@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitHub Project Work Tracking"
+  short_description: "Track feature and slice progress in GitHub Projects without treating the board as the plan."
+  default_prompt: "Check or update GitHub Project tracking for this work. Use the status decision matrix, keep planning separate from tracking, and do not mark Done until proof and acceptance are clear."

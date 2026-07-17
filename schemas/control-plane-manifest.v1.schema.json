@@ -34,6 +34,7 @@
           "exclude": { "$ref": "#/$defs/stringList" },
           "detectLocalOnly": { "type": "boolean" },
           "allowRootLink": { "type": "boolean" },
+          "allowInstalledRootLink": { "type": "boolean" },
           "lock": { "type": "string", "pattern": "^\\$\\{[^}]+\\}(?:/.*)?$" }
         }
       }

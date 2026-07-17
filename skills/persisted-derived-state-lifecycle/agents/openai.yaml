@@ -1,0 +1,4 @@
+interface:
+  display_name: "Persisted Derived State Lifecycle"
+  short_description: "Build lifecycle matrices for queues, retries, projections, provider evidence, and stale derived rows."
+  default_prompt: "Create a persisted derived state lifecycle matrix. Cover source mutations, row states, stale/retryable rows, terminal evidence, reconciliation, final surfaces, and tests."

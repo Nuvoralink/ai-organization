@@ -1,0 +1,21 @@
+<!-- TEMPLATE: the found-but-not-fixed-now bug ledger. Save to {{DOCS_DIR}}/BUG_BACKLOG.md. Seed empty (the header + format only). -->
+# Bug Backlog — {{PROJECT}}
+
+Real bugs found during work but not fixed in the current task (a genuinely-out-of-scope defect, never a way to hide required work). Re-triaged at every sprint-close / whole-app sweep: each OPEN row is fix-now / still-deferred + why / obsolete.
+
+**A false-passing test is NEVER a backlog row** (test-intent §4) — it's a P0 fixed the moment it's found. Same for an exploitable-now security or {{DOMAIN_NOUN}} finding.
+
+## Format
+```
+### <ID> — <one-line symptom>
+- **Status:** OPEN | FIXED (<commit/PR>) | OBSOLETE
+- **Symptom:** what's visibly wrong.
+- **Suspected/root cause:** if known (traced to file:line), else "unknown — needs investigation".
+- **Validation needed:** the test/smoke that would prove the fix.
+- **Tier:** exploitable-now (fix this turn — should not be here) | deferred (+ why genuinely out of scope now).
+- **Found:** <date> · <how it surfaced (which agent/lens/sweep)>
+```
+
+## Open
+
+_(empty at bootstrap — the first deferred bug lands here.)_

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend Design Director"
+  short_description: "Route premium UI work from concept to proof"
+  default_prompt: "Use $frontend-design-director to route this visible UI request through the correct mock, design, implementation, and verification workflow."

@@ -1,0 +1,140 @@
+/**
+ * Proves: {{ORCHESTRATION_REQUIREMENT_ID}}
+ * Test type: regression
+ * Surface: scripts/claude-lifecycle-hook.mjs
+ * Authority: six-part dispatch brief + content-free lifecycle telemetry contract
+ *
+ * Product proof: rendered GitHub issue briefs are accepted, placeholder/comment-only or sibling-section
+ * bodies are rejected, and supplied prompt content never becomes retained telemetry.
+ * Killer mutations: count headings without substantive bodies; scan beyond the current heading;
+ * persist the raw hook payload.
+ */
+import {
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { afterAll, describe, expect, it } from 'vitest';
+
+const scratch: string[] = [];
+
+afterAll(() => {
+  for (const root of scratch) rmSync(root, { recursive: true, force: true });
+});
+
+function findLifecycleScript() {
+  let current = process.cwd();
+  while (true) {
+    const candidate = path.join(current, 'scripts', 'claude-lifecycle-hook.mjs');
+    try {
+      readFileSync(candidate, 'utf8');
+      return candidate;
+    } catch {
+      const parent = path.dirname(current);
+      if (parent === current) throw new Error('scripts/claude-lifecycle-hook.mjs not found');
+      current = parent;
+    }
+  }
+}
+
+const lifecycleScript = findLifecycleScript();
+
+function git(root: string, args: string[]) {
+  const result = spawnSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true });
+  if (result.status !== 0) throw new Error(`${result.stderr}\n${result.stdout}`);
+}
+
+function fixture() {
+  const root = mkdtempSync(path.join(tmpdir(), 'lifecycle-template-'));
+  scratch.push(root);
+  git(root, ['init', '-b', 'main']);
+  git(root, ['config', 'user.email', 'lifecycle@example.invalid']);
+  git(root, ['config', 'user.name', 'Lifecycle Test']);
+  writeFileSync(path.join(root, 'README.md'), 'base\n');
+  git(root, ['add', '.']);
+  git(root, ['commit', '-m', 'base']);
+  git(root, ['update-ref', 'refs/remotes/origin/{{INTEGRATION_BRANCH}}', 'HEAD']);
+  return root;
+}
+
+function run(root: string, payload: unknown) {
+  return spawnSync(process.execPath, [lifecycleScript], {
+    cwd: root,
+    input: JSON.stringify({ cwd: root, ...(payload as object) }),
+    encoding: 'utf8',
+    windowsHide: true,
+  });
+}
+
+function renderedBrief() {
+  return [
+    '### Context',
+    'Settled authority.',
+    '### Exact paths',
+    'scripts/claude-lifecycle-hook.mjs',
+    '### Numbered procedure',
+    '1. Inspect the real output.',
+    '### Output contract',
+    'Return command-owned proof.',
+    '### Boundaries',
+    'Do not publish.',
+    '### Self-verifiable acceptance',
+    'The hostile fixture is blocked.',
+    '### Completion tier',
+    'implementation',
+  ].join('\n');
+}
+
+describe('Claude lifecycle bootstrap contract', () => {
+  it('accepts a rendered issue brief and rejects empty or sibling-owned section content', () => {
+    const root = fixture();
+    const accepted = run(root, {
+      hook_event_name: 'TaskCreated',
+      session_id: 'session-valid',
+      task_id: 'task-valid',
+      task_description: renderedBrief(),
+    });
+    expect(accepted.status).toBe(0);
+
+    const commentOnly = run(root, {
+      hook_event_name: 'TaskCreated',
+      session_id: 'session-comment',
+      task_id: 'task-comment',
+      task_description: renderedBrief().replace('Settled authority.', '<!-- fill later -->'),
+    });
+    expect(commentOnly.status).toBe(2);
+    expect(commentOnly.stderr).toContain('Context');
+
+    const siblingOnly = run(root, {
+      hook_event_name: 'TaskCreated',
+      session_id: 'session-sibling',
+      task_id: 'task-sibling',
+      task_description: renderedBrief().replace(
+        '### Context\nSettled authority.',
+        '### Context\n### Overview\nThis belongs to Overview.',
+      ),
+    });
+    expect(siblingOnly.status).toBe(2);
+    expect(siblingOnly.stderr).toContain('Context');
+  });
+
+  it('retains hashes and counts, never the supplied prompt body', () => {
+    const root = fixture();
+    const secret = 'HOSTILE_PROMPT_CONTENT_91d2';
+    const result = run(root, {
+      hook_event_name: 'TaskCreated',
+      session_id: `session-${secret}`,
+      task_id: `task-${secret}`,
+      task_description: renderedBrief().replace('Settled authority.', `Settled authority ${secret}.`),
+    });
+    expect(result.status).toBe(0);
+    const telemetry = readFileSync(path.join(root, 'tmp', 'agent-telemetry', 'events.jsonl'), 'utf8');
+    expect(telemetry).not.toContain(secret);
+    expect(telemetry).not.toContain('task_description');
+    expect(telemetry).toContain('taskHash');
+  });
+});

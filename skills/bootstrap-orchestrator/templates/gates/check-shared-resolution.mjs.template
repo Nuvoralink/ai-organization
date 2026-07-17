@@ -1,0 +1,103 @@
+#!/usr/bin/env node
+/**
+ * gate:shared-resolution — internal workspace packages resolve IN-TREE, not to a foreign checkout.
+ *
+ * TEMPLATE: fill the {{PLACEHOLDER}}s for THIS repo's internal `file:`/`workspace:` packages + their
+ * consumer workspaces, then save to {{SCRIPTS_DIR}}/check-shared-resolution.mjs and wire it as the FIRST
+ * step of each consumer's `build` script in package.json (e.g. backend build =
+ * `node ../{{SCRIPTS_DIR}}/check-shared-resolution.mjs && <existing build>`). Delete this TEMPLATE line
+ * before shipping. Skip this gate entirely for a single-package repo (no internal workspace deps).
+ *
+ * WHY THIS EXISTS (origin incident, Nuvora CoachAI 2026-07-04): `backend`/`frontend` consume an internal
+ * workspace package (`@scope/shared`) via `file:../shared`, resolved through `node_modules`. When the repo
+ * is built inside a `git worktree` that was never `npm install`-ed, that worktree has NO local
+ * `node_modules`, so Node resolution walks UP the tree and resolves the MAIN checkout's built package
+ * (`shared/dist`) instead of the worktree's own. If that foreign build is stale vs the worktree's source,
+ * the build compiles against the WRONG contract and produces either:
+ *   - a FALSE RED  — the foreign build has fields the current source removed (a 5-field producer typechecked
+ *     against a stale 8-field DTO → a cryptic TS2345 that looks like a source bug but is a stale artifact), or
+ *   - a FALSE GREEN — the foreign build still has fields the current source added → a real break sails through.
+ * The false-green is the dangerous one: a cryptic TS error at least surfaces; a false-green ships broken.
+ * `git stash` does NOT hide it (the built artifact is gitignored, so stashing source leaves it in place),
+ * which is exactly how the class gets misdiagnosed as an origin/main source defect.
+ *
+ * THE RULE: for each consumer workspace, the internal package it imports must resolve to a path INSIDE this
+ * checkout. If it resolves to a foreign tree, FAIL FAST with the fix (install this worktree, or link the
+ * package in-tree) instead of letting a cryptic downstream TS error mislead the next agent.
+ *
+ * Exit 0 = pass (in-tree, or nothing to check); 1 = fail (foreign resolution).  Run: `npm run gate:shared-resolution`
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// FILL: the internal workspace packages consumers import (the `file:`/`workspace:` deps), each as a
+// path-segment array so nested scopes work. e.g. [['@scope', 'shared'], ['@scope', 'contracts']].
+const INTERNAL_PKGS = {{INTERNAL_PKGS}}; // e.g. [['@scope', 'shared']]
+// FILL: the workspace dirs that import those packages (relative to repo root). e.g. ['backend', 'frontend'].
+const CONSUMERS = {{CONSUMERS}}; // e.g. ['backend', 'frontend']
+
+// The repo root is the parent of the scripts dir this file lives in. FILL {{SCRIPTS_DIR}} depth if nested.
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const root = path.resolve(scriptDir, '..');
+
+/** Case-fold on win32 (NTFS is case-insensitive; realpath can differ in drive-letter case). */
+const norm = (p) => (process.platform === 'win32' ? path.resolve(p).toLowerCase() : path.resolve(p));
+
+/** Walk up from `startDir`, return the REAL directory `pkgSegments` resolves to, or null. */
+function findPackageDir(startDir, pkgSegments) {
+  let dir = path.resolve(startDir);
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const candidate = path.join(dir, 'node_modules', ...pkgSegments);
+    if (fs.existsSync(candidate)) {
+      try {
+        return fs.realpathSync.native ? fs.realpathSync.native(candidate) : fs.realpathSync(candidate);
+      } catch {
+        return candidate;
+      }
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) return null;
+    dir = parent;
+  }
+}
+
+function isInside(child, parent) {
+  const rel = path.relative(norm(parent), norm(child));
+  return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+}
+
+let foreign = null;
+outer: for (const consumer of CONSUMERS) {
+  const consumerDir = path.join(root, consumer);
+  if (!fs.existsSync(consumerDir)) continue; // bootstrap-skip: consumer not present yet
+  for (const pkg of INTERNAL_PKGS) {
+    const resolved = findPackageDir(consumerDir, pkg);
+    if (resolved && !isInside(resolved, root)) {
+      foreign = { consumer, pkg: pkg.join('/'), resolved };
+      break outer;
+    }
+  }
+}
+
+if (foreign) {
+  const junctionTarget = path.join(root, 'node_modules', ...foreign.pkg.split('/'));
+  console.error(`check:shared-resolution FAILED — '${foreign.pkg}' resolves to a tree OUTSIDE this checkout.`);
+  console.error(`  this checkout                 : ${root}`);
+  console.error(`  ${foreign.consumer} resolves ${foreign.pkg} → ${foreign.resolved}`);
+  console.error('');
+  console.error('You are about to build/typecheck against a FOREIGN, possibly-stale build of an internal');
+  console.error('package (the classic worktree false-red / false-green). Make it resolve IN-TREE first:');
+  console.error('');
+  console.error(`    npm install            # from ${root}   (or pnpm/yarn install)`);
+  console.error('');
+  console.error('  or, for a fast in-tree link without a full install (Windows junction shown):');
+  console.error(`    cmd /c mklink /J "${junctionTarget}" "<in-tree package dir>"`);
+  console.error('');
+  console.error('Then re-run the build.');
+  process.exit(1);
+}
+
+console.log('check:shared-resolution: OK — internal workspace packages resolve in-tree.');
+process.exit(0);

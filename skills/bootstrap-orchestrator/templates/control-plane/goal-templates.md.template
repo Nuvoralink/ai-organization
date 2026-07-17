@@ -1,0 +1,35 @@
+# Goal Templates — Agent View and Saved Workflows
+
+Status: live
+Last verified: {{DATE}}
+
+Use a GitHub Agent slice issue for the full six-part brief. Launch editing sessions in isolated worktrees with
+Agent View. For drift reconciliation, enter Claude plan mode first, then run `orchestration-drift-audit`;
+prompt language alone is not a read-only permission boundary. {{DESIGN_AUTHORITY}} remains the visible UI
+authority and visible implementation stays mock → approval → code.
+
+## Feature slice
+
+**Goal:** Deliver `<user outcome>` end to end within `<issue URL>` and `<worktree>`, preserve `<authority
+IDs>`, trace feeders/consumers, prove negative states, and stop before external/irreversible actions.
+
+**Evaluator:** PASS only if the actual diff matches the allowlist, authority reaches final consumers, named
+checks have their own zero exits, the killer mutation goes red, rendered proof matches the approved baseline,
+and not-reached surfaces are named.
+
+## Root-cause bug slice
+
+**Goal:** Reproduce `<visible failure>`, correct the earliest reliably-correctable upstream decision, sweep the
+class repo-wide, replace/demote the old path, and stop before external/irreversible action.
+
+**Evaluator:** PASS only with before/after evidence, positive/negative cases, a biting killer mutation, and no
+parallel authority or stale reference.
+
+## Review and verification
+
+**Goal:** Read-only refute `<branch/PR/done claim>` against actual diff, callers/feeders, authorities, tests,
+external state, and raw artifacts. Make no mutation.
+
+**Evaluator:** PASS only when scope is enumerated, evidence is exact, green claims are re-derived, and every
+not-reached/conflicting surface is explicit. `clean` is forbidden outside inspected scope.
+

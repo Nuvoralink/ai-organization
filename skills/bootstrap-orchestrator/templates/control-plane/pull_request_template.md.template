@@ -1,0 +1,56 @@
+## Product outcome
+
+<!-- User/business outcome; too little vs too much. -->
+
+## Authority and decision matrix
+
+| Decision | Authority/evidence | Chosen option | Rejected option and strongest argument | Invalidation trigger |
+| --- | --- | --- | --- | --- |
+|  |  |  |  |  |
+
+## Blast radius
+
+### Upstream feeders
+
+### Downstream consumers
+
+## Verification evidence
+
+| Exact command | Command-owned exit | What it proves | Raw key output/artifact |
+| --- | ---: | --- | --- |
+|  |  |  |  |
+
+## Killer mutation
+
+## Rendered evidence (when relevant)
+
+<!-- Approved {{DESIGN_AUTHORITY}} baseline plus rendered proof, or N/A. -->
+
+## Security/domain/authority checks
+
+- [ ] Server-side authorization/object scope and tenant boundaries checked, or evidenced N/A.
+- [ ] Secrets/PII/provider payloads and paid/irreversible boundaries checked, or evidenced N/A.
+- [ ] Project crown-jewel/domain invariants checked, or evidenced N/A.
+
+## Docs, journey, and doctrine-loop
+
+- [ ] Live docs/maps updated, or exact N/A evidence supplied.
+- [ ] Reusable journey lesson captured, or explicit none.
+- [ ] Doctrine-loop findings include RCA and smallest control fix, or explicit none.
+
+## Honesty: surfaces not reached
+
+## Conditional autonomous merge evidence
+
+<!-- Required only when an agent proposes to merge without a human. Every row must be evidenced; uncertainty means do not merge. -->
+- [ ] No deploy or production effect.
+- [ ] Low-risk and additive/isolated; no auth, security, billing, schema/data, provider, AI-semantics, or visible-UI impact.
+- [ ] Current fetched base, no active conflicting work, and actual diff independently reviewed.
+- [ ] Every required check passed and no unresolved product/design/material-architecture decision remains.
+
+## Human gates (agents leave unchecked)
+
+- [ ] Human approves any merge that deploys or mutates production.
+- [ ] Human approves deploy/publish, production config/write, or data migration.
+- [ ] Human approves destructive/irreversible, billed/purchase, secret, or external-contact action.
+- [ ] Human approves unresolved product scope, visible design/copy, or material architecture decision.

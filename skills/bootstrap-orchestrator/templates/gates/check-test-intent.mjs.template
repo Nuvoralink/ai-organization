@@ -1,0 +1,98 @@
+#!/usr/bin/env node
+/**
+ * gate:test-intent — every test file declares what product decision it proves, and the `Proves:` IDs resolve.
+ *
+ * TEMPLATE: derived from the Auxara Dialer scripts/check-test-intent.mjs. Fill the {{PLACEHOLDER}}s (src dirs, the
+ * requirement/benchmark ID sources + their ID regexes, the allowed test-type set), save to {{SCRIPTS_DIR}}/check-test-intent.mjs,
+ * and wire `gate:test-intent` into package.json + gates:all. Delete this TEMPLATE line before shipping.
+ *
+ * See {{RULES_DIR}}/test-intent.<ext>. Exit 0 = pass; 1 = fail.  Run: `npm run gate:test-intent`
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import process from 'node:process';
+
+const root = process.cwd();
+
+// ----- src dirs to walk (bootstrap-skip until they exist) -----
+const SRC_DIRS = [{{SRC_DIRS}}]; // FILL every real test root: e.g. 'backend/src', 'frontend/src', 'frontend/e2e' — or 'src' for one package
+const existingSrc = SRC_DIRS.filter((d) => fs.existsSync(path.join(root, d)));
+if (existingSrc.length === 0) {
+  console.log(`check-test-intent: no source dirs (${SRC_DIRS.join(', ')}) yet — skipping (bootstrap).`);
+  process.exit(0);
+}
+
+// ----- resolve catalogs of valid requirement / benchmark IDs -----
+const readIfExists = (p) => { try { return fs.readFileSync(p, 'utf8'); } catch { return ''; } };
+// FILL: the docs that DEFINE valid IDs (PRD, benchmarks, decision log, bug backlog). Prune to what exists.
+const ID_SOURCE_FILES = [{{ID_SOURCE_FILES}}]; // e.g. PRD, benchmark, decision-log, and backlog paths
+const idSourceText = ID_SOURCE_FILES.map((p) => readIfExists(path.join(root, p))).join('\n');
+const validIds = new Set();
+// FILL tighter if the project's catalogs use a narrower grammar. The default admits any uppercase,
+// hyphenated catalog ID so decisions/backlog regressions need not borrow an unrelated PRD requirement.
+for (const m of idSourceText.matchAll(/\b([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+)\b/g)) validIds.add(m[1]);
+const isValidId = (id) => validIds.has(id);
+
+// ----- allowed test types (FILL: prune to the types THIS project actually uses) -----
+const allowedTypes = new Set([
+  'unit', 'integration', 'e2e', 'contract', 'regression', 'smoke',
+  'source-to-screen', 'tenant-isolation', 'bounded-repair',
+  // {{PROJECT_TEST_TYPES}}  // FILL: add domain types (e.g. 'compliance-audit' for a regulated product)
+]);
+
+// ----- walk test files -----
+const testPatterns = [/\.test\.tsx?$/, /\.spec\.tsx?$/, /Regression[^/\\]*\.(ts|mjs)$/];
+const isTestFile = (p) => testPatterns.some((re) => re.test(p));
+function walk(dir) {
+  const out = [];
+  if (!fs.existsSync(dir)) return out;
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) { if (e.name === 'node_modules' || e.name.startsWith('.')) continue; out.push(...walk(full)); }
+    else if (isTestFile(full)) out.push(full);
+  }
+  return out;
+}
+const testFiles = existingSrc.flatMap((d) => walk(path.join(root, d)));
+if (testFiles.length === 0) { console.log('check-test-intent: no test files found — skipping.'); process.exit(0); }
+
+// ----- parse each header -----
+const failures = [];
+const relPath = (p) => path.relative(root, p).replaceAll('\\', '/');
+const readHeader = (fp) => { const t = fs.readFileSync(fp, 'utf8'); const m = t.match(/^﻿?\s*\/\*\*([\s\S]*?)\*\//); return m ? m[1] : null; };
+const extractLineValue = (h, k) => { const m = h.match(new RegExp(`^\\s*\\*?\\s*${k}\\s*:\\s*(.+?)\\s*$`, 'm')); return m ? m[1].trim() : null; };
+// Keep every catalog-shaped candidate. Filtering to known IDs here would make an unresolved typo
+// disappear before the validation below (for example `NFR-011, BUX-999`).
+const extractIds = (s) => [...new Set(s.match(/\b[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+\b/g) ?? [])];
+
+for (const file of testFiles) {
+  const rel = relPath(file);
+  const h = readHeader(file);
+  if (!h) { failures.push(`${rel}: missing leading /** ... */ intent header`); continue; }
+  const local = [];
+  const proves = extractLineValue(h, 'Proves');
+  if (!proves) local.push('missing "Proves:" line');
+  if (!extractLineValue(h, 'Test type')) local.push('missing "Test type:" line');
+  if (!extractLineValue(h, 'Surface')) local.push('missing "Surface:" line');
+  if (!extractLineValue(h, 'Authority')) local.push('missing "Authority:" line');
+  if (!h.match(/What this test proves about the product\s*:/i)) local.push('missing "What this test proves about the product:" line');
+  if (!extractLineValue(h, 'Killer mutation')) local.push('missing "Killer mutation:" line');
+  if (!extractLineValue(h, 'Gated command')) local.push('missing "Gated command:" line');
+  if (proves) {
+    const ids = extractIds(proves);
+    if (ids.length === 0) local.push('"Proves:" has no catalog-shaped requirement/decision IDs');
+    else { const bad = ids.filter((id) => !isValidId(id)); if (bad.length) local.push(`"Proves:" contains unresolved IDs: ${bad.join(', ')}`); }
+  }
+  const tt = extractLineValue(h, 'Test type');
+  if (tt && !allowedTypes.has(tt.toLowerCase())) local.push(`"Test type:" value "${tt}" not in allowed set [${[...allowedTypes].join(', ')}]`);
+  if (local.length) failures.push(`${rel}:\n  - ${local.join('\n  - ')}`);
+}
+
+if (failures.length) {
+  console.error(`check-test-intent: FAILED — ${failures.length} test file(s) missing/invalid intent headers:\n`);
+  for (const f of failures) console.error('  x ' + f);
+  console.error(`\nSee {{RULES_DIR}}/test-intent.<ext> for the required header.`);
+  process.exit(1);
+}
+console.log(`check-test-intent: OK — ${testFiles.length} test file(s) carry a valid intent header.`);
+process.exit(0);

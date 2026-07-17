@@ -1,0 +1,72 @@
+// TEMPLATE: Claude Code PostToolUse hook — runs the doctrine gates automatically after file edits.
+// Derived from the Auxara Dialer scripts/claude-posttooluse-gate.mjs. FILL the file-path→gate routing map for THIS repo's gates.
+// Save to {{SCRIPTS_DIR}}/claude-posttooluse-gate.mjs (referenced from .claude/settings.json). Delete this TEMPLATE line.
+//
+// Wired from .claude/settings.json. Receives the tool-call JSON on stdin; routes the edited file to the matching gate(s).
+// Exit 2 feeds the gate failure back to the agent so it must fix the violation before moving on ("wire the gate, not the rule").
+//
+// ⚠ WARN-TIER GATES ARE SWALLOWED BY THIS SHAPE (caught 2026-07-03, dialer PR #176): the success path
+// discards the piped output — a gate that flags with exit 0 (WARN-only) prints to a pipe nobody reads,
+// so its "edit-time visibility" is theater. For each WARN-tier gate routed through this hook, give the
+// gate a STRICT env/--strict mode (exit 1 on a flag; WARN-only stays for gates:all/CI) and set that env
+// here (see the `env:` below) — the catch branch then feeds the flags back to the agent. Keep the
+// scanned tree at 0 warnings so strict never nags on pre-existing debt.
+import { readFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
+
+let filePath = '';
+try {
+  const payload = JSON.parse(readFileSync(0, 'utf8'));
+  filePath = payload?.tool_input?.file_path ?? '';
+} catch {
+  process.exit(0); // unparseable payload — never block on hook plumbing
+}
+if (!filePath) process.exit(0);
+
+const p = filePath.replace(/\\/g, '/');
+const gates = [];
+
+// ---- FILL: route edited files to the gates that scan them. Examples (keep what applies, delete the rest) ----
+// Frontend edits → the UI + layout gates:
+// if (/\/frontend\/src\//.test(p)) gates.push('check:ui-guardrails', 'check:layout', 'check:ui-source-of-truth');
+// UI-primitive edits only → the testid-passthrough gate:
+// if (/\/frontend\/src\/components\/ui\//.test(p)) gates.push('check:ui-testid');
+// Test-file edits → the test-intent gate (INVARIANT — every project has this):
+if (/\.(test|spec)\.(ts|tsx|mts|mjs)$/.test(p) || /Regression[^/]*\.(ts|mjs)$/.test(p)) gates.push('gate:test-intent');
+// Rule / entry-doc edits → wiring + startup-context budgets (INVARIANT):
+if (/\/({{RULES_DIR_LEAF}})\/[^/]+\.({{RULE_EXT_BARE}})$/.test(p) || /\/(CLAUDE|AGENTS)\.md$/.test(p)) gates.push('gate:rules-wiring', 'gate:agent-context');
+// Durable permission/workflow artifacts → the agent-control-plane gate (INVARIANT). Keep the exact
+// settings/playbook paths: otherwise a settings-only tool-permission regression or a playbook-only removal
+// of the plan-mode boundary bypasses edit-time and TaskCompleted changed-file routing.
+if (
+  /\/\.github\/ISSUE_TEMPLATE\/agent-slice\.yml$/.test(p) ||
+  /\/\.github\/pull_request_template\.md$/i.test(p) ||
+  /\/\.claude\/settings\.json$/.test(p) ||
+  /\/\.claude\/workflows\/orchestration-drift-audit\.js$/.test(p) ||
+  /\/\.claude\/loop\.md$/.test(p) ||
+  /\/docs\/agent-prompts\/(?:goal-templates|orchestration-playbook)\.md$/.test(p) ||
+  /\/scripts\/(?:check-agent-control-plane|claude-lifecycle-hook)\.mjs$/.test(p)
+) gates.push('gate:agent-control-plane');
+// {{PROJECT_ROUTING}}  // FILL: any project-specific routing (e.g. schema edits → a tx-seam gate).
+
+if (gates.length === 0) process.exit(0);
+
+let failed = false;
+for (const gate of [...new Set(gates)]) {
+  try {
+    execSync(`npm run ${gate}`, {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      timeout: 90_000,
+      // FILL: strict-mode envs for the WARN-tier gates this hook routes (see the header note).
+      env: { ...process.env /* , {{WARN_GATE_STRICT_ENV}}: '1' */ },
+    });
+  } catch (err) {
+    failed = true;
+    const out = `${err.stdout ?? ''}${err.stderr ?? ''}`.slice(-3000);
+    console.error(
+      `[gate-hook] \`npm run ${gate}\` FAILED after editing ${p}.\n` +
+        `Fix the violation now — do not proceed or work around the gate.\n${out}`,
+    );
+  }
+}
+process.exit(failed ? 2 : 0);

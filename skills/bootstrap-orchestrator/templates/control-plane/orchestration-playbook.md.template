@@ -1,0 +1,34 @@
+# Orchestration Playbook
+
+Status: live
+Last verified: {{DATE}}
+
+## Start
+
+1. Read live git/worktree state and the relevant authority docs; do not fetch during a read-only audit.
+2. Put every delegated task in the six-part Agent slice issue/template with `Completion tier`.
+3. Give each editing agent an isolated fetched-base worktree; reviewers are read-only and forbid every
+   tree-mutating git command.
+4. Use Agent View (`claude agents`) for concurrent session status and the goal/evaluator templates for exits.
+
+## Saved drift workflow
+
+Enter Claude plan mode first, then invoke `orchestration-drift-audit`. Plan mode is the permission boundary;
+prompt language alone is not a tool-permission boundary; the workflow's read-only wording is defense-in-depth.
+It reports only evidence-backed
+repo/GitHub/control discrepancies and never edits.
+
+## Action authority
+
+`{{ACTION_AUTHORITY_PATH}}` is the single machine-readable authority. In-scope branch/worktree creation,
+commit, push, and draft/ready PR publication are autonomous. PR merge is conditional: every listed condition
+must be proven, including no deploy or production effect; uncertainty falls back to human approval.
+
+Deploy/publish, production mutation or configuration, data migrations, destructive/irreversible actions,
+billed actions or purchases, external contact, secrets, and unresolved product/design/material-architecture
+decisions remain human-gated. A merge that auto-deploys or otherwise mutates production is human-gated.
+
+## Evidence
+
+Open real outputs/artifacts. A status, report, grep-zero, green test, or critic verdict is a lead. Re-run
+surprising results a second way and record every not-reached surface.

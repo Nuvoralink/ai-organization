@@ -8,6 +8,7 @@
   },
   "scripts": {
     "control:check": "node scripts/control-plane.mjs check",
+    "control:validate": "node scripts/control-plane.mjs validate",
     "control:install": "node scripts/control-plane.mjs install",
     "control:capture": "node scripts/control-plane.mjs capture",
     "control:inventory": "node scripts/control-plane.mjs inventory",

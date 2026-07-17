@@ -1,0 +1,40 @@
+<!-- TEMPLATE: the compact project AGENTS.md — Codex's rule-discovery surface + operational summary. MERGE into an existing AGENTS.md
+     (or create it). Codex has no native rule auto-loader, so EVERY rule file must be NAMED here (always-on or contextual) or
+     gate:rules-wiring fails. FILL every {{PLACEHOLDER}}. Do NOT copy the global orchestration doctrine in. Keep detailed
+     procedures in path-scoped rules/skills; this startup router should stay under the measured context budget. -->
+
+# Codex Project Defaults — {{PROJECT}}
+
+This repo's agent rules live under `{{RULES_DIR}}/`. Codex must treat them as project guidance. **The global engineering doctrine loads user-level via `~/.codex/AGENTS.md` — it is NOT restated here.** This file lists the project rules (so Codex can discover them — it has no auto-loader) + the operational summary.
+
+## Authority boundary — read before implementing anything
+{{AUTHORITY_BOUNDARY_SUMMARY}}
+<!-- FILL: same north-star + tier summary as CLAUDE.md; point to {{RULES_DIR}}/{{DOMAIN_RULE_FILE}}. -->
+
+## Always-on rules (Codex applies these by default on every task)
+{{ALWAYS_ON_RULE_PATHS}}
+<!-- FILL: one `{{RULES_DIR}}/<file>` bullet per always-on rule. Every file in {{RULES_DIR}}/ must appear here OR under contextual (gate:rules-wiring). -->
+
+## Contextual rules (read when the path/topic applies)
+{{CONTEXTUAL_RULE_PATHS}}
+<!-- FILL: the remaining rule files, each with a one-line "when it applies" (e.g. "`{{RULES_DIR}}/frontend-rules.<ext>` — frontend changes"). -->
+
+## Agent fleet
+The project runs with one orchestrator/PM over the fleet in `.claude/agents/` (global model): premise-and-architecture-challenger (read-only pre-plan, not a second PM), sprint-kickoff-auditor, {{IMPLEMENTER_NAME}}, adversarial-reviewer, {{DOMAIN_AUDITOR_NAME}} (domain lens), {{SECURITY_AUDITOR_NAME}}, doctrine-drift-auditor{{UI_VERIFIER_NAME_CLAUSE}}, performance-auditor, functionality-parity-auditor (delivery-chain: decided→built→wired→reachable), user-journey-auditor (the ICP's-seat walk), release-verifier{{TEST_RUNNER_NAME_CLAUSE}}. Backend/non-visual slices route to Codex CLI; visual/mockup-first slices stay on Claude.
+
+Visible frontend work routes through the global `frontend-design-director`: marketing/editorial surfaces use `design-taste-frontend`; dashboards, admin, analytics, and product workflows use `product-ui-design-taste`; implementation begins only after the governing mock-approval gate.
+
+When a skill used in a task exposes a proven reusable loophole, trigger/routing miss, stale rule, or better method, load the global `skill-evolution-loop` and patch the canonical owning skill/trigger/rubric/test in the same task with a fail-state, regression mutation, counterexample, validation, and behavioral re-test. Keep project-specific lessons local and preserve human approval for material doctrine/safety changes.
+
+## Operational summary
+- Start from product intent + the user/business outcome, not only the literal code request.
+- For non-trivial backend/shared-contract/{{DB_TERM}}/security/{{PROVIDER_INTEGRATION_TERM}}/queue/storage/deploy/cross-layer work, check `{{ARCH_BLAST_RADIUS_DOC}}` first; if a miss reveals a missing relation, update it the same turn.
+- When a change creates/modifies persisted derived state, require a lifecycle matrix (every source mutation × every applicable row state).
+- Prefer durable root-cause fixes over brittle patches. Respect workspace boundaries. Keep routes thin, logic in services, shared contracts in the shared workspace.
+- Preserve stable API/persistence contracts; prefer additive changes.
+- {{DOMAIN_OPERATIONAL_INVARIANTS}} <!-- FILL: the domain's key operational invariants in a few bullets — the source-of-truth rules, the lifecycle state machine, the compliance/AI-boundary posture. -->
+- Validate + normalize all machine-consumed model output before use; when AI output is validated, validation feeds back into generation (bounded retry, only failed fields, merge into the good payload).
+- Every paid provider call goes through a metered adapter with stable stage/role/capability/provider/model/tokens/cost. {{IF_APPLICABLE}}
+- Security/auth/RBAC hardening is architecture work: httpOnly cookie-first browser auth, signed CSRF + Origin/Referer checks, token-version rehydration; tenant-scoped queries + {{RLS_TERM}} backstop; object-scope checks on every client-supplied id; trusted-URL helpers for redirects; telemetry through the shared redaction authority.
+- Documentation is part of done: update the living docs that own changed behavior in the same commit.
+- Claude hooks and Codex both feed the same vendor-neutral task-assurance/completion governor. Claude's PostToolUse adapter provides faster edit-time feedback; Codex invokes the project completion wrapper before commit/PR, and CI replays the same risk-to-proof policy. A vendor lane may not complete with zero selected proof.

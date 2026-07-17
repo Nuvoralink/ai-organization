@@ -1,0 +1,17 @@
+# Secrets - never commit real keys
+.env
+
+# Persisted council runs (may contain idea content)
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# OS / editor
+.DS_Store
+Thumbs.db

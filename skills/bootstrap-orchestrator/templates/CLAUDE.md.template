@@ -1,0 +1,56 @@
+<!-- TEMPLATE: the project CLAUDE.md fleet + rules wiring. This is a SECTION SET to MERGE into the repo's existing CLAUDE.md
+     (or create it if absent) — do NOT overwrite a rich existing CLAUDE.md; add the "Agent fleet" + "Always-on rules" blocks.
+     FILL every {{PLACEHOLDER}}. Do NOT copy the global orchestration doctrine in — it loads user-level automatically.
+     CONTEXT BUDGET (SKILL.md Step 2.5): this file + every @ import + every .claude/rules file WITHOUT official `paths:`
+     frontmatter is ALWAYS-ON context, paid on every agent turn. Splitting a large file into imports does NOT save tokens.
+     Keep it pointer-based, path-scope every task rule, measure chars ÷ 4, and wire gate:agent-context. -->
+
+@AGENTS.md
+
+# {{PROJECT}} — Claude Code Project Rules
+
+This file is the entry point for Claude Code. It mirrors the operational guidance Codex follows via `AGENTS.md` so both agents work from one playbook. **The global engineering doctrine (`~/.claude/rules/orchestrator-mode.md` + doctrine-loop / loop-discipline / decision-discipline / slice-rigor / test-intent / authority-boundary) loads user-level in every project — it is NOT copied here (no parallel system).** This file adds only the project layer.
+
+## Authority boundary — read before implementing anything
+{{AUTHORITY_BOUNDARY_SUMMARY}}
+<!-- FILL a 3-6 line north-star + tier summary authored from the crown jewels (see the domain-rules authoring guide). Point to the full rule: {{RULES_DIR}}/{{DOMAIN_RULE_FILE}}. -->
+
+## Agent fleet
+This project is run as an orchestrator/PM over a fleet (the global model; see `~/.claude/rules/orchestrator-mode.md`). The project-level agents live in `.claude/agents/`:
+- **{{IMPLEMENTER_NAME}}** — slice implementer (full slice, no deferral, self-review, gates).
+- **premise-and-architecture-challenger** — read-only pre-plan lens; challenges necessity, authority placement, reuse/removal, and workaround risk. It advises the orchestrator, never becomes a second PM.
+- **sprint-kickoff-auditor** — read-only opening bookend; reconciles settled decisions and dependencies into the iteration before planning starts.
+- **adversarial-reviewer** — the general-doneness lens (refute-the-done, before merge).
+- **{{DOMAIN_AUDITOR_NAME}}** — the crown-jewel domain lens: {{DOMAIN_INVARIANTS_SHORT}}. Run before merging anything touching {{DOMAIN_TOUCH_SURFACES}}.
+- **{{SECURITY_AUDITOR_NAME}}** — appsec/tenancy.
+- **doctrine-drift-auditor** — code-vs-our-own-doctrine (+ doctrine-vs-doctrine) contradictions.
+{{UI_VERIFIER_FLEET_LINE}}
+- **performance-auditor** — N+1/index/re-render/bundle/leak scale hazards (hot-path slices + sprint-close sweep).
+- **functionality-parity-auditor** — the delivery chain decided→built→wired→called→reachable, both directions (backend-contract-without-frontend slices + sprint-close whole-app walk; re-triages the wiring gate's PENDING rows).
+- **user-journey-auditor** — the ICP's-seat walk: per-persona jobs (day-zero first), workflow loopholes, improvement candidates as decision inputs (sprint/phase close + before new product/design slices).
+- **release-verifier** — the DEPLOYED-product lens, after every production-affecting merge (the merge loop isn't closed until its verdict lands).
+{{TEST_RUNNER_FLEET_LINE}}
+
+The auditor cadence, dispatch-brief contract, closed-loop learning, and integration model are the global doctrine — this section only names THIS project's members.
+
+## Just-in-time rules
+Every project rule under `{{RULES_DIR}}/` carries official `paths:` frontmatter and lazy-loads when Claude reads a matching file. `AGENTS.md` lists every rule and its trigger for Codex. Keep startup imports exceptional: if a compact project rule is truly irreducible, add it below AND keep `paths:` on the file so it does not auto-load a second way. `gate:rules-wiring` + `gate:agent-context` enforce both contracts.
+
+{{IRREDUCIBLE_RULE_AT_REFS}}
+<!-- FILL with zero to four deliberate `@{{RULES_DIR}}/<file>` lines. Prefer zero: global doctrine + AGENTS.md should carry the startup core. Never @-import every generated rule. -->
+
+## Authoritative source-of-truth docs
+| Doc | When to read |
+|---|---|
+| {{DOMAIN_AUTHORITY_DOC}} | Before touching {{DOMAIN_TOUCH_SURFACES}} |
+| `{{DOCUMENTATION_INDEX}}` | When creating/retiring/re-authoring a doc |
+| `{{ARCH_BLAST_RADIUS_DOC}}` | Any non-trivial cross-layer change |
+| `{{JOURNEY_LESSONS_DOC}}` | When a task reveals a reusable lesson (update after the fix) |
+| `{{DECISION_LOG_DOC}}` + `{{ADR_DIR}}` | The decision authority (settled + scrapped) |
+
+## Definition of done (every change)
+Architecture still coherent; the intended source of truth drives the final user-visible behavior; tests prove product logic not just compilation; blast-radius docs updated if a relation was exposed; {{SAFETY_INVARIANTS}} preserved where applicable; security/privacy/tenant-isolation considered; any deferred follow-up named with a reason, never silently dropped.
+
+For visible frontend work, load the global `frontend-design-director` before any prompt, mock, critique, or implementation. Route marketing/editorial surfaces to `design-taste-frontend` and dashboards, admin, analytics, or product workflows to `product-ui-design-taste`; preserve the project's mock-approval gate.
+
+When a skill used in a task exposes a proven reusable loophole, trigger/routing miss, stale rule, or better method, load the global `skill-evolution-loop` and patch the canonical owning skill/trigger/rubric/test in the same task with a fail-state, regression mutation, counterexample, validation, and behavioral re-test. Keep project-specific lessons local and preserve human approval for material doctrine/safety changes.

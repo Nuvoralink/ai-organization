@@ -1,0 +1,24 @@
+<!-- TEMPLATE: the living docs routing layer. Save to {{DOCS_DIR}}/DOCUMENTATION_INDEX.md. FILL the rows from the docs actually generated/present. -->
+# Documentation Index — {{PROJECT}}
+
+The routing layer for authority docs. Each row carries a **freshness signal** (`Status:` live / stub / historical + `Last verified:` date) so staleness is visible, not silent. A doc still marked `stub` must NOT be cited as settled authority.
+
+_Last reviewed: {{BOOTSTRAP_DATE}}_
+
+| Doc | Owns (authority over) | Status | Last verified |
+|---|---|---|---|
+| `{{DECISION_LOG_DOC}}` | Settled decisions + scrapped/do-not-resurrect scope | {{STATUS}} | {{BOOTSTRAP_DATE}} |
+| `{{ADR_DIR}}` | Architectural decisions (highest authority) | {{STATUS}} | {{BOOTSTRAP_DATE}} |
+| `{{ARCH_BLAST_RADIUS_DOC}}` | Connected-surface map (backend/DB/contracts/deploy) | stub — grows with code | {{BOOTSTRAP_DATE}} |
+| `{{FRONTEND_BLAST_RADIUS_DOC}}` | Connected frontend surfaces | stub — grows with code | {{BOOTSTRAP_DATE}} |
+| `{{BUG_BACKLOG_DOC}}` | Real bugs found-but-not-fixed-now | live | {{BOOTSTRAP_DATE}} |
+| `{{JOURNEY_LESSONS_DOC}}` | Reusable narrative lessons | live | {{BOOTSTRAP_DATE}} |
+| `{{DOMAIN_AUTHORITY_DOC}}` | {{DOMAIN_NOUN}} posture / crown-jewel invariants | {{STATUS}} | {{BOOTSTRAP_DATE}} |
+| `{{SOURCE_OF_TRUTH_MAP}}` | Which authority owns each decision | {{STATUS}} | {{BOOTSTRAP_DATE}} |
+
+## Discipline (doctrine-loop Arm 3 — docs are verified-not-trusted)
+- When you read a doc to inform work, sanity-check its load-bearing claims against code/state/git. Stale = a bug you found.
+- Stale-on-sight = fix-now (small/safe) or flag with `file:line` (bigger). Never knowingly leave a doc lying to the next agent.
+- Behavior change → same-PR doc update. Grep for the docs/comments/briefs describing the changed behavior.
+- Adding/retiring/re-authoring a doc → update this index row in the same change.
+- This index is the **just-in-time routing layer** of the project's context system: agents load docs THROUGH it when a task needs them. Doc content is never inlined into `CLAUDE.md`/`AGENTS.md`/rules (the always-on layer stays lean and pointer-based — bootstrap Step 2.5).

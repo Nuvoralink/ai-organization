@@ -1,0 +1,4 @@
+interface:
+  display_name: "Skill Evolution Loop"
+  short_description: "Turn proven skill gaps into validated improvements"
+  default_prompt: "Use $skill-evolution-loop to turn this observed skill failure into a safe, validated improvement."

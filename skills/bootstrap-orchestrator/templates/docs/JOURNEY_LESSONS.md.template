@@ -1,0 +1,21 @@
+<!-- TEMPLATE: the narrative lessons doc (doctrine-loop Arm 2 destination for reusable "why"). Save to {{DOCS_DIR}}/Journey/AI_BUILD_JOURNEY_LESSONS.md (or the repo's journey location). Seed with the bootstrap entry (SKILL.md Step 5). -->
+# {{PROJECT}} — AI Build Journey & Lessons
+
+Reusable lessons about building this product with AI — the *why* behind a fix, a technique that worked, a footgun and its prevention. Updated AFTER a fix/analysis (doctrine-loop Arm 2), not when someone remembers to ask. Each lesson: what happened, the root cause, the durable prevention (which gate/rule/agent-file/doc it landed in).
+
+For a long-running multi-slice PHASE (a migration, a remediation sweep, a redesign), additionally keep a **phase ledger** doc the phase's slices APPEND to — per issue found: the measured evidence, root cause, fix, *how it should have been done* (imperative, for the next agent), and the codified home that now enforces it. An entry with no codified home is an unrouted lesson (doctrine-loop fail-state). Pattern origin: the Auxara Dialer's `responsive-remediation-log.md` (Amin directive 2026-07-02).
+
+## Format
+```
+## L<N> — <short title> (<date>)
+**What happened:** ...
+**Root cause:** ... (why introduced + why no control caught it)
+**Prevention (where it landed):** the gate / rule / agent-checklist-row / test-shape / doc that now prevents the class.
+```
+
+## Lessons
+
+## L1 — Orchestrator structure bootstrapped ({{BOOTSTRAP_DATE}})
+**What happened:** the `bootstrap-orchestrator` skill stood up the orchestrator/fleet/gates/living-docs model in this repo.
+**Decisions recorded:** crown jewels = {{CROWN_JEWELS}}; rules dir = {{RULES_DIR}} ({{RULES_DIR_REASON}}); domain auditor = {{DOMAIN_AUDITOR_NAME}}; gate set = {{GATE_SET}}.
+**Prevention (where it landed):** the fleet + gates + living docs are now the default operating layer; the doctrine loop keeps them growing. Future lessons append below.

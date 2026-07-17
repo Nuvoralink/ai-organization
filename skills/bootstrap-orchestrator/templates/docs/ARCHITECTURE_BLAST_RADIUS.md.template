@@ -1,0 +1,24 @@
+<!-- TEMPLATE: the connected-surface map. Save to {{DOCS_DIR}}/ARCHITECTURE_BLAST_RADIUS.md. Starts as a stub; GROWS as code lands.
+     A frontend product ALSO gets frontend/docs/FRONTEND_BLAST_RADIUS.md (same shape, frontend surfaces). -->
+# Architecture Blast Radius — {{PROJECT}}
+
+_Status: stub at bootstrap — this GROWS as code lands. When a change (or a bug/deploy/smoke failure) reveals a connected layer that WASN'T mapped here, add the exact relation in the SAME turn as the fix. Name the exact route, DTO, script, job, package export, migration path, frontend consumer, event handler, or smoke — never a vague category._
+
+## Purpose
+Before any non-trivial backend/shared-contract/{{DB_TERM}}/security/{{PROVIDER_INTEGRATION_TERM}}/queue/storage/deploy/cross-layer change, read this to identify the connected producers, validators, persistence/read models, API contracts, jobs/scripts, {{EVENT_HANDLER_TERM}}, frontend consumers, docs, and verification gates that must be inspected with the change.
+
+## Connected-surface map
+<!-- FILL as surfaces land. One section per authority surface: what produces it, what consumes it, what persists it, what validates it, which tests prove it. Seed with the known top-level layers. -->
+
+### {{TOP_LEVEL_SURFACE_1}}
+- **Producers:** {{...}}
+- **Consumers (both directions):** {{...}}
+- **Persistence / read models:** {{...}}
+- **Contracts / DTOs:** {{...}}
+- **Jobs / queues:** {{...}}
+- **Tests that prove it:** {{...}}
+
+## Persisted-derived-state lifecycle matrix (mandatory when derived rows can act/stale/retry/aggregate)
+For every source-of-truth mutation × every applicable row state (pending / queued / processing / retryable-failed / terminal-failed / completed / ambiguous / canceled / test-only): which authority created it, whether it can still act, what happens when the source changes / eligibility is revoked / the parent is archived, what evidence must never be overwritten, what the final surface shows, which test proves it.
+
+_(Populate per persisted-derived surface as it lands.)_

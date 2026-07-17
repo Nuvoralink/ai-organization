@@ -1,0 +1,123 @@
+// TEMPLATE: .claude/settings.json — a read-only allowlist of the repo's REAL checks plus lifecycle and PostToolUse hooks.
+// FILL: replace the allowlist entries with THIS repo's actual scripts (discovered from package.json). Keep the hook blocks.
+// Save as .claude/settings.json (strip these comment lines — JSON has no comments).
+{
+  "permissions": {
+    "allow": [
+      // FILL: one entry per real check/test command, in BOTH Bash(...) and PowerShell(...) form on Windows.
+      // Discover from package.json scripts. Examples (replace with the repo's real ones):
+      "Bash(npm run typecheck)",
+      "Bash(npm run lint)",
+      "Bash(npm run format:check)",
+      "Bash(npm run test)",
+      "Bash(npm run gates:all)",
+      "Bash(npm run gate:rules-wiring)",
+      "Bash(npm run gate:agent-context)",
+      "Bash(npm run gate:agent-control-plane)",
+      "Bash(npm run gate:test-intent)",
+      // "Bash(npm run check:ui)",              // frontend products
+      // "Bash(npm run check:layout)",          // frontend products
+      "PowerShell(npm run typecheck)",
+      "PowerShell(npm run lint)",
+      "PowerShell(npm run format:check)",
+      "PowerShell(npm run test)",
+      "PowerShell(npm run gates:all)",
+      "PowerShell(npm run gate:rules-wiring)",
+      "PowerShell(npm run gate:agent-context)",
+      "PowerShell(npm run gate:agent-control-plane)",
+      "PowerShell(npm run gate:test-intent)"
+      // Add read-only MCP tools the fleet uses (preview_* for ui-verifier, deploy-status reads for release-verifier, etc.).
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/claude-lifecycle-hook.mjs",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/claude-lifecycle-hook.mjs",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "TaskCreated": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/claude-lifecycle-hook.mjs",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/claude-lifecycle-hook.mjs",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/claude-lifecycle-hook.mjs",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/claude-lifecycle-hook.mjs",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/claude-lifecycle-hook.mjs",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/claude-posttooluse-gate.mjs",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}

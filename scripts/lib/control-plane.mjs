@@ -5,13 +5,13 @@ import { spawnSync } from 'node:child_process';
 
 const TEXT_EXTENSIONS = new Set([
   '', '.md', '.txt', '.json', '.jsonl', '.yaml', '.yml', '.toml', '.mjs', '.cjs', '.js', '.ts', '.tsx',
-  '.jsx', '.py', '.ps1', '.sh', '.css', '.scss', '.html', '.xml', '.csv', '.template', '.mustache'
+  '.jsx', '.py', '.ps1', '.sh', '.css', '.scss', '.html', '.xml', '.csv', '.toml', '.lock', '.template', '.mustache'
 ]);
 
 const SECRET_PATTERNS = [
   /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/i,
   /\b(?:gh[opusr]_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16})\b/,
-  /\b(?:api[_-]?key|access[_-]?token|client[_-]?secret)\s*[:=]\s*["']?(?!\$\{|<|REDACTED|EXAMPLE|YOUR_)[A-Za-z0-9_\-/.+=]{16,}/i
+  /\b(?:api[_-]?key|access[_-]?token|client[_-]?secret)\s*[:=]\s*["']?(?!\$\{|<|REDACTED|EXAMPLE|YOUR_|process\.env|Deno\.env|env\.|os\.environ|getenv\()[A-Za-z0-9_\-/.+=]{16,}/i
 ];
 
 function invariant(condition, message) {
@@ -69,6 +69,22 @@ export function hashFile(file) {
   return crypto.createHash('sha256').update(normalizedBytes(fs.readFileSync(file), file)).digest('hex');
 }
 
+function renderedBytes(file, roots) {
+  const bytes = fs.readFileSync(file);
+  const ext = path.extname(file).toLowerCase();
+  if (!TEXT_EXTENSIONS.has(ext)) return bytes;
+  const rendered = bytes.toString('utf8').replace(/\$\{([^}]+)\}/g, (match, token) => roots[token] ?? match);
+  return Buffer.from(rendered);
+}
+
+function hashBytes(bytes, file) {
+  return crypto.createHash('sha256').update(normalizedBytes(bytes, file)).digest('hex');
+}
+
+function renderedHash(file, roots) {
+  return hashBytes(renderedBytes(file, roots), file);
+}
+
 function denyReason(relative, manifest, mapping) {
   const normalized = normalizeRelative(relative);
   const segments = normalized.toLowerCase().split('/');
@@ -89,6 +105,15 @@ function inspectRoot(root, allowRootLink) {
   if (!stat.isSymbolicLink()) return root;
   invariant(allowRootLink, `Root link/junction is not allowed: ${root}`);
   return fs.realpathSync(root);
+}
+
+function rootIsLink(root) {
+  return fs.existsSync(root) && fs.lstatSync(root).isSymbolicLink();
+}
+
+function legacyLinkMatches(destinationRoot, captureRoot) {
+  if (!rootIsLink(destinationRoot)) return false;
+  return path.resolve(fs.realpathSync(destinationRoot)).toLowerCase() === path.resolve(fs.realpathSync(captureRoot)).toLowerCase();
 }
 
 export function collectFiles(rootInput, manifest, mapping) {
@@ -125,7 +150,7 @@ export function collectFiles(rootInput, manifest, mapping) {
 
 function secretFinding(file) {
   const ext = path.extname(file).toLowerCase();
-  if (!TEXT_EXTENSIONS.has(ext)) return undefined;
+  if (!TEXT_EXTENSIONS.has(ext)) return -1;
   const content = fs.readFileSync(file, 'utf8');
   return SECRET_PATTERNS.findIndex((pattern) => pattern.test(content));
 }
@@ -160,12 +185,43 @@ export function validateManifest(manifest, repoRoot, roots) {
   return errors;
 }
 
-function compareTrees(sourceFiles, destinationFiles, detectLocalOnly) {
+export function validateCanonical({ repoRoot, manifest }) {
+  const problems = [];
+  const ids = new Set();
+  const destinationTemplates = new Set();
+  for (const mapping of manifest.mappings) {
+    if (!/^[a-z0-9][a-z0-9-]+$/.test(mapping.id ?? '')) problems.push({ type: 'manifest', message: `Invalid mapping id: ${mapping.id}` });
+    if (ids.has(mapping.id)) problems.push({ type: 'manifest', message: `Duplicate mapping id: ${mapping.id}` });
+    ids.add(mapping.id);
+    let sourceRoot;
+    try { sourceRoot = resolveSource(repoRoot, mapping.source); }
+    catch (error) { problems.push({ type: 'manifest', message: error.message }); continue; }
+    for (const template of [...(mapping.destinations ?? []), mapping.captureFrom, mapping.lock]) {
+      if (!/^\$\{[^}]+\}(?:\/.*)?$/.test(template ?? '')) problems.push({ type: 'manifest', message: `Path must start with a registered token: ${template}` });
+    }
+    for (const template of mapping.destinations ?? []) {
+      if (destinationTemplates.has(template)) problems.push({ type: 'manifest', message: `Duplicate destination template: ${template}` });
+      destinationTemplates.add(template);
+    }
+    let sourceFiles;
+    try { sourceFiles = collectFiles(sourceRoot, manifest, mapping); }
+    catch (error) { problems.push({ type: 'source', mapping: mapping.id, message: error.message }); continue; }
+    if (sourceFiles.size === 0) problems.push({ type: 'empty-source', mapping: mapping.id });
+    for (const [relative, source] of sourceFiles) {
+      const secretIndex = secretFinding(source);
+      if (secretIndex >= 0) problems.push({ type: 'secret-shaped-content', mapping: mapping.id, relative, pattern: secretIndex + 1 });
+      if (portablePathFinding(source)) problems.push({ type: 'absolute-path', mapping: mapping.id, relative });
+    }
+  }
+  return problems;
+}
+
+function compareTrees(sourceFiles, destinationFiles, detectLocalOnly, roots) {
   const problems = [];
   for (const [relative, source] of sourceFiles) {
     const destination = destinationFiles.get(relative);
     if (!destination) problems.push({ type: 'missing', relative });
-    else if (hashFile(source) !== hashFile(destination)) problems.push({ type: 'drift', relative });
+    else if (renderedHash(source, roots) !== hashFile(destination)) problems.push({ type: 'drift', relative });
   }
   if (detectLocalOnly) {
     for (const relative of destinationFiles.keys()) {
@@ -197,20 +253,21 @@ function writeAtomic(file, bytes) {
 }
 
 export function runCheck({ repoRoot, manifest, roots }) {
-  const problems = validateManifest(manifest, repoRoot, roots).map((message) => ({ type: 'manifest', message }));
+  const problems = [...validateCanonical({ repoRoot, manifest }), ...validateManifest(manifest, repoRoot, roots).map((message) => ({ type: 'manifest', message }))];
   for (const mapping of manifest.mappings) {
     const sourceRoot = resolveSource(repoRoot, mapping.source);
     const sourceFiles = collectFiles(sourceRoot, manifest, mapping);
-    if (sourceFiles.size === 0) problems.push({ type: 'empty-source', mapping: mapping.id });
-    for (const [relative, source] of sourceFiles) {
-      const secretIndex = secretFinding(source);
-      if (secretIndex >= 0) problems.push({ type: 'secret-shaped-content', mapping: mapping.id, relative, pattern: secretIndex + 1 });
-      if (portablePathFinding(source)) problems.push({ type: 'absolute-path', mapping: mapping.id, relative });
-    }
     for (const destinationTemplate of mapping.destinations) {
       const destinationRoot = resolveTokenPath(destinationTemplate, roots);
-      const destinationFiles = collectFiles(destinationRoot, manifest, { ...mapping, allowRootLink: false });
-      for (const problem of compareTrees(sourceFiles, destinationFiles, mapping.detectLocalOnly)) {
+      const captureRoot = resolveTokenPath(mapping.captureFrom, roots);
+      if (rootIsLink(destinationRoot) && (!mapping.allowInstalledRootLink || !legacyLinkMatches(destinationRoot, captureRoot))) {
+        problems.push({ type: 'unexpected-link-target', mapping: mapping.id, destination: destinationTemplate });
+        continue;
+      }
+      let destinationFiles;
+      try { destinationFiles = collectFiles(destinationRoot, manifest, { ...mapping, allowRootLink: mapping.allowInstalledRootLink === true }); }
+      catch (error) { problems.push({ type: 'installed-path', mapping: mapping.id, destination: destinationTemplate, message: error.message }); continue; }
+      for (const problem of compareTrees(sourceFiles, destinationFiles, mapping.detectLocalOnly, roots)) {
         problems.push({ ...problem, mapping: mapping.id, destination: destinationTemplate });
       }
     }
@@ -242,7 +299,7 @@ export function runCapture({ repoRoot, manifest, roots, dryRun = false }) {
   return operations;
 }
 
-export function runInstall({ repoRoot, manifest, roots, dryRun = false }) {
+export function runInstall({ repoRoot, manifest, roots, dryRun = false, adoptExisting = false }) {
   const errors = validateManifest(manifest, repoRoot, roots);
   invariant(errors.length === 0, `Manifest invalid:\n${errors.join('\n')}`);
   const operations = [];
@@ -258,6 +315,12 @@ export function runInstall({ repoRoot, manifest, roots, dryRun = false }) {
     const lock = locks.get(lockPath);
     for (const destinationTemplate of mapping.destinations) {
       const destinationRoot = resolveTokenPath(destinationTemplate, roots);
+      const captureRoot = resolveTokenPath(mapping.captureFrom, roots);
+      if (rootIsLink(destinationRoot)) {
+        invariant(mapping.allowInstalledRootLink && legacyLinkMatches(destinationRoot, captureRoot), `Unexpected installed link/junction target: ${destinationRoot}`);
+        operations.push({ type: 'retain-legacy-link', mapping: mapping.id, relative: '', target: destinationRoot });
+        continue;
+      }
       const destinationFiles = collectFiles(destinationRoot, manifest, { ...mapping, allowRootLink: false });
       if (mapping.detectLocalOnly) {
         for (const relative of destinationFiles.keys()) if (!sourceFiles.has(relative)) conflicts.push(`Local-only managed file: ${mapping.id}/${relative}`);
@@ -266,19 +329,20 @@ export function runInstall({ repoRoot, manifest, roots, dryRun = false }) {
         const target = mapping.mode === 'file' ? destinationRoot : path.join(destinationRoot, relative);
         const current = destinationFiles.get(relative);
         const key = lockKey(mapping, destinationTemplate, relative);
-        const sourceHash = hashFile(source);
+        const rendered = renderedBytes(source, roots);
+        const sourceHash = hashBytes(rendered, source);
         if (current && hashFile(current) === sourceHash) {
           lock.files[key] = { hash: sourceHash, destination: target };
           continue;
         }
         if (current) {
           const installedHash = lock.files[key]?.hash;
-          if (!installedHash || hashFile(current) !== installedHash) {
+          if ((!installedHash || hashFile(current) !== installedHash) && !adoptExisting) {
             conflicts.push(`Dirty managed target: ${target}`);
             continue;
           }
         }
-        operations.push({ type: current ? 'update' : 'create', mapping: mapping.id, relative, source, target, lockPath, key, sourceHash });
+        operations.push({ type: current ? (adoptExisting && !lock.files[key] ? 'adopt-update' : 'update') : 'create', mapping: mapping.id, relative, source, rendered, target, lockPath, key, sourceHash });
       }
     }
   }
@@ -286,7 +350,8 @@ export function runInstall({ repoRoot, manifest, roots, dryRun = false }) {
   invariant(conflicts.length === 0, `Install refused:\n${conflicts.join('\n')}`);
   if (!dryRun) {
     for (const operation of operations) {
-      writeAtomic(operation.target, fs.readFileSync(operation.source));
+      if (operation.type === 'retain-legacy-link') continue;
+      writeAtomic(operation.target, operation.rendered);
       locks.get(operation.lockPath).files[operation.key] = { hash: operation.sourceHash, destination: operation.target };
     }
     for (const [lockPath, lock] of locks) {
@@ -315,5 +380,18 @@ export function validateRegistries(repoRoot) {
     if (role.required_outputs.length === 0) problems.push(`Agent role lacks output contract: ${role.id}`);
   }
   if (!ids.has('premise-and-architecture-challenger')) problems.push('Premise challenger role is required');
+  const artifacts = readJson(path.join(repoRoot, 'registries', 'artifacts.v1.json'));
+  const artifactIds = new Set();
+  const skillNames = new Set();
+  for (const artifact of artifacts.artifacts) {
+    if (artifactIds.has(artifact.id)) problems.push(`Duplicate artifact id: ${artifact.id}`);
+    artifactIds.add(artifact.id);
+    if (artifact.family === 'skill') {
+      if (skillNames.has(artifact.declaredName)) problems.push(`Duplicate declared skill name: ${artifact.declaredName}`);
+      skillNames.add(artifact.declaredName);
+    }
+  }
+  const manifest = readJson(path.join(repoRoot, 'control-plane.manifest.json'));
+  for (const mapping of manifest.mappings) if (!artifactIds.has(mapping.id)) problems.push(`Mapping lacks artifact registry row: ${mapping.id}`);
   return problems;
 }
