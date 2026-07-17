@@ -97,6 +97,38 @@ test('Proves: retirement never deletes a locally modified formerly managed file;
   assert.equal(fs.readFileSync(installedRetired, 'utf8'), '# Local improvement\n');
 });
 
+test('Proves: retirement requires exact raw-byte identity even when normalized parity is equal; Test type: destructive-boundary mutation; Surface: installer retirement; Authority: prior install raw hash; Killer mutation: change only LF to CRLF and allow deletion through the normalized portability hash; Gated command: npm test', () => {
+  const f = fixture();
+  const canonicalBase = path.join(f.repoRoot, 'canonical', 'rules', 'base.md');
+  const canonicalRetired = path.join(f.repoRoot, 'canonical', 'rules', 'retired.md');
+  const installedRetired = path.join(f.home, '.claude', 'rules', 'retired.md');
+  fs.writeFileSync(canonicalBase, '# Base\n');
+  fs.writeFileSync(canonicalRetired, '# Retire me\n');
+  runInstall({ ...f, dryRun: false });
+
+  fs.unlinkSync(canonicalRetired);
+  fs.writeFileSync(installedRetired, '# Retire me\r\n');
+  assert.throws(() => runInstall({ ...f, dryRun: false }), /Local-only managed file: claude-rules\/retired\.md/u);
+  assert.equal(fs.readFileSync(installedRetired, 'utf8'), '# Retire me\r\n');
+});
+
+test('Proves: legacy normalized-only locks gain exact-byte provenance while the canonical source still exists; Test type: migration; Surface: installer lock; Authority: current installed bytes plus canonical parity; Killer mutation: leave rawHash absent so a later retirement must guess; Gated command: npm test', () => {
+  const f = fixture();
+  const canonical = path.join(f.repoRoot, 'canonical', 'rules', 'base.md');
+  const lockPath = path.join(f.home, '.nuvoralink-control-plane', 'lock.json');
+  fs.writeFileSync(canonical, '# Base\n');
+  runInstall({ ...f, dryRun: false });
+
+  const legacyLock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
+  for (const entry of Object.values(legacyLock.files)) delete entry.rawHash;
+  fs.writeFileSync(lockPath, `${JSON.stringify(legacyLock, null, 2)}\n`);
+
+  const migration = runInstall({ ...f, dryRun: false });
+  assert.ok(migration.some((operation) => operation.type === 'refresh-lock' && operation.relative === 'base.md'));
+  const migratedLock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
+  assert.match(Object.values(migratedLock.files)[0].rawHash, /^[a-f0-9]{64}$/u);
+});
+
 test('Proves: dry-run never writes; Test type: negative; Surface: installer; Authority: action plan; Killer mutation: missing destination remains missing', () => {
   const f = fixture();
   fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');

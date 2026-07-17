@@ -71,6 +71,14 @@ export function hashFile(file) {
   return crypto.createHash('sha256').update(normalizedBytes(fs.readFileSync(file), file)).digest('hex');
 }
 
+function hashRawBytes(bytes) {
+  return crypto.createHash('sha256').update(bytes).digest('hex');
+}
+
+function hashRawFile(file) {
+  return hashRawBytes(fs.readFileSync(file));
+}
+
 const REPOSITORY_META_FILES = new Set([
   '.gitattributes', '.gitignore', '.gitleaks.toml', '.gitleaksignore', 'AGENTS.md', 'CLAUDE.md',
   'README.md', 'control-plane.manifest.json', 'package-lock.json', 'package.json'
@@ -368,8 +376,9 @@ function restoreSnapshot(snapshot, directory) {
 }
 
 function applyInstallTransaction({ operations, locks, repoRoot, failAfter = undefined }) {
-  const writes = operations.filter((operation) => operation.type !== 'retain-legacy-link');
-  if (writes.length === 0 && [...locks.keys()].every((lockPath) => fs.existsSync(lockPath))) return undefined;
+  const writes = operations.filter((operation) => !['retain-legacy-link', 'refresh-lock'].includes(operation.type));
+  const refreshesLockOnly = operations.some((operation) => operation.type === 'refresh-lock');
+  if (writes.length === 0 && !refreshesLockOnly && [...locks.keys()].every((lockPath) => fs.existsSync(lockPath))) return undefined;
   const id = installId();
   const snapshots = new Map();
   for (const [lockPath] of locks) {
@@ -394,7 +403,8 @@ function applyInstallTransaction({ operations, locks, repoRoot, failAfter = unde
       existed,
       backup: existed ? backup : null,
       postExists: operation.type !== 'retire',
-      postHash: operation.type === 'retire' ? null : operation.sourceHash
+      postHash: operation.type === 'retire' ? null : operation.sourceHash,
+      postRawHash: operation.type === 'retire' ? null : operation.sourceRawHash
     });
   }
   for (const snapshot of snapshots.values()) writeAtomic(path.join(snapshot.directory, 'snapshot.json'), `${JSON.stringify(snapshot.data, null, 2)}\n`);
@@ -408,7 +418,12 @@ function applyInstallTransaction({ operations, locks, repoRoot, failAfter = unde
         delete locks.get(operation.lockPath).files[operation.key];
       } else {
         writeAtomic(operation.target, operation.rendered);
-        locks.get(operation.lockPath).files[operation.key] = { hash: operation.sourceHash, destination: operation.destinationTemplate, relative: operation.relative };
+        locks.get(operation.lockPath).files[operation.key] = {
+          hash: operation.sourceHash,
+          rawHash: operation.sourceRawHash,
+          destination: operation.destinationTemplate,
+          relative: operation.relative
+        };
       }
       applied += 1;
     }
@@ -454,7 +469,10 @@ export function runRollback({ manifest, roots, installId: requestedId = undefine
         invariant(!fs.existsSync(entry.target), `Rollback refused; retired target was recreated: ${entry.target}`);
       } else {
         invariant(fs.existsSync(entry.target), `Rollback refused; installed target is missing: ${entry.target}`);
-        invariant(hashFile(entry.target) === entry.postHash, `Rollback refused; installed target is dirty: ${entry.target}`);
+        const targetMatchesSnapshot = entry.postRawHash
+          ? hashRawFile(entry.target) === entry.postRawHash
+          : hashFile(entry.target) === entry.postHash;
+        invariant(targetMatchesSnapshot, `Rollback refused; installed target is dirty: ${entry.target}`);
       }
     }
     selected.push({ directory, snapshotFile, snapshot });
@@ -584,8 +602,8 @@ export function runInstall({ repoRoot, manifest, roots, dryRun = false, adoptExi
         for (const [relative, current] of destinationFiles) {
           if (sourceFiles.has(relative)) continue;
           const key = lockKey(mapping, destinationTemplate, relative);
-          const installedHash = lock.files[key]?.hash;
-          if (installedHash && hashFile(current) === installedHash) {
+          const installedRawHash = lock.files[key]?.rawHash;
+          if (installedRawHash && hashRawFile(current) === installedRawHash) {
             operations.push({
               type: 'retire',
               mapping: mapping.id,
@@ -607,8 +625,14 @@ export function runInstall({ repoRoot, manifest, roots, dryRun = false, adoptExi
         const key = lockKey(mapping, destinationTemplate, relative);
         const rendered = renderedBytes(source, roots, mapping.renderContentTokens !== false);
         const sourceHash = hashBytes(rendered, source);
+        const sourceRawHash = hashRawBytes(rendered);
         if (current && hashFile(current) === sourceHash) {
-          lock.files[key] = { hash: sourceHash, destination: destinationTemplate, relative };
+          const currentRawHash = hashRawFile(current);
+          const prior = lock.files[key];
+          lock.files[key] = { hash: sourceHash, rawHash: currentRawHash, destination: destinationTemplate, relative };
+          if (!prior || prior.hash !== sourceHash || prior.rawHash !== currentRawHash || prior.destination !== destinationTemplate || prior.relative !== relative) {
+            operations.push({ type: 'refresh-lock', mapping: mapping.id, relative, lockPath, key });
+          }
           continue;
         }
         if (current) {
@@ -618,7 +642,19 @@ export function runInstall({ repoRoot, manifest, roots, dryRun = false, adoptExi
             continue;
           }
         }
-        operations.push({ type: current ? (adoptExisting && !lock.files[key] ? 'adopt-update' : 'update') : 'create', mapping: mapping.id, relative, source, rendered, target, destinationTemplate, lockPath, key, sourceHash });
+        operations.push({
+          type: current ? (adoptExisting && !lock.files[key] ? 'adopt-update' : 'update') : 'create',
+          mapping: mapping.id,
+          relative,
+          source,
+          rendered,
+          target,
+          destinationTemplate,
+          lockPath,
+          key,
+          sourceHash,
+          sourceRawHash
+        });
       }
     }
   }
