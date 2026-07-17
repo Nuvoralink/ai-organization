@@ -3,10 +3,6 @@
   "owner": "auxara-ai-organization-control-plane",
   "managedFiles": [
     {
-      "path": ".ai-organization/action-authority.json",
-      "sha256": "5efc57624df30e73c55d301ffce137df61f9630ad8066ab9170719ec02508f42"
-    },
-    {
       "path": ".ai-organization/agents.json",
       "sha256": "930e3b967d55fa262206319a3dfdfd9424d4791e74919f4099c558ecdade4324"
     },
@@ -20,15 +16,15 @@
     },
     {
       "path": ".claude/loop.md",
-      "sha256": "8582e732b4ddf17dd8d16cce2698feec3a21a34b472d699bcefb4e2b4cd1ba09"
+      "sha256": "e36e3d70e9973d1dabc15dce128eb196894a24e9f3640d37a00e4ac45f712e1d"
     },
     {
       "path": ".github/ISSUE_TEMPLATE/agent-slice.yml",
-      "sha256": "62ffb14fdef5de6bff06cd836fb1a9d7385073980b956065f88bfa355761e4a1"
+      "sha256": "aea8284f4d414c681cbdfe4ec0e534872ee1e8b234d7a7a5cadf6675a6c24772"
     },
     {
       "path": ".github/PULL_REQUEST_TEMPLATE.md",
-      "sha256": "ad0671ae28bae421dd89f118eb3f15303a76f1f7d1456c0154008772dacd8e16"
+      "sha256": "bbe3b3144569e449ba1f21ebcb87204e91c97417c96aaa3d467e70d1a8883083"
     }
   ],
   "projectOwnedRoots": [

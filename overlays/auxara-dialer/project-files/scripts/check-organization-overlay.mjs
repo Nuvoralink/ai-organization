@@ -81,8 +81,26 @@ export function validateOrganizationOverlay(root = process.cwd()) {
   return errors;
 }
 
+export function writeOrganizationOverlay(root = process.cwd()) {
+  const manifestPath = path.join(root, ORGANIZATION_MANIFEST);
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  manifest.managedFiles = manifest.managedFiles.map((entry) => ({
+    ...entry,
+    sha256: hashFile(path.join(root, normalizePath(entry.path))),
+  }));
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  return manifestPath;
+}
+
 function main() {
-  const root = process.argv[2] ? path.resolve(process.argv[2]) : process.cwd();
+  const args = process.argv.slice(2);
+  const rootArg = args.find((value) => !value.startsWith('--'));
+  const root = rootArg ? path.resolve(rootArg) : process.cwd();
+  if (args.includes('--write')) {
+    writeOrganizationOverlay(root);
+    console.log(`check-organization-overlay: wrote ${ORGANIZATION_MANIFEST}`);
+    return;
+  }
   const errors = validateOrganizationOverlay(root);
   if (errors.length) {
     console.error('check-organization-overlay: FAIL');

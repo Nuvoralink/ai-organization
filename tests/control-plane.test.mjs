@@ -88,6 +88,35 @@ test('Proves: project-to-canonical promotion requires an explicit update flag; T
   assert.equal(fs.readFileSync(canonical, 'utf8'), '# Reviewed project improvement\n');
 });
 
+test('Proves: a reviewed backflow can target exact mappings without scanning unrelated rendered local copies; Test type: selection mutation; Surface: universal backflow; Authority: mapping registry; Killer mutation: capture an unselected unsafe mapping or accept an unknown mapping id; Gated command: npm test', () => {
+  const f = fixture();
+  const selected = path.join(f.repoRoot, 'canonical', 'rules', 'base.md');
+  fs.writeFileSync(selected, '# Canonical\n');
+  fs.writeFileSync(path.join(f.home, '.claude', 'rules', 'base.md'), '# Reviewed improvement\n');
+
+  const unsafeSource = path.join(f.repoRoot, 'canonical', 'unsafe');
+  const unsafeInstalled = path.join(f.home, '.claude', 'unsafe');
+  fs.mkdirSync(unsafeSource, { recursive: true });
+  fs.mkdirSync(unsafeInstalled, { recursive: true });
+  fs.writeFileSync(path.join(unsafeSource, 'local.md'), '# Canonical safe copy\n');
+  fs.writeFileSync(path.join(unsafeInstalled, 'local.md'), `Machine path: ${['C:', 'dev', 'private'].join('\\')}\n`);
+  f.manifest.mappings.push({
+    ...f.manifest.mappings[0],
+    id: 'unsafe-rendered-copy',
+    source: 'canonical/unsafe',
+    captureFrom: '${HOME}/.claude/unsafe',
+    destinations: ['${HOME}/.claude/unsafe'],
+    lock: '${HOME}/.nuvoralink-control-plane/unsafe-lock.json'
+  });
+
+  const operations = runCapture({ ...f, dryRun: true, updateExisting: true, mappingIds: ['claude-rules'] });
+  assert.deepEqual(operations.map(({ mapping }) => mapping), ['claude-rules']);
+  const fileOperations = runCapture({ ...f, dryRun: true, updateExisting: true, fileSelectors: ['claude-rules:base.md'] });
+  assert.deepEqual(fileOperations.map(({ mapping, relative }) => `${mapping}:${relative}`), ['claude-rules:base.md']);
+  assert.throws(() => runCapture({ ...f, dryRun: true, mappingIds: ['missing-mapping'] }), /Unknown capture mapping/u);
+  assert.throws(() => runCapture({ ...f, dryRun: true, fileSelectors: ['claude-rules:../escape.md'] }), /Unsafe capture file selector/u);
+});
+
 test('Proves: sensitive files are denied before capture; Test type: security mutation; Surface: importer; Authority: deny policy; Killer mutation: seed .credentials.json', () => {
   const f = fixture();
   fs.writeFileSync(path.join(f.home, '.claude', 'rules', '.credentials.json'), '{"token":"should-never-open"}');
@@ -159,21 +188,37 @@ test('Proves: forbidden canonical files fail instead of hiding; Test type: secur
   assert.ok(findings.some((finding) => finding.type === 'source' && /denied filename prefix/u.test(finding.message)));
 });
 
-test('Proves: tracked files outside mapped trees cannot hide secrets, machine paths, or app-source classes; Test type: repository-boundary mutation; Surface: canonical repository; Authority: tracked content scanner; Killer mutation: force-add unsafe docs and an unclassified source root; Gated command: npm test', () => {
+test('Proves: tracked files outside mapped trees cannot hide secrets, machine paths, or app-source classes; Test type: repository-boundary mutation; Surface: canonical repository; Authority: exact tracked-scope registry; Killer mutation: force-add unsafe docs plus app source at top level and beneath otherwise allowed roots; Gated command: npm test', () => {
   const f = fixture();
   fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Safe\n');
   fs.mkdirSync(path.join(f.repoRoot, 'docs'), { recursive: true });
   fs.mkdirSync(path.join(f.repoRoot, 'application'), { recursive: true });
+  fs.mkdirSync(path.join(f.repoRoot, 'overlays', 'copied-app'), { recursive: true });
+  fs.mkdirSync(path.join(f.repoRoot, 'artifacts', 'copied-app'), { recursive: true });
+  fs.mkdirSync(path.join(f.repoRoot, 'registries'), { recursive: true });
   const tokenShape = ['sk', 'abcdefghijklmnopqrstuvwxyz1234567890'].join('-');
   const machinePath = ['C:', 'dev', 'private'].join('\\');
   fs.writeFileSync(path.join(f.repoRoot, 'docs', 'unsafe.md'), `${tokenShape}\n${machinePath}\n`);
+  fs.writeFileSync(path.join(f.repoRoot, 'docs', 'copied-app.ts'), 'export const copiedAppSource = true;\n');
+  fs.writeFileSync(path.join(f.repoRoot, 'overlays', 'copied-app', 'index.ts'), 'export const copiedAppSource = true;\n');
+  fs.writeFileSync(path.join(f.repoRoot, 'artifacts', 'copied-app', 'index.ts'), 'export const copiedAppSource = true;\n');
   fs.writeFileSync(path.join(f.repoRoot, 'application', 'index.ts'), 'export const copiedAppSource = true;\n');
+  fs.writeFileSync(path.join(f.repoRoot, 'registries', 'tracked-scope.v1.json'), `${JSON.stringify({
+    version: '1.0.0',
+    scope: 'orchestration-only',
+    files: [
+      { path: 'docs/unsafe.md', class: 'documentation' },
+      { path: 'registries/tracked-scope.v1.json', class: 'scope-registry' }
+    ]
+  }, null, 2)}\n`);
   assert.equal(spawnSync('git', ['init'], { cwd: f.repoRoot }).status, 0);
   assert.equal(spawnSync('git', ['add', '-A'], { cwd: f.repoRoot }).status, 0);
   const findings = validateCanonical({ repoRoot: f.repoRoot, manifest: f.manifest });
   assert.ok(findings.some((finding) => finding.type === 'tracked-secret-shaped-content' && finding.relative === 'docs/unsafe.md'));
   assert.ok(findings.some((finding) => finding.type === 'tracked-absolute-path' && finding.relative === 'docs/unsafe.md'));
-  assert.ok(findings.some((finding) => finding.type === 'unclassified-tracked-path' && finding.relative === 'application/index.ts'));
+  for (const relative of ['application/index.ts', 'docs/copied-app.ts', 'overlays/copied-app/index.ts', 'artifacts/copied-app/index.ts']) {
+    assert.ok(findings.some((finding) => finding.type === 'unsupported-tracked-scope-path' && finding.relative === relative), relative);
+  }
 });
 
 test('Proves: capture rejects machine-specific paths before writes; Test type: portability mutation; Surface: capture; Authority: tokenized roots; Killer mutation: import a C drive path; Gated command: npm test', () => {

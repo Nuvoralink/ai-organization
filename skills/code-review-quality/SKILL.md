@@ -22,6 +22,25 @@ These ten gates mirror the user's global engineering doctrine. They are **always
 9. **Stop before you quick-fix.** A bug spotted during review is flagged with file:line and root cause, not silently patched mid-review without running the loop.
 10. **Clean up after yourself — repoint or remove every trace of the old.** After any delete/replace/rename/change, grep the old name repo-wide: switch every dependent to the new thing (or migrate/remove it on delete), delete every now-orphaned dead path, and leave no dangling reference — in *all* files; nothing still points at the old thing (the reverse of Gate 4).
 
+## Proof-execution and gate-coverage audit (blocking)
+
+- Open the raw verification output or machine-readable report behind every load-bearing proof claim.
+  Enumerate the expected suites/files/cases and confirm they actually executed with nonzero counts;
+  conditional skips, missing prerequisites, filtered-out files, and bootstrap no-ops are **UNRUN**, even
+  when the aggregate command exits 0. A separately executed DB/provider/browser suite is valid when
+  its own raw output and exit are present and attributable to the reviewed commit.
+- For every touched scanner, allowlist, or authority gate, compare its classified inputs with the
+  current repo inventory. A new in-scope file must be classified or make the gate fail; a hardcoded
+  list that silently ignores the file is a blocking coverage hole.
+- **Fail-state:** the reviewer cites a green aggregate status while a load-bearing suite was skipped,
+  or trusts a gate that never saw a newly added in-scope file.
+- **Regression mutations:** remove the DB prerequisite so the suite reports skipped; add an in-scope
+  authority file absent from the gate's list. Both must block acceptance.
+- **Counterexamples:** a documented separately run DB suite with raw non-skipped counts is valid; a
+  file that is provably outside the gate's declared domain need not be classified.
+- **Completion evidence:** report the expected-versus-executed suite inventory, raw exits/counts, and
+  the gate's current classified-versus-filesystem inventory before stating that proof is complete.
+
 ## Review Priorities
 
 - Behavioral regressions and incorrect logic.

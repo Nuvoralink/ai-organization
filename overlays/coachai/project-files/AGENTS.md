@@ -14,7 +14,7 @@ This is the compact, cross-vendor startup router. It names authorities and tells
 - The main session is the single orchestrator/PM and the only dispatch authority. Do not add another PM agent.
 - Every task must pass the structured kickoff and completion contracts in `.ai-organization/`; proof is selected from changed paths and risk. A task cannot close on prose or a generic green status.
 - The premise-and-architecture challenger is read-only. It asks whether the task should exist, whether the premise is sound, and whether the proposed authority/seam is the durable one. It never dispatches or implements.
-- Agents may branch, commit, push, and open PRs. Conditional merge is permitted only when every condition in `.ai-organization/action-authority.json` is true. Production/deploy/config/migration mutation, destructive or billed actions, external contact/messages, secrets, and product/design/material-architecture decisions require the human. Branch protection is deferred.
+- Agents may branch, commit, push, and open PRs. Conditional merge is permitted only when every condition in `.ai-organization/policies/action-authority.v1.json` is true. Production/deploy/config/migration mutation, destructive or billed actions, external contact/messages, secrets, and product/design/material-architecture decisions require the human. Branch protection is deferred.
 - Frontend is Claude-Design-first and approval-gated. Figma is not an active authority. No visible surface is implemented before the user approves the Claude Design reference.
 - Cross-agent truth travels through plans, issues, commits, PRs, decision records, and evidence artifacts—not user copy/paste.
 
@@ -60,4 +60,4 @@ Use the smallest proof profile that fully covers the risk:
 - `npm run verify:db` — the single DB-regression authority; CI calls the same command.
 - `npm run test:organization-control-plane` — killer mutations for organization gates.
 
-Do not claim deployed behavior from local or CI proof. Merge, deploy, publish, production writes, deletion, purchases, external messages, and other human-gated actions must obey `.ai-organization/action-authority.json`.
+Do not claim deployed behavior from local or CI proof. Merge, deploy, publish, production writes, deletion, purchases, external messages, and other human-gated actions must obey `.ai-organization/policies/action-authority.v1.json`.

@@ -53,7 +53,7 @@
 
 ## Human-gated actions (agents must leave unchecked)
 
-`.ai-organization/action-authority.json` is canonical. Agents may branch, commit, push, and publish/update
+`.ai-organization/policies/action-authority.v1.json` is canonical. Agents may branch, commit, push, and publish/update
 this PR within the authorized task. Agents may merge only when all conditional-merge criteria below are
 independently proven; otherwise merge requires a human decision.
 

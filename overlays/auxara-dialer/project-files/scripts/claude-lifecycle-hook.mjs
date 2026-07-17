@@ -20,6 +20,7 @@ import {
   formatOrchestrationState,
   resolveGitRoot,
 } from './orchestration-state.mjs';
+import { validateTaskContract as validateUniversalTaskContract } from '../.ai-organization/runtime/core/lifecycle/task-governor.mjs';
 
 const REQUIRED_BRIEF_SECTIONS = Object.freeze([
   { name: 'Context', aliases: ['context'] },
@@ -60,6 +61,12 @@ function meaningfulLines(text) {
     lines.push(line);
   }
   return lines;
+}
+
+function structuredMarker(text, marker) {
+  const line = String(text ?? '').split(/\r?\n/).find((candidate) => candidate.startsWith(marker));
+  if (!line) return null;
+  try { return JSON.parse(line.slice(marker.length).trim()); } catch { return null; }
 }
 
 function isExplicitSectionLine(line, aliases) {
@@ -300,6 +307,9 @@ function handleSubagentStart(payload, telemetryDir) {
 function handleTaskCreated(payload, telemetryDir) {
   const description = typeof payload.task_description === 'string' ? payload.task_description : '';
   const missing = missingExplicitSections(description, REQUIRED_BRIEF_SECTIONS);
+  const universalContract = structuredMarker(description, 'TASK_CONTRACT_JSON:');
+  const universalFailures = validateUniversalTaskContract(universalContract);
+  if (universalFailures.length > 0) missing.push(`Universal task contract (${universalFailures.join('; ')})`);
   const tier = completionTier(description);
   if (!tier) missing.push('Completion tier');
 

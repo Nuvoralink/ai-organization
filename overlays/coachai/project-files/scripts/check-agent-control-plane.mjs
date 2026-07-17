@@ -8,32 +8,33 @@ import { pathToFileURL } from 'node:url';
 const readJson = (root, rel) => JSON.parse(fs.readFileSync(path.join(root, rel), 'utf8'));
 const exists = (root, rel) => fs.existsSync(path.join(root, rel));
 const read = (root, rel) => fs.readFileSync(path.join(root, rel), 'utf8');
+const sameMembers = (actual, expected) => Array.isArray(actual) && actual.length === expected.length && [...actual].sort().every((value, index) => value === [...expected].sort()[index]);
 
 export function checkAgentControlPlane(root = process.cwd()) {
   const errors = [];
   const requiredFiles = [
-    '.ai-organization/action-authority.json', '.ai-organization/roles.json', '.ai-organization/proof-profiles.json',
-    '.ai-organization/lifecycle-policy.json', '.ai-organization/task-contract.schema.json', '.ai-organization/completion-evidence.schema.json',
+    '.ai-organization/policies/action-authority.v1.json', '.ai-organization/roles.json', '.ai-organization/proof-profiles.json',
+    '.ai-organization/lifecycle-policy.json', '.ai-organization/schemas/task-assurance.v1.schema.json', '.ai-organization/schemas/task-evidence.v1.schema.json',
     '.ai-organization/ownership.json', '.claude/settings.json', '.github/CODEOWNERS', '.github/ISSUE_TEMPLATE/agent-slice.yml',
     '.github/pull_request_template.md', 'docs/app-plan/decision-log.md', 'docs/app-plan/adr/README.md', 'docs/app-plan/adr/000-template.md'
   ];
   for (const rel of requiredFiles) if (!exists(root, rel)) errors.push(`required control-plane artifact missing: ${rel}`);
   if (errors.length) return { ok: false, errors };
 
-  for (const rel of ['.ai-organization/task-contract.schema.json', '.ai-organization/completion-evidence.schema.json']) {
+  for (const rel of ['.ai-organization/schemas/task-assurance.v1.schema.json', '.ai-organization/schemas/task-evidence.v1.schema.json']) {
     try { readJson(root, rel); } catch (error) { errors.push(`invalid JSON authority ${rel}: ${error.message}`); }
   }
 
-  const action = readJson(root, '.ai-organization/action-authority.json');
-  const expectedAutonomous = ['create_branch', 'create_worktree', 'commit', 'push_branch', 'open_pull_request', 'run_read_only_checks'];
-  for (const value of expectedAutonomous) if (!action.autonomous?.includes(value)) errors.push(`autonomous action missing: ${value}`);
-  const conditions = ['change_is_low_risk', 'change_is_additive_or_isolated', 'no_merge_conflicts', 'independent_verification_passed', 'no_production_or_deploy_effect', 'no_human_required_category'];
-  if (action.conditional_merge?.permitted !== true) errors.push('conditional merge policy must be explicitly permitted');
-  for (const value of conditions) if (!action.conditional_merge?.all_conditions_required?.includes(value)) errors.push(`conditional merge condition missing: ${value}`);
-  const human = ['production_mutation', 'deploy', 'production_config_change', 'database_migration_or_schema_change', 'destructive_action', 'billed_action', 'external_message_or_contact', 'secret_or_credential_action', 'product_decision', 'design_decision', 'material_architecture_decision'];
-  for (const value of human) if (!action.human_required?.includes(value)) errors.push(`human gate missing: ${value}`);
+  const action = readJson(root, '.ai-organization/policies/action-authority.v1.json');
+  const expectedAutonomous = ['read_in_scope', 'analyze_and_plan', 'edit_in_isolated_workspace', 'run_local_tests_and_safe_read_only_checks', 'create_branch_or_worktree', 'commit_in_scope_changes', 'push_branch', 'open_or_update_pull_request'];
+  if (!sameMembers(action.autonomous, expectedAutonomous)) errors.push('autonomous actions must exactly match the universal policy');
+  const conditions = ['no_deploy_or_production_effect', 'low_risk', 'additive_or_isolated_change', 'no_active_conflicting_work', 'fetched_current_base', 'required_checks_passed', 'independent_review_passed', 'actual_diff_verified', 'no_unresolved_human_decision', 'not_security_auth_billing_schema_data_provider_ai_semantics_or_visible_ui'];
+  if (!sameMembers(action.conditional?.merge_pull_request?.all, conditions)) errors.push('conditional merge conditions must exactly match the universal policy');
+  if (action.conditional?.merge_pull_request?.on_uncertainty !== 'human_required') errors.push('conditional merge uncertainty must default to human_required');
+  const human = ['merge_that_deploys_or_mutates_production', 'deploy_or_publish', 'production_write_or_configuration_change', 'database_or_data_migration', 'destructive_or_irreversible_action', 'billed_action_or_purchase', 'external_message_or_contact', 'secret_or_credential_change', 'close_product_scope_decision', 'approve_visible_design_or_copy_in_context', 'close_material_architecture_decision'];
+  if (!sameMembers(action.human_required, human)) errors.push('human gates must exactly match the universal policy');
   if (action.default !== 'human_required') errors.push('unknown actions must default to human_required');
-  if (action.branch_protection?.status !== 'deferred' || action.branch_protection?.claim_required_checks_active !== false) errors.push('branch protection must remain explicitly deferred without an active-check claim');
+  if (!action.explicitly_deferred?.includes('github_branch_protection')) errors.push('branch protection must remain explicitly deferred');
 
   const roles = readJson(root, '.ai-organization/roles.json');
   const allRoles = [...(roles.global_roles ?? []), ...(roles.project_roles ?? [])];

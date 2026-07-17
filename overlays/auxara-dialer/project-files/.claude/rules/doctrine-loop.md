@@ -70,7 +70,7 @@ Docs are part of the doctrine; a stale doc actively misleads the next agent. (Th
 - Stale `origin/main` base → fetch-first wired into the workflow doc + CLAUDE.md + AGENTS.md.
 
 **Propagate:**
-- Safe production-migration execution via the Neon MCP at owner level (no credential exposure) + a correct Prisma ledger row + read-only verification → captured as `docs/runbooks/prod-migrations.md`; the runbook proves readiness after the human authorization required by `.ai-organization/action-authority.json` and never grants mutation authority itself.
+- Safe production-migration execution via the Neon MCP at owner level (no credential exposure) + a correct Prisma ledger row + read-only verification → captured as `docs/runbooks/prod-migrations.md`; the runbook proves readiness after the human authorization required by `.ai-organization/policies/action-authority.v1.json` and never grants mutation authority itself.
 - Refute-the-done-claim adversarial review with repo-wide greps + named killer-mutations → the `adversarial-reviewer` agent.
 - Silent mid-task decisions → the `decision-discipline.md` always-on rule.
 

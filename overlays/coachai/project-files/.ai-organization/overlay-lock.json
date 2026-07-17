@@ -1,84 +1,316 @@
 {
   "version": 1,
   "source": "universal-private-orchestrator/overlays/coachai",
-  "files": {
-    ".ai-organization/README.md": "61aeb52cee64d46598121aad7e8d81136ee2d13967a0c7950424da5ebbd8ab0c",
-    ".ai-organization/action-authority.json": "91f8915f6c6e1ee4e52174dbe627f658e682002d4e2cf81ffe00452e9e8ccb96",
-    ".ai-organization/automations/project-automations.v1.json": "fa498a694e9aabc581255ed2ec60b071f786ef7fc0d22a2f6d6b673ba4ca8b7b",
-    ".ai-organization/completion-evidence.schema.json": "c4bfa8aecceffd08fb4b1f7a1da1c6979fbe4e64839b63831065eda53ed18ff8",
-    ".ai-organization/context-budget.json": "1f8ca52b49893b5718b9acbe57afea369216c9e6a7852fb17e10f9ff881aabdd",
-    ".ai-organization/control-plane/action-authority.v1.json": "6f58b7be520cff95320044a30fe9d0c0096ea33937de1d19d1e532ee172a2308",
-    ".ai-organization/control-plane/project-profile.v1.json": "0a2bc47d45c67aa600b4a79ca77894181edf46b12fa859b93ecf1509fd1a0b37",
-    ".ai-organization/lifecycle-policy.json": "ef284ba4b4ae1a510a0308ae1d17745fb2add6a726149606c92da1973ab21314",
-    ".ai-organization/ownership.json": "0c8e9d5c906d3dd9fde946466907e4679a4634f966eff68b80a30b14a57892c7",
-    ".ai-organization/policies/action-authority.v1.json": "dff8b12d250446bb73c430026173f60e19173530e1b0ea6f0ef84047eb15e088",
-    ".ai-organization/proof-profiles.json": "146978810492c37530df664817b1cdea8d1cb825e6f4c660b10c0da381f69998",
-    ".ai-organization/registries/agent-roles.v1.json": "ae518ba5e82bc931fd36365a93382cf79d2533fcdc012f92d6952fb5f0e09d9c",
-    ".ai-organization/roles.json": "70e80b27f0af91442639492f4c87e83801e10cbeb178d9e5dd9fe4428d21e509",
-    ".ai-organization/schemas/action-authority.v1.schema.json": "e281de325ece7c119e497d28f2dd8014f42eab30e45bfcbaa885594e2f543ea9",
-    ".ai-organization/schemas/agent-role-registry.v1.schema.json": "235d3007d15d288ea2664a3c7ff59bdc423ca8201b424f471359c62904adc8d4",
-    ".ai-organization/schemas/control-plane-manifest.v1.schema.json": "bfae8365923628c0d1640621c555d212784e34c88e2f3574b49b4f3edf4e2f48",
-    ".ai-organization/schemas/project-overlay.v1.schema.json": "315075620866e8645db914855c2b257b9f0acea065783decbef91dad10d32573",
-    ".ai-organization/schemas/task-assurance.v1.schema.json": "db44810bb54696b5cb5eb407dd71fc8a65e912d5c383915e04f4eac340bb0721",
-    ".ai-organization/schemas/task-evidence.v1.schema.json": "571d5708fa8b67a53a37580e9e02b7bf2dbdb88375447c702f6443f078ba0813",
-    ".ai-organization/task-contract.schema.json": "64adcfd5efaed93a99587be40f5f5ac139de11fe6345650db4bfcb05116a2733",
-    ".claude/agents/adversarial-reviewer.md": "ca38a52772945802cb11c045cf4b1ca01c0eb7a1a50f11f1457e11cde24693a0",
-    ".claude/agents/ai-decision-boundary-auditor.md": "79fce27e186f2e73b6d1560f288d72cb4d08b20d65484c28317d85267ac7314b",
-    ".claude/agents/doctrine-drift-auditor.md": "4bb7c2e22ea4cff9f265f226c3771e37a9a7e993e5dc91f0628c67279bb7f2a6",
-    ".claude/agents/functionality-parity-auditor.md": "b0f05ee5783f5799f9f7a1bd316b152c41f1778ca96c78a8c81b651131bde90c",
-    ".claude/agents/performance-auditor.md": "701b58db3cde47cbc872babaafb3804db4976027f22b3d584d64321519582734",
-    ".claude/agents/premise-and-architecture-challenger.md": "bb0e7ab48d1e6039e5d368684506c2b0a2ef4e71926805b33d4fe582b09338d4",
-    ".claude/agents/release-verifier.md": "667ff1804343343c2e4b563b26c79fc56666011e647af78903ea5da10dd045fc",
-    ".claude/agents/source-to-screen-auditor.md": "d0408ed77dbd7dcef8c55ce369538cafc653d7b16d505c51aac09345c4d4041c",
-    ".claude/agents/sprint-kickoff-auditor.md": "4f3496118f9b66dd0cfa1b1924662e5034b600ec9495b0a7b7b5770869a3ad50",
-    ".claude/agents/test-runner.md": "c04368f5f8bea226f65087781d4e2bef476eebb91bc94cd5d22d6ce80de518e8",
-    ".claude/agents/ui-verifier.md": "23f45d59cb0600fdef52ffbb6088096a1d98b8b639598499928cc4303d3aca31",
-    ".claude/agents/user-journey-auditor.md": "95300a27526d799c274fe8bf18fa50e1fa8d106804d1b51213be11258410812f",
-    ".cursor/rules/agent-product-intent.mdc": "47febccdf718350b3e3cb0d1cd5130dd2fd282d27c5f5f896196616609f05672",
-    ".cursor/rules/analysis-pipeline.mdc": "76507fba0c14002f8416954fe365ddfb041ee34a6722f97fd64743a9106a9fa3",
-    ".cursor/rules/authority-boundary.mdc": "2dc8c8f62aa6ccdeea994e9782dcf4598b7022815869f4bb925c8595c06b560c",
-    ".cursor/rules/backend-prisma-build-checks.mdc": "3623bd7936a98272b9cbb112a81c589fa462f09849ee6664578e2329553dd959",
-    ".cursor/rules/centralization-doctrine.mdc": "b1ab5ab4853a50e1366bfb58313ca262edad145e79c8823ad4726dcb714624d6",
-    ".cursor/rules/coachai-engineering-rules.mdc": "3f88bae41d1e1c2cdb8626a44d09186ec36875d1a6faf6242e32965bd36b4114",
-    ".cursor/rules/coachai-frontend-rules.mdc": "90339a28534317473494214884a7157b7d1bb02cd1817fcc3c48ac4ea3ddea7f",
-    ".cursor/rules/coachai-project-rules.mdc": "b1fb9b98730c6b623bc284558283165f9496bd6c83532ae8eea0afc6ad1bfd49",
-    ".cursor/rules/coachai-security-rules.mdc": "1ddd63ff9bf7646fd8195ac16f8bc6169956a51f93ffa166570e6e585987f436",
-    ".cursor/rules/coaching-entities.mdc": "c2fe3bb81ec53303f247d8bd9bc8fd2be1663186d379b446677d30fd54337bcb",
-    ".cursor/rules/coaching-frontend.mdc": "57e47f8a18644c24b177661656cf5d57b552d503629b21c24d76209b70041734",
-    ".cursor/rules/coaching-lanes.mdc": "aa8402bc7e8764870c2436c465181053dc5514a4bd0040ed102d794870f3d3c4",
-    ".cursor/rules/instrumentation.mdc": "cdf8aa469a82809a410b9154285fe31fa648abcaac769c03f9d5c089f493e05b",
-    ".cursor/rules/internal-admin-full-experience.mdc": "593181ada3ddb460dc26d8cd900175cbc082b0b91a2e81ab6710dc2dd3b6b075",
-    ".cursor/rules/manager-surfaces.mdc": "d10993d99d6eac354bad13581573efaa3f498ed6380f802e3d08ce8df31c17b0",
-    ".cursor/rules/manual-verification-smoke.mdc": "71d27616978a6e089a5a24041aa2e60143063877fab12fb6b5d9f4bb81111ff9",
-    ".cursor/rules/product-first-planning.mdc": "c01b3efea8505384c4cabce97b2efb018bc975e8a5a14064f3d1a8fdab06ce44",
-    ".cursor/rules/slice-rigor.mdc": "5eedf88f02fe3fc0b69c446611e96d0ae8b6f07ce9aabd061a3b3fc474f7e200",
-    ".cursor/rules/testing-guardrails.mdc": "e7a17e304041dd8d4a43d7e3ad78cde0c8606c31e7741e2eb007a6a37737bc15",
-    ".cursor/rules/ui-design-tokens.mdc": "dfe90f14e9d9c4bcbab65482c4cc1c7514a6dba0e0693d232c5c651e5e511fd3",
-    ".github/CODEOWNERS": "010b7040aba124776f10977f202c6448b3a80a046d9f50e1e46522e16e2bac67",
-    ".github/ISSUE_TEMPLATE/agent-slice.yml": "e20cee856877df33dae44cbf83a9a03387f44d5d60048ee99b123156427901ea",
-    ".github/pull_request_template.md": "3abbf9948fdcefb3c48d712728862d0a218b19d7858da5831c07e4fe5d1fffaa",
-    ".github/workflows/backend-db-regressions.yml": "e634f53f2d289f90cb81b2f3a4893cfbdea0c0954fd22c7bfc9b5732528fb9d4",
-    ".github/workflows/ui-source-of-truth-gates.yml": "dcd3fbe647c3c50f0008d637b74be09a4cf13c1e39f0fc494e5a5eb9cfa0d91d",
-    "AGENTS.md": "bbd9af49c8e3ee9097a5e2a651eb5fa56bfd6b736e945bdc2a20010e9839e5b9",
-    "CLAUDE.md": "20abca9962c321fc4aad2c51cad30fa3626c09fbb01bdb947f61ff011ddfebd0",
-    "scripts/check-agent-context.mjs": "2f9a31dc3848b6bd766a93f010d110285fe83794e48aab6f15eedbe299e3cef8",
-    "scripts/check-agent-control-plane.mjs": "83ee995507c5aabfcb1826ec7ddd711617dbb275cf83fbadb614f7ebaf436f61",
-    "scripts/check-doc-code-drift.mjs": "b58dc0e169fb66e3a2d87632a9bd57d3b28eed134c298d41e9622f038e4552f5",
-    "scripts/check-overlay-parity.mjs": "caeca40398ff31c2c84e1199f9eaa7adfeca1b9804da7b0352b82fd36ec13484",
-    "scripts/check-rules-wiring.mjs": "0c65596611926fff7b092939b1c315d916faa8b1d9ea0fd8f94b627b2d176fcd",
-    "scripts/check-test-intent.mjs": "b3e8fa5e2c6dd3efc17fa00d2406b4ed265972b6f19d50d72913aab251f853c0",
-    "scripts/ci-local.mjs": "27b15cc8826f4c4e093ec93e532e7ac0d1aeae4e0e491f2da17729a0ae9e848a",
-    "scripts/claude-lifecycle-hook.mjs": "e15afc477faac0088a308e6761f06fdd29e61cc3ae83a31ce2866d8c2608261a",
-    "scripts/claude-posttooluse-gate.mjs": "749045096acd82b8440c781531f8984bfd0886a2d24f8c152be96e13906b04fe",
-    "scripts/run-risk-selected-proof.mjs": "53a400b3c75c17f1cfc9cccf13ad050f62de0f127e4788f738f8c07e4bc104cf",
-    "scripts/task-governor.mjs": "cd3ecfe56503abc21b142426c9bb0b8fab289302262138cade45a26c1513453d",
-    "scripts/tests/contextAndRulesRegression.mjs": "187ed922c9583ef2385000237553b05204e47da3debfb293f8d5030cb753a148",
-    "scripts/tests/controlPlaneRegression.mjs": "0d43d3187fd708821c9d27ce0f036361bda640c9da924b9c7e8760221b00930f",
-    "scripts/tests/fixture-helpers.mjs": "61704d864f500b55dfc90a080558b5d0362da59828d53a654ba4d90d474895a0",
-    "scripts/tests/overlayParityRegression.mjs": "0f93d3b40d3c499fa510c4b4f9a7b1bfca80407794c605ac166d674ed08b0c0d",
-    "scripts/tests/riskSelectedProofRegression.mjs": "dda32244a6d4364e6ecd1f33b384961ebdbf3386bcbc6761fbd7c1da5f7b59f8",
-    "scripts/tests/taskLifecycleRegression.mjs": "3a840acb4ac9c7c9f028fb3cd4821ff39999042f7d01ca88cfc9a500f5f2989d"
-  },
+  "files": [
+    {
+      "path": ".ai-organization/README.md",
+      "sha256": "8af1d1447b69968ebc182b95d233fadc461d542eea8b59347f0b4d0070328d10"
+    },
+    {
+      "path": ".ai-organization/automations/project-automations.v1.json",
+      "sha256": "fa498a694e9aabc581255ed2ec60b071f786ef7fc0d22a2f6d6b673ba4ca8b7b"
+    },
+    {
+      "path": ".ai-organization/context-budget.json",
+      "sha256": "1f8ca52b49893b5718b9acbe57afea369216c9e6a7852fb17e10f9ff881aabdd"
+    },
+    {
+      "path": ".ai-organization/control-plane/action-authority.v1.json",
+      "sha256": "6f58b7be520cff95320044a30fe9d0c0096ea33937de1d19d1e532ee172a2308"
+    },
+    {
+      "path": ".ai-organization/control-plane/project-profile.v1.json",
+      "sha256": "0a2bc47d45c67aa600b4a79ca77894181edf46b12fa859b93ecf1509fd1a0b37"
+    },
+    {
+      "path": ".ai-organization/lifecycle-policy.json",
+      "sha256": "ef284ba4b4ae1a510a0308ae1d17745fb2add6a726149606c92da1973ab21314"
+    },
+    {
+      "path": ".ai-organization/ownership.json",
+      "sha256": "0c8e9d5c906d3dd9fde946466907e4679a4634f966eff68b80a30b14a57892c7"
+    },
+    {
+      "path": ".ai-organization/policies/action-authority.v1.json",
+      "sha256": "dff8b12d250446bb73c430026173f60e19173530e1b0ea6f0ef84047eb15e088"
+    },
+    {
+      "path": ".ai-organization/proof-profiles.json",
+      "sha256": "146978810492c37530df664817b1cdea8d1cb825e6f4c660b10c0da381f69998"
+    },
+    {
+      "path": ".ai-organization/registries/agent-roles.v1.json",
+      "sha256": "ae518ba5e82bc931fd36365a93382cf79d2533fcdc012f92d6952fb5f0e09d9c"
+    },
+    {
+      "path": ".ai-organization/roles.json",
+      "sha256": "70e80b27f0af91442639492f4c87e83801e10cbeb178d9e5dd9fe4428d21e509"
+    },
+    {
+      "path": ".ai-organization/runtime/core/authority/assess-action.mjs",
+      "sha256": "d110cf335e4356ec40b38f9385c07e5c8918dd5251181f135e812d2e16a0f81b"
+    },
+    {
+      "path": ".ai-organization/runtime/core/lifecycle/README.md",
+      "sha256": "7eee7c6109f313c0fe973b7e6eb1d70c8d8266a0f757c930efb6b08f7ec3fe56"
+    },
+    {
+      "path": ".ai-organization/runtime/core/lifecycle/task-governor.mjs",
+      "sha256": "871b669c0244a7a1dd5ee3b4e32dd4fe95e8ab574119f283df0159d01e83cbf6"
+    },
+    {
+      "path": ".ai-organization/runtime/core/schema/validate-json-schema.mjs",
+      "sha256": "d9ac4138159b93515d9ebdde0963da5054436962ad1d6694753a504579ae45ab"
+    },
+    {
+      "path": ".ai-organization/schemas/action-authority.v1.schema.json",
+      "sha256": "e281de325ece7c119e497d28f2dd8014f42eab30e45bfcbaa885594e2f543ea9"
+    },
+    {
+      "path": ".ai-organization/schemas/agent-role-registry.v1.schema.json",
+      "sha256": "235d3007d15d288ea2664a3c7ff59bdc423ca8201b424f471359c62904adc8d4"
+    },
+    {
+      "path": ".ai-organization/schemas/control-plane-manifest.v1.schema.json",
+      "sha256": "bfae8365923628c0d1640621c555d212784e34c88e2f3574b49b4f3edf4e2f48"
+    },
+    {
+      "path": ".ai-organization/schemas/project-overlay.v1.schema.json",
+      "sha256": "315075620866e8645db914855c2b257b9f0acea065783decbef91dad10d32573"
+    },
+    {
+      "path": ".ai-organization/schemas/task-assurance.v1.schema.json",
+      "sha256": "db44810bb54696b5cb5eb407dd71fc8a65e912d5c383915e04f4eac340bb0721"
+    },
+    {
+      "path": ".ai-organization/schemas/task-evidence.v1.schema.json",
+      "sha256": "571d5708fa8b67a53a37580e9e02b7bf2dbdb88375447c702f6443f078ba0813"
+    },
+    {
+      "path": ".claude/agents/adversarial-reviewer.md",
+      "sha256": "ca38a52772945802cb11c045cf4b1ca01c0eb7a1a50f11f1457e11cde24693a0"
+    },
+    {
+      "path": ".claude/agents/ai-decision-boundary-auditor.md",
+      "sha256": "79fce27e186f2e73b6d1560f288d72cb4d08b20d65484c28317d85267ac7314b"
+    },
+    {
+      "path": ".claude/agents/doctrine-drift-auditor.md",
+      "sha256": "4bb7c2e22ea4cff9f265f226c3771e37a9a7e993e5dc91f0628c67279bb7f2a6"
+    },
+    {
+      "path": ".claude/agents/functionality-parity-auditor.md",
+      "sha256": "b0f05ee5783f5799f9f7a1bd316b152c41f1778ca96c78a8c81b651131bde90c"
+    },
+    {
+      "path": ".claude/agents/performance-auditor.md",
+      "sha256": "701b58db3cde47cbc872babaafb3804db4976027f22b3d584d64321519582734"
+    },
+    {
+      "path": ".claude/agents/premise-and-architecture-challenger.md",
+      "sha256": "0a0fb7169382fc2101e143c3c7d0056ab5a38ed80ae27b3f5eef1855669d494d"
+    },
+    {
+      "path": ".claude/agents/release-verifier.md",
+      "sha256": "667ff1804343343c2e4b563b26c79fc56666011e647af78903ea5da10dd045fc"
+    },
+    {
+      "path": ".claude/agents/source-to-screen-auditor.md",
+      "sha256": "d0408ed77dbd7dcef8c55ce369538cafc653d7b16d505c51aac09345c4d4041c"
+    },
+    {
+      "path": ".claude/agents/sprint-kickoff-auditor.md",
+      "sha256": "4f3496118f9b66dd0cfa1b1924662e5034b600ec9495b0a7b7b5770869a3ad50"
+    },
+    {
+      "path": ".claude/agents/test-runner.md",
+      "sha256": "c04368f5f8bea226f65087781d4e2bef476eebb91bc94cd5d22d6ce80de518e8"
+    },
+    {
+      "path": ".claude/agents/ui-verifier.md",
+      "sha256": "23f45d59cb0600fdef52ffbb6088096a1d98b8b639598499928cc4303d3aca31"
+    },
+    {
+      "path": ".claude/agents/user-journey-auditor.md",
+      "sha256": "95300a27526d799c274fe8bf18fa50e1fa8d106804d1b51213be11258410812f"
+    },
+    {
+      "path": ".cursor/rules/agent-product-intent.mdc",
+      "sha256": "47febccdf718350b3e3cb0d1cd5130dd2fd282d27c5f5f896196616609f05672"
+    },
+    {
+      "path": ".cursor/rules/analysis-pipeline.mdc",
+      "sha256": "76507fba0c14002f8416954fe365ddfb041ee34a6722f97fd64743a9106a9fa3"
+    },
+    {
+      "path": ".cursor/rules/authority-boundary.mdc",
+      "sha256": "2dc8c8f62aa6ccdeea994e9782dcf4598b7022815869f4bb925c8595c06b560c"
+    },
+    {
+      "path": ".cursor/rules/backend-prisma-build-checks.mdc",
+      "sha256": "3623bd7936a98272b9cbb112a81c589fa462f09849ee6664578e2329553dd959"
+    },
+    {
+      "path": ".cursor/rules/centralization-doctrine.mdc",
+      "sha256": "b1ab5ab4853a50e1366bfb58313ca262edad145e79c8823ad4726dcb714624d6"
+    },
+    {
+      "path": ".cursor/rules/coachai-engineering-rules.mdc",
+      "sha256": "3f88bae41d1e1c2cdb8626a44d09186ec36875d1a6faf6242e32965bd36b4114"
+    },
+    {
+      "path": ".cursor/rules/coachai-frontend-rules.mdc",
+      "sha256": "90339a28534317473494214884a7157b7d1bb02cd1817fcc3c48ac4ea3ddea7f"
+    },
+    {
+      "path": ".cursor/rules/coachai-project-rules.mdc",
+      "sha256": "b1fb9b98730c6b623bc284558283165f9496bd6c83532ae8eea0afc6ad1bfd49"
+    },
+    {
+      "path": ".cursor/rules/coachai-security-rules.mdc",
+      "sha256": "1ddd63ff9bf7646fd8195ac16f8bc6169956a51f93ffa166570e6e585987f436"
+    },
+    {
+      "path": ".cursor/rules/coaching-entities.mdc",
+      "sha256": "c2fe3bb81ec53303f247d8bd9bc8fd2be1663186d379b446677d30fd54337bcb"
+    },
+    {
+      "path": ".cursor/rules/coaching-frontend.mdc",
+      "sha256": "57e47f8a18644c24b177661656cf5d57b552d503629b21c24d76209b70041734"
+    },
+    {
+      "path": ".cursor/rules/coaching-lanes.mdc",
+      "sha256": "aa8402bc7e8764870c2436c465181053dc5514a4bd0040ed102d794870f3d3c4"
+    },
+    {
+      "path": ".cursor/rules/instrumentation.mdc",
+      "sha256": "cdf8aa469a82809a410b9154285fe31fa648abcaac769c03f9d5c089f493e05b"
+    },
+    {
+      "path": ".cursor/rules/internal-admin-full-experience.mdc",
+      "sha256": "593181ada3ddb460dc26d8cd900175cbc082b0b91a2e81ab6710dc2dd3b6b075"
+    },
+    {
+      "path": ".cursor/rules/manager-surfaces.mdc",
+      "sha256": "d10993d99d6eac354bad13581573efaa3f498ed6380f802e3d08ce8df31c17b0"
+    },
+    {
+      "path": ".cursor/rules/manual-verification-smoke.mdc",
+      "sha256": "71d27616978a6e089a5a24041aa2e60143063877fab12fb6b5d9f4bb81111ff9"
+    },
+    {
+      "path": ".cursor/rules/product-first-planning.mdc",
+      "sha256": "c01b3efea8505384c4cabce97b2efb018bc975e8a5a14064f3d1a8fdab06ce44"
+    },
+    {
+      "path": ".cursor/rules/slice-rigor.mdc",
+      "sha256": "5eedf88f02fe3fc0b69c446611e96d0ae8b6f07ce9aabd061a3b3fc474f7e200"
+    },
+    {
+      "path": ".cursor/rules/testing-guardrails.mdc",
+      "sha256": "e7a17e304041dd8d4a43d7e3ad78cde0c8606c31e7741e2eb007a6a37737bc15"
+    },
+    {
+      "path": ".cursor/rules/ui-design-tokens.mdc",
+      "sha256": "dfe90f14e9d9c4bcbab65482c4cc1c7514a6dba0e0693d232c5c651e5e511fd3"
+    },
+    {
+      "path": ".github/CODEOWNERS",
+      "sha256": "010b7040aba124776f10977f202c6448b3a80a046d9f50e1e46522e16e2bac67"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/agent-slice.yml",
+      "sha256": "e20cee856877df33dae44cbf83a9a03387f44d5d60048ee99b123156427901ea"
+    },
+    {
+      "path": ".github/pull_request_template.md",
+      "sha256": "3abbf9948fdcefb3c48d712728862d0a218b19d7858da5831c07e4fe5d1fffaa"
+    },
+    {
+      "path": ".github/workflows/backend-db-regressions.yml",
+      "sha256": "e634f53f2d289f90cb81b2f3a4893cfbdea0c0954fd22c7bfc9b5732528fb9d4"
+    },
+    {
+      "path": ".github/workflows/ui-source-of-truth-gates.yml",
+      "sha256": "dcd3fbe647c3c50f0008d637b74be09a4cf13c1e39f0fc494e5a5eb9cfa0d91d"
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "a14c307585f8bb04767add5dd4158a3873e2d10a1b5b7e36d4810de33fd16612"
+    },
+    {
+      "path": "CLAUDE.md",
+      "sha256": "20abca9962c321fc4aad2c51cad30fa3626c09fbb01bdb947f61ff011ddfebd0"
+    },
+    {
+      "path": "scripts/check-agent-context.mjs",
+      "sha256": "2f9a31dc3848b6bd766a93f010d110285fe83794e48aab6f15eedbe299e3cef8"
+    },
+    {
+      "path": "scripts/check-agent-control-plane.mjs",
+      "sha256": "0aa3ca1a4ffa335250a10fc71f1564a37c99825a44351aed761ffb8437623177"
+    },
+    {
+      "path": "scripts/check-doc-code-drift.mjs",
+      "sha256": "b58dc0e169fb66e3a2d87632a9bd57d3b28eed134c298d41e9622f038e4552f5"
+    },
+    {
+      "path": "scripts/check-overlay-parity.mjs",
+      "sha256": "f05c84053b4ca41c0ca608943e99a69913ed71e73aac8f55e2fdfb59c9dbdbaf"
+    },
+    {
+      "path": "scripts/check-rules-wiring.mjs",
+      "sha256": "0c65596611926fff7b092939b1c315d916faa8b1d9ea0fd8f94b627b2d176fcd"
+    },
+    {
+      "path": "scripts/check-test-intent.mjs",
+      "sha256": "b3e8fa5e2c6dd3efc17fa00d2406b4ed265972b6f19d50d72913aab251f853c0"
+    },
+    {
+      "path": "scripts/ci-local.mjs",
+      "sha256": "27b15cc8826f4c4e093ec93e532e7ac0d1aeae4e0e491f2da17729a0ae9e848a"
+    },
+    {
+      "path": "scripts/claude-lifecycle-hook.mjs",
+      "sha256": "5c1ace540a70075b12df1888d4f3960d9875a3dd2948cb2d47d90641bba09cc5"
+    },
+    {
+      "path": "scripts/claude-posttooluse-gate.mjs",
+      "sha256": "749045096acd82b8440c781531f8984bfd0886a2d24f8c152be96e13906b04fe"
+    },
+    {
+      "path": "scripts/run-risk-selected-proof.mjs",
+      "sha256": "53a400b3c75c17f1cfc9cccf13ad050f62de0f127e4788f738f8c07e4bc104cf"
+    },
+    {
+      "path": "scripts/task-governor.mjs",
+      "sha256": "eb9420836d5681ed3e3f140cfd871de7a6e227afba1cb3ed308dfaf3c89fb907"
+    },
+    {
+      "path": "scripts/tests/contextAndRulesRegression.mjs",
+      "sha256": "187ed922c9583ef2385000237553b05204e47da3debfb293f8d5030cb753a148"
+    },
+    {
+      "path": "scripts/tests/controlPlaneRegression.mjs",
+      "sha256": "5e0d2bd427363dc00d3ae6138f2269fac33b67368596e9ec85213fe511d16718"
+    },
+    {
+      "path": "scripts/tests/fixture-helpers.mjs",
+      "sha256": "61704d864f500b55dfc90a080558b5d0362da59828d53a654ba4d90d474895a0"
+    },
+    {
+      "path": "scripts/tests/overlayParityRegression.mjs",
+      "sha256": "0f93d3b40d3c499fa510c4b4f9a7b1bfca80407794c605ac166d674ed08b0c0d"
+    },
+    {
+      "path": "scripts/tests/riskSelectedProofRegression.mjs",
+      "sha256": "dda32244a6d4364e6ecd1f33b384961ebdbf3386bcbc6761fbd7c1da5f7b59f8"
+    },
+    {
+      "path": "scripts/tests/taskLifecycleRegression.mjs",
+      "sha256": "5c5c8274103841086d493758acbcad5a41070745b22272a2daa54d016f7817e5"
+    }
+  ],
   "json_sections": {
     ".claude/settings.json": {
       "hooks": "6337f0cabe38ac701ed0bfe704e826c8a14b2f4c31a44201256feac0cd9a11b9"

@@ -6,6 +6,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { loadOverlay, validateOverlay } from '../scripts/project-overlay.mjs';
 import { runCheck, runInstall } from '../scripts/lib/control-plane.mjs';
+import { validatePortableOverlayLock } from '../scripts/project-overlay.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -48,4 +49,15 @@ test('Proves: ORG-OVERLAY-003; Test type: ownership counterexample; Surface: pro
 test('Proves: ORG-OVERLAY-004; Test type: registry mutation; Surface: overlay ownership; Authority: ownership.v1.json; Killer mutation: omit an installable mapping owner; Gated command: npm test', () => {
   assert.deepEqual(validateOverlay('auxara-dialer').map((failure) => failure.message ?? failure), []);
   assert.deepEqual(validateOverlay('coachai').map((failure) => failure.message ?? failure), []);
+});
+
+test('Proves: portable overlay locks can contain only normalized paths and SHA-256 integrity hashes without secret-shaped path/hash pairs on one line; Test type: secret-boundary mutation; Surface: project overlay lock; Authority: portable lock schema; Killer mutation: restore a path-keyed hash map or hide a generic API key in a lock entry; Gated command: npm test', () => {
+  const valid = { version: 1, source: 'universal-private-orchestrator/overlays/coachai', files: [{ path: 'AGENTS.md', sha256: 'a'.repeat(64) }], json_sections: {} };
+  assert.deepEqual(validatePortableOverlayLock(valid), []);
+  const unsafe = structuredClone(valid);
+  unsafe.files.push({ path: '../generic_api_key', sha256: 'not-a-sha256-secret-value' });
+  const failures = validatePortableOverlayLock(unsafe).join('\n');
+  assert.match(failures, /non-portable path/u);
+  assert.match(failures, /non-SHA-256/u);
+  assert.match(validatePortableOverlayLock({ ...valid, files: { 'AGENTS.md': 'a'.repeat(64) } }).join('\n'), /files must be an array/u);
 });

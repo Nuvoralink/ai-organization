@@ -11,7 +11,7 @@
 
 A bootstrap is complete only when tests, canonical validation, installed parity, and the selected project overlay checks all exit zero.
 
-Run `gitleaks git --redact` as the independent history-aware secret scan before publication. The committed Gitleaks allowlist is limited to the `generic-api-key` false positive produced by SHA-256 values in portable overlay lock files.
+Run `gitleaks git --redact` as the independent history-aware secret scan before publication. Any false positive must be suppressed by its exact historical fingerprint in `.gitleaksignore`; whole paths and rules must not be exempted.
 
 ## Normal change flow
 

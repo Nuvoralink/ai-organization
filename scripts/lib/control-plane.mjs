@@ -70,6 +70,33 @@ export function hashFile(file) {
   return crypto.createHash('sha256').update(normalizedBytes(fs.readFileSync(file), file)).digest('hex');
 }
 
+const REPOSITORY_META_FILES = new Set([
+  '.gitattributes', '.gitignore', '.gitleaks.toml', '.gitleaksignore', 'AGENTS.md', 'CLAUDE.md',
+  'README.md', 'control-plane.manifest.json', 'package-lock.json', 'package.json'
+]);
+
+export function classifyTrackedScope(relativeInput) {
+  const relative = normalizeRelative(relativeInput);
+  const extension = path.extname(relative).toLowerCase();
+  if (REPOSITORY_META_FILES.has(relative)) return 'repository-metadata';
+  if (relative === 'registries/tracked-scope.v1.json') return 'scope-registry';
+  if (relative.startsWith('.github/')) return 'github-orchestration';
+  if (relative.startsWith('artifacts/')) return ['.md', '.pptx'].includes(extension) ? 'presentation-artifact' : undefined;
+  if (relative.startsWith('docs/')) return extension === '.md' ? 'documentation' : undefined;
+  if (relative.startsWith('overlays/')) return ['.md', '.mdc', '.json', '.mjs', '.js', '.yaml', '.yml', ''].includes(extension) ? 'project-orchestration-overlay' : undefined;
+  if (relative.startsWith('automations/')) return extension === '.json' ? 'automation-specification' : undefined;
+  if (relative.startsWith('policies/')) return extension === '.json' ? 'policy' : undefined;
+  if (relative.startsWith('registries/')) return extension === '.json' ? 'registry' : undefined;
+  if (relative.startsWith('schemas/')) return extension === '.json' ? 'schema' : undefined;
+  if (relative.startsWith('scripts/')) return extension === '.mjs' ? 'control-plane-tooling' : undefined;
+  if (relative.startsWith('tests/')) return extension === '.mjs' ? 'control-plane-test' : undefined;
+  if (relative.startsWith('core/')) return ['.mjs', '.md'].includes(extension) ? 'shared-control-plane-runtime' : undefined;
+  if (relative.startsWith('global/')) return ['.md', '.json', '.mjs', '.yaml', '.yml'].includes(extension) ? 'global-orchestration' : undefined;
+  if (relative.startsWith('skills/')) return ['.md', '.json', '.mjs', '.js', '.ts', '.tsx', '.py', '.ps1', '.csv', '.yaml', '.yml', '.template'].includes(extension) ? 'reusable-skill' : undefined;
+  if (relative.startsWith('dependencies/')) return ['.md', '.json', '.py', '.toml', '.lock', ''].includes(extension) ? 'orchestration-dependency' : undefined;
+  return undefined;
+}
+
 function renderedBytes(file, roots, renderContentTokens = true) {
   const bytes = fs.readFileSync(file);
   const ext = path.extname(file).toLowerCase();
@@ -244,14 +271,27 @@ export function validateCanonical({ repoRoot, manifest }) {
   }
   const tracked = spawnSync('git', ['ls-files', '-z'], { cwd: repoRoot, encoding: 'utf8' });
   if (tracked.status === 0 && !tracked.error) {
-    const allowedRoots = new Set(['.gitattributes', '.github', '.gitignore', '.gitleaks.toml', 'AGENTS.md', 'CLAUDE.md', 'README.md', 'artifacts', 'automations', 'control-plane.manifest.json', 'core', 'dependencies', 'docs', 'global', 'overlays', 'package-lock.json', 'package.json', 'policies', 'registries', 'schemas', 'scripts', 'skills', 'tests']);
+    const scopeRegistryPath = path.join(repoRoot, 'registries', 'tracked-scope.v1.json');
+    let scopeEntries = [];
+    try { scopeEntries = JSON.parse(fs.readFileSync(scopeRegistryPath, 'utf8')).files ?? []; }
+    catch (error) { problems.push({ type: 'tracked-scope-registry', message: `Missing or invalid tracked scope registry: ${error.message}` }); }
+    const scopeByPath = new Map();
+    for (const entry of scopeEntries) {
+      const normalized = normalizeRelative(entry?.path ?? '');
+      if (!normalized || scopeByPath.has(normalized)) problems.push({ type: 'tracked-scope-registry', message: `Duplicate or invalid tracked scope entry: ${normalized || '<missing>'}` });
+      else scopeByPath.set(normalized, entry.class);
+    }
     const boundaryMapping = { allowedExtensions: [], exclude: [] };
-    for (const relative of tracked.stdout.split('\0').filter(Boolean)) {
-      const normalized = normalizeRelative(relative);
-      const first = normalized.split('/')[0];
+    const trackedPaths = tracked.stdout.split('\0').filter(Boolean).map(normalizeRelative);
+    const trackedSet = new Set(trackedPaths);
+    for (const normalized of trackedPaths) {
+      const relative = normalized;
       const reason = denyReason(normalized, manifest, boundaryMapping);
       if (reason) problems.push({ type: 'forbidden-tracked-path', relative, reason });
-      else if (!allowedRoots.has(first)) problems.push({ type: 'unclassified-tracked-path', relative });
+      const expectedClass = classifyTrackedScope(normalized);
+      if (!expectedClass) problems.push({ type: 'unsupported-tracked-scope-path', relative });
+      else if (!scopeByPath.has(normalized)) problems.push({ type: 'unclassified-tracked-path', relative });
+      else if (scopeByPath.get(normalized) !== expectedClass) problems.push({ type: 'tracked-scope-class-mismatch', relative, expected: expectedClass, actual: scopeByPath.get(normalized) });
       else {
         const trackedFile = path.join(repoRoot, relative);
         if (fs.existsSync(trackedFile) && fs.statSync(trackedFile).isFile()) {
@@ -261,6 +301,7 @@ export function validateCanonical({ repoRoot, manifest }) {
         }
       }
     }
+    for (const relative of scopeByPath.keys()) if (!trackedSet.has(relative)) problems.push({ type: 'stale-tracked-scope-entry', relative });
   }
   return problems;
 }
@@ -440,11 +481,30 @@ export function runCheck({ repoRoot, manifest, roots }) {
   return problems;
 }
 
-export function runCapture({ repoRoot, manifest, roots, dryRun = false, updateExisting = false }) {
+export function runCapture({ repoRoot, manifest, roots, dryRun = false, updateExisting = false, mappingIds = undefined, fileSelectors = undefined }) {
   const errors = validateManifest(manifest, repoRoot, roots);
   invariant(errors.length === 0, `Manifest invalid:\n${errors.join('\n')}`);
+  const selectedIds = mappingIds === undefined ? undefined : new Set(mappingIds);
+  if (selectedIds) {
+    const knownIds = new Set(manifest.mappings.map((mapping) => mapping.id));
+    const unknownIds = [...selectedIds].filter((id) => !knownIds.has(id));
+    invariant(unknownIds.length === 0, `Unknown capture mapping(s): ${unknownIds.join(', ')}`);
+  }
+  const selectedFiles = new Map();
+  for (const selector of fileSelectors ?? []) {
+    const separator = selector.indexOf(':');
+    invariant(separator > 0 && separator < selector.length - 1, `Invalid capture file selector: ${selector}`);
+    const mappingId = selector.slice(0, separator);
+    const relative = normalizeRelative(selector.slice(separator + 1));
+    invariant(manifest.mappings.some((mapping) => mapping.id === mappingId), `Unknown capture mapping: ${mappingId}`);
+    invariant(relative.length > 0 && !relative.startsWith('../') && !path.isAbsolute(relative), `Unsafe capture file selector: ${selector}`);
+    if (!selectedFiles.has(mappingId)) selectedFiles.set(mappingId, new Set());
+    selectedFiles.get(mappingId).add(relative);
+  }
   const operations = [];
   for (const mapping of manifest.mappings) {
+    if (selectedIds && !selectedIds.has(mapping.id)) continue;
+    if (selectedFiles.size > 0 && !selectedFiles.has(mapping.id)) continue;
     const captureRoot = resolveTokenPath(mapping.captureFrom, roots);
     const sourceRoot = resolveSource(repoRoot, mapping.source);
     const captured = collectFiles(captureRoot, manifest, mapping);
@@ -452,6 +512,7 @@ export function runCapture({ repoRoot, manifest, roots, dryRun = false, updateEx
     if (captured.size === 0 && canonical.size > 0) continue;
     invariant(captured.size > 0, `Capture source is empty: ${mapping.id}`);
     for (const [relative, input] of captured) {
+      if (selectedFiles.size > 0 && !selectedFiles.get(mapping.id)?.has(relative)) continue;
       const secretIndex = secretFinding(input);
       invariant(secretIndex < 0, `Secret-shaped content refused (pattern ${secretIndex + 1}): ${mapping.id}/${relative}`);
       invariant(!portablePathFinding(input), `Machine-specific absolute path refused: ${mapping.id}/${relative}`);
@@ -461,6 +522,10 @@ export function runCapture({ repoRoot, manifest, roots, dryRun = false, updateEx
         invariant(updateExisting, `Canonical source differs; capture refused: ${mapping.id}/${relative}`);
         operations.push({ type: 'update-capture', mapping: mapping.id, relative, input, target });
       } else operations.push({ type: 'capture', mapping: mapping.id, relative, input, target });
+    }
+    if (selectedFiles.has(mapping.id)) {
+      const missing = [...selectedFiles.get(mapping.id)].filter((relative) => !captured.has(relative));
+      invariant(missing.length === 0, `Selected capture file(s) missing from ${mapping.id}: ${missing.join(', ')}`);
     }
   }
   if (!dryRun) {

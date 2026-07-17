@@ -118,6 +118,25 @@
       "lock": "${HOME}/.nuvoralink-control-plane/project-locks/auxara-dialer/overlay-lock.json"
     },
     {
+      "id": "auxara-shared-runtime",
+      "source": "core",
+      "captureFrom": "${PROJECT:auxara-dialer}/.ai-organization/runtime/core",
+      "destinations": [
+        "${PROJECT:auxara-dialer}/.ai-organization/runtime/core"
+      ],
+      "mode": "tree",
+      "ownership": "generated",
+      "allowedExtensions": [
+        ".md",
+        ".mjs"
+      ],
+      "exclude": [],
+      "detectLocalOnly": true,
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "lock": "${HOME}/.nuvoralink-control-plane/project-locks/auxara-dialer/overlay-lock.json"
+    },
+    {
       "id": "auxara-automation-specs",
       "source": "overlays/auxara-dialer/automations",
       "captureFrom": "${PROJECT:auxara-dialer}/.ai-organization/automations",

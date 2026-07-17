@@ -64,24 +64,6 @@
       "lock": "${HOME}/.nuvoralink-control-plane/project-locks/coachai/overlay-lock.json"
     },
     {
-      "id": "coachai-task-governor",
-      "source": "overlays/coachai/project-files/scripts/task-governor.mjs",
-      "captureFrom": "${PROJECT:coachai}/scripts/task-governor.mjs",
-      "destinations": [
-        "${PROJECT:coachai}/scripts/task-governor.mjs"
-      ],
-      "mode": "file",
-      "ownership": "generated",
-      "allowedExtensions": [
-        ".mjs"
-      ],
-      "exclude": [],
-      "detectLocalOnly": false,
-      "allowRootLink": false,
-      "allowInstalledRootLink": false,
-      "lock": "${HOME}/.nuvoralink-control-plane/project-locks/coachai/overlay-lock.json"
-    },
-    {
       "id": "coachai-action-authority",
       "source": "policies/action-authority.v1.json",
       "captureFrom": "${PROJECT:coachai}/.ai-organization/policies/action-authority.v1.json",
@@ -128,6 +110,25 @@
       "ownership": "generated",
       "allowedExtensions": [
         ".json"
+      ],
+      "exclude": [],
+      "detectLocalOnly": true,
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "lock": "${HOME}/.nuvoralink-control-plane/project-locks/coachai/overlay-lock.json"
+    },
+    {
+      "id": "coachai-shared-runtime",
+      "source": "core",
+      "captureFrom": "${PROJECT:coachai}/.ai-organization/runtime/core",
+      "destinations": [
+        "${PROJECT:coachai}/.ai-organization/runtime/core"
+      ],
+      "mode": "tree",
+      "ownership": "generated",
+      "allowedExtensions": [
+        ".md",
+        ".mjs"
       ],
       "exclude": [],
       "detectLocalOnly": true,

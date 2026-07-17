@@ -83,7 +83,7 @@ Do not create duplicate helpers with slightly different names.
 - Any schema change must consider migration impact, old data, nullable transitions, defaults, multi-tenant RLS impact, and rollback risk.
 - Do not assume production data is clean. Per ADR-AUTH-005 (tenant-isolation RLS), every tenant-scoped table has `tenant_id` and Postgres RLS is the backstop.
 - Do not change or remove fields used by old calls, saved campaigns, billing history, or stored compliance audit rows without a migration plan.
-- **Applying a migration to production:** `.ai-organization/action-authority.json` requires explicit human authorization for every production migration. After authorization, follow `docs/runbooks/prod-migrations.md`, use the credential-safe owner-level method, maintain the `_prisma_migrations` ledger, and perform post-apply verification. Safety checks prove readiness; they do not grant mutation authority.
+- **Applying a migration to production:** `.ai-organization/policies/action-authority.v1.json` requires explicit human authorization for every production migration. After authorization, follow `docs/runbooks/prod-migrations.md`, use the credential-safe owner-level method, maintain the `_prisma_migrations` ledger, and perform post-apply verification. Safety checks prove readiness; they do not grant mutation authority.
 
 ## 8. Quality gates
 

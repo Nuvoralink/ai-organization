@@ -2,6 +2,18 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { validateJsonAgainstSchema } from '../schema/validate-json-schema.mjs';
+
+const moduleDirectory = path.dirname(fileURLToPath(import.meta.url));
+function assuranceSchema(name) {
+  const candidates = [
+    path.resolve(moduleDirectory, '..', '..', 'schemas', name),
+    path.resolve(moduleDirectory, '..', '..', '..', 'schemas', name)
+  ];
+  const found = candidates.find((candidate) => fs.existsSync(candidate));
+  if (!found) throw new Error(`Assurance schema is not installed: ${name}`);
+  return found;
+}
 
 const RISK_CLASSES = new Set([
   'frontend', 'auth', 'security', 'privacy', 'billing', 'database', 'data_migration', 'provider',
@@ -34,7 +46,7 @@ function nonEmptyStrings(value) {
 }
 
 export function validateTaskContract(contract) {
-  const failures = [];
+  const failures = validateJsonAgainstSchema(assuranceSchema('task-assurance.v1.schema.json'), contract);
   if (!contract || typeof contract !== 'object') return ['Task contract must be an object'];
   if (typeof contract.id !== 'string' || contract.id.length < 2) failures.push('Task id is required');
   if (typeof contract.product_intent !== 'string' || contract.product_intent.trim().length < 10) failures.push('Product intent must be substantive');
@@ -59,9 +71,15 @@ export function validateTaskContract(contract) {
   return [...new Set(failures)];
 }
 
+export function validateTaskEvidence(evidence) {
+  if (!evidence || typeof evidence !== 'object') return ['Evidence must be an object'];
+  return validateJsonAgainstSchema(assuranceSchema('task-evidence.v1.schema.json'), evidence);
+}
+
 export function validateCompletion(contract, evidence) {
   const failures = validateTaskContract(contract);
   if (!evidence || typeof evidence !== 'object') return [...failures, 'Evidence must be an object'];
+  failures.push(...validateTaskEvidence(evidence));
   if (evidence.task_id !== contract.id) failures.push('Evidence task_id does not match the contract');
   if (!Array.isArray(evidence.changed_files)) failures.push('Evidence changed_files must be an array');
   for (const file of evidence.changed_files ?? []) {

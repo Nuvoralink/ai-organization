@@ -46,7 +46,7 @@ status or start unscheduled work.
 **Evaluator:** PASS only when every included requirement/decision/locked element maps to shipped evidence or
 a cited durable deferral, local proof matches the risk, auditor findings are resolved or honestly routed, and
 all not-reached provider/deployed/rendered surfaces are explicit. Merge is permitted only when every
-conditional-merge predicate in `.ai-organization/action-authority.json` is proven; release/deploy remains
+conditional-merge predicate in `.ai-organization/policies/action-authority.v1.json` is proven; release/deploy remains
 human-required.
 
 ## Review and verification

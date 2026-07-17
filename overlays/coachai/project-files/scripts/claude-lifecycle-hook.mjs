@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
-import { extractStructured, validateAgentReport, validateCompletionEvidence, validateTaskContract } from './task-governor.mjs';
+import { extractStructured, validateAgentReport, validateCompletion, validateTaskContract } from './task-governor.mjs';
 
 const root = process.cwd();
 let payload = {};
@@ -32,8 +32,9 @@ if (event === 'SubagentStart') {
   errors.push(...validateTaskContract(task));
 }
 if (event === 'TaskCompleted') {
+  const task = extractStructured(payload, 'task_contract');
   const evidence = extractStructured(payload, 'completion_evidence');
-  errors.push(...validateCompletionEvidence(evidence));
+  errors.push(...validateCompletion(task, evidence));
   if (errors.length === 0) {
     const command = process.env.AGENT_PROOF_COMMAND || 'npm run proof:changed';
     const proof = spawnSync(command, { cwd: root, shell: true, stdio: 'inherit', env: process.env });

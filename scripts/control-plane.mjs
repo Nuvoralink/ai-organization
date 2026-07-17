@@ -18,6 +18,9 @@ const roots = loadRoots(repoRoot);
 const command = process.argv[2];
 const dryRun = process.argv.includes('--dry-run');
 const adoptExisting = process.argv.includes('--adopt-existing');
+const updateExisting = process.argv.includes('--update-existing');
+const mappingIds = process.argv.flatMap((value, index, values) => value === '--mapping' && values[index + 1] ? [values[index + 1]] : []);
+const fileSelectors = process.argv.flatMap((value, index, values) => value === '--file' && values[index + 1] ? [values[index + 1]] : []);
 
 function printOperations(operations) {
   for (const operation of operations) console.log(`${operation.type}\t${operation.mapping}\t${operation.relative || '.'}`);
@@ -39,7 +42,15 @@ try {
       process.exitCode = 1;
     } else console.log('control-plane check passed');
   } else if (command === 'capture') {
-    printOperations(runCapture({ repoRoot, manifest, roots, dryRun }));
+    printOperations(runCapture({
+      repoRoot,
+      manifest,
+      roots,
+      dryRun,
+      updateExisting,
+      mappingIds: mappingIds.length > 0 ? mappingIds : undefined,
+      fileSelectors: fileSelectors.length > 0 ? fileSelectors : undefined
+    }));
   } else if (command === 'install') {
     printOperations(runInstall({ repoRoot, manifest, roots, dryRun, adoptExisting }));
   } else if (command === 'inventory') {
@@ -49,7 +60,7 @@ try {
     const ids = runRollback({ manifest, roots, installId: idIndex >= 0 ? process.argv[idIndex + 1] : undefined });
     console.log(`rolled back install ${[...new Set(ids)].join(', ')}`);
   } else {
-    console.error('Usage: node scripts/control-plane.mjs <validate|check|capture|install|inventory|rollback> [--dry-run] [--adopt-existing] [--install-id ID]');
+    console.error('Usage: node scripts/control-plane.mjs <validate|check|capture|install|inventory|rollback> [--dry-run] [--update-existing] [--mapping ID] [--file MAPPING:RELATIVE] [--adopt-existing] [--install-id ID]');
     process.exitCode = 2;
   }
 } catch (error) {

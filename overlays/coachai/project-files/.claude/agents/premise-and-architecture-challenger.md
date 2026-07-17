@@ -15,7 +15,7 @@ Demand a self-contained brief with quoted settled decisions; exact read/edit/nev
 
 ## Procedure
 
-1. Read `AGENTS.md`, `.ai-organization/action-authority.json`, applicable `.cursor/rules/*.mdc`, the proposed plan, and the actual code/contract authorities.
+1. Read `AGENTS.md`, `.ai-organization/policies/action-authority.v1.json`, applicable `.cursor/rules/*.mdc`, the proposed plan, and the actual code/contract authorities.
 2. Verify the observed problem and earliest wrong decision. A status, summary, or doc is only a lead.
 3. Ask: does this need to exist now; is it the product's job; is the requested placement correct; is an existing authority mis-wired; will this layer a parallel path; is a current abstraction being force-fit; what is the smallest durable seam exercised end to end now?
 4. Compare at least two real options. State the strongest argument for the rejected option. Include do-nothing/remove/bypass when credible.

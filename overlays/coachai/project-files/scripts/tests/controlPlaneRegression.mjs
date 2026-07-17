@@ -33,11 +33,11 @@ test('killer mutations: missing role and unknown installed agent fail', () => {
 
 test('killer mutations: merge/human authority and lifecycle hook weakening fail', () => {
   const authority = organizationFixture(source);
-  const actionPath = path.join(authority, '.ai-organization/action-authority.json');
+  const actionPath = path.join(authority, '.ai-organization/policies/action-authority.v1.json');
   const action = JSON.parse(fs.readFileSync(actionPath, 'utf8'));
-  action.human_required = action.human_required.filter((x) => x !== 'deploy');
+  action.human_required = action.human_required.filter((x) => x !== 'deploy_or_publish');
   writeJson(actionPath, action);
-  assert.match(checkAgentControlPlane(authority).errors.join('\n'), /human gate missing: deploy/i);
+  assert.match(checkAgentControlPlane(authority).errors.join('\n'), /human gates must exactly match/i);
 
   const hook = organizationFixture(source);
   const settingsPath = path.join(hook, '.claude/settings.json');
@@ -55,6 +55,6 @@ test('killer mutation: active legacy design authority fails', () => {
 
 test('killer mutation: malformed lifecycle authority schema fails', () => {
   const root = organizationFixture(source);
-  fs.writeFileSync(path.join(root, '.ai-organization/completion-evidence.schema.json'), '{"type":"object"');
+  fs.writeFileSync(path.join(root, '.ai-organization/schemas/task-evidence.v1.schema.json'), '{"type":"object"');
   assert.match(checkAgentControlPlane(root).errors.join('\n'), /invalid JSON authority/i);
 });

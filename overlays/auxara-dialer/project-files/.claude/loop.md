@@ -9,7 +9,7 @@ The current transcript is the only authority for work scope. Continue only unfin
 explicitly authorized there. This loop never authorizes a new product initiative, a broader refactor, or a
 new issue merely because the queue is idle.
 
-`.ai-organization/action-authority.json` is the canonical boundary. Inside the already-authorized task the
+`.ai-organization/policies/action-authority.v1.json` is the generated universal boundary. Inside the already-authorized task the
 loop may branch, commit, push, and open or update pull requests. Conditional merge is permitted only when
 the change is low-risk, additive or isolated, conflict-free, independently verified, and has no production
 or deploy effect. Production mutation/deploy/config/migrations, destructive or billed actions, external

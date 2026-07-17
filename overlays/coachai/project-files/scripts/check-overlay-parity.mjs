@@ -39,10 +39,10 @@ export function buildOverlayLock(root = process.cwd()) {
   const isExcluded = (rel) => rel === ownership.lock_file || excluded.some((re) => re.test(rel));
   const files = new Set((ownership.managed_files ?? []).map(normalize));
   for (const managedRoot of ownership.managed_roots ?? []) for (const rel of walk(root, managedRoot)) if (!isExcluded(rel)) files.add(rel);
-  const fileHashes = {};
+  const fileHashes = [];
   for (const rel of [...files].sort()) {
     const abs = path.join(root, rel);
-    fileHashes[rel] = fs.existsSync(abs) && fs.statSync(abs).isFile() ? fileSha(abs) : null;
+    fileHashes.push({ path: rel, sha256: fs.existsSync(abs) && fs.statSync(abs).isFile() ? fileSha(abs) : null });
   }
   const jsonSections = {};
   for (const [rel, sections] of Object.entries(ownership.managed_json_sections ?? {})) {
@@ -59,15 +59,17 @@ export function checkOverlayParity(root = process.cwd()) {
   const expected = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
   const actual = buildOverlayLock(root);
   const errors = [];
-  for (const [rel, hash] of Object.entries(expected.files ?? {})) {
-    if (!(rel in actual.files) || actual.files[rel] === null) errors.push(`managed file missing: ${rel}`);
-    else if (actual.files[rel] !== hash) errors.push(`managed file modified: ${rel}`);
+  const expectedFiles = new Map((expected.files ?? []).map((entry) => [entry.path, entry.sha256]));
+  const actualFiles = new Map((actual.files ?? []).map((entry) => [entry.path, entry.sha256]));
+  for (const [rel, hash] of expectedFiles) {
+    if (!actualFiles.has(rel) || actualFiles.get(rel) === null) errors.push(`managed file missing: ${rel}`);
+    else if (actualFiles.get(rel) !== hash) errors.push(`managed file modified: ${rel}`);
   }
-  for (const rel of Object.keys(actual.files)) if (!(rel in (expected.files ?? {}))) errors.push(`unlocked file added under managed ownership: ${rel}`);
+  for (const rel of actualFiles.keys()) if (!expectedFiles.has(rel)) errors.push(`unlocked file added under managed ownership: ${rel}`);
   for (const [rel, sections] of Object.entries(expected.json_sections ?? {})) for (const [section, hash] of Object.entries(sections)) {
     if (actual.json_sections?.[rel]?.[section] !== hash) errors.push(`managed JSON section modified or missing: ${rel}#${section}`);
   }
-  return { ok: errors.length === 0, errors, managedFileCount: Object.keys(actual.files).length };
+  return { ok: errors.length === 0, errors, managedFileCount: actualFiles.size };
 }
 
 export function writeOverlayLock(root = process.cwd()) {

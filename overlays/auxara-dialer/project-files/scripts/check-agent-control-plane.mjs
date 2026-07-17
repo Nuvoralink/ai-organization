@@ -20,7 +20,7 @@ export const CONTROL_PLANE_POLICY = Object.freeze({
     goals: 'docs/agent-prompts/goal-templates.md',
     playbook: 'docs/agent-prompts/orchestration-playbook.md',
     settings: '.claude/settings.json',
-    actionAuthority: '.ai-organization/action-authority.json',
+    actionAuthority: '.ai-organization/policies/action-authority.v1.json',
     agentRegistry: '.ai-organization/agents.json',
     completionProfiles: '.ai-organization/completion-profiles.json',
     package: 'package.json',
@@ -43,7 +43,7 @@ export const CONTROL_PLANE_POLICY = Object.freeze({
       'output contract',
       'boundaries and escalation',
       'self-verifiable acceptance criteria',
-      'action-authority.json',
+      'action-authority.v1.json',
       'conditional merge',
     ]),
     completionTierOptions: Object.freeze(['read-only', 'implementation']),
@@ -115,7 +115,7 @@ export const CONTROL_PLANE_POLICY = Object.freeze({
       'exactly one read-only drift inspection',
       'branch, commit, push, and open or update pull requests',
       'conditional merge',
-      'action-authority.json',
+      'action-authority.v1.json',
       "command's own exit status",
     ]),
   }),
@@ -169,26 +169,40 @@ const DANGEROUS_COMMANDS = Object.freeze([
   },
 ]);
 
-const AGENT_ACTIONS = Object.freeze(['branch', 'commit', 'push', 'pull_request']);
+const AGENT_ACTIONS = Object.freeze([
+  'read_in_scope',
+  'analyze_and_plan',
+  'edit_in_isolated_workspace',
+  'run_local_tests_and_safe_read_only_checks',
+  'create_branch_or_worktree',
+  'commit_in_scope_changes',
+  'push_branch',
+  'open_or_update_pull_request',
+]);
 const HUMAN_ACTIONS = Object.freeze([
-  'production_mutation',
-  'deploy',
-  'production_config_change',
-  'migration',
-  'destructive_action',
-  'billed_action',
+  'merge_that_deploys_or_mutates_production',
+  'deploy_or_publish',
+  'production_write_or_configuration_change',
+  'database_or_data_migration',
+  'destructive_or_irreversible_action',
+  'billed_action_or_purchase',
   'external_message_or_contact',
-  'secrets',
-  'product_decision',
-  'design_decision',
-  'material_architecture_decision',
+  'secret_or_credential_change',
+  'close_product_scope_decision',
+  'approve_visible_design_or_copy_in_context',
+  'close_material_architecture_decision',
 ]);
 const MERGE_CONDITIONS = Object.freeze([
-  'low-risk',
-  'additive-or-isolated',
-  'no-conflicts',
-  'independent-verification',
-  'no-production-or-deploy-effect',
+  'no_deploy_or_production_effect',
+  'low_risk',
+  'additive_or_isolated_change',
+  'no_active_conflicting_work',
+  'fetched_current_base',
+  'required_checks_passed',
+  'independent_review_passed',
+  'actual_diff_verified',
+  'no_unresolved_human_decision',
+  'not_security_auth_billing_schema_data_provider_ai_semantics_or_visible_ui',
 ]);
 
 const normalize = (value) => value.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -297,32 +311,17 @@ function validateActionAuthority(source, file) {
   const errors = [];
   const policy = parseJson(errors, file, source);
   if (!policy) return errors;
-  if (policy.schemaVersion !== 1) errors.push(`${file}: schemaVersion must be 1`);
-  if (policy.authority !== 'orchestrator-is-single-pm') {
-    errors.push(`${file}: orchestrator must remain the single PM`);
-  }
-  if (policy.branchProtection !== 'deferred') {
-    errors.push(`${file}: branch protection must remain explicitly deferred`);
-  }
-  const actions = policy.actions && typeof policy.actions === 'object' ? policy.actions : {};
-  const expectedIds = [...AGENT_ACTIONS, 'merge', ...HUMAN_ACTIONS];
-  if (!sameMembers(Object.keys(actions), expectedIds)) {
-    errors.push(`${file}: action inventory must exactly match the canonical authority set`);
-  }
-  for (const id of AGENT_ACTIONS) {
-    if (actions[id]?.authority !== 'agent') errors.push(`${file}: ${id} must be agent-authorized`);
-  }
-  if (actions.merge?.authority !== 'conditional-agent') {
-    errors.push(`${file}: merge must use conditional-agent authority`);
-  }
-  if (!sameMembers(actions.merge?.conditions, MERGE_CONDITIONS)) {
+  if (policy.version !== '1.0.0') errors.push(`${file}: version must be 1.0.0`);
+  if (policy.default !== 'human_required') errors.push(`${file}: unknown actions must default to human_required`);
+  if (!sameMembers(policy.autonomous, AGENT_ACTIONS)) errors.push(`${file}: autonomous actions must exactly match the canonical authority set`);
+  if (!sameMembers(policy.conditional?.merge_pull_request?.all, MERGE_CONDITIONS)) {
     errors.push(
       `${file}: merge conditions must exactly encode the low-risk conditional-merge policy`,
     );
   }
-  for (const id of HUMAN_ACTIONS) {
-    if (actions[id]?.authority !== 'human') errors.push(`${file}: ${id} must be human-gated`);
-  }
+  if (policy.conditional?.merge_pull_request?.on_uncertainty !== 'human_required') errors.push(`${file}: merge uncertainty must require the human`);
+  if (!sameMembers(policy.human_required, HUMAN_ACTIONS)) errors.push(`${file}: human-gated actions must exactly match the canonical authority set`);
+  if (!sameMembers(policy.explicitly_deferred, ['github_branch_protection'])) errors.push(`${file}: branch protection must remain explicitly deferred`);
   return errors;
 }
 

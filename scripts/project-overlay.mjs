@@ -44,6 +44,45 @@ export function loadOverlay(project, rootsOverride = undefined) {
   return { overlayRoot, manifest, roots };
 }
 
+export function validatePortableOverlayLock(value) {
+  const failures = [];
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return ['portable overlay lock must be an object'];
+  const allowed = new Set(['version', 'source', 'files', 'json_sections']);
+  for (const key of Object.keys(value)) if (!allowed.has(key)) failures.push(`portable overlay lock has unexpected property: ${key}`);
+  if (value.version !== 1) failures.push('portable overlay lock version must be 1');
+  if (typeof value.source !== 'string' || !/^universal-private-orchestrator\/overlays\/[a-z0-9-]+$/u.test(value.source)) failures.push('portable overlay lock source is invalid');
+  const validateHashMap = (entries, label) => {
+    if (!entries || typeof entries !== 'object' || Array.isArray(entries)) { failures.push(`${label} must be an object`); return; }
+    for (const [relative, hash] of Object.entries(entries)) {
+      const normalized = relative.replaceAll('\\', '/');
+      if (!relative || normalized !== relative || path.posix.isAbsolute(relative) || relative === '..' || relative.startsWith('../')) failures.push(`${label} contains a non-portable path: ${relative}`);
+      if (typeof hash !== 'string' || !/^[a-f0-9]{64}$/u.test(hash)) failures.push(`${label} contains a non-SHA-256 value: ${relative}`);
+    }
+  };
+  if (!Array.isArray(value.files)) failures.push('portable overlay lock files must be an array');
+  else {
+    const seenPaths = new Set();
+    for (const entry of value.files) {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry) || Object.keys(entry).some((key) => !['path', 'sha256'].includes(key))) {
+        failures.push('portable overlay lock file entry must contain only path and sha256');
+        continue;
+      }
+      const relative = entry.path;
+      const normalized = typeof relative === 'string' ? relative.replaceAll('\\', '/') : '';
+      if (!relative || normalized !== relative || path.posix.isAbsolute(relative) || relative === '..' || relative.startsWith('../')) failures.push(`portable overlay lock files contains a non-portable path: ${relative}`);
+      if (seenPaths.has(relative)) failures.push(`portable overlay lock files contains a duplicate path: ${relative}`);
+      seenPaths.add(relative);
+      if (typeof entry.sha256 !== 'string' || !/^[a-f0-9]{64}$/u.test(entry.sha256)) failures.push(`portable overlay lock files contains a non-SHA-256 value: ${relative}`);
+    }
+  }
+  if (!value.json_sections || typeof value.json_sections !== 'object' || Array.isArray(value.json_sections)) failures.push('portable overlay lock json_sections must be an object');
+  else for (const [relative, sections] of Object.entries(value.json_sections)) {
+    if (path.posix.isAbsolute(relative) || relative.includes('\\') || relative === '..' || relative.startsWith('../')) failures.push(`portable overlay lock json_sections contains a non-portable path: ${relative}`);
+    validateHashMap(sections, `portable overlay lock json_sections ${relative}`);
+  }
+  return failures;
+}
+
 export function validateOverlay(project, rootsOverride = undefined) {
   const { overlayRoot, manifest, roots } = loadOverlay(project, rootsOverride);
   const failures = [...validateCanonical({ repoRoot, manifest })];
@@ -65,6 +104,12 @@ export function validateOverlay(project, rootsOverride = undefined) {
         if (typeof row.detectLocalOnly !== 'boolean') failures.push({ type: 'overlay', message: `Generated project file lacks local-only policy: ${row.id}` });
         const normalized = path.posix.normalize(row.sourcePath.replaceAll('\\', '/'));
         if (path.posix.isAbsolute(normalized) || normalized === '..' || normalized.startsWith('../')) failures.push({ type: 'overlay', message: `Generated project source escapes overlay: ${row.id}` });
+        if (row.destination === '.ai-organization/overlay-lock.json') {
+          try {
+            const lock = readJson(path.join(overlayRoot, 'project-files', normalized));
+            for (const message of validatePortableOverlayLock(lock)) failures.push({ type: 'overlay', message });
+          } catch (error) { failures.push({ type: 'overlay', message: `Portable overlay lock is unreadable: ${error.message}` }); }
+        }
       }
     }
     for (const mapping of manifest.mappings) {
@@ -104,8 +149,16 @@ function cli(argv) {
     roots[loaded.manifest.rootToken] = path.resolve(root);
   }
   const failures = validateOverlay(project, roots);
+  let portableCaptureReplacementValid = false;
+  if (command === 'capture' && roots[loaded.manifest.rootToken]) {
+    const replacement = path.join(roots[loaded.manifest.rootToken], '.ai-organization', 'overlay-lock.json');
+    if (fs.existsSync(replacement)) {
+      try { portableCaptureReplacementValid = validatePortableOverlayLock(readJson(replacement)).length === 0; }
+      catch { portableCaptureReplacementValid = false; }
+    }
+  }
   const blockingFailures = command === 'capture'
-    ? failures.filter((failure) => failure.type !== 'empty-source')
+    ? failures.filter((failure) => failure.type !== 'empty-source' && !(portableCaptureReplacementValid && failure.type === 'overlay' && failure.message?.startsWith('portable overlay lock ')))
     : failures;
   if (blockingFailures.length > 0) {
     printFailures(blockingFailures);
