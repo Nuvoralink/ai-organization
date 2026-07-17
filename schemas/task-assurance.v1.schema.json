@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nuvoralink.internal/schemas/task-assurance.v1.schema.json",
+  "title": "Cross-vendor task assurance contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "product_intent",
+    "settled_decisions",
+    "scope",
+    "paths",
+    "risk",
+    "authorities",
+    "blast_radius",
+    "procedure",
+    "acceptance",
+    "proofs",
+    "action_authority",
+    "completion"
+  ],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[A-Z0-9][A-Z0-9._-]+$" },
+    "product_intent": { "type": "string", "minLength": 10 },
+    "settled_decisions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["in", "out", "too_little", "too_much"],
+      "properties": {
+        "in": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "out": { "type": "array", "items": { "type": "string" } },
+        "too_little": { "type": "string", "minLength": 1 },
+        "too_much": { "type": "string", "minLength": 1 }
+      }
+    },
+    "paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["read", "edit", "read_only", "output"],
+      "properties": {
+        "read": { "$ref": "#/$defs/pathList" },
+        "edit": { "$ref": "#/$defs/pathList" },
+        "read_only": { "$ref": "#/$defs/pathList" },
+        "output": { "$ref": "#/$defs/pathList" }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["level", "classes", "reasons"],
+      "properties": {
+        "level": { "enum": ["low", "medium", "high", "critical"] },
+        "classes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["frontend", "auth", "security", "privacy", "billing", "database", "data_migration", "provider", "ai_semantics", "production", "destructive", "external_contact", "architecture", "documentation", "control_plane"] }
+        },
+        "reasons": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+      }
+    },
+    "authorities": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "blast_radius": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["feeders", "producers", "transformers", "persistence", "validators", "consumers", "surfaces", "retirements"],
+      "properties": {
+        "feeders": { "$ref": "#/$defs/stringList" },
+        "producers": { "$ref": "#/$defs/stringList" },
+        "transformers": { "$ref": "#/$defs/stringList" },
+        "persistence": { "$ref": "#/$defs/stringList" },
+        "validators": { "$ref": "#/$defs/stringList" },
+        "consumers": { "$ref": "#/$defs/stringList" },
+        "surfaces": { "$ref": "#/$defs/stringList" },
+        "retirements": { "$ref": "#/$defs/stringList" }
+      }
+    },
+    "procedure": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "acceptance": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "proofs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "proves", "command", "surface", "authority", "killer_mutation", "required"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "proves": { "type": "string", "minLength": 1 },
+          "command": { "type": "string", "minLength": 1 },
+          "surface": { "type": "string", "minLength": 1 },
+          "authority": { "type": "string", "minLength": 1 },
+          "killer_mutation": { "type": "string", "minLength": 1 },
+          "required": { "type": "boolean" }
+        }
+      }
+    },
+    "action_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed", "conditional", "human_required"],
+      "properties": {
+        "allowed": { "$ref": "#/$defs/stringList" },
+        "conditional": { "$ref": "#/$defs/stringList" },
+        "human_required": { "$ref": "#/$defs/stringList" }
+      }
+    },
+    "completion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tier", "honesty_clause", "unreached_surfaces", "doctrine_loop"],
+      "properties": {
+        "tier": { "enum": ["analysis", "implemented", "locally_verified", "review_verified", "deployed_verified"] },
+        "honesty_clause": { "type": "string", "minLength": 1 },
+        "unreached_surfaces": { "$ref": "#/$defs/stringList" },
+        "doctrine_loop": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "$defs": {
+    "stringList": { "type": "array", "items": { "type": "string" } },
+    "pathList": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+  }
+}

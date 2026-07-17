@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "deny": {
+    "segments": [
+      ".git",
+      ".env",
+      "credentials",
+      "secrets",
+      "sessions",
+      "history",
+      "logs",
+      "telemetry",
+      "cache",
+      ".cache",
+      "node_modules",
+      "dist",
+      "build",
+      "coverage",
+      "__pycache__"
+    ],
+    "filenames": [
+      ".credentials.json",
+      "auth.json",
+      "credentials.json",
+      "settings.local.json",
+      "config.toml",
+      "default.rules"
+    ],
+    "prefixes": [".env"],
+    "extensions": [".pem", ".key", ".pfx", ".p12", ".log", ".sqlite", ".db", ".pyc", ".pyo"]
+  },
+  "mappings": []
+}

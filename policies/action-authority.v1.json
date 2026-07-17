@@ -1,0 +1,48 @@
+{
+  "$schema": "../schemas/action-authority.v1.schema.json",
+  "version": "1.0.0",
+  "default": "human_required",
+  "autonomous": [
+    "read_in_scope",
+    "analyze_and_plan",
+    "edit_in_isolated_workspace",
+    "run_local_tests_and_safe_read_only_checks",
+    "create_branch_or_worktree",
+    "commit_in_scope_changes",
+    "push_branch",
+    "open_or_update_pull_request"
+  ],
+  "conditional": {
+    "merge_pull_request": {
+      "all": [
+        "no_deploy_or_production_effect",
+        "low_risk",
+        "additive_or_isolated_change",
+        "no_active_conflicting_work",
+        "fetched_current_base",
+        "required_checks_passed",
+        "independent_review_passed",
+        "actual_diff_verified",
+        "no_unresolved_human_decision",
+        "not_security_auth_billing_schema_data_provider_ai_semantics_or_visible_ui"
+      ],
+      "on_uncertainty": "human_required"
+    }
+  },
+  "human_required": [
+    "merge_that_deploys_or_mutates_production",
+    "deploy_or_publish",
+    "production_write_or_configuration_change",
+    "database_or_data_migration",
+    "destructive_or_irreversible_action",
+    "billed_action_or_purchase",
+    "external_message_or_contact",
+    "secret_or_credential_change",
+    "close_product_scope_decision",
+    "approve_visible_design_or_copy_in_context",
+    "close_material_architecture_decision"
+  ],
+  "explicitly_deferred": [
+    "github_branch_protection"
+  ]
+}

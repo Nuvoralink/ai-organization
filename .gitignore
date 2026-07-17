@@ -1,0 +1,26 @@
+# This repository is an orchestration control plane, never a secret store.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+*.log
+*.sqlite*
+*.db
+credentials*
+secrets*
+tokens*
+sessions/
+history/
+logs/
+telemetry/
+cache/
+.cache/
+node_modules/
+dist/
+build/
+coverage/
+artifacts/rendered/
+registries/project-roots.local.json

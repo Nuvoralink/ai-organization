@@ -1,0 +1,72 @@
+{
+  "version": "1.0.0",
+  "default_required": [
+    "task_assurance_contract",
+    "blast_radius_both_directions",
+    "test_with_killer_mutation",
+    "actual_diff_review",
+    "doctrine_loop_closure"
+  ],
+  "classes": {
+    "control_plane": {
+      "required_roles": ["implementation-reviewer"],
+      "required_proofs": ["schema_validation", "local_only_mutation", "drift_mutation", "collision_mutation", "installed_parity"],
+      "human_gate": []
+    },
+    "frontend": {
+      "required_roles": ["claude-frontend-implementer", "ui-verifier"],
+      "required_proofs": ["claude_design_approval_reference", "rendered_breakpoint_state_matrix"],
+      "human_gate": ["approve_visible_design_or_copy_in_context"]
+    },
+    "architecture": {
+      "required_roles": ["premise-and-architecture-challenger", "implementation-reviewer"],
+      "required_proofs": ["decision_matrix", "authority_map", "bypass_scan", "retirement_plan"],
+      "human_gate": ["close_material_architecture_decision"]
+    },
+    "auth": {
+      "required_roles": ["security-auditor"],
+      "required_proofs": ["server_authorization", "object_scope_authorization", "cross_tenant_non_disclosure"],
+      "human_gate": []
+    },
+    "security": {
+      "required_roles": ["security-auditor"],
+      "required_proofs": ["threat_path_review", "untrusted_input_validation", "secret_and_pii_redaction"],
+      "human_gate": []
+    },
+    "database": {
+      "required_roles": ["implementation-reviewer", "performance-auditor"],
+      "required_proofs": ["migration_and_rollback_plan", "tenant_scope_and_rls", "sequential_and_concurrent_idempotency", "query_plan_or_boundedness"],
+      "human_gate": ["database_or_data_migration"]
+    },
+    "billing": {
+      "required_roles": ["security-auditor"],
+      "required_proofs": ["server_recomputed_amounts", "idempotency", "metering_and_audit"],
+      "human_gate": ["billed_action_or_purchase"]
+    },
+    "provider": {
+      "required_roles": ["security-auditor", "implementation-reviewer"],
+      "required_proofs": ["official_contract_or_repo_truth", "messy_payload_cases", "signature_and_replay_protection", "redaction"],
+      "human_gate": []
+    },
+    "ai_semantics": {
+      "required_roles": ["implementation-reviewer"],
+      "required_proofs": ["decision_matrix", "grounding_and_provenance", "bounded_field_repair", "qualitative_eval", "cost_metering"],
+      "human_gate": []
+    },
+    "production": {
+      "required_roles": ["release-verifier"],
+      "required_proofs": ["deployment_identity", "real_readiness", "deployed_core_flow", "error_monitor_sweep", "rollback_or_forward_fix"],
+      "human_gate": ["deploy_or_publish", "production_write_or_configuration_change", "merge_that_deploys_or_mutates_production"]
+    },
+    "destructive": {
+      "required_roles": ["implementation-reviewer"],
+      "required_proofs": ["target_identity", "backup_or_recovery", "dry_run", "blast_radius"],
+      "human_gate": ["destructive_or_irreversible_action"]
+    },
+    "external_contact": {
+      "required_roles": [],
+      "required_proofs": ["recipient_and_content_preview"],
+      "human_gate": ["external_message_or_contact"]
+    }
+  }
+}

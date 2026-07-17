@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nuvoralink.internal/schemas/control-plane-manifest.v1.schema.json",
+  "title": "Control-plane artifact manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "deny", "mappings"],
+  "properties": {
+    "version": { "type": "string" },
+    "deny": {
+      "type": "object",
+      "required": ["segments", "filenames", "prefixes", "extensions"],
+      "properties": {
+        "segments": { "$ref": "#/$defs/stringList" },
+        "filenames": { "$ref": "#/$defs/stringList" },
+        "prefixes": { "$ref": "#/$defs/stringList" },
+        "extensions": { "$ref": "#/$defs/stringList" }
+      }
+    },
+    "mappings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "source", "captureFrom", "destinations", "mode", "ownership", "allowedExtensions", "detectLocalOnly", "lock"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]+$" },
+          "source": { "type": "string" },
+          "captureFrom": { "type": "string", "pattern": "^\\$\\{[^}]+\\}(?:/.*)?$" },
+          "destinations": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^\\$\\{[^}]+\\}(?:/.*)?$" } },
+          "mode": { "enum": ["file", "tree"] },
+          "ownership": { "enum": ["canonical", "generated", "external-state", "reference"] },
+          "allowedExtensions": { "$ref": "#/$defs/stringList" },
+          "exclude": { "$ref": "#/$defs/stringList" },
+          "detectLocalOnly": { "type": "boolean" },
+          "allowRootLink": { "type": "boolean" },
+          "lock": { "type": "string", "pattern": "^\\$\\{[^}]+\\}(?:/.*)?$" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "stringList": { "type": "array", "uniqueItems": true, "items": { "type": "string" } }
+  }
+}

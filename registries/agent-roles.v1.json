@@ -1,0 +1,126 @@
+{
+  "$schema": "../schemas/agent-role-registry.v1.schema.json",
+  "version": "1.0.0",
+  "roles": [
+    {
+      "id": "orchestrator",
+      "purpose": "Own the task contract, route bounded work, reconcile evidence, and decide whether the requested outcome is genuinely closed.",
+      "trigger": ["every non-trivial multi-step task"],
+      "mode": "orchestrate",
+      "strength": "strongest_available",
+      "vendor_preference": "either",
+      "incompatible_with": ["sole-independent-reviewer-of-own-change"],
+      "required_outputs": ["task assurance contract", "decision log", "verified completion report", "doctrine-loop routing"]
+    },
+    {
+      "id": "premise-and-architecture-challenger",
+      "purpose": "Challenge whether the task should exist, whether the proposed location and authority are correct, and whether the plan is a workaround before implementation begins.",
+      "trigger": ["material architecture", "new system or authority", "workaround concern", "high blast radius", "uncertain product necessity"],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "either",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": ["premise verdict", "at least two options", "best rejected argument", "root-fix recommendation", "unresolved human decisions"]
+    },
+    {
+      "id": "codex-backend-implementer",
+      "purpose": "Implement bounded non-visual backend, infrastructure, gate, data, and token-intensive slices from a settled self-contained brief.",
+      "trigger": ["settled backend or non-visual implementation"],
+      "mode": "implement",
+      "strength": "implementation",
+      "vendor_preference": "codex",
+      "incompatible_with": ["independent-reviewer-for-own-diff", "unapproved-visible-frontend"],
+      "required_outputs": ["actual diff", "real command exits", "proof artifacts", "unreached surfaces", "doctrine-loop findings"]
+    },
+    {
+      "id": "claude-frontend-implementer",
+      "purpose": "Implement visible frontend work only after an approved Claude Design reference, using the project design authority and rendered verification contract.",
+      "trigger": ["approved visible frontend implementation"],
+      "mode": "implement",
+      "strength": "implementation",
+      "vendor_preference": "claude",
+      "incompatible_with": ["implementation-before-design-approval", "independent-reviewer-for-own-diff"],
+      "required_outputs": ["design approval reference", "actual diff", "rendered breakpoint evidence", "state coverage", "doctrine-loop findings"]
+    },
+    {
+      "id": "sprint-kickoff-auditor",
+      "purpose": "Verify prerequisites, settled decisions, dependency ordering, decision linkage, worktree base, and task-contract completeness before a sprint or large slice starts.",
+      "trigger": ["sprint start", "large implementation phase", "parallel work launch"],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "either",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": ["kickoff verdict", "dependency gaps", "decision linkage proof", "dispatch readiness"]
+    },
+    {
+      "id": "implementation-reviewer",
+      "purpose": "Adversarially compare a committed implementation with its settled plan, actual authority graph, blast radius, and required proof without trusting status claims.",
+      "trigger": ["after implementation before merge"],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "either",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": ["findings by severity", "plan-to-diff coverage", "caller/feeder sweep", "test-bite assessment", "honesty clause"]
+    },
+    {
+      "id": "functionality-parity-auditor",
+      "purpose": "Prove the delivery chain is decided, built, wired, called, reachable, and represented on every required consumer surface in both dependency directions.",
+      "trigger": ["backend contract without matching consumer", "cross-layer feature", "sprint close"],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "either",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": ["delivery-chain matrix", "unwired endpoints or jobs", "missing surfaces", "retirement gaps"]
+    },
+    {
+      "id": "ui-verifier",
+      "purpose": "Verify an approved visible implementation on the rendered surface at named breakpoints, states, and interactions rather than relying on static checks.",
+      "trigger": ["any visible frontend change before merge"],
+      "mode": "verify_runtime",
+      "strength": "strongest_available",
+      "vendor_preference": "claude",
+      "incompatible_with": ["unapproved-design"],
+      "required_outputs": ["approved Claude Design reference", "rendered evidence", "breakpoint/state matrix", "visual findings"]
+    },
+    {
+      "id": "security-auditor",
+      "purpose": "Adversarially review authorization, tenant isolation, privacy, secrets, untrusted input, abuse paths, provider boundaries, and sensitive logging.",
+      "trigger": ["auth", "security", "privacy", "billing", "uploads", "provider", "tenant-scoped data", "secrets"],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "either",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": ["threat-path findings", "cross-tenant probes", "redaction evidence", "remaining risk"]
+    },
+    {
+      "id": "performance-auditor",
+      "purpose": "Inspect hot paths for unbounded reads, N+1 behavior, missing indexes, render storms, bundle growth, queue pressure, and cost-capacity regressions.",
+      "trigger": ["hot-path slice", "data-volume change", "sprint close"],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "either",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": ["hot-path inventory", "boundedness proof", "capacity risks", "performance evidence"]
+    },
+    {
+      "id": "user-journey-auditor",
+      "purpose": "Walk the product from the target user's seat across discovery, first use, completion, recovery, undo, and later modification to expose dead ends and silent outcomes.",
+      "trigger": ["sprint close", "new product workflow", "before major UX slice"],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "either",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": ["persona-moment inventory", "journey gaps", "recovery and undo assessment", "decision candidates"]
+    },
+    {
+      "id": "release-verifier",
+      "purpose": "Verify deployment status, readiness semantics, one real deployed core flow, monitoring/error evidence, and skipped-proof truth before release closure.",
+      "trigger": ["after deployment", "release candidate", "production incident recovery"],
+      "mode": "verify_runtime",
+      "strength": "strongest_available",
+      "vendor_preference": "either",
+      "incompatible_with": ["deployed-verified-with-skipped-required-proof"],
+      "required_outputs": ["deployment identity", "readiness output", "core-flow proof", "error/monitor evidence", "release verdict"]
+    }
+  ]
+}
