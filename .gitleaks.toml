@@ -1,0 +1,9 @@
+title = "Nuvoralink AI organization control-plane secret scanning"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Portable overlay lock files contain only normalized paths and SHA-256 integrity hashes."
+targetRules = ["generic-api-key"]
+paths = ['''^overlays/(auxara-dialer|coachai)/project-files/\.ai-organization/overlay-lock\.json$''']

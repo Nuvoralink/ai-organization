@@ -244,7 +244,7 @@ export function validateCanonical({ repoRoot, manifest }) {
   }
   const tracked = spawnSync('git', ['ls-files', '-z'], { cwd: repoRoot, encoding: 'utf8' });
   if (tracked.status === 0 && !tracked.error) {
-    const allowedRoots = new Set(['.gitattributes', '.github', '.gitignore', 'AGENTS.md', 'CLAUDE.md', 'README.md', 'artifacts', 'automations', 'control-plane.manifest.json', 'core', 'dependencies', 'docs', 'global', 'overlays', 'package-lock.json', 'package.json', 'policies', 'registries', 'schemas', 'scripts', 'skills', 'tests']);
+    const allowedRoots = new Set(['.gitattributes', '.github', '.gitignore', '.gitleaks.toml', 'AGENTS.md', 'CLAUDE.md', 'README.md', 'artifacts', 'automations', 'control-plane.manifest.json', 'core', 'dependencies', 'docs', 'global', 'overlays', 'package-lock.json', 'package.json', 'policies', 'registries', 'schemas', 'scripts', 'skills', 'tests']);
     const boundaryMapping = { allowedExtensions: [], exclude: [] };
     for (const relative of tracked.stdout.split('\0').filter(Boolean)) {
       const normalized = normalizeRelative(relative);
