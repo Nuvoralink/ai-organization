@@ -129,6 +129,25 @@ test('Proves: legacy normalized-only locks gain exact-byte provenance while the 
   assert.match(Object.values(migratedLock.files)[0].rawHash, /^[a-f0-9]{64}$/u);
 });
 
+test('Proves: a source-absent legacy lock without exact-byte provenance fails closed; Test type: destructive-boundary mutation; Surface: installer retirement; Authority: prior install raw hash; Killer mutation: authorize deletion from a normalized-only historical lock after the canonical source disappears; Gated command: npm test', () => {
+  const f = fixture();
+  const canonicalBase = path.join(f.repoRoot, 'canonical', 'rules', 'base.md');
+  const canonicalRetired = path.join(f.repoRoot, 'canonical', 'rules', 'retired.md');
+  const installedRetired = path.join(f.home, '.claude', 'rules', 'retired.md');
+  const lockPath = path.join(f.home, '.nuvoralink-control-plane', 'lock.json');
+  fs.writeFileSync(canonicalBase, '# Base\n');
+  fs.writeFileSync(canonicalRetired, '# Retire me\n');
+  runInstall({ ...f, dryRun: false });
+
+  const legacyLock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
+  for (const entry of Object.values(legacyLock.files)) delete entry.rawHash;
+  fs.writeFileSync(lockPath, `${JSON.stringify(legacyLock, null, 2)}\n`);
+  fs.unlinkSync(canonicalRetired);
+
+  assert.throws(() => runInstall({ ...f, dryRun: false }), /Local-only managed file: claude-rules\/retired\.md/u);
+  assert.equal(fs.readFileSync(installedRetired, 'utf8'), '# Retire me\n');
+});
+
 test('Proves: dry-run never writes; Test type: negative; Surface: installer; Authority: action plan; Killer mutation: missing destination remains missing', () => {
   const f = fixture();
   fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
@@ -378,6 +397,23 @@ test('Proves: a successful install can be rolled back to the prior lock and byte
   runRollback({ manifest: f.manifest, roots: f.roots, installId: second.installId });
   assert.equal(fs.readFileSync(installed, 'utf8'), '# Version one\n');
   assert.equal(fs.readFileSync(path.join(f.home, '.nuvoralink-control-plane', 'lock.json'), 'utf8'), firstLock);
+});
+
+test('Proves: rollback refuses a line-ending-only byte change after installation; Test type: destructive-boundary mutation; Surface: rollback; Authority: snapshot raw hash; Killer mutation: validate rollback with the normalized portability hash and overwrite CRLF-modified bytes; Gated command: npm test', () => {
+  const f = fixture();
+  const canonical = path.join(f.repoRoot, 'canonical', 'rules', 'base.md');
+  const installed = path.join(f.home, '.claude', 'rules', 'base.md');
+  fs.writeFileSync(canonical, '# Version one\n');
+  runInstall({ ...f, dryRun: false });
+  fs.writeFileSync(canonical, '# Version two\n');
+  const second = runInstall({ ...f, dryRun: false });
+
+  fs.writeFileSync(installed, '# Version two\r\n');
+  assert.throws(
+    () => runRollback({ manifest: f.manifest, roots: f.roots, installId: second.installId }),
+    /Rollback refused; installed target is dirty/u
+  );
+  assert.equal(fs.readFileSync(installed, 'utf8'), '# Version two\r\n');
 });
 
 test('Proves: a mid-install failure restores every prior byte; Test type: failure injection; Surface: installer transaction; Authority: snapshot journal; Killer mutation: throw after the first write; Gated command: npm test', () => {
