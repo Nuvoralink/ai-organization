@@ -48,7 +48,7 @@
     },
     {
       "path": ".ai-organization/runtime/core/authority/assess-action.mjs",
-      "sha256": "d110cf335e4356ec40b38f9385c07e5c8918dd5251181f135e812d2e16a0f81b"
+      "sha256": "79587bcd28275d7a1823e958efd3d6fef8d96b5a388da1f02ea29504d3faae6c"
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/README.md",
@@ -248,7 +248,7 @@
     },
     {
       "path": "scripts/check-agent-control-plane.mjs",
-      "sha256": "0aa3ca1a4ffa335250a10fc71f1564a37c99825a44351aed761ffb8437623177"
+      "sha256": "8aa6272949ec31099afbaddb60d525b3540e00c05b35423da590168567d18845"
     },
     {
       "path": "scripts/check-doc-code-drift.mjs",
@@ -292,7 +292,7 @@
     },
     {
       "path": "scripts/tests/controlPlaneRegression.mjs",
-      "sha256": "5e0d2bd427363dc00d3ae6138f2269fac33b67368596e9ec85213fe511d16718"
+      "sha256": "15f57d80465e6269bd8d425c253e7991d5087694ac91ce7dc88091ed9fe8bba6"
     },
     {
       "path": "scripts/tests/fixture-helpers.mjs",

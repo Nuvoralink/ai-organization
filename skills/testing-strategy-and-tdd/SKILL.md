@@ -51,6 +51,23 @@ For external or user-supplied data adapters such as imports, parsers, webhooks, 
 
 The test should fail if the adapter silently overwrites data, falls back to the wrong authority, or accepts unsafe structure as if it were confirmed truth.
 
+## Test Network Boundary
+
+Unit and local-integration test processes default-deny public network egress. Mocking the expected
+provider call is not enough: a forgotten mock, a new SDK transport, or an error branch can otherwise
+send a real unauthenticated or billable request while the suite appears local.
+
+- Install the guard in the test runner's process-wide setup, before test modules execute.
+- Cover both `globalThis.fetch` and the underlying socket boundary (`node:net.Socket.connect` or the
+  runtime-equivalent), because HTTP clients and provider SDKs may bypass `fetch`.
+- Permit loopback and local IPC only. A live-provider lane is separate, explicit, credential-scoped,
+  human-gated when billed/mutating, and never enabled by a casual environment escape in the normal suite.
+- Give the guard its own tests: public fetch blocked, direct public socket blocked, loopback succeeds,
+  and the original provider test now uses an explicit fake.
+
+*Fail-state:* removing only the fetch wrapper or only the socket wrapper still leaves the boundary
+green. Killer mutations: delete each wrapper independently; its matching attack test must fail.
+
 ## Idempotency And Concurrency Proof
 
 When behavior is described as idempotent, test both:

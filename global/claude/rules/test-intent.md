@@ -32,6 +32,14 @@ For every test, name the concrete **mutation** that should make it fail (the reg
 
 **Validation claims are PATH-scoped.** A live/A-B/smoke validation claim must name the exact code path it exercised and flag every diff path it did NOT reach — "live validation done" that exercised only the unchunked/single-shot/happy variant is a false-confidence claim for the windowed/retry/fallback variants. And plumbing-level proof is never behavior proof: a regression asserting a prompt/string/payload was ASSEMBLED correctly says nothing about how the model/system BEHAVES with it (origin: CoachAI #186 — a prompt-injection tail was "validated live" single-shot while the chunked path it existed for was never exercised, hiding a timestamp double-offset hazard).
 
+**Public network is a denied test boundary.** The normal unit/local-integration runner installs a
+process-wide, default-deny egress guard before test modules load. It blocks both `globalThis.fetch`
+and direct non-loopback sockets; permitting fetch alone misses SDK/HTTP-client transports. Loopback
+and local IPC remain live. Provider tests use explicit fakes. A live-provider lane is separate,
+credential-scoped, and human-gated when billed or mutating; no ordinary env flag silently weakens the
+normal runner. The guard carries attack tests for public fetch, public socket, and loopback liveness.
+Killer mutations delete each wrapper independently and make its matching attack test red.
+
 ## 3. Forbidden shapes (a reviewer rejects these)
 - **Vacuous / tautological** — asserts something that's true by construction.
 - **Mock-the-SUT** — mocks the very thing under test, so it proves the mock, not the code.

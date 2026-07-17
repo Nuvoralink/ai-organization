@@ -4,11 +4,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
+import { validateActionPolicySemantics } from '../.ai-organization/runtime/core/authority/assess-action.mjs';
+import { validateJsonAgainstSchema } from '../.ai-organization/runtime/core/schema/validate-json-schema.mjs';
 
 const readJson = (root, rel) => JSON.parse(fs.readFileSync(path.join(root, rel), 'utf8'));
 const exists = (root, rel) => fs.existsSync(path.join(root, rel));
 const read = (root, rel) => fs.readFileSync(path.join(root, rel), 'utf8');
-const sameMembers = (actual, expected) => Array.isArray(actual) && actual.length === expected.length && [...actual].sort().every((value, index) => value === [...expected].sort()[index]);
 
 export function checkAgentControlPlane(root = process.cwd()) {
   const errors = [];
@@ -26,15 +27,8 @@ export function checkAgentControlPlane(root = process.cwd()) {
   }
 
   const action = readJson(root, '.ai-organization/policies/action-authority.v1.json');
-  const expectedAutonomous = ['read_in_scope', 'analyze_and_plan', 'edit_in_isolated_workspace', 'run_local_tests_and_safe_read_only_checks', 'create_branch_or_worktree', 'commit_in_scope_changes', 'push_branch', 'open_or_update_pull_request'];
-  if (!sameMembers(action.autonomous, expectedAutonomous)) errors.push('autonomous actions must exactly match the universal policy');
-  const conditions = ['no_deploy_or_production_effect', 'low_risk', 'additive_or_isolated_change', 'no_active_conflicting_work', 'fetched_current_base', 'required_checks_passed', 'independent_review_passed', 'actual_diff_verified', 'no_unresolved_human_decision', 'not_security_auth_billing_schema_data_provider_ai_semantics_or_visible_ui'];
-  if (!sameMembers(action.conditional?.merge_pull_request?.all, conditions)) errors.push('conditional merge conditions must exactly match the universal policy');
-  if (action.conditional?.merge_pull_request?.on_uncertainty !== 'human_required') errors.push('conditional merge uncertainty must default to human_required');
-  const human = ['merge_that_deploys_or_mutates_production', 'deploy_or_publish', 'production_write_or_configuration_change', 'database_or_data_migration', 'destructive_or_irreversible_action', 'billed_action_or_purchase', 'external_message_or_contact', 'secret_or_credential_change', 'close_product_scope_decision', 'approve_visible_design_or_copy_in_context', 'close_material_architecture_decision'];
-  if (!sameMembers(action.human_required, human)) errors.push('human gates must exactly match the universal policy');
-  if (action.default !== 'human_required') errors.push('unknown actions must default to human_required');
-  if (!action.explicitly_deferred?.includes('github_branch_protection')) errors.push('branch protection must remain explicitly deferred');
+  errors.push(...validateJsonAgainstSchema(path.join(root, '.ai-organization/schemas/action-authority.v1.schema.json'), action).map((error) => `action authority schema: ${error}`));
+  errors.push(...validateActionPolicySemantics(action).map((error) => `action authority semantics: ${error}`));
 
   const roles = readJson(root, '.ai-organization/roles.json');
   const allRoles = [...(roles.global_roles ?? []), ...(roles.project_roles ?? [])];
@@ -95,5 +89,5 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const rootArg = process.argv.indexOf('--root');
   const result = checkAgentControlPlane(rootArg >= 0 ? path.resolve(process.argv[rootArg + 1]) : process.cwd());
   if (!result.ok) { console.error(['agent-control-plane: FAIL', ...result.errors.map((e) => `- ${e}`)].join('\n')); process.exit(1); }
-  console.log(`agent-control-plane: PASS — ${result.roleCount} roles, ${result.proofProfileCount} risk profiles, exact action authority`);
+  console.log(`agent-control-plane: PASS — ${result.roleCount} roles, ${result.proofProfileCount} risk profiles, canonical action authority semantics`);
 }

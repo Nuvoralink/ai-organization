@@ -1107,10 +1107,6 @@
       "class": "reusable-skill"
     },
     {
-      "path": "skills/bootstrap-orchestrator/templates/control-plane/action-authority.json.template",
-      "class": "reusable-skill"
-    },
-    {
       "path": "skills/bootstrap-orchestrator/templates/control-plane/agent-slice.yml.template",
       "class": "reusable-skill"
     },

@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { validateJsonAgainstSchema, validateSchemaReferences } from '../../core/schema/validate-json-schema.mjs';
+import { validateActionPolicySemantics } from '../../core/authority/assess-action.mjs';
 
 const TEXT_EXTENSIONS = new Set([
   '', '.md', '.txt', '.json', '.jsonl', '.ndjson', '.yaml', '.yml', '.toml', '.mjs', '.cjs', '.js', '.ts', '.tsx',
@@ -83,7 +84,14 @@ export function classifyTrackedScope(relativeInput) {
   if (relative.startsWith('.github/')) return 'github-orchestration';
   if (relative.startsWith('artifacts/')) return ['.md', '.pptx'].includes(extension) ? 'presentation-artifact' : undefined;
   if (relative.startsWith('docs/')) return extension === '.md' ? 'documentation' : undefined;
-  if (relative.startsWith('overlays/')) return ['.md', '.mdc', '.json', '.mjs', '.js', '.yaml', '.yml', ''].includes(extension) ? 'project-orchestration-overlay' : undefined;
+  if (relative.startsWith('overlays/')) {
+    const parts = relative.split('/');
+    const overlayRelative = parts.slice(2).join('/');
+    const allowedRootFiles = new Set(['manifest.json', 'ownership.v1.json', 'profile.v1.json', 'exclusions.v1.json']);
+    const allowedSubtrees = ['automations/', 'control-plane/', 'migrations/', 'project-files/'];
+    const hasOrchestrationShape = parts.length >= 3 && (allowedRootFiles.has(overlayRelative) || allowedSubtrees.some((prefix) => overlayRelative.startsWith(prefix)));
+    return hasOrchestrationShape && ['.md', '.mdc', '.json', '.mjs', '.js', '.yaml', '.yml', ''].includes(extension) ? 'project-orchestration-overlay' : undefined;
+  }
   if (relative.startsWith('automations/')) return extension === '.json' ? 'automation-specification' : undefined;
   if (relative.startsWith('policies/')) return extension === '.json' ? 'policy' : undefined;
   if (relative.startsWith('registries/')) return extension === '.json' ? 'registry' : undefined;
@@ -381,7 +389,13 @@ function applyInstallTransaction({ operations, locks, repoRoot, failAfter = unde
     const existed = fs.existsSync(operation.target);
     const backup = `${crypto.createHash('sha256').update(operation.target.toLowerCase()).digest('hex')}.bin`;
     if (existed) fs.writeFileSync(path.join(snapshot.directory, backup), fs.readFileSync(operation.target));
-    snapshot.data.entries.push({ target: operation.target, existed, backup: existed ? backup : null, postHash: operation.sourceHash });
+    snapshot.data.entries.push({
+      target: operation.target,
+      existed,
+      backup: existed ? backup : null,
+      postExists: operation.type !== 'retire',
+      postHash: operation.type === 'retire' ? null : operation.sourceHash
+    });
   }
   for (const snapshot of snapshots.values()) writeAtomic(path.join(snapshot.directory, 'snapshot.json'), `${JSON.stringify(snapshot.data, null, 2)}\n`);
 
@@ -389,8 +403,13 @@ function applyInstallTransaction({ operations, locks, repoRoot, failAfter = unde
   try {
     for (const operation of writes) {
       if (failAfter !== undefined && applied >= failAfter) throw new Error(`Injected install failure after ${applied} writes`);
-      writeAtomic(operation.target, operation.rendered);
-      locks.get(operation.lockPath).files[operation.key] = { hash: operation.sourceHash, destination: operation.destinationTemplate, relative: operation.relative };
+      if (operation.type === 'retire') {
+        fs.unlinkSync(operation.target);
+        delete locks.get(operation.lockPath).files[operation.key];
+      } else {
+        writeAtomic(operation.target, operation.rendered);
+        locks.get(operation.lockPath).files[operation.key] = { hash: operation.sourceHash, destination: operation.destinationTemplate, relative: operation.relative };
+      }
       applied += 1;
     }
     for (const [lockPath, lock] of locks) {
@@ -431,8 +450,12 @@ export function runRollback({ manifest, roots, installId: requestedId = undefine
     const snapshot = readJson(snapshotFile);
     invariant(snapshot.status === 'applied', `Snapshot is not rollback-eligible: ${id}/${snapshot.status}`);
     for (const entry of snapshot.entries) {
-      invariant(fs.existsSync(entry.target), `Rollback refused; installed target is missing: ${entry.target}`);
-      invariant(hashFile(entry.target) === entry.postHash, `Rollback refused; installed target is dirty: ${entry.target}`);
+      if (entry.postExists === false) {
+        invariant(!fs.existsSync(entry.target), `Rollback refused; retired target was recreated: ${entry.target}`);
+      } else {
+        invariant(fs.existsSync(entry.target), `Rollback refused; installed target is missing: ${entry.target}`);
+        invariant(hashFile(entry.target) === entry.postHash, `Rollback refused; installed target is dirty: ${entry.target}`);
+      }
     }
     selected.push({ directory, snapshotFile, snapshot });
   }
@@ -558,7 +581,25 @@ export function runInstall({ repoRoot, manifest, roots, dryRun = false, adoptExi
       }
       const destinationFiles = collectFiles(destinationRoot, manifest, { ...mapping, allowRootLink: false });
       if (mapping.detectLocalOnly) {
-        for (const relative of destinationFiles.keys()) if (!sourceFiles.has(relative)) conflicts.push(`Local-only managed file: ${mapping.id}/${relative}`);
+        for (const [relative, current] of destinationFiles) {
+          if (sourceFiles.has(relative)) continue;
+          const key = lockKey(mapping, destinationTemplate, relative);
+          const installedHash = lock.files[key]?.hash;
+          if (installedHash && hashFile(current) === installedHash) {
+            operations.push({
+              type: 'retire',
+              mapping: mapping.id,
+              relative,
+              target: current,
+              destinationTemplate,
+              lockPath,
+              key,
+              sourceHash: null
+            });
+          } else {
+            conflicts.push(`Local-only managed file: ${mapping.id}/${relative}`);
+          }
+        }
       }
       for (const [relative, source] of sourceFiles) {
         const target = mapping.mode === 'file' ? destinationRoot : path.join(destinationRoot, relative);
@@ -588,29 +629,7 @@ export function runInstall({ repoRoot, manifest, roots, dryRun = false, adoptExi
 }
 
 export function validateActionPolicy(policy) {
-  const problems = [];
-  const requiredAutonomous = [
-    'read_in_scope', 'analyze_and_plan', 'edit_in_isolated_workspace', 'run_local_tests_and_safe_read_only_checks',
-    'create_branch_or_worktree', 'commit_in_scope_changes', 'push_branch', 'open_or_update_pull_request'
-  ];
-  const requiredHuman = [
-    'merge_that_deploys_or_mutates_production', 'deploy_or_publish', 'production_write_or_configuration_change',
-    'database_or_data_migration', 'destructive_or_irreversible_action', 'billed_action_or_purchase',
-    'external_message_or_contact', 'secret_or_credential_change', 'close_product_scope_decision',
-    'approve_visible_design_or_copy_in_context', 'close_material_architecture_decision'
-  ];
-  const requiredMergeConditions = [
-    'no_deploy_or_production_effect', 'low_risk', 'additive_or_isolated_change', 'no_active_conflicting_work',
-    'fetched_current_base', 'required_checks_passed', 'independent_review_passed', 'actual_diff_verified',
-    'no_unresolved_human_decision', 'not_security_auth_billing_schema_data_provider_ai_semantics_or_visible_ui'
-  ];
-  if (policy.default !== 'human_required') problems.push('Action authority must fail closed to human_required');
-  for (const action of requiredAutonomous) if (!policy.autonomous?.includes(action)) problems.push(`Autonomous action is missing: ${action}`);
-  for (const action of requiredHuman) if (!policy.human_required?.includes(action)) problems.push(`Human-required action is missing: ${action}`);
-  for (const condition of requiredMergeConditions) if (!policy.conditional?.merge_pull_request?.all?.includes(condition)) problems.push(`Conditional merge predicate is missing: ${condition}`);
-  if (policy.conditional?.merge_pull_request?.on_uncertainty !== 'human_required') problems.push('Conditional merge must fail closed to human_required');
-  if (!policy.explicitly_deferred?.includes('github_branch_protection')) problems.push('Branch protection deferral must remain explicit');
-  return problems;
+  return validateActionPolicySemantics(policy);
 }
 
 export function validateAutomationSpecs(registry, projectSpecs) {

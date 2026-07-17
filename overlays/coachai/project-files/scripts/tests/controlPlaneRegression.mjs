@@ -31,13 +31,13 @@ test('killer mutations: missing role and unknown installed agent fail', () => {
   assert.match(checkAgentControlPlane(unknown).errors.join('\n'), /unknown installed agent/i);
 });
 
-test('killer mutations: merge/human authority and lifecycle hook weakening fail', () => {
+test('killer mutations: overlapping authority and lifecycle hook weakening fail', () => {
   const authority = organizationFixture(source);
   const actionPath = path.join(authority, '.ai-organization/policies/action-authority.v1.json');
   const action = JSON.parse(fs.readFileSync(actionPath, 'utf8'));
-  action.human_required = action.human_required.filter((x) => x !== 'deploy_or_publish');
+  action.human_required.push(action.autonomous[0]);
   writeJson(actionPath, action);
-  assert.match(checkAgentControlPlane(authority).errors.join('\n'), /human gates must exactly match/i);
+  assert.match(checkAgentControlPlane(authority).errors.join('\n'), /multiple authorities/i);
 
   const hook = organizationFixture(source);
   const settingsPath = path.join(hook, '.claude/settings.json');

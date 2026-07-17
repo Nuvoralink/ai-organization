@@ -1,12 +1,14 @@
 // Claude Code lifecycle hook router. Reads stdin exactly once, then dispatches by hook_event_name.
 // Blocking events use exit 2 per the official Claude hooks contract; observation-only events never block.
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
+import path from 'node:path';
 import {
   appendTelemetry,
   hashSummary,
+  hashIdentifier,
   recordTaskCompletionTier,
   recordSessionStart,
   sessionDurationMs,
@@ -20,7 +22,10 @@ import {
   formatOrchestrationState,
   resolveGitRoot,
 } from './orchestration-state.mjs';
-import { validateTaskContract as validateUniversalTaskContract } from '../.ai-organization/runtime/core/lifecycle/task-governor.mjs';
+import {
+  validateCompletion as validateUniversalCompletion,
+  validateTaskContract as validateUniversalTaskContract,
+} from '../.ai-organization/runtime/core/lifecycle/task-governor.mjs';
 
 const REQUIRED_BRIEF_SECTIONS = Object.freeze([
   { name: 'Context', aliases: ['context'] },
@@ -42,6 +47,35 @@ const REQUIRED_REPORT_SECTIONS = Object.freeze([
   { name: 'Honesty clause', aliases: ['honesty clause'] },
 ]);
 const STDERR_LIMIT = 12_000;
+const ASSURANCE_STATE_VERSION = 1;
+
+function assuranceStatePath(taskId, telemetryDir) {
+  const taskHash = hashIdentifier(taskId);
+  return taskHash ? path.join(path.dirname(telemetryDir), 'agent-task-assurance', `task-${taskHash}.json`) : undefined;
+}
+
+function recordUniversalTaskContract(taskId, contract, telemetryDir) {
+  const statePath = assuranceStatePath(taskId, telemetryDir);
+  if (!statePath) throw new Error('task id is unavailable');
+  mkdirSync(path.dirname(statePath), { recursive: true });
+  writeFileSync(statePath, `${JSON.stringify({ schema_version: ASSURANCE_STATE_VERSION, contract })}\n`, { encoding: 'utf8', mode: 0o600 });
+}
+
+function universalTaskContract(taskId, telemetryDir) {
+  const statePath = assuranceStatePath(taskId, telemetryDir);
+  if (!statePath) return undefined;
+  try {
+    const state = JSON.parse(readFileSync(statePath, 'utf8'));
+    return state?.schema_version === ASSURANCE_STATE_VERSION ? state.contract : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function clearUniversalTaskContract(taskId, telemetryDir) {
+  const statePath = assuranceStatePath(taskId, telemetryDir);
+  if (statePath) rmSync(statePath, { force: true });
+}
 
 function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -67,6 +101,25 @@ function structuredMarker(text, marker) {
   const line = String(text ?? '').split(/\r?\n/).find((candidate) => candidate.startsWith(marker));
   if (!line) return null;
   try { return JSON.parse(line.slice(marker.length).trim()); } catch { return null; }
+}
+
+function npmGateFromProofCommand(command) {
+  return /^npm run ([A-Za-z0-9:_-]+)$/u.exec(command ?? '')?.[1];
+}
+
+function validateAdapterProofCommands(contract, tier) {
+  const failures = [];
+  for (const proof of (contract?.proofs ?? []).filter((candidate) => candidate.required)) {
+    if (proof.command === 'internal:read-only-worktree-fingerprint') {
+      if (tier !== 'read-only') failures.push(`${proof.id}: internal read-only proof is valid only for read-only tasks`);
+      continue;
+    }
+    if (!npmGateFromProofCommand(proof.command)) failures.push(`${proof.id}: proof command must be "npm run <script>" or the read-only internal proof`);
+  }
+  if (tier === 'read-only' && !(contract?.proofs ?? []).some((proof) => proof.required && proof.command === 'internal:read-only-worktree-fingerprint')) {
+    failures.push('read-only tasks require internal:read-only-worktree-fingerprint');
+  }
+  return failures;
 }
 
 function isExplicitSectionLine(line, aliases) {
@@ -192,6 +245,76 @@ function runGit(args, cwd, timeout = 10_000) {
   });
 }
 
+function runNpmGate(gate, cwd, timeout = 120_000) {
+  const executable = process.platform === 'win32' ? (process.env.ComSpec ?? 'cmd.exe') : 'npm';
+  const args = process.platform === 'win32' ? ['/d', '/s', '/c', 'npm', 'run', gate] : ['run', gate];
+  const result = spawnSync(executable, args, {
+    cwd,
+    encoding: 'utf8',
+    env: { ...process.env, CALL_DROP_GATE_STRICT: '1' },
+    timeout,
+    windowsHide: true,
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  return {
+    status: result.status ?? 1,
+    output: `${result.stdout ?? ''}${result.stderr ?? ''}${result.error ? `\n${result.error.message}` : ''}`.slice(-3_000),
+  };
+}
+
+function runUniversalContractProofs(contract, { cwd, projectGateResult, readOnlyFingerprintPassed = false }) {
+  const proofEvidence = [];
+  const failures = [];
+  const projectFailures = new Map((projectGateResult?.failures ?? []).map((failure) => [failure.gate, failure]));
+  for (const proof of (contract?.proofs ?? []).filter((candidate) => candidate.required)) {
+    let status;
+    let output = '';
+    if (proof.command === 'internal:read-only-worktree-fingerprint') {
+      status = readOnlyFingerprintPassed ? 0 : 1;
+      if (status !== 0) output = 'read-only worktree fingerprint did not match the accepted baseline';
+    } else {
+      const gate = npmGateFromProofCommand(proof.command);
+      if (!gate) {
+        status = 1;
+        output = 'unsupported proof command';
+      } else if (projectGateResult?.gates?.includes(gate)) {
+        const failed = projectFailures.get(gate);
+        status = failed ? (failed.status ?? 1) : 0;
+        output = failed?.output ?? '';
+      } else {
+        const result = runNpmGate(gate, cwd);
+        status = result.status;
+        output = result.output;
+      }
+    }
+    proofEvidence.push({
+      id: proof.id,
+      command: proof.command,
+      exit_code: status,
+      artifact_opened: true,
+      killer_mutation_observed: status === 0,
+    });
+    if (status !== 0) failures.push(`Universal proof ${proof.id} FAILED (${proof.command})\n${output}`);
+  }
+  return { proofEvidence, failures };
+}
+
+function universalCompletionEvidence(contract, changedFiles, proofEvidence) {
+  const reviewRequired = ['review_verified', 'deployed_verified'].includes(contract.completion?.tier);
+  return {
+    task_id: contract.id,
+    changed_files: changedFiles,
+    proofs: proofEvidence,
+    independent_review: {
+      required: reviewRequired,
+      reviewer: null,
+      verdict: reviewRequired ? 'findings' : 'not_required',
+    },
+    unreached_surfaces: contract.completion?.unreached_surfaces ?? [],
+    doctrine_loop: contract.completion?.doctrine_loop ?? 'none',
+  };
+}
+
 function gitOutput(args, cwd) {
   const result = runGit(args, cwd);
   if (result.status !== 0 || result.error) {
@@ -312,6 +435,10 @@ function handleTaskCreated(payload, telemetryDir) {
   if (universalFailures.length > 0) missing.push(`Universal task contract (${universalFailures.join('; ')})`);
   const tier = completionTier(description);
   if (!tier) missing.push('Completion tier');
+  if (universalFailures.length === 0 && tier) {
+    const proofCommandFailures = validateAdapterProofCommands(universalContract, tier);
+    if (proofCommandFailures.length > 0) missing.push(`Universal proof commands (${proofCommandFailures.join('; ')})`);
+  }
 
   let worktreeFingerprint;
   let baselineError;
@@ -325,7 +452,13 @@ function handleTaskCreated(payload, telemetryDir) {
     }
   }
 
-  const outcome = missing.length === 0 && !baselineError ? 'allow' : 'block';
+  let assuranceError;
+  if (missing.length === 0 && !baselineError) {
+    try { recordUniversalTaskContract(payload.task_id, universalContract, telemetryDir); }
+    catch (error) { assuranceError = error; }
+  }
+
+  const outcome = missing.length === 0 && !baselineError && !assuranceError ? 'allow' : 'block';
   if (outcome === 'allow') {
     safelyRecordTaskCompletionTier(payload.task_id, tier, telemetryDir, worktreeFingerprint);
   }
@@ -347,6 +480,9 @@ function handleTaskCreated(payload, telemetryDir) {
     block(
       `[lifecycle-hook] TaskCreated blocked: unable to capture the read-only worktree baseline. ${baselineError.message}`,
     );
+  }
+  if (assuranceError) {
+    block(`[lifecycle-hook] TaskCreated blocked: unable to persist the validated universal task contract for completion. ${assuranceError.message}`);
   }
 }
 
@@ -374,11 +510,19 @@ function handleTaskCompleted(payload, telemetryDir) {
     block('[lifecycle-hook] TaskCompleted blocked: task description has no valid Completion tier.');
     return;
   }
+  const universalContract = universalTaskContract(payload.task_id, telemetryDir);
+  const storedContractFailures = validateUniversalTaskContract(universalContract);
+  if (storedContractFailures.length > 0) {
+    safelyAppendTelemetry(eventTelemetry(payload, { outcome: 'block', completionTier: tier, failedCheckCount: 1 }), telemetryDir);
+    block(`[lifecycle-hook] TaskCompleted blocked: validated universal task contract is missing or corrupt. ${storedContractFailures.join('; ')}`);
+    return;
+  }
 
   if (tier === 'read-only') {
     let currentWorktreeFingerprint;
+    let repoRoot;
     try {
-      const repoRoot = resolveGitRoot(payload.cwd ?? process.cwd());
+      repoRoot = resolveGitRoot(payload.cwd ?? process.cwd());
       if (!repoRoot) throw new Error('git worktree unavailable');
       currentWorktreeFingerprint = collectWorktreeFingerprint(repoRoot);
     } catch (error) {
@@ -426,6 +570,21 @@ function handleTaskCompleted(payload, telemetryDir) {
       );
       return;
     }
+    const universalProof = runUniversalContractProofs(universalContract, {
+      cwd: repoRoot,
+      readOnlyFingerprintPassed: true,
+    });
+    const completionEvidence = universalCompletionEvidence(universalContract, [], universalProof.proofEvidence);
+    const universalCompletionFailures = validateUniversalCompletion(universalContract, completionEvidence);
+    if (universalProof.failures.length > 0 || universalCompletionFailures.length > 0) {
+      safelyAppendTelemetry(eventTelemetry(payload, { outcome: 'block', completionTier: tier, failedCheckCount: universalProof.failures.length + universalCompletionFailures.length }), telemetryDir);
+      block([
+        '[lifecycle-hook] TaskCompleted blocked: universal completion evidence failed.',
+        ...universalProof.failures,
+        ...universalCompletionFailures.map((failure) => `Universal evidence: ${failure}`),
+      ].join('\n'));
+      return;
+    }
     safelyAppendTelemetry(
       eventTelemetry(payload, {
         outcome: 'allow',
@@ -436,6 +595,7 @@ function handleTaskCompleted(payload, telemetryDir) {
       }),
       telemetryDir,
     );
+    clearUniversalTaskContract(payload.task_id, telemetryDir);
     return;
   }
 
@@ -462,7 +622,10 @@ function handleTaskCompleted(payload, telemetryDir) {
 
   const diffFailures = diffCheckFailures(repoRoot, changed.base);
   const gateResult = runCompletionProofForFiles(changed.files, { cwd: repoRoot });
-  const failedCheckCount = diffFailures.length + gateResult.failures.length;
+  const universalProof = runUniversalContractProofs(universalContract, { cwd: repoRoot, projectGateResult: gateResult });
+  const completionEvidence = universalCompletionEvidence(universalContract, changed.files, universalProof.proofEvidence);
+  const universalCompletionFailures = validateUniversalCompletion(universalContract, completionEvidence);
+  const failedCheckCount = diffFailures.length + gateResult.failures.length + universalProof.failures.length + universalCompletionFailures.length;
   safelyAppendTelemetry(
     eventTelemetry(payload, {
       outcome: failedCheckCount === 0 ? 'allow' : 'block',
@@ -474,12 +637,17 @@ function handleTaskCompleted(payload, telemetryDir) {
     telemetryDir,
   );
 
-  if (failedCheckCount === 0) return;
+  if (failedCheckCount === 0) {
+    clearUniversalTaskContract(payload.task_id, telemetryDir);
+    return;
+  }
 
   const details = [
     ...diffFailures.map((failure) => `${failure.command} FAILED\n${failure.output}`),
     `Completion proof profiles: ${gateResult.profiles.join(', ')}`,
     ...gateResult.failures.map((failure) => `npm run ${failure.gate} FAILED\n${failure.output}`),
+    ...universalProof.failures,
+    ...universalCompletionFailures.map((failure) => `Universal evidence: ${failure}`),
   ].join('\n\n');
   block(
     '[lifecycle-hook] TaskCompleted blocked. Fix the changed-file completion checks before marking the task complete.\n' +

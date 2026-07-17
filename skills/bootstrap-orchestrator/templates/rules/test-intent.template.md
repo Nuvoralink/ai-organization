@@ -39,7 +39,15 @@ A test that passes when it should fail (mocks the SUT, asserts a tautology the s
 ## 5. Isolation — a gate/whole-tree meta-test must NEVER write fixtures into the live source tree
 A test that spawns a real gate and seeds a fixture into the LIVE source tree is flaky by construction (parallel test workers race the walk; a crashed test strands a fixture that poisons the next gate run). Build a throwaway `os.tmpdir()` scaffold, seed the fixture there, run the gate with `cwd:<scaffold>`. Reviewer-enforced.
 
-## 6. Wire the gate
+## 6. Public network is denied in the normal test runner
+Install a process-wide default-deny egress guard before test modules load. It blocks both
+`globalThis.fetch` and direct non-loopback sockets; loopback and local IPC remain available. Provider
+tests use explicit fakes. Any live-provider lane is separate, credential-scoped, and human-gated when
+billed or mutating; do not add an ordinary environment escape that weakens the normal runner. Add
+attack tests for public fetch, direct public socket, and loopback liveness. Killer mutations: remove
+each wrapper independently and require its matching test to fail.
+
+## 7. Wire the gate
 `{{TEST_INTENT_GATE}}` scans every real test root (including browser/e2e lanes outside `src`) for the intent header + real `Proves:` IDs and fails the build on a missing/placeholder/unresolved one. Candidate extraction happens before catalog resolution, so one valid ID cannot hide a typo beside it. Catalog only owning authority sources: PRD/NFR tables, decision-log rows, ADR H1 IDs, benchmark registries, and bug-backlog headings; do not scan arbitrary prose as an ID authority. It runs in `gates:all` and in the CI mirror. Until `{{SRC_DIRS}}` exist it bootstrap-skips.
 
 *Fail-state:* a test shipped without a `Proves:` header, or with one naming no real requirement — or a green test was trusted that would still pass against a regressed version of the change it supposedly defends.

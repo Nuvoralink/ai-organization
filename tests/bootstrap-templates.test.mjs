@@ -20,13 +20,25 @@ function actionAuthorityErrors(policy) {
 }
 
 test('Proves: ORG-AUTH-001; Test type: mutation; Surface: action-authority template; Authority: policies/action-authority.v1.json; Killer mutation: remove autonomous push and no-production merge condition; Gated command: npm test', () => {
-  const template = read('templates/control-plane/action-authority.json.template').replace('{{CONTROL_PLANE_REPO_OR_PINNED_SCHEMA}}', '.');
-  const policy = JSON.parse(template);
+  const policy = JSON.parse(fs.readFileSync(path.join(root, 'policies', 'action-authority.v1.json'), 'utf8'));
   assert.deepEqual(actionAuthorityErrors(policy), []);
   const mutated = structuredClone(policy);
   mutated.autonomous = mutated.autonomous.filter((value) => value !== 'push_branch');
   mutated.conditional.merge_pull_request.all = mutated.conditional.merge_pull_request.all.filter((value) => value !== 'no_deploy_or_production_effect');
   assert.deepEqual(actionAuthorityErrors(mutated), ['missing autonomous push_branch', 'merge lacks production boundary']);
+});
+
+test('Proves: ORG-AUTH-004; Test type: authority-retirement mutation; Surface: bootstrap and project gates; Authority: policies/action-authority.v1.json; Killer mutation: restore a legacy authority path or hardcoded runtime action-list constant; Gated command: npm test', () => {
+  const files = [
+    'templates/gates/check-agent-control-plane.mjs.template',
+    path.join(root, 'overlays/auxara-dialer/project-files/scripts/check-agent-control-plane.mjs'),
+    path.join(root, 'overlays/coachai/project-files/scripts/check-agent-control-plane.mjs')
+  ];
+  for (const file of files) {
+    const source = path.isAbsolute(file) ? fs.readFileSync(file, 'utf8') : read(file);
+    assert.doesNotMatch(source, /docs\/agent-prompts\/action-authority\.json|\.ai-organization\/action-authority\.json|AGENT_ACTIONS|HUMAN_ACTIONS|MERGE_CONDITIONS|expectedAutonomous/u);
+    assert.match(source, /validateActionPolicySemantics/u);
+  }
 });
 
 test('Proves: ORG-PLAN-001; Test type: mutation; Surface: decision-log template; Authority: decision-sprint linkage schema; Killer mutation: restore the obsolete five-column header; Gated command: npm test', () => {
@@ -79,6 +91,10 @@ test('Proves: ORG-GOV-005; Test type: architecture; Surface: cross-vendor lifecy
   assert.match(skill, /neither adapter may reduce proof or path checks/u);
   assert.match(governor, /Changed file is outside editable paths/u);
   assert.match(governor, /Killer mutation was not observed/u);
+  for (const project of ['auxara-dialer', 'coachai']) {
+    const adapter = fs.readFileSync(path.join(root, 'overlays', project, 'project-files', 'scripts', 'claude-lifecycle-hook.mjs'), 'utf8');
+    assert.match(adapter, /TaskCompleted[\s\S]*?validate(?:Universal)?Completion\(/u, `${project} TaskCompleted must call the shared completion governor`);
+  }
 });
 
 test('Proves: ORG-REL-001; Test type: mutation; Surface: release-verifier template; Authority: deployed-verification truth table; Killer mutation: allow DEPLOY-VERIFIED with a skipped check or shell-only core flow; Gated command: npm test', () => {

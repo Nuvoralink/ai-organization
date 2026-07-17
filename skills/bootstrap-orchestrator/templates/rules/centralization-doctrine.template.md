@@ -32,6 +32,10 @@ Purpose: prevent the most-expensive class of architecture drift — the same con
 - ❌ Hardcoded event name / enum string retyped at a call site. Reference the taxonomy.
 - ❌ A DTO shape redefined in two places. Use the single shared contract.
 - ❌ A duplicated constant in two files. One source; consumers read it.
+- ❌ Pre-normalizing raw input at a route/leaf before the domain's composite resolver sees it. A
+  "defensive" outer normalizer can erase meaningful intent (short codes, commands, aliases, signed
+  shapes) and make the central classifier unreachable. Hand raw input to the registered resolver;
+  prove with a fixture where the outer normalizer and the full resolver deliberately diverge.
 {{PROJECT_FORBIDDEN_PATTERNS}}
 <!-- FILL: any project-specific forbidden pattern (e.g. a frontend product adds "a page that owns scroll/height" and "a transparent hand-rolled header"; a token product adds "any raw design literal outside the token source"). Delete if none. -->
 

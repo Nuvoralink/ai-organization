@@ -12,6 +12,7 @@ import {
   validateCanonical,
   validateManifest
 } from '../scripts/lib/control-plane.mjs';
+import { reconcileTrackedScope } from '../scripts/refresh-tracked-scope.mjs';
 
 function fixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'orgctl-'));
@@ -60,6 +61,40 @@ test('Proves: byte drift cannot hide; Test type: mutation; Surface: installed ru
   fs.writeFileSync(path.join(f.home, '.claude', 'rules', 'base.md'), '# Changed locally\n');
   assert.ok(runCheck(f).some((problem) => problem.type === 'drift'));
   assert.throws(() => runInstall({ ...f, dryRun: false }), /Dirty managed target/);
+});
+
+test('Proves: canonically retired managed files are transactionally removed and rollback-restorable; Test type: lifecycle mutation; Surface: installer retirement; Authority: prior install lock; Killer mutation: leave an obsolete locked file installed or delete it without snapshot recovery; Gated command: npm test', () => {
+  const f = fixture();
+  const canonicalBase = path.join(f.repoRoot, 'canonical', 'rules', 'base.md');
+  const canonicalRetired = path.join(f.repoRoot, 'canonical', 'rules', 'retired.md');
+  const installedRetired = path.join(f.home, '.claude', 'rules', 'retired.md');
+  fs.writeFileSync(canonicalBase, '# Base\n');
+  fs.writeFileSync(canonicalRetired, '# Retire me\n');
+  runInstall({ ...f, dryRun: false });
+
+  fs.unlinkSync(canonicalRetired);
+  const retirement = runInstall({ ...f, dryRun: false });
+  assert.ok(retirement.some((operation) => operation.type === 'retire' && operation.relative === 'retired.md'));
+  assert.equal(fs.existsSync(installedRetired), false);
+  assert.deepEqual(runCheck(f), []);
+
+  runRollback({ manifest: f.manifest, roots: f.roots, installId: retirement.installId });
+  assert.equal(fs.readFileSync(installedRetired, 'utf8'), '# Retire me\n');
+});
+
+test('Proves: retirement never deletes a locally modified formerly managed file; Test type: destructive-boundary mutation; Surface: installer retirement; Authority: prior install lock; Killer mutation: delete a retired target whose bytes no longer match the last installed hash; Gated command: npm test', () => {
+  const f = fixture();
+  const canonicalBase = path.join(f.repoRoot, 'canonical', 'rules', 'base.md');
+  const canonicalRetired = path.join(f.repoRoot, 'canonical', 'rules', 'retired.md');
+  const installedRetired = path.join(f.home, '.claude', 'rules', 'retired.md');
+  fs.writeFileSync(canonicalBase, '# Base\n');
+  fs.writeFileSync(canonicalRetired, '# Retire me\n');
+  runInstall({ ...f, dryRun: false });
+
+  fs.unlinkSync(canonicalRetired);
+  fs.writeFileSync(installedRetired, '# Local improvement\n');
+  assert.throws(() => runInstall({ ...f, dryRun: false }), /Local-only managed file: claude-rules\/retired\.md/u);
+  assert.equal(fs.readFileSync(installedRetired, 'utf8'), '# Local improvement\n');
 });
 
 test('Proves: dry-run never writes; Test type: negative; Surface: installer; Authority: action plan; Killer mutation: missing destination remains missing', () => {
@@ -194,6 +229,7 @@ test('Proves: tracked files outside mapped trees cannot hide secrets, machine pa
   fs.mkdirSync(path.join(f.repoRoot, 'docs'), { recursive: true });
   fs.mkdirSync(path.join(f.repoRoot, 'application'), { recursive: true });
   fs.mkdirSync(path.join(f.repoRoot, 'overlays', 'copied-app'), { recursive: true });
+  fs.mkdirSync(path.join(f.repoRoot, 'overlays', 'auxara-dialer', 'project-files', 'backend', 'src'), { recursive: true });
   fs.mkdirSync(path.join(f.repoRoot, 'artifacts', 'copied-app'), { recursive: true });
   fs.mkdirSync(path.join(f.repoRoot, 'registries'), { recursive: true });
   const tokenShape = ['sk', 'abcdefghijklmnopqrstuvwxyz1234567890'].join('-');
@@ -201,6 +237,8 @@ test('Proves: tracked files outside mapped trees cannot hide secrets, machine pa
   fs.writeFileSync(path.join(f.repoRoot, 'docs', 'unsafe.md'), `${tokenShape}\n${machinePath}\n`);
   fs.writeFileSync(path.join(f.repoRoot, 'docs', 'copied-app.ts'), 'export const copiedAppSource = true;\n');
   fs.writeFileSync(path.join(f.repoRoot, 'overlays', 'copied-app', 'index.ts'), 'export const copiedAppSource = true;\n');
+  fs.writeFileSync(path.join(f.repoRoot, 'overlays', 'copied-app', 'index.js'), 'export const copiedAppSource = true;\n');
+  fs.writeFileSync(path.join(f.repoRoot, 'overlays', 'auxara-dialer', 'project-files', 'backend', 'src', 'index.js'), 'export const copiedAppSource = true;\n');
   fs.writeFileSync(path.join(f.repoRoot, 'artifacts', 'copied-app', 'index.ts'), 'export const copiedAppSource = true;\n');
   fs.writeFileSync(path.join(f.repoRoot, 'application', 'index.ts'), 'export const copiedAppSource = true;\n');
   fs.writeFileSync(path.join(f.repoRoot, 'registries', 'tracked-scope.v1.json'), `${JSON.stringify({
@@ -219,6 +257,17 @@ test('Proves: tracked files outside mapped trees cannot hide secrets, machine pa
   for (const relative of ['application/index.ts', 'docs/copied-app.ts', 'overlays/copied-app/index.ts', 'artifacts/copied-app/index.ts']) {
     assert.ok(findings.some((finding) => finding.type === 'unsupported-tracked-scope-path' && finding.relative === relative), relative);
   }
+  assert.ok(findings.some((finding) => finding.type === 'unsupported-tracked-scope-path' && finding.relative === 'overlays/copied-app/index.js'));
+  assert.ok(findings.some((finding) => finding.type === 'unclassified-tracked-path' && finding.relative === 'overlays/auxara-dialer/project-files/backend/src/index.js'));
+});
+
+test('Proves: allowed-extension overlay files require an explicit reviewed registry declaration; Test type: approval-boundary mutation; Surface: tracked-scope refresh; Authority: exact tracked-scope registry; Killer mutation: auto-register copied application JavaScript under project-files from its filename; Gated command: npm test', () => {
+  const existing = { version: '1.0.0', scope: 'orchestration-only', files: [{ path: 'README.md', class: 'repository-metadata' }] };
+  const copiedSource = 'overlays/auxara-dialer/project-files/backend/src/index.js';
+  const files = ['README.md', copiedSource];
+  assert.throws(() => reconcileTrackedScope(files, existing), /Unreviewed new path/u);
+  const approved = reconcileTrackedScope(files, existing, { approvals: new Map([[copiedSource, 'project-orchestration-overlay']]) });
+  assert.deepEqual(approved.files.at(-1), { path: copiedSource, class: 'project-orchestration-overlay' });
 });
 
 test('Proves: capture rejects machine-specific paths before writes; Test type: portability mutation; Surface: capture; Authority: tokenized roots; Killer mutation: import a C drive path; Gated command: npm test', () => {
