@@ -7,6 +7,15 @@ import { pathToFileURL } from 'node:url';
 import process from 'node:process';
 import { validateActionPolicySemantics } from '../.ai-organization/runtime/core/authority/assess-action.mjs';
 import { validateJsonAgainstSchema } from '../.ai-organization/runtime/core/schema/validate-json-schema.mjs';
+import {
+  COMPLETION_CLAIM_LEASE_MS,
+  isValidIntegrationBranch,
+  MIN_PROOF_BUDGET_SAFETY_MARGIN_MS,
+  normalizeProfileRegistry,
+  validateRegisteredAgentRoleProviders,
+  validateLifecycleRoleModes,
+  validateSafeProofProfile,
+} from '../.ai-organization/runtime/core/lifecycle/evidence-runtime.mjs';
 
 export const ARTIFACTS = Object.freeze({
   issue: '.github/ISSUE_TEMPLATE/agent-slice.yml',
@@ -19,6 +28,9 @@ export const ARTIFACTS = Object.freeze({
   capabilities: '.ai-organization/policies/action-authority.v1.json',
   capabilitySchema: '.ai-organization/schemas/action-authority.v1.schema.json',
   lifecycle: 'scripts/claude-lifecycle-hook.mjs',
+  proofRegistry: '.ai-organization/proof-profiles.json',
+  riskPolicy: '.ai-organization/policies/risk-controls.v1.json',
+  roles: '.ai-organization/roles.json',
   gitignore: '.gitignore',
 });
 
@@ -63,6 +75,9 @@ export function validateAgentControlPlane(root = process.cwd()) {
   const playbook = read(root, 'playbook', errors);
   const capabilitiesText = read(root, 'capabilities', errors);
   const lifecycle = read(root, 'lifecycle', errors);
+  const proofRegistryText = read(root, 'proofRegistry', errors);
+  const riskPolicyText = read(root, 'riskPolicy', errors);
+  const rolesText = read(root, 'roles', errors);
   const gitignore = read(root, 'gitignore', errors);
 
   for (const id of REQUIRED_ISSUE_IDS) requireText(issue, `id: ${id}`, ARTIFACTS.issue, errors);
@@ -85,6 +100,39 @@ export function validateAgentControlPlane(root = process.cwd()) {
   catch { errors.push(`${ARTIFACTS.capabilitySchema}: missing/unreadable`); }
   errors.push(...validateActionPolicySemantics(capabilities).map((error) => `${ARTIFACTS.capabilities}: semantics ${error}`));
 
+  let proofRegistry;
+  let riskPolicy;
+  let roles;
+  try { proofRegistry = JSON.parse(proofRegistryText); }
+  catch { errors.push(`${ARTIFACTS.proofRegistry}: invalid JSON`); proofRegistry = {}; }
+  try { riskPolicy = JSON.parse(riskPolicyText); }
+  catch { errors.push(`${ARTIFACTS.riskPolicy}: invalid JSON`); riskPolicy = {}; }
+  try { roles = JSON.parse(rolesText); }
+  catch { errors.push(`${ARTIFACTS.roles}: invalid JSON`); roles = {}; }
+  const roleNames = new Set((roles.roles ?? []).map((role) => role.name));
+  const roleModes = new Map((roles.roles ?? []).map((role) => [role.name, role.mode]));
+  errors.push(...validateRegisteredAgentRoleProviders(roles.roles, root).map((error) => `${ARTIFACTS.roles}: ${error}`));
+  for (const role of roles.roles ?? []) if (!['read-only', 'implementation'].includes(role.mode)) errors.push(`${ARTIFACTS.roles}: role mode must be read-only or implementation for ${role.name ?? '<unnamed>'}`);
+  if (!isValidIntegrationBranch(proofRegistry.integration_branch)) errors.push(`${ARTIFACTS.proofRegistry}: integration_branch must be an explicit safe Git branch name`);
+  if (!Array.isArray(proofRegistry.lifecycle_supported_risk_classes) || proofRegistry.lifecycle_supported_risk_classes.length === 0) errors.push(`${ARTIFACTS.proofRegistry}: lifecycle-supported risk classes must be explicit`);
+  errors.push(...validateLifecycleRoleModes(proofRegistry.lifecycle_roles_by_completion_mode, roleModes).map((error) => `${ARTIFACTS.proofRegistry}: ${error}`));
+  if (!Number.isInteger(proofRegistry.lifecycle_hook_timeout_ms)) errors.push(`${ARTIFACTS.proofRegistry}: lifecycle_hook_timeout_ms is required`);
+  if (!Number.isInteger(proofRegistry.lifecycle_timeout_safety_margin_ms) || proofRegistry.lifecycle_timeout_safety_margin_ms < MIN_PROOF_BUDGET_SAFETY_MARGIN_MS) errors.push(`${ARTIFACTS.proofRegistry}: lifecycle timeout safety margin must be at least one minute`);
+  const rawProfiles = Array.isArray(proofRegistry.profiles) ? proofRegistry.profiles : Object.entries(proofRegistry.profiles ?? {}).map(([id, profile]) => ({ id, ...profile }));
+  const lifecycleIds = new Set(rawProfiles.filter((profile) => profile.assurance || profile.classification).map((profile) => profile.id));
+  const lifecycleProfiles = normalizeProfileRegistry(proofRegistry).filter((profile) => lifecycleIds.has(profile.id));
+  const providedCapabilities = new Set(lifecycleProfiles.flatMap((profile) => profile.capabilities ?? []));
+  for (const profile of lifecycleProfiles) errors.push(...validateSafeProofProfile(profile, { cwd: root, actionAuthority: capabilities }).map((error) => `${ARTIFACTS.proofRegistry}/${profile.id}: ${error}`));
+  for (const riskClass of proofRegistry.lifecycle_supported_risk_classes ?? []) {
+    const row = riskPolicy.classes?.[riskClass];
+    if (!row) errors.push(`${ARTIFACTS.proofRegistry}: lifecycle-supported risk class has no policy row: ${riskClass}`);
+    for (const required of row?.required_proofs ?? []) if (!providedCapabilities.has(required)) errors.push(`${ARTIFACTS.proofRegistry}: ${riskClass} lacks assurance capability provider: ${required}`);
+    for (const required of row?.required_roles ?? []) if (!roleNames.has(required)) errors.push(`${ARTIFACTS.proofRegistry}: ${riskClass} lacks registered role provider: ${required}`);
+  }
+  const profileBudgets = lifecycleProfiles.map((profile) => (profile.commands ?? []).reduce((sum, command) => sum + (Number.isInteger(command.timeout_ms) ? command.timeout_ms : 0), 0) + (Number.isInteger(profile.mutation?.timeout_ms) ? profile.mutation.timeout_ms : 0));
+  if (profileBudgets.some((budget) => budget + (proofRegistry.lifecycle_timeout_safety_margin_ms ?? 0) > (proofRegistry.lifecycle_hook_timeout_ms ?? 0))) errors.push(`${ARTIFACTS.proofRegistry}: a lifecycle profile budget exceeds the hook timeout after safety margin`);
+  if ((proofRegistry.lifecycle_hook_timeout_ms ?? Infinity) + (proofRegistry.lifecycle_timeout_safety_margin_ms ?? 0) > COMPLETION_CLAIM_LEASE_MS) errors.push(`${ARTIFACTS.proofRegistry}: hook timeout plus safety margin exceeds the completion claim lease`);
+
   if (/node:(?:child_process|vm)|\b(?:exec|execSync|spawn|spawnSync)\s*\(/.test(workflow)) errors.push(`${ARTIFACTS.workflow}: process execution/imports are forbidden`);
   const agentCalls = workflow.match(/\bagent\s*\(/g)?.length ?? 0;
   if (agentCalls < 1 || agentCalls > 4) errors.push(`${ARTIFACTS.workflow}: agent() calls must be between 1 and 4, found ${agentCalls}`);
@@ -101,6 +149,7 @@ export function validateAgentControlPlane(root = process.cwd()) {
   requireText(lifecycle, 'Doctrine-loop findings', ARTIFACTS.lifecycle, errors);
   requireText(lifecycle, 'Honesty clause', ARTIFACTS.lifecycle, errors);
   requireText(gitignore, 'tmp/agent-telemetry/', ARTIFACTS.gitignore, errors);
+  requireText(gitignore, 'tmp/agent-assurance/', ARTIFACTS.gitignore, errors);
 
   let settings;
   try { settings = JSON.parse(settingsText); }
@@ -113,6 +162,8 @@ export function validateAgentControlPlane(root = process.cwd()) {
     const commands = Array.isArray(registrations) ? registrations.flatMap((entry) => Array.isArray(entry?.hooks) ? entry.hooks : []) : [];
     if (registrations?.length !== 1 || commands.length !== 1 || commands[0]?.type !== 'command' || commands[0]?.command !== 'node scripts/claude-lifecycle-hook.mjs') errors.push(`${ARTIFACTS.settings}: ${event} must contain exactly one node scripts/claude-lifecycle-hook.mjs command hook`);
   }
+  const taskCompletedTimeouts = hooks.TaskCompleted?.flatMap((entry) => entry.hooks ?? []).filter((hook) => hook.command === 'node scripts/claude-lifecycle-hook.mjs').map((hook) => hook.timeout) ?? [];
+  if (taskCompletedTimeouts.length !== 1 || taskCompletedTimeouts[0] * 1_000 !== proofRegistry.lifecycle_hook_timeout_ms) errors.push(`${ARTIFACTS.settings}: TaskCompleted timeout must exactly match proof registry lifecycle_hook_timeout_ms`);
   const post = hooks.PostToolUse;
   const postCommands = Array.isArray(post) ? post.flatMap((entry) => Array.isArray(entry?.hooks) ? entry.hooks : []) : [];
   if (post?.length !== 1 || post[0]?.matcher !== 'Edit|Write' || postCommands.length !== 1 || postCommands[0]?.type !== 'command' || postCommands[0]?.command !== 'node scripts/claude-posttooluse-gate.mjs') errors.push(`${ARTIFACTS.settings}: PostToolUse must be Edit|Write with exactly one node scripts/claude-posttooluse-gate.mjs command hook`);

@@ -29,6 +29,12 @@ test('killer mutations: missing role and unknown installed agent fail', () => {
   const unknown = organizationFixture(source);
   fs.writeFileSync(path.join(unknown, '.claude/agents/shadow-pm.md'), '---\nname: shadow-pm\n---\n');
   assert.match(checkAgentControlPlane(unknown).errors.join('\n'), /unknown installed agent/i);
+
+  const bodySpoof = organizationFixture(source);
+  const reviewerFile = path.join(bodySpoof, '.claude/agents/adversarial-reviewer.md');
+  const reviewerSource = fs.readFileSync(reviewerFile, 'utf8');
+  fs.writeFileSync(reviewerFile, `${reviewerSource.replace(/^---\s*\r?\n[\s\S]*?\r?\n---\s*\r?\n/u, '')}\nname: adversarial-reviewer\n`);
+  assert.match(checkAgentControlPlane(bodySpoof).errors.join('\n'), /role name\/file mismatch/i);
 });
 
 test('killer mutations: overlapping authority and lifecycle hook weakening fail', () => {
@@ -55,6 +61,43 @@ test('killer mutation: active legacy design authority fails', () => {
 
 test('killer mutation: malformed lifecycle authority schema fails', () => {
   const root = organizationFixture(source);
-  fs.writeFileSync(path.join(root, '.ai-organization/schemas/task-evidence.v1.schema.json'), '{"type":"object"');
+  fs.writeFileSync(path.join(root, '.ai-organization/schemas/task-evidence.v2.schema.json'), '{"type":"object"');
   assert.match(checkAgentControlPlane(root).errors.join('\n'), /invalid JSON authority/i);
+});
+
+test('killer mutations: invalid assurance, missing reviewer provider, and timeout drift fail closure', () => {
+  const invalidProvider = organizationFixture(source);
+  const proofPath = path.join(invalidProvider, '.ai-organization/proof-profiles.json');
+  const proof = JSON.parse(fs.readFileSync(proofPath, 'utf8'));
+  proof.profiles.find((profile) => profile.id === 'organization-control').assurance.commands = [];
+  writeJson(proofPath, proof);
+  assert.match(checkAgentControlPlane(invalidProvider).errors.join('\n'), /invalid assurance provider/u);
+
+  const missingReviewer = organizationFixture(source);
+  const rolesPath = path.join(missingReviewer, '.ai-organization/roles.json');
+  const roles = JSON.parse(fs.readFileSync(rolesPath, 'utf8'));
+  roles.project_roles = roles.project_roles.filter((role) => role.name !== 'adversarial-reviewer');
+  writeJson(rolesPath, roles);
+  assert.match(checkAgentControlPlane(missingReviewer).errors.join('\n'), /lacks registered role provider/u);
+
+  const timeoutDrift = organizationFixture(source);
+  const settingsPath = path.join(timeoutDrift, '.claude/settings.json');
+  const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+  settings.hooks.TaskCompleted[0].hooks[0].timeout -= 1;
+  writeJson(settingsPath, settings);
+  assert.match(checkAgentControlPlane(timeoutDrift).errors.join('\n'), /exactly match/u);
+
+  const invalidBranch = organizationFixture(source);
+  const invalidBranchProofPath = path.join(invalidBranch, '.ai-organization/proof-profiles.json');
+  const invalidBranchProof = JSON.parse(fs.readFileSync(invalidBranchProofPath, 'utf8'));
+  invalidBranchProof.integration_branch = '!!!';
+  writeJson(invalidBranchProofPath, invalidBranchProof);
+  assert.match(checkAgentControlPlane(invalidBranch).errors.join('\n'), /explicit safe Git branch name/u);
+
+  const reviewerAsImplementer = organizationFixture(source);
+  const reviewerProofPath = path.join(reviewerAsImplementer, '.ai-organization/proof-profiles.json');
+  const reviewerProof = JSON.parse(fs.readFileSync(reviewerProofPath, 'utf8'));
+  reviewerProof.lifecycle_roles_by_completion_mode.implementation = ['adversarial-reviewer'];
+  writeJson(reviewerProofPath, reviewerProof);
+  assert.match(checkAgentControlPlane(reviewerAsImplementer).errors.join('\n'), /not an implementation-capable provider/u);
 });

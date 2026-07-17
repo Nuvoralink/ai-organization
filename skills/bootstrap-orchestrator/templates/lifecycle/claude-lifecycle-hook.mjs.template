@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 // TEMPLATE: Claude Code lifecycle router. Fill {{INTEGRATION_BRANCH}} and
 // {{TASK_COMPLETION_GATE}}, save as scripts/claude-lifecycle-hook.mjs, and keep
-// tmp/agent-telemetry ignored. Do not add WorktreeCreate/WorktreeRemove until
+// tmp/agent-telemetry and tmp/agent-assurance ignored. Do not add WorktreeCreate/WorktreeRemove until
 // replacement semantics and Windows paths are verified on the installed Claude version.
 import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
+import { acceptLifecycleTask, completeLifecycleTask, recordLifecycleCompletionReport, recordLifecycleReview } from '../.ai-organization/runtime/core/lifecycle/lifecycle-controller.mjs';
+import { defaultAssuranceStateDirectory, loadTaskAttempt } from '../.ai-organization/runtime/core/lifecycle/evidence-runtime.mjs';
 
 const INTEGRATION_BRANCH = '{{INTEGRATION_BRANCH}}';
 const TASK_COMPLETION_GATE = '{{TASK_COMPLETION_GATE}}';
@@ -51,9 +53,9 @@ function readState(root) {
   const file = path.join(telemetryRoot(root), 'lifecycle-state.json');
   try {
     const parsed = JSON.parse(readFileSync(file, 'utf8'));
-    return { tasks: parsed.tasks ?? {}, sessions: parsed.sessions ?? {} };
+    return { sessions: parsed.sessions ?? {} };
   } catch {
-    return { tasks: {}, sessions: {} };
+    return { sessions: {} };
   }
 }
 
@@ -147,22 +149,6 @@ function tierFrom(text) {
   return undefined;
 }
 
-function fingerprint(root) {
-  const digest = createHash('sha256');
-  const add = (label, value) => digest.update(`${label}:${String(value ?? '').length}:`).update(String(value ?? ''), 'utf8');
-  add('head', gitText(['rev-parse', 'HEAD'], root));
-  add('branch', gitText(['rev-parse', '--abbrev-ref', 'HEAD'], root));
-  add('head-worktree', gitText(['diff', '--binary', 'HEAD', '--'], root));
-  add('head-index', gitText(['diff', '--cached', '--binary', 'HEAD', '--'], root));
-  add('index-worktree', gitText(['diff', '--binary', '--'], root));
-  const untracked = gitText(['ls-files', '--others', '--exclude-standard', '-z'], root).split('\0').filter(Boolean).sort();
-  for (const file of untracked) {
-    add('untracked-path', file);
-    add('untracked-content', gitText(['hash-object', '--no-filters', '--', file], root));
-  }
-  return digest.digest('hex');
-}
-
 function changedFiles(root) {
   const upstream = `origin/${INTEGRATION_BRANCH}`;
   const base = gitText(['merge-base', 'HEAD', upstream], root).trim();
@@ -183,6 +169,16 @@ function block(message) {
 
 function emitContext(eventName, content) {
   process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: eventName, additionalContext: content } })}\n`);
+}
+
+function structuredMarker(text, marker) {
+  const line = String(text ?? '').split(/\r?\n/u).find((candidate) => candidate.startsWith(marker));
+  if (!line) return null;
+  try { return JSON.parse(line.slice(marker.length).trim()); } catch { return null; }
+}
+
+function profileRegistry(root) {
+  return JSON.parse(readFileSync(path.join(root, '.ai-organization', 'proof-profiles.json'), 'utf8'));
 }
 
 function stateSummary(root) {
@@ -237,43 +233,95 @@ function handle(payload, root) {
       const missing = missingSections(description, BRIEF_SECTIONS);
       const tier = tierFrom(description);
       if (!tier) missing.push('Completion tier');
+      const contract = structuredMarker(description, 'TASK_CONTRACT_JSON:');
+      if (!contract) missing.push('TASK_CONTRACT_JSON');
       if (missing.length) {
         recordEvent(root, payload, { outcome: 'block', missingSectionCount: missing.length });
         block(`[lifecycle] TaskCreated blocked. Add explicit, substantive sections for: ${missing.join(', ')}. Procedure needs a numbered step.`);
         return;
       }
       if (!taskKey) return block('[lifecycle] TaskCreated blocked: task_id missing.');
-      state.tasks[taskKey] = { tier, baseline: tier === 'read-only' ? fingerprint(root) : null };
-      writeState(root, state);
-      recordEvent(root, payload, { outcome: 'allow', completionTier: tier });
+      const result = acceptLifecycleTask({
+        taskId: payload.task_id,
+        contract,
+        sessionId: payload.session_id,
+        implementerId: payload.agent_id ?? payload.agent_type ?? payload.session_id,
+        completionMode: tier,
+        cwd: root,
+        profileRegistry: profileRegistry(root),
+      });
+      recordEvent(root, payload, { outcome: result.accepted ? 'allow' : 'block', completionTier: tier, failedCheckCount: result.failures.length });
+      if (!result.accepted) block(`[lifecycle] TaskCreated blocked: ${result.failures.join('; ')}`);
       return;
     }
     case 'TaskCompleted': {
-      const accepted = taskKey ? state.tasks[taskKey] : undefined;
+      const stateDirectory = defaultAssuranceStateDirectory(root);
+      const accepted = taskKey ? loadTaskAttempt(stateDirectory, payload.task_id) : undefined;
       if (!accepted) return block('[lifecycle] TaskCompleted blocked: no accepted TaskCreated state.');
-      if (accepted.tier === 'read-only') {
-        const same = accepted.baseline && accepted.baseline === fingerprint(root);
-        recordEvent(root, payload, { outcome: same ? 'allow' : 'block', completionTier: accepted.tier, failedCheckCount: same ? 0 : 1 });
-        if (!same) block('[lifecycle] TaskCompleted blocked: branch/worktree changed after the read-only baseline.');
+      if (payload.completion_report || structuredMarker(payload.task_description, 'COMPLETION_REPORT_JSON:')) {
+        return block('[lifecycle] TaskCompleted blocked: the official event has no completion-report field; use a platform SubagentStop report receipt.');
+      }
+      let changed = { files: [] };
+      let preflightFailures = 0;
+      let gateOutput = '';
+      if (accepted.state !== 'completed' && accepted.completion_mode === 'implementation') {
+        changed = changedFiles(root);
+        const diffChecks = [
+          git(['diff', '--check', `${changed.base}...HEAD`], root),
+          git(['diff', '--cached', '--check'], root),
+          git(['diff', '--check'], root),
+        ];
+        const gate = runCompletionGate(root);
+        gateOutput = `${gate.stdout ?? ''}${gate.stderr ?? ''}`.slice(-8_000);
+        preflightFailures = diffChecks.filter((result) => result.status !== 0 || result.error).length + (gate.status === 0 && !gate.error ? 0 : 1);
+      }
+      if (preflightFailures) {
+        recordEvent(root, payload, { outcome: 'block', completionTier: accepted.completion_mode, changedFileCount: changed.files.length, gateCount: 1, failedCheckCount: preflightFailures });
+        block(`[lifecycle] TaskCompleted blocked: changed-file completion checks failed.\n${gateOutput}`);
         return;
       }
-      const changed = changedFiles(root);
-      const diffChecks = [
-        git(['diff', '--check', `${changed.base}...HEAD`], root),
-        git(['diff', '--cached', '--check'], root),
-        git(['diff', '--check'], root),
-      ];
-      const gate = runCompletionGate(root);
-      const failed = diffChecks.filter((result) => result.status !== 0 || result.error).length + (gate.status === 0 && !gate.error ? 0 : 1);
-      recordEvent(root, payload, { outcome: failed ? 'block' : 'allow', completionTier: accepted.tier, changedFileCount: changed.files.length, gateCount: 1, failedCheckCount: failed });
-      if (failed) block(`[lifecycle] TaskCompleted blocked: changed-file completion checks failed.\n${`${gate.stdout ?? ''}${gate.stderr ?? ''}`.slice(-8_000)}`);
+      const result = completeLifecycleTask({
+        taskId: payload.task_id,
+        sessionId: payload.session_id,
+        cwd: root,
+        stateDirectory,
+        profileRegistry: profileRegistry(root),
+      });
+      recordEvent(root, payload, { outcome: result.accepted ? 'allow' : 'block', completionTier: accepted.completion_mode, changedFileCount: changed.files.length, gateCount: accepted.completion_mode === 'implementation' ? 1 : 0, failedCheckCount: result.failures.length });
+      if (!result.accepted) block(`[lifecycle] TaskCompleted blocked: ${result.failures.join('; ')}`);
       return;
     }
     case 'SubagentStop': {
       const report = typeof payload.last_assistant_message === 'string' ? payload.last_assistant_message : '';
       const missing = missingSections(report, REPORT_SECTIONS);
-      recordEvent(root, payload, { outcome: missing.length ? 'block' : 'allow', missingSectionCount: missing.length });
-      if (missing.length) block(`[lifecycle] SubagentStop blocked. Add substantive sections for: ${missing.join(', ')}.`);
+      const completion = structuredMarker(report, 'COMPLETION_REPORT_JSON:');
+      const review = structuredMarker(report, 'REVIEW_REPORT_JSON:');
+      const receiptFailures = [];
+      try {
+        if (completion) recordLifecycleCompletionReport({
+          taskId: completion.task_id,
+          reporterId: payload.agent_id,
+          reporterSessionId: payload.session_id,
+          reporterRole: payload.agent_type,
+          report: completion,
+          cwd: root,
+        });
+        if (review) recordLifecycleReview({
+          taskId: review.task_id,
+          reviewerId: payload.agent_id,
+          reviewerSessionId: payload.session_id,
+          role: payload.agent_type,
+          verdict: review.verdict,
+          findingCount: review.finding_count,
+          unresolvedFindingCount: review.unresolved_finding_count,
+          cwd: root,
+        });
+      } catch (error) {
+        receiptFailures.push(error.message);
+      }
+      const failures = [...missing, ...receiptFailures];
+      recordEvent(root, payload, { outcome: failures.length ? 'block' : 'allow', missingSectionCount: failures.length });
+      if (failures.length) block(`[lifecycle] SubagentStop blocked. ${receiptFailures.join('; ')} Add substantive sections for: ${missing.join(', ')}.`);
       return;
     }
     case 'PostCompact': {

@@ -1,14 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://nuvoralink.internal/schemas/task-assurance.v1.schema.json",
+  "$id": "https://nuvoralink.internal/schemas/task-assurance.v2.schema.json",
   "title": "Cross-vendor task assurance contract",
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "schema_version",
     "id",
     "product_intent",
     "settled_decisions",
     "scope",
+    "execution",
     "paths",
     "risk",
     "authorities",
@@ -20,6 +22,7 @@
     "completion"
   ],
   "properties": {
+    "schema_version": { "enum": [2] },
     "id": { "type": "string", "pattern": "^[A-Z0-9][A-Z0-9._-]+$" },
     "product_intent": { "type": "string", "minLength": 10 },
     "settled_decisions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
@@ -32,6 +35,14 @@
         "out": { "type": "array", "items": { "type": "string" } },
         "too_little": { "type": "string", "minLength": 1 },
         "too_much": { "type": "string", "minLength": 1 }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["implementer_role"],
+      "properties": {
+        "implementer_role": { "type": "string", "minLength": 1 }
       }
     },
     "paths": {
@@ -53,6 +64,7 @@
         "level": { "enum": ["low", "medium", "high", "critical"] },
         "classes": {
           "type": "array",
+          "minItems": 1,
           "uniqueItems": true,
           "items": { "enum": ["frontend", "auth", "security", "privacy", "billing", "database", "data_migration", "provider", "ai_semantics", "production", "destructive", "external_contact", "architecture", "documentation", "control_plane"] }
         },
@@ -65,14 +77,14 @@
       "additionalProperties": false,
       "required": ["feeders", "producers", "transformers", "persistence", "validators", "consumers", "surfaces", "retirements"],
       "properties": {
-        "feeders": { "$ref": "#/$defs/stringList" },
-        "producers": { "$ref": "#/$defs/stringList" },
-        "transformers": { "$ref": "#/$defs/stringList" },
-        "persistence": { "$ref": "#/$defs/stringList" },
-        "validators": { "$ref": "#/$defs/stringList" },
-        "consumers": { "$ref": "#/$defs/stringList" },
-        "surfaces": { "$ref": "#/$defs/stringList" },
-        "retirements": { "$ref": "#/$defs/stringList" }
+        "feeders": { "$ref": "#/$defs/blastRadiusList" },
+        "producers": { "$ref": "#/$defs/blastRadiusList" },
+        "transformers": { "$ref": "#/$defs/blastRadiusList" },
+        "persistence": { "$ref": "#/$defs/blastRadiusList" },
+        "validators": { "$ref": "#/$defs/blastRadiusList" },
+        "consumers": { "$ref": "#/$defs/blastRadiusList" },
+        "surfaces": { "$ref": "#/$defs/blastRadiusList" },
+        "retirements": { "$ref": "#/$defs/blastRadiusList" }
       }
     },
     "procedure": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
@@ -83,11 +95,12 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "proves", "command", "surface", "authority", "risk_classes", "killer_mutation", "required"],
+        "required": ["id", "profile_id", "capability", "proves", "surface", "authority", "risk_classes", "mutation", "required"],
         "properties": {
           "id": { "type": "string", "minLength": 1 },
+          "profile_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]+$" },
+          "capability": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]+$" },
           "proves": { "type": "string", "minLength": 1 },
-          "command": { "type": "string", "minLength": 1 },
           "surface": { "type": "string", "minLength": 1 },
           "authority": { "type": "string", "minLength": 1 },
           "risk_classes": {
@@ -96,7 +109,16 @@
             "uniqueItems": true,
             "items": { "type": "string", "minLength": 1 }
           },
-          "killer_mutation": { "type": "string", "minLength": 1 },
+          "mutation": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["required", "case_id", "rationale"],
+            "properties": {
+              "required": { "type": "boolean" },
+              "case_id": { "type": ["string", "null"] },
+              "rationale": { "type": "string", "minLength": 1 }
+            }
+          },
           "required": { "type": "boolean" }
         }
       }
@@ -125,6 +147,7 @@
   },
   "$defs": {
     "stringList": { "type": "array", "items": { "type": "string" } },
+    "blastRadiusList": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
     "pathList": { "type": "array", "items": { "type": "string", "minLength": 1 } }
   }
 }

@@ -69,7 +69,7 @@
           {
             "type": "command",
             "command": "node scripts/claude-lifecycle-hook.mjs",
-            "timeout": 120
+            "timeout": 1800
           }
         ]
       }

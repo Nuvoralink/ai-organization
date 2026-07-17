@@ -30,6 +30,16 @@ test('killer mutations: modified, missing, and newly added managed files fail', 
   const added = organizationFixture(source);
   fs.writeFileSync(path.join(added, '.claude/agents/shadow.md'), 'shadow');
   assert.match(checkOverlayParity(added).errors.join('\n'), /unlocked file added/i);
+
+  const missingJsonSection = organizationFixture(source);
+  const packageFile = path.join(missingJsonSection, 'package.json');
+  const packageJson = JSON.parse(fs.readFileSync(packageFile, 'utf8'));
+  delete packageJson.scripts['test:evidence-integrity-mutation'];
+  fs.writeFileSync(packageFile, JSON.stringify(packageJson, null, 2));
+  assert.doesNotThrow(() => checkOverlayParity(missingJsonSection));
+  assert.match(checkOverlayParity(missingJsonSection).errors.join('\n'), /managed JSON section modified or missing/i);
+  assert.throws(() => writeOverlayLock(missingJsonSection), /managed JSON section modified or missing/i);
+  assert.equal(checkOverlayParity(missingJsonSection).ok, false);
 });
 
 test('project product and source files are ignored by overlay parity', () => {
@@ -44,7 +54,7 @@ test('project product and source files are ignored by overlay parity', () => {
 test('checkout line-ending convention does not create false overlay drift', () => {
   const root = organizationFixture(source);
   const file = path.join(root, 'AGENTS.md');
-  fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/\n/g, '\r\n'));
+  fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/\r?\n/g, '\r\n'));
   assert.equal(checkOverlayParity(root).ok, true);
 });
 

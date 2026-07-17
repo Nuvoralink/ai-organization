@@ -84,17 +84,41 @@ test('Proves: ORG-CONTEXT-001; Test type: mutation; Surface: startup context; Au
   assert.match(gate, /firstParent/u);
 });
 
-test('Proves: ORG-GOV-005; Test type: architecture; Surface: cross-vendor lifecycle; Authority: vendor-neutral task governor; Killer mutation: let one vendor bypass the shared governor; Gated command: npm test', () => {
+test('Proves: ORG-GOV-005; Test type: architecture; Surface: cross-vendor assurance; Authority: vendor-neutral task governor; Killer mutation: fabricate Codex lifecycle parity without an authenticated platform event; Gated command: npm test', () => {
   const skill = fs.readFileSync(path.join(root, 'skills', 'bootstrap-orchestrator', 'SKILL.md'), 'utf8');
   const governor = fs.readFileSync(path.join(root, 'core', 'lifecycle', 'task-governor.mjs'), 'utf8');
-  assert.match(skill, /Claude and Codex adapters/u);
-  assert.match(skill, /neither adapter may reduce proof or path checks/u);
+  const lifecycleTemplate = fs.readFileSync(path.join(root, 'skills', 'bootstrap-orchestrator', 'templates', 'lifecycle', 'claude-lifecycle-hook.mjs.template'), 'utf8');
+  const lifecycleFixture = fs.readFileSync(path.join(root, 'skills', 'bootstrap-orchestrator', 'templates', 'tests', 'claude-lifecycle-hook.test.ts.template'), 'utf8');
+  const codexStatus = fs.readFileSync(path.join(root, 'core', 'lifecycle', 'codex-task-status.mjs'), 'utf8');
+  assert.match(skill, /read-only Codex status client/u);
+  assert.match(skill, /Never add a self-minting Codex report\/review\/approval CLI/u);
+  assert.match(skill, /full nested and pre\/post script closure/u);
+  const controlGate = read('templates/gates/check-agent-control-plane.mjs.template');
+  assert.match(controlGate, /lifecycle_supported_risk_classes/u);
+  assert.match(controlGate, /lacks assurance capability provider/u);
+  assert.match(controlGate, /lacks registered role provider/u);
+  assert.match(controlGate, /lifecycle_hook_timeout_ms/u);
+  assert.match(controlGate, /COMPLETION_CLAIM_LEASE_MS/u);
+  assert.match(controlGate, /isValidIntegrationBranch\(proofRegistry\.integration_branch\)/u);
+  assert.match(controlGate, /validateRegisteredAgentRoleProviders\(roles\.roles, root\)/u);
+  assert.match(controlGate, /validateLifecycleRoleModes\(proofRegistry\.lifecycle_roles_by_completion_mode, roleModes\)/u);
   assert.match(governor, /Changed file is outside editable paths/u);
-  assert.match(governor, /Killer mutation was not observed/u);
+  assert.match(governor, /Runner attestation is invalid/u);
+  assert.doesNotMatch(governor, /artifact_opened|killer_mutation_observed/u);
+  assert.match(lifecycleTemplate, /recordLifecycleCompletionReport/u);
+  assert.match(lifecycleTemplate, /case 'SubagentStop'/u);
+  assert.doesNotMatch(lifecycleTemplate, /completionReport:\s*completionReport\(payload\)/u);
+  assert.match(lifecycleFixture, /execution:\s*\{ implementer_role:/u);
+  assert.match(lifecycleFixture, /COMPLETION_REPORT_JSON:/u);
+  assert.doesNotMatch(codexStatus, /acceptLifecycleTask|completeLifecycleTask|recordLifecycle/u);
   for (const project of ['auxara-dialer', 'coachai']) {
     const adapter = fs.readFileSync(path.join(root, 'overlays', project, 'project-files', 'scripts', 'claude-lifecycle-hook.mjs'), 'utf8');
-    assert.match(adapter, /TaskCompleted[\s\S]*?validate(?:Universal)?Completion\(/u, `${project} TaskCompleted must call the shared completion governor`);
+    assert.match(adapter, /completeLifecycleTask\(/u, `${project} TaskCompleted must call the shared stateful lifecycle controller`);
+    assert.doesNotMatch(adapter, /artifact_opened|killer_mutation_observed|AGENT_PROOF_COMMAND/u, `${project} must not synthesize or override proof truth`);
   }
+  const template = read('templates/lifecycle/claude-lifecycle-hook.mjs.template');
+  assert.match(template, /completeLifecycleTask\(/u);
+  assert.match(template, /TASK_CONTRACT_JSON/u);
 });
 
 test('Proves: ORG-REL-001; Test type: mutation; Surface: release-verifier template; Authority: deployed-verification truth table; Killer mutation: allow DEPLOY-VERIFIED with a skipped check or shell-only core flow; Gated command: npm test', () => {

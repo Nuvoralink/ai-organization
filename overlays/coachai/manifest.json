@@ -82,6 +82,24 @@
       "lock": "${HOME}/.nuvoralink-control-plane/project-locks/coachai/overlay-lock.json"
     },
     {
+      "id": "coachai-risk-controls",
+      "source": "policies/risk-controls.v1.json",
+      "captureFrom": "${PROJECT:coachai}/.ai-organization/policies/risk-controls.v1.json",
+      "destinations": [
+        "${PROJECT:coachai}/.ai-organization/policies/risk-controls.v1.json"
+      ],
+      "mode": "file",
+      "ownership": "generated",
+      "allowedExtensions": [
+        ".json"
+      ],
+      "exclude": [],
+      "detectLocalOnly": false,
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "lock": "${HOME}/.nuvoralink-control-plane/project-locks/coachai/overlay-lock.json"
+    },
+    {
       "id": "coachai-agent-role-registry",
       "source": "registries/agent-roles.v1.json",
       "captureFrom": "${PROJECT:coachai}/.ai-organization/registries/agent-roles.v1.json",

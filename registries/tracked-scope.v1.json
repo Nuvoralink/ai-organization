@@ -67,6 +67,22 @@
       "class": "shared-control-plane-runtime"
     },
     {
+      "path": "core/lifecycle/codex-task-status.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/lifecycle/evidence-runtime.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/lifecycle/lifecycle-controller.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/lifecycle/run-evidence-integrity-mutation.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
       "path": "core/lifecycle/task-governor.mjs",
       "class": "shared-control-plane-runtime"
     },
@@ -923,11 +939,11 @@
       "class": "schema"
     },
     {
-      "path": "schemas/task-assurance.v1.schema.json",
+      "path": "schemas/task-assurance.v2.schema.json",
       "class": "schema"
     },
     {
-      "path": "schemas/task-evidence.v1.schema.json",
+      "path": "schemas/task-evidence.v2.schema.json",
       "class": "schema"
     },
     {
@@ -1128,6 +1144,10 @@
     },
     {
       "path": "skills/bootstrap-orchestrator/templates/control-plane/pull_request_template.md.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/control-plane/roles.json.template",
       "class": "reusable-skill"
     },
     {

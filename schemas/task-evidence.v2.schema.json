@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nuvoralink.internal/schemas/task-evidence.v2.schema.json",
+  "title": "Runner-generated task completion evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "attempt_id", "contract_sha256", "repository", "changed_files", "proof_receipts", "review_receipts", "human_gate_receipts", "completion_report_receipt", "unreached_surfaces", "doctrine_loop"],
+  "properties": {
+    "schema_version": { "enum": [2] },
+    "task_id": { "type": "string", "minLength": 1 },
+    "attempt_id": { "type": "string", "pattern": "^att-[a-f0-9]{32}$" },
+    "contract_sha256": { "$ref": "#/$defs/sha256" },
+    "repository": { "$ref": "#/$defs/repository" },
+    "changed_files": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "proof_receipts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["proof_id", "profile_id", "profile_sha256", "capability", "execution_id", "attempt_id", "contract_sha256", "started_at", "finished_at", "repository_before", "repository_after", "commands", "mutation", "attestation_hmac_sha256"],
+        "properties": {
+          "proof_id": { "type": "string", "minLength": 1 },
+          "profile_id": { "type": "string", "minLength": 1 },
+          "profile_sha256": { "$ref": "#/$defs/sha256" },
+          "capability": { "type": "string", "minLength": 1 },
+          "execution_id": { "type": "string", "pattern": "^run-[a-f0-9]{32}$" },
+          "attempt_id": { "type": "string", "pattern": "^att-[a-f0-9]{32}$" },
+          "contract_sha256": { "$ref": "#/$defs/sha256" },
+          "started_at": { "$ref": "#/$defs/timestamp" },
+          "finished_at": { "$ref": "#/$defs/timestamp" },
+          "repository_before": { "$ref": "#/$defs/repository" },
+          "repository_after": { "$ref": "#/$defs/repository" },
+          "commands": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/commandReceipt" } },
+          "mutation": { "oneOf": [{ "$ref": "#/$defs/mutationReceipt" }, { "type": "null" }] },
+          "attestation_hmac_sha256": { "$ref": "#/$defs/sha256" }
+        }
+      }
+    },
+    "review_receipts": { "type": "array", "items": { "$ref": "#/$defs/reviewReceipt" } },
+    "human_gate_receipts": { "type": "array", "items": { "$ref": "#/$defs/humanGateReceipt" } },
+    "completion_report_receipt": { "$ref": "#/$defs/completionReportReceipt" },
+    "unreached_surfaces": { "type": "array", "items": { "type": "string" } },
+    "doctrine_loop": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "timestamp": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T" },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root_sha256", "head", "base", "diff_sha256"],
+      "properties": {
+        "root_sha256": { "$ref": "#/$defs/sha256" },
+        "head": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" },
+        "base": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" },
+        "diff_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "artifactRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "type": "integer" }
+      }
+    },
+    "commandReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command_id", "argv", "started_at", "finished_at", "exit_code", "stdout_sha256", "stderr_sha256", "stdout_bytes", "stderr_bytes", "artifact", "parser"],
+      "properties": {
+        "command_id": { "type": "string", "minLength": 1 },
+        "argv": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "started_at": { "$ref": "#/$defs/timestamp" },
+        "finished_at": { "$ref": "#/$defs/timestamp" },
+        "exit_code": { "type": "integer" },
+        "stdout_sha256": { "$ref": "#/$defs/sha256" },
+        "stderr_sha256": { "$ref": "#/$defs/sha256" },
+        "stdout_bytes": { "type": "integer" },
+        "stderr_bytes": { "type": "integer" },
+        "artifact": { "$ref": "#/$defs/artifactRef" },
+        "parser": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "executed_count", "skipped_count", "observed_cases"],
+          "properties": {
+            "status": { "enum": ["pass", "fail"] },
+            "executed_count": { "type": "integer" },
+            "skipped_count": { "type": "integer" },
+            "observed_cases": { "type": "array", "uniqueItems": true, "items": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "mutationReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "harness_execution_id", "artifact", "baseline", "mutant", "restored", "post_restore"],
+      "properties": {
+        "case_id": { "type": "string", "minLength": 1 },
+        "harness_execution_id": { "type": "string", "pattern": "^run-[a-f0-9]{32}$" },
+        "artifact": { "$ref": "#/$defs/artifactRef" },
+        "baseline": { "$ref": "#/$defs/mutationCheckpoint" },
+        "mutant": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["exit_code", "diagnostic_sha256"],
+          "properties": {
+            "exit_code": { "type": "integer" },
+            "diagnostic_sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "restored": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["digest"],
+          "properties": { "digest": { "$ref": "#/$defs/sha256" } }
+        },
+        "post_restore": { "$ref": "#/$defs/mutationCheckpoint" }
+      }
+    },
+    "mutationCheckpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exit_code", "digest"],
+      "properties": {
+        "exit_code": { "type": "integer" },
+        "digest": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "reviewReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["review_id", "attempt_id", "contract_sha256", "reviewer_id_sha256", "reviewer_session_sha256", "role", "repository", "verdict", "finding_count", "unresolved_finding_count", "reviewed_at", "attestation_hmac_sha256"],
+      "properties": {
+        "review_id": { "type": "string", "pattern": "^review-[a-f0-9]{32}$" },
+        "attempt_id": { "type": "string", "pattern": "^att-[a-f0-9]{32}$" },
+        "contract_sha256": { "$ref": "#/$defs/sha256" },
+        "reviewer_id_sha256": { "$ref": "#/$defs/sha256" },
+        "reviewer_session_sha256": { "$ref": "#/$defs/sha256" },
+        "role": { "type": "string", "minLength": 1 },
+        "repository": { "$ref": "#/$defs/repository" },
+        "verdict": { "enum": ["pass", "findings"] },
+        "finding_count": { "type": "integer" },
+        "unresolved_finding_count": { "type": "integer" },
+        "reviewed_at": { "$ref": "#/$defs/timestamp" },
+        "supersedes_review_id": { "type": "string", "pattern": "^review-[a-f0-9]{32}$" },
+        "attestation_hmac_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "completionReportReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["report_id", "attempt_id", "contract_sha256", "reporter_id_sha256", "reporter_session_sha256", "reporter_role", "repository", "unreached_surfaces", "doctrine_loop", "reported_at", "attestation_hmac_sha256"],
+      "properties": {
+        "report_id": { "type": "string", "pattern": "^report-[a-f0-9]{32}$" },
+        "attempt_id": { "type": "string", "pattern": "^att-[a-f0-9]{32}$" },
+        "contract_sha256": { "$ref": "#/$defs/sha256" },
+        "reporter_id_sha256": { "$ref": "#/$defs/sha256" },
+        "reporter_session_sha256": { "$ref": "#/$defs/sha256" },
+        "reporter_role": { "type": "string", "minLength": 1 },
+        "repository": { "$ref": "#/$defs/repository" },
+        "unreached_surfaces": { "type": "array", "items": { "type": "string" } },
+        "doctrine_loop": { "type": "string", "minLength": 1 },
+        "reported_at": { "$ref": "#/$defs/timestamp" },
+        "supersedes_report_id": { "type": "string", "pattern": "^report-[a-f0-9]{32}$" },
+        "attestation_hmac_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "humanGateReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gate_id", "attempt_id", "contract_sha256", "approver_id_sha256", "approver_session_sha256", "repository", "approved_at", "attestation_hmac_sha256"],
+      "properties": {
+        "gate_id": { "type": "string", "minLength": 1 },
+        "attempt_id": { "type": "string", "pattern": "^att-[a-f0-9]{32}$" },
+        "contract_sha256": { "$ref": "#/$defs/sha256" },
+        "approver_id_sha256": { "$ref": "#/$defs/sha256" },
+        "approver_session_sha256": { "$ref": "#/$defs/sha256" },
+        "repository": { "$ref": "#/$defs/repository" },
+        "approved_at": { "$ref": "#/$defs/timestamp" },
+        "attestation_hmac_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

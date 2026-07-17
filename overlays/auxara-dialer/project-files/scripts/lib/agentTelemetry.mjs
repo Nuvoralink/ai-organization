@@ -116,11 +116,6 @@ function sessionStatePath(sessionId, directory) {
   return hash ? path.join(directory, `session-${hash}.json`) : undefined;
 }
 
-function taskStatePath(taskId, directory) {
-  const hash = hashIdentifier(taskId);
-  return hash ? path.join(directory, `task-${hash}.json`) : undefined;
-}
-
 export function recordSessionStart(
   sessionId,
   startedAt = Date.now(),
@@ -152,56 +147,6 @@ export function sessionDurationMs(
     const state = JSON.parse(readFileSync(statePath, 'utf8'));
     if (!Number.isInteger(state?.started_at_ms) || state.started_at_ms < 0) return undefined;
     return Math.max(0, Math.round(endedAt - state.started_at_ms));
-  } catch {
-    return undefined;
-  }
-}
-
-export function recordTaskCompletionTier(
-  taskId,
-  completionTier,
-  directory = telemetryDirectory(),
-  worktreeFingerprint,
-) {
-  const statePath = taskStatePath(taskId, directory);
-  const tier = enumValue(completionTier, COMPLETION_TIERS);
-  if (!statePath || !tier) return;
-  mkdirSync(directory, { recursive: true });
-  const state = {
-    schema_version: 1,
-    task_hash: hashIdentifier(taskId),
-    completion_tier: tier,
-  };
-  if (typeof worktreeFingerprint === 'string' && /^[a-f0-9]{64}$/.test(worktreeFingerprint)) {
-    state.worktree_fingerprint = worktreeFingerprint;
-  }
-  try {
-    writeFileSync(statePath, `${JSON.stringify(state)}\n`, { encoding: 'utf8', flag: 'wx' });
-  } catch (error) {
-    if (error?.code !== 'EEXIST') throw error;
-  }
-}
-
-export function taskCompletionTier(taskId, directory = telemetryDirectory()) {
-  const statePath = taskStatePath(taskId, directory);
-  if (!statePath) return undefined;
-  try {
-    const state = JSON.parse(readFileSync(statePath, 'utf8'));
-    return enumValue(state?.completion_tier, COMPLETION_TIERS);
-  } catch {
-    return undefined;
-  }
-}
-
-export function taskWorktreeFingerprint(taskId, directory = telemetryDirectory()) {
-  const statePath = taskStatePath(taskId, directory);
-  if (!statePath) return undefined;
-  try {
-    const state = JSON.parse(readFileSync(statePath, 'utf8'));
-    return typeof state?.worktree_fingerprint === 'string' &&
-      /^[a-f0-9]{64}$/.test(state.worktree_fingerprint)
-      ? state.worktree_fingerprint
-      : undefined;
   } catch {
     return undefined;
   }

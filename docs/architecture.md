@@ -18,7 +18,7 @@ Connect a clean machine to this private repository and begin safe, consistent Cl
 ## Authority seams
 
 - Policy: `policies/action-authority.v1.json` owns what agents may do autonomously.
-- Task assurance: `schemas/task-assurance.v1.schema.json` owns the cross-vendor work contract.
+- Task assurance: `schemas/task-assurance.v2.schema.json`, `schemas/task-evidence.v2.schema.json`, and `core/lifecycle/` own the cross-vendor contract, runner evidence, attempt state, and completion authority.
 - Roles: `registries/agent-roles.v1.json` owns standing roles, triggers, and incompatible responsibilities.
 - Assets: `global`, `skills`, and `overlays` own portable files.
 - Location: `registries/project-roots.local.json` owns machine-specific paths and is never committed.

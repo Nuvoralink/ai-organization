@@ -66,7 +66,7 @@ Install begins with `--dry-run`; capture never overwrites canonical data without
 
 - Safe canonical boundary enforcement, secret/path refusal, destination-collision detection, deterministic install/check, local-only detection, snapshots, failure rollback, and explicit rollback.
 - Executed JSON schemas plus semantic action-policy invariants and a fail-closed action evaluator.
-- Cross-vendor task governor with editable/read-only path boundaries, risk-selected proof, real command exits, opened-output evidence, killer mutations, and independent-review requirements.
+- Cross-vendor task assurance runtime with immutable attempts, registry-resolved local proof profiles, parsed artifact digests, structural mutation receipts, risk-derived independent review/human gates, and replay-safe completion.
 - Auxara and CoachAI overlay authorities plus daily/weekly project checks and a biweekly universal backflow comparison.
 - Pull-request CI, ownership/review templates, and an editable 19-slide operating-model presentation with structural and rendered QA.
 

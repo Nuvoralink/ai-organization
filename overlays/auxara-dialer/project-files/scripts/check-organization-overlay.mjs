@@ -10,6 +10,25 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const ORGANIZATION_MANIFEST = '.ai-organization/ownership.json';
+const REQUIRED_MANAGED_FILES = new Set([
+  '.ai-organization/completion-profiles.json',
+  '.ai-organization/policies/action-authority.v1.json',
+  '.ai-organization/policies/risk-controls.v1.json',
+  '.ai-organization/schemas/task-assurance.v2.schema.json',
+  '.ai-organization/schemas/task-evidence.v2.schema.json',
+  '.ai-organization/runtime/core/authority/assess-action.mjs',
+  '.ai-organization/runtime/core/schema/validate-json-schema.mjs',
+  '.ai-organization/runtime/core/lifecycle/README.md',
+  '.ai-organization/runtime/core/lifecycle/codex-task-status.mjs',
+  '.ai-organization/runtime/core/lifecycle/evidence-runtime.mjs',
+  '.ai-organization/runtime/core/lifecycle/lifecycle-controller.mjs',
+  '.ai-organization/runtime/core/lifecycle/run-evidence-integrity-mutation.mjs',
+  '.ai-organization/runtime/core/lifecycle/task-governor.mjs',
+  'scripts/check-agent-control-plane.mjs',
+  'scripts/check-organization-overlay.mjs',
+  'scripts/claude-lifecycle-hook.mjs',
+  'scripts/lib/agentTelemetry.mjs',
+]);
 
 const normalizePath = (value) =>
   String(value ?? '')
@@ -78,6 +97,7 @@ export function validateOrganizationOverlay(root = process.cwd()) {
     const actual = hashFile(target);
     if (actual !== entry.sha256) errors.push(`${relative}: managed file parity mismatch`);
   }
+  for (const required of REQUIRED_MANAGED_FILES) if (!seen.has(required)) errors.push(`${ORGANIZATION_MANIFEST}: required managed control is omitted: ${required}`);
   return errors;
 }
 

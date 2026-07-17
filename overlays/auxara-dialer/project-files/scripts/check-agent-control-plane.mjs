@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { validateActionPolicySemantics } from '../.ai-organization/runtime/core/authority/assess-action.mjs';
 import { validateJsonAgainstSchema } from '../.ai-organization/runtime/core/schema/validate-json-schema.mjs';
+import { COMPLETION_CLAIM_LEASE_MS, isValidIntegrationBranch, normalizeProfileRegistry, validateLifecycleRoleModes, validateSafeProofProfile } from '../.ai-organization/runtime/core/lifecycle/evidence-runtime.mjs';
 
 export const CONTROL_PLANE_POLICY = Object.freeze({
   artifacts: Object.freeze({
@@ -23,6 +24,7 @@ export const CONTROL_PLANE_POLICY = Object.freeze({
     playbook: 'docs/agent-prompts/orchestration-playbook.md',
     settings: '.claude/settings.json',
     actionAuthority: '.ai-organization/policies/action-authority.v1.json',
+    riskPolicy: '.ai-organization/policies/risk-controls.v1.json',
     actionAuthoritySchema: '.ai-organization/schemas/action-authority.v1.schema.json',
     agentRegistry: '.ai-organization/agents.json',
     completionProfiles: '.ai-organization/completion-profiles.json',
@@ -360,15 +362,19 @@ function npmReferences(source) {
   return references;
 }
 
-function validateNpmCommandReferences(root, packageSource, completionProfilesSource) {
+function validateNpmCommandReferences(root, packageSource, completionProfilesSource, agentRegistrySource, actionAuthoritySource) {
   const errors = [];
   const rootPackage = parseJson(errors, 'package.json', packageSource);
   if (!rootPackage) return errors;
+  if (rootPackage.scripts?.['test:organization-control-plane'] !== 'npm test --workspace=backend -- --reporter=tap claude-lifecycle-hook.test.ts') errors.push('package.json: test:organization-control-plane must emit structured TAP for the assurance parser');
+  if (rootPackage.scripts?.['test:evidence-integrity-mutation'] !== 'node .ai-organization/runtime/core/lifecycle/run-evidence-integrity-mutation.mjs') errors.push('package.json: mutation proof must run the shared live-verifier harness');
   const completionProfiles = parseJson(
     errors,
     CONTROL_PLANE_POLICY.artifacts.completionProfiles,
     completionProfilesSource,
   );
+  const agentRegistry = parseJson(errors, CONTROL_PLANE_POLICY.artifacts.agentRegistry, agentRegistrySource);
+  const actionAuthority = parseJson(errors, CONTROL_PLANE_POLICY.artifacts.actionAuthority, actionAuthoritySource);
   const packages = new Map([['root', rootPackage]]);
   for (const workspace of Array.isArray(rootPackage.workspaces) ? rootPackage.workspaces : []) {
     const packagePath = path.join(root, workspace, 'package.json');
@@ -435,6 +441,33 @@ function validateNpmCommandReferences(root, packageSource, completionProfilesSou
   ];
   if (completionProfiles?.schemaVersion !== 1) {
     errors.push(`${CONTROL_PLANE_POLICY.artifacts.completionProfiles}: schemaVersion must be 1`);
+  }
+  if (!isValidIntegrationBranch(completionProfiles?.integration_branch)) {
+    errors.push(`${CONTROL_PLANE_POLICY.artifacts.completionProfiles}: integration_branch must be an explicit safe Git branch name for repository binding`);
+  }
+  if (!Number.isInteger(completionProfiles?.lifecycle_hook_timeout_ms) || !Number.isInteger(completionProfiles?.lifecycle_timeout_safety_margin_ms)) errors.push(`${CONTROL_PLANE_POLICY.artifacts.completionProfiles}: lifecycle hook timeout and safety margin are required in milliseconds`);
+  if (!Array.isArray(completionProfiles?.lifecycle_supported_risk_classes) || completionProfiles.lifecycle_supported_risk_classes.length === 0) {
+    errors.push(`${CONTROL_PLANE_POLICY.artifacts.completionProfiles}: lifecycle-supported risk classes must be explicit`);
+  } else {
+    const policyFile = path.join(root, '.ai-organization', 'policies', 'risk-controls.v1.json');
+    const riskPolicy = fs.existsSync(policyFile) ? parseJson(errors, '.ai-organization/policies/risk-controls.v1.json', fs.readFileSync(policyFile, 'utf8')) : null;
+    const lifecycleProfileIds = new Set(Object.entries(completionProfiles.profiles ?? {}).filter(([, profile]) => profile?.assurance).map(([id]) => id));
+    const lifecycleProfiles = normalizeProfileRegistry(completionProfiles).filter((profile) => lifecycleProfileIds.has(profile.id));
+    for (const profile of lifecycleProfiles) errors.push(...validateSafeProofProfile(profile, { cwd: root, actionAuthority }).map((error) => `${CONTROL_PLANE_POLICY.artifacts.completionProfiles}/${profile.id}: ${error}`));
+    const capabilities = new Set(lifecycleProfiles.flatMap((profile) => profile.capabilities ?? []));
+    const roleProviders = new Set((agentRegistry?.agents ?? []).map((agent) => agent.id));
+    const roleProviderModes = new Map((agentRegistry?.agents ?? []).map((agent) => [agent.id, agent.mode]));
+    errors.push(...validateLifecycleRoleModes(completionProfiles.lifecycle_roles_by_completion_mode, roleProviderModes).map((error) => `${CONTROL_PLANE_POLICY.artifacts.completionProfiles}: ${error}`));
+    for (const riskClass of completionProfiles.lifecycle_supported_risk_classes) {
+      const row = riskPolicy?.classes?.[riskClass];
+      if (!row) errors.push(`${CONTROL_PLANE_POLICY.artifacts.completionProfiles}: lifecycle-supported risk class has no policy row: ${riskClass}`);
+      for (const capability of row?.required_proofs ?? []) if (!capabilities.has(capability)) errors.push(`${CONTROL_PLANE_POLICY.artifacts.completionProfiles}: ${riskClass} lacks assurance capability provider: ${capability}`);
+      for (const role of row?.required_roles ?? []) if (!roleProviders.has(role)) errors.push(`${CONTROL_PLANE_POLICY.artifacts.completionProfiles}: ${riskClass} lacks registered role provider: ${role}`);
+    }
+    for (const rule of completionProfiles.risk_path_rules ?? []) if (!riskPolicy?.classes?.[rule.risk_class] || !Array.isArray(rule.include) || rule.include.length === 0) errors.push(`${CONTROL_PLANE_POLICY.artifacts.completionProfiles}: invalid risk path rule for ${rule.risk_class ?? '<missing>'}`);
+    const profileBudgets = lifecycleProfiles.map((profile) => (profile.commands ?? []).reduce((sum, command) => sum + (command.timeout_ms ?? 0), 0) + (profile.mutation?.timeout_ms ?? 0));
+    if (profileBudgets.some((budget) => budget + completionProfiles.lifecycle_timeout_safety_margin_ms > completionProfiles.lifecycle_hook_timeout_ms)) errors.push(`${CONTROL_PLANE_POLICY.artifacts.completionProfiles}: lifecycle profile budget exceeds hook timeout after safety margin`);
+    if (completionProfiles.lifecycle_hook_timeout_ms + completionProfiles.lifecycle_timeout_safety_margin_ms > COMPLETION_CLAIM_LEASE_MS) errors.push(`${CONTROL_PLANE_POLICY.artifacts.completionProfiles}: hook timeout plus safety margin exceeds completion claim lease`);
   }
   for (const profile of requiredProfiles) {
     const commands = completionProfiles?.profiles?.[profile]?.commands;
@@ -707,7 +740,7 @@ export function validateAgentControlPlane(root = process.cwd()) {
   errors.push(
     ...validateAgentRegistry(root, agentRegistry, CONTROL_PLANE_POLICY.artifacts.agentRegistry),
   );
-  errors.push(...validateNpmCommandReferences(root, packageSource, completionProfiles));
+  errors.push(...validateNpmCommandReferences(root, packageSource, completionProfiles, agentRegistry, actionAuthority));
   requireHeadings(
     errors,
     CONTROL_PLANE_POLICY.artifacts.goals,
@@ -736,6 +769,9 @@ export function validateAgentControlPlane(root = process.cwd()) {
         );
       }
     }
+    const completionTimeouts = settings.hooks?.TaskCompleted?.flatMap((entry) => entry.hooks ?? []).filter((hook) => hook.command === 'node scripts/claude-lifecycle-hook.mjs').map((hook) => hook.timeout) ?? [];
+    const profileRegistry = JSON.parse(completionProfiles);
+    if (completionTimeouts.length !== 1 || completionTimeouts[0] * 1_000 !== profileRegistry.lifecycle_hook_timeout_ms) errors.push(`${CONTROL_PLANE_POLICY.artifacts.settings}: TaskCompleted timeout must exactly match the completion profile authority`);
   } catch (error) {
     errors.push(`${CONTROL_PLANE_POLICY.artifacts.settings}: invalid JSON: ${error.message}`);
   }

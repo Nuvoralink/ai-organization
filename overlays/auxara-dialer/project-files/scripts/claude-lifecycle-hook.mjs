@@ -1,19 +1,14 @@
 // Claude Code lifecycle hook router. Reads stdin exactly once, then dispatches by hook_event_name.
 // Blocking events use exit 2 per the official Claude hooks contract; observation-only events never block.
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { Buffer } from 'node:buffer';
-import { createHash } from 'node:crypto';
 import path from 'node:path';
 import {
   appendTelemetry,
   hashSummary,
-  hashIdentifier,
-  recordTaskCompletionTier,
   recordSessionStart,
   sessionDurationMs,
-  taskCompletionTier,
-  taskWorktreeFingerprint,
   telemetryDirectory,
 } from './lib/agentTelemetry.mjs';
 import { runCompletionProofForFiles } from './lib/claudeGateRouter.mjs';
@@ -22,10 +17,17 @@ import {
   formatOrchestrationState,
   resolveGitRoot,
 } from './orchestration-state.mjs';
+import { validateTaskContract as validateUniversalTaskContract } from '../.ai-organization/runtime/core/lifecycle/task-governor.mjs';
 import {
-  validateCompletion as validateUniversalCompletion,
-  validateTaskContract as validateUniversalTaskContract,
-} from '../.ai-organization/runtime/core/lifecycle/task-governor.mjs';
+  acceptLifecycleTask,
+  completeLifecycleTask,
+  recordLifecycleCompletionReport,
+  recordLifecycleReview,
+} from '../.ai-organization/runtime/core/lifecycle/lifecycle-controller.mjs';
+import {
+  defaultAssuranceStateDirectory,
+  loadTaskAttempt,
+} from '../.ai-organization/runtime/core/lifecycle/evidence-runtime.mjs';
 
 const REQUIRED_BRIEF_SECTIONS = Object.freeze([
   { name: 'Context', aliases: ['context'] },
@@ -47,36 +49,6 @@ const REQUIRED_REPORT_SECTIONS = Object.freeze([
   { name: 'Honesty clause', aliases: ['honesty clause'] },
 ]);
 const STDERR_LIMIT = 12_000;
-const ASSURANCE_STATE_VERSION = 1;
-
-function assuranceStatePath(taskId, telemetryDir) {
-  const taskHash = hashIdentifier(taskId);
-  return taskHash ? path.join(path.dirname(telemetryDir), 'agent-task-assurance', `task-${taskHash}.json`) : undefined;
-}
-
-function recordUniversalTaskContract(taskId, contract, telemetryDir) {
-  const statePath = assuranceStatePath(taskId, telemetryDir);
-  if (!statePath) throw new Error('task id is unavailable');
-  mkdirSync(path.dirname(statePath), { recursive: true });
-  writeFileSync(statePath, `${JSON.stringify({ schema_version: ASSURANCE_STATE_VERSION, contract })}\n`, { encoding: 'utf8', mode: 0o600 });
-}
-
-function universalTaskContract(taskId, telemetryDir) {
-  const statePath = assuranceStatePath(taskId, telemetryDir);
-  if (!statePath) return undefined;
-  try {
-    const state = JSON.parse(readFileSync(statePath, 'utf8'));
-    return state?.schema_version === ASSURANCE_STATE_VERSION ? state.contract : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function clearUniversalTaskContract(taskId, telemetryDir) {
-  const statePath = assuranceStatePath(taskId, telemetryDir);
-  if (statePath) rmSync(statePath, { force: true });
-}
-
 function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -101,25 +73,6 @@ function structuredMarker(text, marker) {
   const line = String(text ?? '').split(/\r?\n/).find((candidate) => candidate.startsWith(marker));
   if (!line) return null;
   try { return JSON.parse(line.slice(marker.length).trim()); } catch { return null; }
-}
-
-function npmGateFromProofCommand(command) {
-  return /^npm run ([A-Za-z0-9:_-]+)$/u.exec(command ?? '')?.[1];
-}
-
-function validateAdapterProofCommands(contract, tier) {
-  const failures = [];
-  for (const proof of (contract?.proofs ?? []).filter((candidate) => candidate.required)) {
-    if (proof.command === 'internal:read-only-worktree-fingerprint') {
-      if (tier !== 'read-only') failures.push(`${proof.id}: internal read-only proof is valid only for read-only tasks`);
-      continue;
-    }
-    if (!npmGateFromProofCommand(proof.command)) failures.push(`${proof.id}: proof command must be "npm run <script>" or the read-only internal proof`);
-  }
-  if (tier === 'read-only' && !(contract?.proofs ?? []).some((proof) => proof.required && proof.command === 'internal:read-only-worktree-fingerprint')) {
-    failures.push('read-only tasks require internal:read-only-worktree-fingerprint');
-  }
-  return failures;
 }
 
 function isExplicitSectionLine(line, aliases) {
@@ -204,14 +157,6 @@ function safelyRecordSessionStart(sessionId, directory) {
   }
 }
 
-function safelyRecordTaskCompletionTier(taskId, tier, directory, worktreeFingerprint) {
-  try {
-    recordTaskCompletionTier(taskId, tier, directory, worktreeFingerprint);
-  } catch {
-    // A deterministic brief check can still run when local lifecycle state is unavailable.
-  }
-}
-
 function stateCounts(state) {
   return {
     branchCount: new Set(state.worktrees.map((worktree) => worktree.branch).filter(Boolean)).size,
@@ -245,76 +190,6 @@ function runGit(args, cwd, timeout = 10_000) {
   });
 }
 
-function runNpmGate(gate, cwd, timeout = 120_000) {
-  const executable = process.platform === 'win32' ? (process.env.ComSpec ?? 'cmd.exe') : 'npm';
-  const args = process.platform === 'win32' ? ['/d', '/s', '/c', 'npm', 'run', gate] : ['run', gate];
-  const result = spawnSync(executable, args, {
-    cwd,
-    encoding: 'utf8',
-    env: { ...process.env, CALL_DROP_GATE_STRICT: '1' },
-    timeout,
-    windowsHide: true,
-    maxBuffer: 64 * 1024 * 1024,
-  });
-  return {
-    status: result.status ?? 1,
-    output: `${result.stdout ?? ''}${result.stderr ?? ''}${result.error ? `\n${result.error.message}` : ''}`.slice(-3_000),
-  };
-}
-
-function runUniversalContractProofs(contract, { cwd, projectGateResult, readOnlyFingerprintPassed = false }) {
-  const proofEvidence = [];
-  const failures = [];
-  const projectFailures = new Map((projectGateResult?.failures ?? []).map((failure) => [failure.gate, failure]));
-  for (const proof of (contract?.proofs ?? []).filter((candidate) => candidate.required)) {
-    let status;
-    let output = '';
-    if (proof.command === 'internal:read-only-worktree-fingerprint') {
-      status = readOnlyFingerprintPassed ? 0 : 1;
-      if (status !== 0) output = 'read-only worktree fingerprint did not match the accepted baseline';
-    } else {
-      const gate = npmGateFromProofCommand(proof.command);
-      if (!gate) {
-        status = 1;
-        output = 'unsupported proof command';
-      } else if (projectGateResult?.gates?.includes(gate)) {
-        const failed = projectFailures.get(gate);
-        status = failed ? (failed.status ?? 1) : 0;
-        output = failed?.output ?? '';
-      } else {
-        const result = runNpmGate(gate, cwd);
-        status = result.status;
-        output = result.output;
-      }
-    }
-    proofEvidence.push({
-      id: proof.id,
-      command: proof.command,
-      exit_code: status,
-      artifact_opened: true,
-      killer_mutation_observed: status === 0,
-    });
-    if (status !== 0) failures.push(`Universal proof ${proof.id} FAILED (${proof.command})\n${output}`);
-  }
-  return { proofEvidence, failures };
-}
-
-function universalCompletionEvidence(contract, changedFiles, proofEvidence) {
-  const reviewRequired = ['review_verified', 'deployed_verified'].includes(contract.completion?.tier);
-  return {
-    task_id: contract.id,
-    changed_files: changedFiles,
-    proofs: proofEvidence,
-    independent_review: {
-      required: reviewRequired,
-      reviewer: null,
-      verdict: reviewRequired ? 'findings' : 'not_required',
-    },
-    unreached_surfaces: contract.completion?.unreached_surfaces ?? [],
-    doctrine_loop: contract.completion?.doctrine_loop ?? 'none',
-  };
-}
-
 function gitOutput(args, cwd) {
   const result = runGit(args, cwd);
   if (result.status !== 0 || result.error) {
@@ -330,9 +205,11 @@ function nulPaths(value) {
   return value.split('\0').filter(Boolean);
 }
 
-export function collectTaskChangedFiles(repoRoot) {
-  const base = gitOutput(['merge-base', 'HEAD', 'origin/main'], repoRoot).trim();
-  if (!base) throw new Error('Unable to resolve merge-base with origin/main.');
+export function collectTaskChangedFiles(repoRoot, integrationBranch) {
+  if (typeof integrationBranch !== 'string' || integrationBranch.length === 0) throw new Error('Proof registry integration branch is unavailable.');
+  const baseRef = `origin/${integrationBranch}`;
+  const base = gitOutput(['merge-base', 'HEAD', baseRef], repoRoot).trim();
+  if (!base) throw new Error(`Unable to resolve merge-base with ${baseRef}.`);
 
   const files = new Set([
     ...nulPaths(
@@ -344,31 +221,6 @@ export function collectTaskChangedFiles(repoRoot) {
   ]);
 
   return { base, files: [...files].sort() };
-}
-
-export function collectWorktreeFingerprint(repoRoot) {
-  const hash = createHash('sha256');
-  const add = (label, value) => {
-    const text = String(value ?? '');
-    hash.update(`${label.length}:${label}:${Buffer.byteLength(text, 'utf8')}:`);
-    hash.update(text, 'utf8');
-  };
-
-  add('head', gitOutput(['rev-parse', 'HEAD'], repoRoot));
-  const branch = runGit(['symbolic-ref', '--quiet', '--short', 'HEAD'], repoRoot);
-  add('branch', branch.status === 0 && !branch.error ? branch.stdout : 'detached');
-  add('head_to_worktree', gitOutput(['diff', '--binary', 'HEAD', '--'], repoRoot));
-  add('head_to_index', gitOutput(['diff', '--cached', '--binary', 'HEAD', '--'], repoRoot));
-  add('index_to_worktree', gitOutput(['diff', '--binary', '--'], repoRoot));
-
-  const untracked = nulPaths(
-    gitOutput(['ls-files', '--others', '--exclude-standard', '-z'], repoRoot),
-  ).sort();
-  for (const file of untracked) {
-    add('untracked_path', file);
-    add('untracked_hash', gitOutput(['hash-object', '--no-filters', '--', file], repoRoot));
-  }
-  return hash.digest('hex');
 }
 
 function diffCheckFailures(repoRoot, base) {
@@ -427,248 +279,173 @@ function handleSubagentStart(payload, telemetryDir) {
   );
 }
 
+function assuranceProfileRegistry(repoRoot) {
+  return JSON.parse(readFileSync(path.join(repoRoot, '.ai-organization', 'completion-profiles.json'), 'utf8'));
+}
+
+function taskImplementerIdentity(payload) {
+  return payload.agent_id ?? payload.agent_type ?? payload.subagent_type ?? payload.session_id;
+}
+
 function handleTaskCreated(payload, telemetryDir) {
   const description = typeof payload.task_description === 'string' ? payload.task_description : '';
   const missing = missingExplicitSections(description, REQUIRED_BRIEF_SECTIONS);
-  const universalContract = structuredMarker(description, 'TASK_CONTRACT_JSON:');
-  const universalFailures = validateUniversalTaskContract(universalContract);
-  if (universalFailures.length > 0) missing.push(`Universal task contract (${universalFailures.join('; ')})`);
+  const contract = structuredMarker(description, 'TASK_CONTRACT_JSON:');
+  const contractFailures = validateUniversalTaskContract(contract);
+  if (contractFailures.length > 0) missing.push(`Universal task contract (${contractFailures.join('; ')})`);
   const tier = completionTier(description);
   if (!tier) missing.push('Completion tier');
-  if (universalFailures.length === 0 && tier) {
-    const proofCommandFailures = validateAdapterProofCommands(universalContract, tier);
-    if (proofCommandFailures.length > 0) missing.push(`Universal proof commands (${proofCommandFailures.join('; ')})`);
+  let result = { accepted: false, failures: [] };
+  let repoRoot;
+  if (missing.length === 0) {
+    repoRoot = resolveGitRoot(payload.cwd ?? process.cwd());
+    if (!repoRoot) result.failures.push('git worktree unavailable');
+    else result = acceptLifecycleTask({
+      taskId: payload.task_id,
+      contract,
+      sessionId: payload.session_id,
+      implementerId: taskImplementerIdentity(payload),
+      completionMode: tier,
+      cwd: repoRoot,
+      profileRegistry: assuranceProfileRegistry(repoRoot),
+    });
   }
-
-  let worktreeFingerprint;
-  let baselineError;
-  if (missing.length === 0 && tier === 'read-only') {
-    try {
-      const repoRoot = resolveGitRoot(payload.cwd ?? process.cwd());
-      if (!repoRoot) throw new Error('git worktree unavailable');
-      worktreeFingerprint = collectWorktreeFingerprint(repoRoot);
-    } catch (error) {
-      baselineError = error;
-    }
-  }
-
-  let assuranceError;
-  if (missing.length === 0 && !baselineError) {
-    try { recordUniversalTaskContract(payload.task_id, universalContract, telemetryDir); }
-    catch (error) { assuranceError = error; }
-  }
-
-  const outcome = missing.length === 0 && !baselineError && !assuranceError ? 'allow' : 'block';
-  if (outcome === 'allow') {
-    safelyRecordTaskCompletionTier(payload.task_id, tier, telemetryDir, worktreeFingerprint);
-  }
+  const failures = [...missing, ...result.failures];
   safelyAppendTelemetry(
     eventTelemetry(payload, {
-      outcome,
+      outcome: failures.length === 0 ? 'allow' : 'block',
       completionTier: tier,
       missingSectionCount: missing.length,
+      failedCheckCount: result.failures.length,
     }),
     telemetryDir,
   );
-  if (missing.length > 0) {
+  if (failures.length > 0) {
     block(
-      `[lifecycle-hook] TaskCreated blocked. Add explicit, non-empty sections for: ${missing.join(', ')}. ` +
+      `[lifecycle-hook] TaskCreated blocked. ${failures.join('; ')}. ` +
         'Procedure must contain a numbered step; names mentioned only in prose, quotes, or code fences do not satisfy the brief contract.',
     );
-  }
-  if (baselineError) {
-    block(
-      `[lifecycle-hook] TaskCreated blocked: unable to capture the read-only worktree baseline. ${baselineError.message}`,
-    );
-  }
-  if (assuranceError) {
-    block(`[lifecycle-hook] TaskCreated blocked: unable to persist the validated universal task contract for completion. ${assuranceError.message}`);
   }
 }
 
 function handleTaskCompleted(payload, telemetryDir) {
+  const repoRoot = resolveGitRoot(payload.cwd ?? process.cwd());
+  if (!repoRoot) {
+    safelyAppendTelemetry(eventTelemetry(payload, { outcome: 'block', failedCheckCount: 1 }), telemetryDir);
+    block('[lifecycle-hook] TaskCompleted blocked: git worktree unavailable.');
+    return;
+  }
+  const stateDirectory = defaultAssuranceStateDirectory(repoRoot);
+  const attempt = loadTaskAttempt(stateDirectory, payload.task_id);
+  if (!attempt) {
+    safelyAppendTelemetry(eventTelemetry(payload, { outcome: 'block', failedCheckCount: 1 }), telemetryDir);
+    block('[lifecycle-hook] TaskCompleted blocked: no accepted TaskCreated attempt exists.');
+    return;
+  }
   const description = typeof payload.task_description === 'string' ? payload.task_description : '';
   const describedTier = completionTier(description);
-  const recordedTier = taskCompletionTier(payload.task_id, telemetryDir);
-  const recordedWorktreeFingerprint = taskWorktreeFingerprint(payload.task_id, telemetryDir);
-  if (describedTier && recordedTier && describedTier !== recordedTier) {
-    safelyAppendTelemetry(
-      eventTelemetry(payload, { outcome: 'block', failedCheckCount: 1 }),
-      telemetryDir,
-    );
-    block(
-      '[lifecycle-hook] TaskCompleted blocked: Completion tier differs from the tier accepted at TaskCreated.',
-    );
+  if (describedTier && describedTier !== attempt.completion_mode) {
+    safelyAppendTelemetry(eventTelemetry(payload, { outcome: 'block', failedCheckCount: 1 }), telemetryDir);
+    block('[lifecycle-hook] TaskCompleted blocked: Completion tier differs from the accepted TaskCreated attempt.');
     return;
   }
-  const tier = recordedTier ?? describedTier;
-  if (!tier) {
-    safelyAppendTelemetry(
-      eventTelemetry(payload, { outcome: 'block', failedCheckCount: 1 }),
-      telemetryDir,
-    );
-    block('[lifecycle-hook] TaskCompleted blocked: task description has no valid Completion tier.');
+  const callerEvidence = payload.completion_evidence ?? structuredMarker(description, 'COMPLETION_EVIDENCE_JSON:');
+  if (callerEvidence) {
+    safelyAppendTelemetry(eventTelemetry(payload, { outcome: 'block', failedCheckCount: 1 }), telemetryDir);
+    block('[lifecycle-hook] TaskCompleted blocked: caller-supplied completion evidence is not accepted; the shared runner owns evidence generation.');
     return;
   }
-  const universalContract = universalTaskContract(payload.task_id, telemetryDir);
-  const storedContractFailures = validateUniversalTaskContract(universalContract);
-  if (storedContractFailures.length > 0) {
-    safelyAppendTelemetry(eventTelemetry(payload, { outcome: 'block', completionTier: tier, failedCheckCount: 1 }), telemetryDir);
-    block(`[lifecycle-hook] TaskCompleted blocked: validated universal task contract is missing or corrupt. ${storedContractFailures.join('; ')}`);
+  if (payload.completion_report || structuredMarker(description, 'COMPLETION_REPORT_JSON:')) {
+    safelyAppendTelemetry(eventTelemetry(payload, { outcome: 'block', failedCheckCount: 1 }), telemetryDir);
+    block('[lifecycle-hook] TaskCompleted blocked: the official event has no report field; completion report evidence must be captured from SubagentStop.');
     return;
   }
 
-  if (tier === 'read-only') {
-    let currentWorktreeFingerprint;
-    let repoRoot;
+  const preflightFailures = [];
+  let gateResult = { profiles: [], gates: [], failures: [] };
+  let changed = { files: [], base: attempt.repository.base };
+  const profileRegistry = assuranceProfileRegistry(repoRoot);
+  if (attempt.state !== 'completed' && attempt.completion_mode === 'implementation') {
     try {
-      repoRoot = resolveGitRoot(payload.cwd ?? process.cwd());
-      if (!repoRoot) throw new Error('git worktree unavailable');
-      currentWorktreeFingerprint = collectWorktreeFingerprint(repoRoot);
+      changed = collectTaskChangedFiles(repoRoot, profileRegistry.integration_branch);
+      preflightFailures.push(...diffCheckFailures(repoRoot, changed.base).map((failure) => `${failure.command} FAILED\n${failure.output}`));
+      gateResult = runCompletionProofForFiles(changed.files, { cwd: repoRoot });
+      preflightFailures.push(...gateResult.failures.map((failure) => `npm run ${failure.gate} FAILED\n${failure.output}`));
     } catch (error) {
-      safelyAppendTelemetry(
-        eventTelemetry(payload, {
-          outcome: 'block',
-          completionTier: tier,
-          failedCheckCount: 1,
-        }),
-        telemetryDir,
-      );
-      block(
-        `[lifecycle-hook] TaskCompleted blocked: unable to compare the read-only task with its accepted baseline. ${error.message}`,
-      );
-      return;
+      preflightFailures.push(`Unable to compute changed-file proof floor: ${error.message}`);
     }
-    if (!recordedWorktreeFingerprint) {
-      safelyAppendTelemetry(
-        eventTelemetry(payload, {
-          outcome: 'block',
-          completionTier: tier,
-          gateCount: 0,
-          failedCheckCount: 1,
-        }),
-        telemetryDir,
-      );
-      block(
-        '[lifecycle-hook] TaskCompleted blocked: the accepted read-only task has no recorded worktree baseline.',
-      );
-      return;
-    }
-    if (currentWorktreeFingerprint !== recordedWorktreeFingerprint) {
-      safelyAppendTelemetry(
-        eventTelemetry(payload, {
-          outcome: 'block',
-          completionTier: tier,
-          gateCount: 0,
-          failedCheckCount: 1,
-        }),
-        telemetryDir,
-      );
-      block(
-        '[lifecycle-hook] TaskCompleted blocked: the branch/worktree changed after the read-only task baseline. ' +
-          'Restore that task-time state or re-dispatch the task with Completion tier: implementation.',
-      );
-      return;
-    }
-    const universalProof = runUniversalContractProofs(universalContract, {
+  }
+  let result = { accepted: false, failures: preflightFailures };
+  if (preflightFailures.length === 0) {
+    result = completeLifecycleTask({
+      taskId: payload.task_id,
+      sessionId: payload.session_id,
       cwd: repoRoot,
-      readOnlyFingerprintPassed: true,
+      stateDirectory,
+      profileRegistry,
     });
-    const completionEvidence = universalCompletionEvidence(universalContract, [], universalProof.proofEvidence);
-    const universalCompletionFailures = validateUniversalCompletion(universalContract, completionEvidence);
-    if (universalProof.failures.length > 0 || universalCompletionFailures.length > 0) {
-      safelyAppendTelemetry(eventTelemetry(payload, { outcome: 'block', completionTier: tier, failedCheckCount: universalProof.failures.length + universalCompletionFailures.length }), telemetryDir);
-      block([
-        '[lifecycle-hook] TaskCompleted blocked: universal completion evidence failed.',
-        ...universalProof.failures,
-        ...universalCompletionFailures.map((failure) => `Universal evidence: ${failure}`),
-      ].join('\n'));
-      return;
-    }
-    safelyAppendTelemetry(
-      eventTelemetry(payload, {
-        outcome: 'allow',
-        completionTier: tier,
-        changedFileCount: 0,
-        gateCount: 0,
-        failedCheckCount: 0,
-      }),
-      telemetryDir,
-    );
-    clearUniversalTaskContract(payload.task_id, telemetryDir);
-    return;
   }
-
-  let changed;
-  let repoRoot;
-  try {
-    repoRoot = resolveGitRoot(payload.cwd ?? process.cwd());
-    if (!repoRoot) throw new Error('git worktree unavailable');
-    changed = collectTaskChangedFiles(repoRoot);
-  } catch (error) {
-    safelyAppendTelemetry(
-      eventTelemetry(payload, {
-        outcome: 'block',
-        completionTier: tier,
-        failedCheckCount: 1,
-      }),
-      telemetryDir,
-    );
-    block(
-      `[lifecycle-hook] TaskCompleted blocked: unable to compute origin/main changed-file truth. ${error.message}`,
-    );
-    return;
-  }
-
-  const diffFailures = diffCheckFailures(repoRoot, changed.base);
-  const gateResult = runCompletionProofForFiles(changed.files, { cwd: repoRoot });
-  const universalProof = runUniversalContractProofs(universalContract, { cwd: repoRoot, projectGateResult: gateResult });
-  const completionEvidence = universalCompletionEvidence(universalContract, changed.files, universalProof.proofEvidence);
-  const universalCompletionFailures = validateUniversalCompletion(universalContract, completionEvidence);
-  const failedCheckCount = diffFailures.length + gateResult.failures.length + universalProof.failures.length + universalCompletionFailures.length;
   safelyAppendTelemetry(
     eventTelemetry(payload, {
-      outcome: failedCheckCount === 0 ? 'allow' : 'block',
-      completionTier: tier,
+      outcome: result.accepted ? 'allow' : 'block',
+      completionTier: attempt.completion_mode,
       changedFileCount: changed.files.length,
       gateCount: gateResult.gates.length,
-      failedCheckCount,
+      failedCheckCount: result.failures.length,
     }),
     telemetryDir,
   );
-
-  if (failedCheckCount === 0) {
-    clearUniversalTaskContract(payload.task_id, telemetryDir);
-    return;
+  if (!result.accepted) {
+    block(
+      '[lifecycle-hook] TaskCompleted blocked. Fix the completion evidence failures before marking the task complete.\n' +
+        result.failures.join('\n'),
+    );
   }
-
-  const details = [
-    ...diffFailures.map((failure) => `${failure.command} FAILED\n${failure.output}`),
-    `Completion proof profiles: ${gateResult.profiles.join(', ')}`,
-    ...gateResult.failures.map((failure) => `npm run ${failure.gate} FAILED\n${failure.output}`),
-    ...universalProof.failures,
-    ...universalCompletionFailures.map((failure) => `Universal evidence: ${failure}`),
-  ].join('\n\n');
-  block(
-    '[lifecycle-hook] TaskCompleted blocked. Fix the changed-file completion checks before marking the task complete.\n' +
-      details,
-  );
 }
 
 function handleSubagentStop(payload, telemetryDir) {
   const report =
     typeof payload.last_assistant_message === 'string' ? payload.last_assistant_message : '';
   const missing = missingExplicitSections(report, REQUIRED_REPORT_SECTIONS);
+  const completionReport = structuredMarker(report, 'COMPLETION_REPORT_JSON:');
+  const reviewReport = structuredMarker(report, 'REVIEW_REPORT_JSON:');
+  const receiptFailures = [];
+  const repoRoot = resolveGitRoot(payload.cwd ?? process.cwd());
+  if ((completionReport || reviewReport) && !repoRoot) receiptFailures.push('git worktree unavailable for report receipt');
+  if (repoRoot) {
+    try {
+      if (completionReport) recordLifecycleCompletionReport({
+        taskId: completionReport.task_id,
+        reporterId: payload.agent_id,
+        reporterSessionId: payload.session_id,
+        reporterRole: payload.agent_type,
+        report: completionReport,
+        cwd: repoRoot,
+      });
+      if (reviewReport) recordLifecycleReview({
+        taskId: reviewReport.task_id,
+        reviewerId: payload.agent_id,
+        reviewerSessionId: payload.session_id,
+        role: payload.agent_type,
+        verdict: reviewReport.verdict,
+        findingCount: reviewReport.finding_count,
+        unresolvedFindingCount: reviewReport.unresolved_finding_count,
+        cwd: repoRoot,
+      });
+    } catch (error) {
+      receiptFailures.push(error.message);
+    }
+  }
   safelyAppendTelemetry(
     eventTelemetry(payload, {
-      outcome: missing.length === 0 ? 'allow' : 'block',
-      missingSectionCount: missing.length,
+      outcome: missing.length === 0 && receiptFailures.length === 0 ? 'allow' : 'block',
+      missingSectionCount: missing.length + receiptFailures.length,
     }),
     telemetryDir,
   );
-  if (missing.length > 0) {
+  if (missing.length > 0 || receiptFailures.length > 0) {
     block(
-      `[lifecycle-hook] SubagentStop blocked. Add explicit, non-empty final-report sections for: ${missing.join(', ')}. ` +
+      `[lifecycle-hook] SubagentStop blocked. ${receiptFailures.join('; ')} Add explicit, non-empty final-report sections for: ${missing.join(', ')}. ` +
         'Quoted prompt text and fenced examples do not satisfy the report contract.',
     );
   }

@@ -6,6 +6,7 @@ import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 import { validateActionPolicySemantics } from '../.ai-organization/runtime/core/authority/assess-action.mjs';
 import { validateJsonAgainstSchema } from '../.ai-organization/runtime/core/schema/validate-json-schema.mjs';
+import { COMPLETION_CLAIM_LEASE_MS, agentFrontmatterName, isValidIntegrationBranch, normalizeProfileRegistry, validateLifecycleRoleModes, validateSafeProofProfile } from '../.ai-organization/runtime/core/lifecycle/evidence-runtime.mjs';
 
 const readJson = (root, rel) => JSON.parse(fs.readFileSync(path.join(root, rel), 'utf8'));
 const exists = (root, rel) => fs.existsSync(path.join(root, rel));
@@ -15,14 +16,14 @@ export function checkAgentControlPlane(root = process.cwd()) {
   const errors = [];
   const requiredFiles = [
     '.ai-organization/policies/action-authority.v1.json', '.ai-organization/roles.json', '.ai-organization/proof-profiles.json',
-    '.ai-organization/lifecycle-policy.json', '.ai-organization/schemas/task-assurance.v1.schema.json', '.ai-organization/schemas/task-evidence.v1.schema.json',
+    '.ai-organization/lifecycle-policy.json', '.ai-organization/schemas/task-assurance.v2.schema.json', '.ai-organization/schemas/task-evidence.v2.schema.json',
     '.ai-organization/ownership.json', '.claude/settings.json', '.github/CODEOWNERS', '.github/ISSUE_TEMPLATE/agent-slice.yml',
     '.github/pull_request_template.md', 'docs/app-plan/decision-log.md', 'docs/app-plan/adr/README.md', 'docs/app-plan/adr/000-template.md'
   ];
   for (const rel of requiredFiles) if (!exists(root, rel)) errors.push(`required control-plane artifact missing: ${rel}`);
   if (errors.length) return { ok: false, errors };
 
-  for (const rel of ['.ai-organization/schemas/task-assurance.v1.schema.json', '.ai-organization/schemas/task-evidence.v1.schema.json']) {
+  for (const rel of ['.ai-organization/schemas/task-assurance.v2.schema.json', '.ai-organization/schemas/task-evidence.v2.schema.json']) {
     try { readJson(root, rel); } catch (error) { errors.push(`invalid JSON authority ${rel}: ${error.message}`); }
   }
 
@@ -42,7 +43,7 @@ export function checkAgentControlPlane(root = process.cwd()) {
     if (!role.file || !exists(root, role.file)) { errors.push(`installed role file missing: ${role.name}`); continue; }
     registeredFiles.add(role.file.replace(/\\/g, '/'));
     const text = read(root, role.file);
-    const declared = text.match(/^name:\s*([^\r\n]+)$/m)?.[1]?.trim();
+    const declared = agentFrontmatterName(text);
     if (declared !== role.name) errors.push(`role name/file mismatch: ${role.name} declares ${declared ?? 'nothing'}`);
     if (role.read_only !== true || role.dispatch !== false) errors.push(`project role must be non-dispatch and registered read-only: ${role.name}`);
   }
@@ -53,9 +54,50 @@ export function checkAgentControlPlane(root = process.cwd()) {
   }
 
   const proof = readJson(root, '.ai-organization/proof-profiles.json');
+  const riskPolicy = readJson(root, '.ai-organization/policies/risk-controls.v1.json');
   if (proof.unknown_path_policy !== 'fail') errors.push('unknown proof paths must fail closed');
+  if (!isValidIntegrationBranch(proof.integration_branch)) errors.push('proof registry integration branch must be an explicit safe Git branch name');
+  if (!Array.isArray(proof.lifecycle_supported_risk_classes) || proof.lifecycle_supported_risk_classes.length === 0) errors.push('proof registry must explicitly declare lifecycle-supported risk classes');
+  const roleProviderModes = new Map(allRoles.map((role) => [role.name, role.mutates_source === true ? 'implementation' : 'read-only']));
+  errors.push(...validateLifecycleRoleModes(proof.lifecycle_roles_by_completion_mode, roleProviderModes));
+  if (!Number.isInteger(proof.lifecycle_hook_timeout_ms) || !Number.isInteger(proof.lifecycle_timeout_safety_margin_ms)) errors.push('proof registry must declare hook timeout and safety margin in milliseconds');
   if (!Array.isArray(proof.profiles) || proof.profiles.length < 4) errors.push('proof profile inventory is missing risk classes');
-  for (const profile of proof.profiles ?? []) if (!profile.id || !profile.lane || !profile.risk || !profile.include?.length || !profile.commands?.length) errors.push(`invalid proof profile: ${profile.id ?? '<unnamed>'}`);
+  for (const profile of proof.profiles ?? []) {
+    const assurance = profile.assurance;
+    const isReadOnlyIntegrity = profile.id === 'internal-read-only'
+      && profile.lane === 'internal'
+      && profile.risk === 'read_only_integrity'
+      && Array.isArray(profile.include) && profile.include.length === 0
+      && Array.isArray(profile.commands) && profile.commands.length === 0
+      && assurance?.classification === 'internal_read_only'
+      && assurance.safe_local_only === true
+      && JSON.stringify(assurance.capabilities) === JSON.stringify(['read_only_integrity'])
+      && assurance.commands?.length === 1
+      && assurance.commands[0]?.id === 'repository-binding'
+      && JSON.stringify(assurance.commands[0]?.argv) === JSON.stringify(['internal', 'repository-binding'])
+      && assurance.mutation === undefined;
+    const isProjectProof = profile.id
+      && profile.lane
+      && profile.risk
+      && profile.include?.length
+      && profile.commands?.length;
+    if (!isReadOnlyIntegrity && !isProjectProof) errors.push(`invalid proof profile: ${profile.id ?? '<unnamed>'}`);
+  }
+  const lifecycleProfileIds = new Set((proof.profiles ?? []).filter((profile) => profile.assurance).map((profile) => profile.id));
+  const lifecycleProfiles = normalizeProfileRegistry(proof).filter((profile) => lifecycleProfileIds.has(profile.id));
+  for (const profile of lifecycleProfiles) errors.push(...validateSafeProofProfile(profile, { cwd: root, actionAuthority: action }).map((error) => `invalid assurance provider ${profile.id}: ${error}`));
+  const assuranceCapabilities = new Set(lifecycleProfiles.flatMap((profile) => profile.capabilities ?? []));
+  const roleProviders = new Set(names);
+  for (const riskClass of proof.lifecycle_supported_risk_classes ?? []) {
+    const row = riskPolicy.classes?.[riskClass];
+    if (!row) errors.push(`lifecycle-supported risk class has no policy row: ${riskClass}`);
+    for (const capability of row?.required_proofs ?? []) if (!assuranceCapabilities.has(capability)) errors.push(`lifecycle-supported risk class ${riskClass} lacks assurance capability provider: ${capability}`);
+    for (const role of row?.required_roles ?? []) if (!roleProviders.has(role)) errors.push(`lifecycle-supported risk class ${riskClass} lacks registered role provider: ${role}`);
+  }
+  for (const rule of proof.risk_path_rules ?? []) if (!riskPolicy.classes?.[rule.risk_class] || (!Array.isArray(rule.include) && !(proof.profiles ?? []).some((profile) => profile.id === rule.profile_id && Array.isArray(profile.include)))) errors.push(`invalid risk path rule for ${rule.risk_class ?? '<missing>'}`);
+  const profileBudgets = lifecycleProfiles.map((profile) => (profile.commands ?? []).reduce((sum, command) => sum + (command.timeout_ms ?? 0), 0) + (profile.mutation?.timeout_ms ?? 0));
+  if (profileBudgets.some((budget) => budget + proof.lifecycle_timeout_safety_margin_ms > proof.lifecycle_hook_timeout_ms)) errors.push('lifecycle assurance profile budget exceeds hook timeout after safety margin');
+  if (proof.lifecycle_hook_timeout_ms + proof.lifecycle_timeout_safety_margin_ms > COMPLETION_CLAIM_LEASE_MS) errors.push('lifecycle hook timeout plus safety margin exceeds completion claim lease');
 
   const settings = readJson(root, '.claude/settings.json');
   const requiredEvents = ['SessionStart', 'SubagentStart', 'TaskCreated', 'TaskCompleted', 'SubagentStop', 'PostCompact', 'SessionEnd'];
@@ -63,6 +105,8 @@ export function checkAgentControlPlane(root = process.cwd()) {
     const hooks = settings.hooks?.[event];
     if (!Array.isArray(hooks) || !hooks.some((entry) => entry.hooks?.some((h) => h.command === 'node scripts/claude-lifecycle-hook.mjs'))) errors.push(`lifecycle hook missing for ${event}`);
   }
+  const taskCompletedTimeouts = settings.hooks?.TaskCompleted?.flatMap((entry) => entry.hooks ?? []).filter((hook) => hook.command === 'node scripts/claude-lifecycle-hook.mjs').map((hook) => hook.timeout) ?? [];
+  if (taskCompletedTimeouts.length !== 1 || taskCompletedTimeouts[0] * 1_000 !== proof.lifecycle_hook_timeout_ms) errors.push('TaskCompleted lifecycle hook timeout must exactly match the proof registry authority');
   if (!settings.hooks?.PostToolUse?.some((entry) => entry.hooks?.some((h) => h.command === 'node scripts/claude-posttooluse-gate.mjs'))) errors.push('separate fast PostToolUse gate is missing');
 
   const pkg = readJson(root, 'package.json');

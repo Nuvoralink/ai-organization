@@ -53,7 +53,7 @@
       "required_outputs": ["kickoff verdict", "dependency gaps", "decision linkage proof", "dispatch readiness"]
     },
     {
-      "id": "implementation-reviewer",
+      "id": "adversarial-reviewer",
       "purpose": "Adversarially compare a committed implementation with its settled plan, actual authority graph, blast radius, and required proof without trusting status claims.",
       "trigger": ["after implementation before merge"],
       "mode": "review_read_only",

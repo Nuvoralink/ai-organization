@@ -22,7 +22,11 @@ export function extractStructured(payload, key) {
   for (const value of candidates) if (value && typeof value === 'object') return value;
   const text = [payload?.prompt, payload?.description, payload?.task_description, payload?.tool_input?.description, payload?.result, payload?.report].find((value) => typeof value === 'string');
   if (!text) return null;
-  const marker = key === 'task_contract' ? 'TASK_CONTRACT_JSON:' : 'COMPLETION_EVIDENCE_JSON:';
+  const marker = key === 'task_contract'
+    ? 'TASK_CONTRACT_JSON:'
+    : key === 'completion_report'
+      ? 'COMPLETION_REPORT_JSON:'
+      : 'COMPLETION_EVIDENCE_JSON:';
   const index = text.indexOf(marker);
   if (index < 0) return null;
   try { return JSON.parse(text.slice(index + marker.length).trim()); } catch { return null; }

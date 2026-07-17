@@ -9,7 +9,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { runSelectedProof, selectProof } from '../run-risk-selected-proof.mjs';
+import { execFileSync } from 'node:child_process';
+import { changedFiles, runSelectedProof, selectProof } from '../run-risk-selected-proof.mjs';
 import { tempFixture, writeJson } from './fixture-helpers.mjs';
 
 function fixture(command = `"${process.execPath}" -e "process.exit(0)"`) {
@@ -51,4 +52,20 @@ test('killer mutations: unknown path, failed command, and missing DB authority f
   delete process.env.ORG_TEST_DB;
   try { assert.match(runSelectedProof(fixture(), ['db/schema.sql'], { dryRun: true }).errors.join('\n'), /requires one of/i); }
   finally { if (old === undefined) delete process.env.ORG_TEST_DB; else process.env.ORG_TEST_DB = old; }
+});
+
+test('changed-file floor derives its base from the proof registry integration branch', () => {
+  const root = tempFixture();
+  const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
+  git('init', '-b', 'develop');
+  git('config', 'user.email', 'proof@example.invalid');
+  git('config', 'user.name', 'Proof Fixture');
+  fs.writeFileSync(path.join(root, 'README.md'), 'base\n');
+  git('add', '.');
+  git('commit', '-m', 'base');
+  git('update-ref', 'refs/remotes/origin/develop', 'HEAD');
+  git('checkout', '-b', 'feature/proof');
+  fs.writeFileSync(path.join(root, 'README.md'), 'changed\n');
+  assert.deepEqual(changedFiles(root, 'develop'), ['README.md']);
+  assert.throws(() => changedFiles(root, 'main'), /merge-base/u);
 });

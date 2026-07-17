@@ -1,5 +1,19 @@
 {
   "schemaVersion": 1,
+  "integration_branch": "main",
+  "lifecycle_hook_timeout_ms": 1800000,
+  "lifecycle_timeout_safety_margin_ms": 60000,
+  "lifecycle_roles_by_completion_mode": {
+    "read-only": ["sprint-implementer", "adversarial-reviewer"],
+    "implementation": ["sprint-implementer"]
+  },
+  "lifecycle_supported_risk_classes": ["control_plane"],
+  "risk_path_rules": [
+    {
+      "risk_class": "control_plane",
+      "include": [".ai-organization/**", ".claude/**", ".cursor/rules/**", ".github/**", "scripts/**", "AGENTS.md", "CLAUDE.md", "REPO_FILEMAP.md", "package.json"]
+    }
+  ],
   "profiles": {
     "control": {
       "commands": [
@@ -8,7 +22,67 @@
         "gate:agent-control-plane",
         "gate:organization-overlay",
         "gate:decision-sprint-linkage"
-      ]
+      ],
+      "assurance": {
+        "version": 1,
+        "classification": "local_non_mutating",
+        "safe_local_only": true,
+        "capabilities": ["control_plane_completion"],
+        "env_allowlist": [],
+        "commands": [
+          {
+            "id": "organization-gates",
+            "argv": ["npm", "run", "gate:organization-overlay"],
+            "timeout_ms": 300000,
+            "parser": {
+              "kind": "patterns",
+              "minimum_output_bytes": 1,
+              "minimum_executed": 1,
+              "required_patterns": ["check-organization-overlay: OK"]
+            }
+          },
+          {
+            "id": "lifecycle-regressions",
+            "argv": ["npm", "run", "test:organization-control-plane"],
+            "timeout_ms": 300000,
+            "parser": {
+              "kind": "tap",
+              "minimum_output_bytes": 1,
+              "minimum_executed": 1,
+              "forbid_skips": true
+            }
+          }
+        ],
+        "mutation": {
+          "case_id": "forged-runner-attestation-rejected",
+          "argv": ["npm", "run", "test:evidence-integrity-mutation"],
+          "timeout_ms": 60000,
+          "receipt_marker": "MUTATION_RECEIPT_JSON:",
+          "expected_diagnostic": "forged runner attestation was accepted"
+        }
+      }
+    },
+    "internal-read-only": {
+      "commands": [],
+      "assurance": {
+        "version": 1,
+        "classification": "internal_read_only",
+        "safe_local_only": true,
+        "capabilities": ["read_only_integrity"],
+        "commands": [
+          {
+            "id": "repository-binding",
+            "argv": ["internal", "repository-binding"],
+            "timeout_ms": 1000,
+            "parser": {
+              "kind": "patterns",
+              "minimum_output_bytes": 1,
+              "minimum_executed": 1,
+              "required_patterns": ["READ_ONLY_REPOSITORY_BINDING:"]
+            }
+          }
+        ]
+      }
     },
     "backend": {
       "commands": ["typecheck", "lint", "gate:test-intent"]

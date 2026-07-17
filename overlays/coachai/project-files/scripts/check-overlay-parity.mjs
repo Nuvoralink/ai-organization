@@ -48,7 +48,11 @@ export function buildOverlayLock(root = process.cwd()) {
   for (const [rel, sections] of Object.entries(ownership.managed_json_sections ?? {})) {
     const value = JSON.parse(fs.readFileSync(path.join(root, rel), 'utf8'));
     jsonSections[rel] = {};
-    for (const section of sections) jsonSections[rel][section] = sha(JSON.stringify(getSection(value, section)));
+    for (const section of sections) {
+      const sectionValue = getSection(value, section);
+      if (sectionValue === undefined) throw new Error(`managed JSON section modified or missing: ${rel}#${section}`);
+      jsonSections[rel][section] = sha(JSON.stringify(sectionValue));
+    }
   }
   return { version: 1, source: ownership.overlay_source, files: fileHashes, json_sections: jsonSections };
 }
@@ -57,7 +61,9 @@ export function checkOverlayParity(root = process.cwd()) {
   const lockPath = path.join(root, '.ai-organization', 'overlay-lock.json');
   if (!fs.existsSync(lockPath)) return { ok: false, errors: ['missing .ai-organization/overlay-lock.json'] };
   const expected = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
-  const actual = buildOverlayLock(root);
+  let actual;
+  try { actual = buildOverlayLock(root); }
+  catch (error) { return { ok: false, errors: [error.message], managedFileCount: 0 }; }
   const errors = [];
   const expectedFiles = new Map((expected.files ?? []).map((entry) => [entry.path, entry.sha256]));
   const actualFiles = new Map((actual.files ?? []).map((entry) => [entry.path, entry.sha256]));
@@ -83,9 +89,14 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const rootIndex = args.indexOf('--root');
   const root = rootIndex >= 0 ? path.resolve(args[rootIndex + 1]) : process.cwd();
   if (args.includes('--write')) {
-    const lockPath = writeOverlayLock(root);
-    console.log(`overlay-parity: wrote ${normalize(path.relative(root, lockPath))}`);
-    process.exit(0);
+    try {
+      const lockPath = writeOverlayLock(root);
+      console.log(`overlay-parity: wrote ${normalize(path.relative(root, lockPath))}`);
+      process.exit(0);
+    } catch (error) {
+      console.error(`overlay-parity: FAIL\n- ${error.message}`);
+      process.exit(1);
+    }
   }
   if (args.includes('--print')) { console.log(`${JSON.stringify(buildOverlayLock(root), null, 2)}\n`); process.exit(0); }
   const result = checkOverlayParity(root);

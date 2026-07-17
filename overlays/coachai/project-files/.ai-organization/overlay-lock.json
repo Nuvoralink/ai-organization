@@ -28,19 +28,23 @@
     },
     {
       "path": ".ai-organization/ownership.json",
-      "sha256": "0c8e9d5c906d3dd9fde946466907e4679a4634f966eff68b80a30b14a57892c7"
+      "sha256": "571404e2809c86e51d4449429d772bfe96b8ebb26b2751a0a593b54607d36d0f"
     },
     {
       "path": ".ai-organization/policies/action-authority.v1.json",
       "sha256": "dff8b12d250446bb73c430026173f60e19173530e1b0ea6f0ef84047eb15e088"
     },
     {
+      "path": ".ai-organization/policies/risk-controls.v1.json",
+      "sha256": "a3c50ca96df3368ad28ccc60826e4151067c38e74e333d7407906dafd5fc852b"
+    },
+    {
       "path": ".ai-organization/proof-profiles.json",
-      "sha256": "146978810492c37530df664817b1cdea8d1cb825e6f4c660b10c0da381f69998"
+      "sha256": "ca3fe3b08e6cce72a12d3d958fd9b9102debb1324696a5f45af805b1ab14b9e8"
     },
     {
       "path": ".ai-organization/registries/agent-roles.v1.json",
-      "sha256": "ae518ba5e82bc931fd36365a93382cf79d2533fcdc012f92d6952fb5f0e09d9c"
+      "sha256": "f7c121ea5099e0ccf5202957bc5d44874b708765cf6e5a5b7d5456e3cc338425"
     },
     {
       "path": ".ai-organization/roles.json",
@@ -52,11 +56,27 @@
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/README.md",
-      "sha256": "7eee7c6109f313c0fe973b7e6eb1d70c8d8266a0f757c930efb6b08f7ec3fe56"
+      "sha256": "1f70fac2ac5581c907f7377dfa348c39c046adc845a57125031b4bf2032ea002"
+    },
+    {
+      "path": ".ai-organization/runtime/core/lifecycle/codex-task-status.mjs",
+      "sha256": "8bf6d668bbc3e3b636f0d4c3a435c590d879bcf8b5ce3c741d9d5afc4b8d1c0a"
+    },
+    {
+      "path": ".ai-organization/runtime/core/lifecycle/evidence-runtime.mjs",
+      "sha256": "34c31c7bea18d2c8fbd6a7f66eda6e662b6adebdc3be3028bbfbf32f678a8b9e"
+    },
+    {
+      "path": ".ai-organization/runtime/core/lifecycle/lifecycle-controller.mjs",
+      "sha256": "b3388c78ac8261545bcb2974372873f73ee387f9f43565a9e9aa228402f6ffb4"
+    },
+    {
+      "path": ".ai-organization/runtime/core/lifecycle/run-evidence-integrity-mutation.mjs",
+      "sha256": "c21bc62b78a981eca9e67806b321240e4fcf2c996bb960897f51bb238491b4fc"
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/task-governor.mjs",
-      "sha256": "871b669c0244a7a1dd5ee3b4e32dd4fe95e8ab574119f283df0159d01e83cbf6"
+      "sha256": "92285c0903afe2fc8af83e0d93c061bcea5ea31cb85810e19170f02a081f880b"
     },
     {
       "path": ".ai-organization/runtime/core/schema/validate-json-schema.mjs",
@@ -79,12 +99,12 @@
       "sha256": "315075620866e8645db914855c2b257b9f0acea065783decbef91dad10d32573"
     },
     {
-      "path": ".ai-organization/schemas/task-assurance.v1.schema.json",
-      "sha256": "db44810bb54696b5cb5eb407dd71fc8a65e912d5c383915e04f4eac340bb0721"
+      "path": ".ai-organization/schemas/task-assurance.v2.schema.json",
+      "sha256": "df1b4b7578c9d4cf909bdbbcec41b81196dfbaad44f9fa42d73d3b8ff618312e"
     },
     {
-      "path": ".ai-organization/schemas/task-evidence.v1.schema.json",
-      "sha256": "571d5708fa8b67a53a37580e9e02b7bf2dbdb88375447c702f6443f078ba0813"
+      "path": ".ai-organization/schemas/task-evidence.v2.schema.json",
+      "sha256": "51c1e08d38a5ce040a81bf088ff40a2c27bfa39c3b5b62add3d415b43b37f002"
     },
     {
       "path": ".claude/agents/adversarial-reviewer.md",
@@ -248,7 +268,7 @@
     },
     {
       "path": "scripts/check-agent-control-plane.mjs",
-      "sha256": "8aa6272949ec31099afbaddb60d525b3540e00c05b35423da590168567d18845"
+      "sha256": "d0f11554819d12273fa473f0e0848a233e6eee3a8fa99d8543e3324c826a3039"
     },
     {
       "path": "scripts/check-doc-code-drift.mjs",
@@ -256,7 +276,7 @@
     },
     {
       "path": "scripts/check-overlay-parity.mjs",
-      "sha256": "f05c84053b4ca41c0ca608943e99a69913ed71e73aac8f55e2fdfb59c9dbdbaf"
+      "sha256": "5ca40dcb277b86f77f203abf4d9e48bba5fa08d7ca832ba97f3ac15482a8fe58"
     },
     {
       "path": "scripts/check-rules-wiring.mjs",
@@ -272,7 +292,7 @@
     },
     {
       "path": "scripts/claude-lifecycle-hook.mjs",
-      "sha256": "5c1ace540a70075b12df1888d4f3960d9875a3dd2948cb2d47d90641bba09cc5"
+      "sha256": "c083205336bc18962be8c3d2a626718dca55fe2c142dcb1210342fdec83f483b"
     },
     {
       "path": "scripts/claude-posttooluse-gate.mjs",
@@ -280,11 +300,11 @@
     },
     {
       "path": "scripts/run-risk-selected-proof.mjs",
-      "sha256": "53a400b3c75c17f1cfc9cccf13ad050f62de0f127e4788f738f8c07e4bc104cf"
+      "sha256": "e03663c6ab6f94556a7374a0cf386512623d3ee65253ddaccb641527312af3f5"
     },
     {
       "path": "scripts/task-governor.mjs",
-      "sha256": "eb9420836d5681ed3e3f140cfd871de7a6e227afba1cb3ed308dfaf3c89fb907"
+      "sha256": "25d498de57166e2bce5a8e2d48fbbdb98462ac1e023c9b486f737f875da5f0f2"
     },
     {
       "path": "scripts/tests/contextAndRulesRegression.mjs",
@@ -292,7 +312,7 @@
     },
     {
       "path": "scripts/tests/controlPlaneRegression.mjs",
-      "sha256": "15f57d80465e6269bd8d425c253e7991d5087694ac91ce7dc88091ed9fe8bba6"
+      "sha256": "211f8e39f2714032eb572c1d9c8e731b68b5115e2010321444f41daa6f4136e5"
     },
     {
       "path": "scripts/tests/fixture-helpers.mjs",
@@ -300,15 +320,15 @@
     },
     {
       "path": "scripts/tests/overlayParityRegression.mjs",
-      "sha256": "0f93d3b40d3c499fa510c4b4f9a7b1bfca80407794c605ac166d674ed08b0c0d"
+      "sha256": "fc95952c96d6bcafed78fce24db507881a00b3930225d1bcb5711a9ffa43c874"
     },
     {
       "path": "scripts/tests/riskSelectedProofRegression.mjs",
-      "sha256": "dda32244a6d4364e6ecd1f33b384961ebdbf3386bcbc6761fbd7c1da5f7b59f8"
+      "sha256": "11de7d5609340d3b7a2a9293edc9cb56ded240c930f0120715c37fb4d71e21a1"
     },
     {
       "path": "scripts/tests/taskLifecycleRegression.mjs",
-      "sha256": "5c5c8274103841086d493758acbcad5a41070745b22272a2daa54d016f7817e5"
+      "sha256": "59c1b52a65b1ca9daa4dfa9b47859110223e5cde789fbe549c19b9eea1f55f30"
     }
   ],
   "json_sections": {
@@ -322,7 +342,8 @@
       "scripts.gate:overlay-parity": "1a8628d10ac232722aad9b376f7a2b1b957703716595b0e3f3ae294f316e5926",
       "scripts.gate:organization": "433ec8b29e1d93c8eb2ce04f5bc365d34df8662414e9cc126f908a99ca0a7b13",
       "scripts.proof:changed": "4bfc520d777a10dc90733e32aadec7d92b0a9b7266227eb27a87f1de6816b82d",
-      "scripts.test:organization-control-plane": "6bfd9f63b30932f63c89846421deba6fbd800ec8bfbeb222e5c47f265f799450",
+      "scripts.test:organization-control-plane": "1c097a3b80598bc3bb156d3239afa4bb1f42bde973db652bcdc5168e62c5cb01",
+      "scripts.test:evidence-integrity-mutation": "2b7ec9ebecd833ee23c906b81349d676eb418e18991b8517a1f1f3335723cbfb",
       "scripts.gates:all": "a6523122c18e4862712b42164a12f16e20e5cd32fc30a39b99685239bbb0f93d",
       "scripts.verify": "217cf314de5043c85b05401ecd1e3294077067f3b1f45edc3248d3c82d2ff46e",
       "scripts.verify:db": "2b1785002c0c3c7172446c78839c7bbc6b7967f283e37b1dd3178e4dd9db0a5b",
