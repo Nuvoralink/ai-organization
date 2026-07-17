@@ -1,0 +1,101 @@
+name: Backend DB regressions
+
+# Runs the DB-backed backend regressions (the dialer auto-ingest family) against a real Postgres
+# service container. These tests SKIP cleanly without a disposable DB, so before this lane they were
+# CI no-ops — their assertions only ever bit on a local / Docker-Postgres run. This makes them
+# actually protect `main`. pull_request + push:main only (no `push: '**'` double-trigger).
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  dialer-db-regressions:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test -d test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      # The disposable test DB. localhost ⇒ the regressions' disposable-DB guard treats it as local
+      # (no confirm flag needed); each test re-points DATABASE_URL at this same URL.
+      DATABASE_URL: postgresql://test:test@localhost:5432/test
+      DIALER_INGEST_TEST_DATABASE_URL: postgresql://test:test@localhost:5432/test
+      DIALER_INGEST_TEST_CONFIRM_DISPOSABLE_DB: "1"
+      # Boot env the tests need at IMPORT time. Some (e.g. dialerIngestCallRegression) pull in the
+      # analysis chain, which validates provider keys before the test's own env setup runs — so they
+      # must come from the job env. All dummies: these tests make no real provider/network calls.
+      APP_STACK: paid
+      NODE_ENV: test
+      QUEUE_DRIVER: memory
+      RATE_LIMIT_STORE: memory
+      GOOGLE_API_KEY: ci-test-google-key
+      OPENAI_API_KEY: ci-test-openai-key
+      GROQ_API_KEY: ci-test-groq-key
+      CREDENTIAL_ENCRYPTION_KEY: BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=
+      JWT_SECRET: ci-test-jwt-secret-value
+      CSRF_SECRET: ci-test-csrf-secret-value
+      STORAGE_SIGNING_SECRET: ci-test-storage-signing-secret
+      # No STORAGE_DRIVER → the app's default (local scratch); the ingest test writes bytes locally, the
+      # same condition under which it passes on a dev machine. (r2 would demand real R2 credentials.)
+      ALLOWED_ORIGINS: http://localhost:5173
+      FRONTEND_URL: http://localhost:5173
+      STRIPE_SECRET_KEY: sk_test_ci
+      STRIPE_WEBHOOK_SECRET: whsec_ci
+      RESEND_API_KEY: ci-test-resend
+      ADMIN_SECRET_KEY: ci-test-admin-secret-key-value
+      AUXARA_DIALER_API_BASE: https://dialer.auxara.test
+      AUXARA_DIALER_AUTHORIZE_URL: https://dialer.auxara.test/oauth/authorize
+      AUXARA_DIALER_TOKEN_URL: https://dialer.auxara.test/oauth/token
+      AUXARA_DIALER_REVOKE_URL: https://dialer.auxara.test/oauth/revoke
+      AUXARA_DIALER_CLIENT_ID: coachai-client
+      AUXARA_DIALER_CLIENT_SECRET: coachai-secret
+      AUXARA_DIALER_RECORDING_HOSTS: r2.auxara.test,recordings.auxara.test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build shared (backend imports @ail-sales-coach/shared)
+        run: npm --prefix shared run build
+
+      - name: Prisma generate + apply migrations to the test DB
+        working-directory: ./backend
+        run: |
+          npx prisma generate
+          npx prisma migrate deploy
+
+      # The root command is the single DB-regression authority shared by local and CI.
+      - name: Changed-path DB proof
+        env:
+          PROOF_LANE: db
+          CI: "true"
+        run: npm run proof:changed

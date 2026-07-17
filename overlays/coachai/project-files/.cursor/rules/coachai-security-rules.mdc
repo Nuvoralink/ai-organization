@@ -1,0 +1,131 @@
+---
+alwaysApply: false
+---
+# CoachAI Security and Privacy Rules
+
+Purpose: reduce the chance of building insecure SaaS features, shipping privacy mistakes, or creating drift in auth, billing, upload, analysis, and team-access flows.
+
+## 1. General security mindset
+
+- Treat this as an internet-exposed SaaS.
+- Default to least privilege, minimal exposure, and explicit validation.
+- User convenience does not override security for auth, billing, admin, team access, uploads, or private data.
+- Assume all client input is untrusted.
+- Assume uploaded content, transcripts, prompts, PDF text, and AI output are untrusted until validated.
+
+## 2. Authentication and session safety
+
+- Browser auth is secure, httpOnly, sameSite cookie-first. Do not store or propagate normal browser auth tokens in `localStorage`, sessionStorage, or in-memory bearer helpers. Bearer auth is explicit non-browser integration compatibility only.
+- Cookie-authenticated unsafe browser requests must be CSRF-safe. Require allowed Origin/Referer and a signed CSRF token bound to the current authenticated session/token version. Do not add deprecated CSRF middleware packages.
+- JWTs must carry the current `User.authTokenVersion`, and authenticated middleware must compare it to the database user. Logout and password change should revoke older tokens server-side by incrementing this version and clearing the cookie.
+- If bearer tokens are temporarily used, keep them short-lived, avoid expanding their authority, and do not make them the browser source of truth.
+- Never expose whether an account exists in production auth or recovery flows unless there is a deliberate reason.
+- Support server-side session invalidation or token versioning for meaningful auth revocation.
+- Do not trust frontend auth state as proof of authorization.
+- Privileged actions must verify the current user on the server.
+
+## 3. Authorization
+
+- Every backend route must enforce authorization server-side.
+- `OrgMembership.orgRole` plus `Organization.tenantKind` are the only authorization source. `User.accountType`, `User.role`, and `teamOwner.accountType` are derived/display fields only and must not grant access.
+- Missing `OrgMembership` fails closed everywhere. Product route families such as materials, billing/Stripe, authenticated promo application, profile/settings, tokens, onboarding, upload, coaching, and analytics must use the shared `requireOrgMembership()` boundary before local route logic or provider calls. Do not add feature flags or fallback membership derivation.
+- Login and authenticated middleware must enforce stack/tenant compatibility: paid accepts only `CUSTOMER` tenants, internal accepts only `INTERNAL` tenants. Existing contaminated rows must fail closed before a cookie is minted or request authority is attached.
+- Internal admin is bootstrap-only: exactly one `INTERNAL_ADMIN` in the internal stack, zero in paid. `/api/admin/signup` must require internal stack, temporary explicit `ADMIN_BOOTSTRAP_ENABLED=true` only during first-admin bootstrap, a strong `ADMIN_SECRET_KEY`, safe secret comparison, serializable count/create, and transactional audit. Production steady state keeps `ADMIN_BOOTSTRAP_ENABLED=false`. Do not add product UI/routes for admin promotion or ownership transfer.
+- Always verify ownership or allowed relationship for sessions, materials, team data, traces, billing records, and admin views.
+- Never trust `userId`, `sessionId`, `teamOwnerId`, `materialId`, or similar identifiers from the client without checking scope.
+- Frontend gating is for UX only.
+
+## 4. Input validation and output handling
+
+- Validate request body, query params, and path params before business logic.
+- Validate uploaded files by size, extension, and MIME type.
+- Sanitize filenames and never trust client-supplied file metadata.
+- Validate AI-generated JSON before persisting or rendering it.
+- Never render unsanitized HTML from user input, uploads, prompts, or AI output.
+- Avoid broad fallback parsing that silently accepts malformed security-sensitive data.
+
+## 5. Secrets and configuration
+
+- Never hardcode secrets, tokens, webhook secrets, or credentials.
+- Never commit real `.env` files.
+- Keep production and development secrets separate.
+- Minimize third-party integration scopes.
+- Rotate secrets immediately if exposure is suspected.
+- Secret rotation is stateful ops work. Use the SRP-004 ledger to track key family, provider, state impact, rotation status, rotated-at timestamp, and proof without recording values. Rotation must account for sessions, CSRF, signed URLs, upload intents, queued jobs, webhooks, provider adapters, API, and Worker redeploys.
+
+## 6. Logging and sensitive data
+
+- Do not log raw auth tokens, secrets, payment payloads, full transcripts, or sensitive personal data.
+- Log enough context to investigate incidents without leaking content.
+- Use structured logging for auth failures, admin actions, billing actions, and abuse-relevant events.
+- Sensitive debugging should be temporary and removed when no longer required.
+- Runtime tenant-security proof belongs in `npm run test:regression:tenant-security-blackbox --workspace=backend`; new route families, request-controlled IDs, signed URL paths, downloads, webhooks, or provider-egress paths must update `backend/src/lib/security/tenantSecurityProbeManifest.ts` and the black-box runner.
+- Tenant-security blackbox probes must use an explicit disposable DB authority (`TENANT_SECURITY_BLACKBOX_DATABASE_URL`) or an explicit existing-env opt-in for a local/test database. Do not allow production or ambiguous backend `.env` database URLs to become the test authority.
+
+## 7. Privacy and data minimization
+
+- Only collect data needed for product behavior, support, billing, security, or compliance.
+- New personal data fields require a clear purpose.
+- New stored artifacts require a retention reason.
+- Deletion behavior should be considered for primary records and derived artifacts.
+- Do not keep recordings, transcripts, or analysis payloads longer than necessary without a product reason.
+- Privacy settings must be enforced by code, not only displayed in UI.
+
+## 8. Billing and admin safety
+
+- Billing actions require strong authorization checks.
+- Admin endpoints should be more tightly rate-limited and auditable.
+- Invite creation, promo validation, admin-heavy endpoints, uploads, analysis triggers, presigned URL issuance, and finalize calls are abuse surfaces and need explicit limiters.
+- Paid production must use distributed Redis-backed rate limits unless an explicit emergency override is documented. Do not silently fall back to process-local memory limits in customer production.
+- Do not trust client-calculated pricing, seats, or entitlement state.
+- Recompute sensitive billing and entitlement values server-side.
+- Log role changes, invite sends, team membership changes, and subscription changes.
+
+## 9. Abuse prevention
+
+- Rate limit more than login and signup.
+- Protect uploads, analysis triggers, invite flows, promo validation, and admin-heavy endpoints.
+- Count failed auth attempts against auth limits; do not configure failed-request skipping for brute-force-sensitive routes.
+- Expensive endpoints should have tighter controls.
+- Add visibility for repeated failures, enumeration attempts, suspicious uploads, and high-volume misuse.
+
+## 10. Browser and transport security
+
+- Enforce HTTPS in production.
+- Use security headers such as CSP, frame protection, and content type protection.
+- CORS should be locked to allowed origins only.
+- Do not use wildcard origins with credentials.
+- Cookies must be secure and sameSite in production.
+- Redirects and external navigation must pass trusted URL validation. Stripe checkout, portal, invoice, and PDF URLs must be HTTPS Stripe hosts; app links must be built from trusted app origins.
+
+## 11. AI and prompt security
+
+- Treat prompt inputs as untrusted.
+- AI output must never decide authorization, billing, roles, or privacy policy enforcement.
+- Schema-validate machine-consumed AI output.
+- Do not allow user-provided content to silently override security controls.
+- Keep security and entitlement logic deterministic and server-enforced.
+
+## 12. Dependency and supply chain discipline
+
+- Prefer mature, well-maintained packages.
+- Do not add a package unless it is necessary.
+- Avoid obscure libraries for auth, crypto, uploads, or HTML parsing unless there is a strong reason.
+- Review dependency risk when adding packages that handle secrets, files, auth, billing, or code execution.
+- Presigned uploads must use persisted upload intent authority before URL issuance and finalize. Do not issue direct-upload URLs from a bare session id without actor, target, org, metadata, expected object keys, expiry, audit, and storage verification.
+- Recording playback, rerun, retention, explicit session deletion, and idempotent upload-finalize replay must resolve storage by `Session.storageBackend` and durable object verification through `recordingStorageAuthority`; do not use process-wide `STORAGE_DRIVER`, finalized upload-intent metadata, local scratch cleanup, or local chunk listing as the security/product authority for whether a recording exists or was deleted. Presigned finalize must use the `UploadIntent.storageBackend` stamped when URLs were issued, not the process driver at finalize time, and finalized-intent replay must reconcile stale session recording authority without resurrecting recordings already marked deleted. If the owning backend is unknown or unavailable, fail closed before deleting the DB row or stamping `recordingDeletedAt`.
+- Observability is an exposure surface. Runtime logs, API errors, Sentry, audit/analytics/AI usage rows, analysis trace rows/admin views, product-feedback diagnostics, frontend console diagnostics, smoke progress logs, timeout dumps, and `tmp/dev-logs` must use the SRP-002 telemetry authority (`backend/src/lib/telemetry.ts`) or smoke redactor (`scripts/lib/diagnosticRedaction.mjs`). Never log or return raw cookies, bearer tokens, CSRF/session/invite tokens, signed URLs, emails/full names/phones, prompts, transcripts, material text, audio paths, provider payloads, Prisma meta, Stripe payloads, R2 keys, or debug payload paths.
+
+## 13. Security definition of done
+
+Before finishing a security-sensitive change, confirm:
+- authentication impact considered
+- authorization checks are server-side
+- inputs validated
+- outputs handled safely
+- logs do not leak sensitive data
+- Sentry, API error envelopes, persistent telemetry rows, admin trace responses, frontend diagnostics, and smoke artifacts are leak-scanned or routed through the shared telemetry authority
+- abuse risk considered
+- privacy impact considered if data collection or storage changed
+- secrets handling remains clean
+- access-control hardening gates are current: role authority, unauthorized access/IDOR inventory, tenant-security black-box, trusted URL, dev DB repair, frontend role authority, preflight, and affected smoke/build gates.

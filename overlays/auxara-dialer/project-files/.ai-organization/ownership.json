@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "owner": "auxara-ai-organization-control-plane",
+  "managedFiles": [
+    {
+      "path": ".ai-organization/action-authority.json",
+      "sha256": "5efc57624df30e73c55d301ffce137df61f9630ad8066ab9170719ec02508f42"
+    },
+    {
+      "path": ".ai-organization/agents.json",
+      "sha256": "930e3b967d55fa262206319a3dfdfd9424d4791e74919f4099c558ecdade4324"
+    },
+    {
+      "path": ".ai-organization/completion-profiles.json",
+      "sha256": "d578aed93a2db228641732169c276c39cafb6335786ca6037c4cdb6fde216eba"
+    },
+    {
+      "path": ".claude/agents/premise-and-architecture-challenger.md",
+      "sha256": "9d63c8d53ce38751a82565e0745248355e291ef1d99fe3f1a1d1d6bb6cb69170"
+    },
+    {
+      "path": ".claude/loop.md",
+      "sha256": "8582e732b4ddf17dd8d16cce2698feec3a21a34b472d699bcefb4e2b4cd1ba09"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/agent-slice.yml",
+      "sha256": "62ffb14fdef5de6bff06cd836fb1a9d7385073980b956065f88bfa355761e4a1"
+    },
+    {
+      "path": ".github/PULL_REQUEST_TEMPLATE.md",
+      "sha256": "ad0671ae28bae421dd89f118eb3f15303a76f1f7d1456c0154008772dacd8e16"
+    }
+  ],
+  "projectOwnedRoots": [
+    "backend/",
+    "frontend/",
+    "shared/",
+    "docs/app-plan/",
+    "docs/Journey/",
+    "docs/design-system/"
+  ]
+}

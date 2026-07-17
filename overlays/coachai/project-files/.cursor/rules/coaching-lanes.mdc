@@ -1,0 +1,27 @@
+---
+description: Three-lane coaching ownership rules for rep, manager, and material intelligence
+alwaysApply: false
+---
+
+# Three-Lane Coaching Ownership
+
+CoachAI coaching must preserve three distinct lanes:
+
+- `manager_accountability`: the rep is compared to approved org materials. Covered script/playbook misses can affect rep coaching and score.
+- `craft_excellence`: universal sales execution independent of whether the script said it. Runtime misses can coach the rep; above-script strengths can be praised.
+- `material_intelligence`: script/playbook/material work owned by manager/materials. Missing beats, weak approved wording, and promoted rep lines must not be framed as rep misses.
+
+## Required Invariants
+
+- Do not infer lane ownership from raw `verdict`, `severity`, `scriptGap`, `scriptStatus`, or `notApplicableReason` alone.
+- Use shared lane helpers in `@ail-sales-coach/shared/coaching/checklistLabels` before ranking, prompting, rendering, or assigning drills from checklist rows.
+- `weak_script` means approved wording needs review; it is not proof the rep failed.
+- `off_script` / `not_in_script` means a material suggestion unless the rep independently executed it as an above-script strength.
+- `above_script_strength` is praise plus a material candidate; it should not inflate the checklist denominator.
+
+## Downstream Usage
+
+- Primary-fix rankers and improvement-plan focus selection use rep-actionable predicates, not raw NO/PARTIAL filters.
+- Prompt blocks must partition material-intelligence rows away from rep-accountability NO/PARTIAL pools.
+- UI labels come from presentation helpers: show `Suggestion`, `Script review`, or `Great line` where appropriate, never raw enum strings.
+- Machine footer parsing may add copy, but it cannot override deterministic lane attribution, call type, applicability, or ranked candidates.

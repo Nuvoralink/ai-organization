@@ -7,6 +7,7 @@ import {
   runCapture,
   runCheck,
   runInstall,
+  runRollback,
   validateCanonical,
   validateRegistries
 } from './lib/control-plane.mjs';
@@ -43,8 +44,12 @@ try {
     printOperations(runInstall({ repoRoot, manifest, roots, dryRun, adoptExisting }));
   } else if (command === 'inventory') {
     console.log(JSON.stringify({ mappings: manifest.mappings.map(({ id, source, destinations, ownership }) => ({ id, source, destinations, ownership })) }, null, 2));
+  } else if (command === 'rollback') {
+    const idIndex = process.argv.indexOf('--install-id');
+    const ids = runRollback({ manifest, roots, installId: idIndex >= 0 ? process.argv[idIndex + 1] : undefined });
+    console.log(`rolled back install ${[...new Set(ids)].join(', ')}`);
   } else {
-    console.error('Usage: node scripts/control-plane.mjs <validate|check|capture|install|inventory> [--dry-run] [--adopt-existing]');
+    console.error('Usage: node scripts/control-plane.mjs <validate|check|capture|install|inventory|rollback> [--dry-run] [--adopt-existing] [--install-id ID]');
     process.exitCode = 2;
   }
 } catch (error) {

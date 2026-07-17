@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "status": "in_progress",
+  "knownGaps": [
+    "decision-sprint linkage command declared but absent on baseline",
+    "volatile product claims repeated in startup router",
+    "task completion may select zero backend proof",
+    "agent fleet lacks a machine-readable project registry",
+    "skill authority remains fragmented pending loader proof"
+  ],
+  "mustNotCanonizeAsCorrect": true
+}

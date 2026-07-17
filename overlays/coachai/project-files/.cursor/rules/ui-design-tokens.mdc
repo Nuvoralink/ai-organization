@@ -1,0 +1,97 @@
+---
+description: Enforces the architecture-derived CoachAI UI language and prevents stale visual-system drift
+globs: frontend/src/**/*.tsx,frontend/src/**/*.ts,frontend/src/**/*.css
+alwaysApply: false
+---
+
+# UI design tokens and continuity
+
+## Source rule
+
+Do not use old design docs as authority. The current source of truth is:
+
+- `PRODUCT.md`
+- `DESIGN.md` (app-wide visual-language authority)
+- `docs/design-system/01-DESIGN-LANGUAGE.md` (DESIGN.md's detailed design companion — gold AI accent, Geist, glass-on-navy)
+- `frontend/docs/DESIGN_SYSTEM.md`
+- `frontend/src/design-system/`
+- `frontend/src/components/ui/`
+
+## Product language
+
+CoachAI is a premium neutral coaching cockpit: evidence-first, operational, compact, accessible, trustworthy, and visually alive through useful hierarchy and module composition.
+
+Role-specific hierarchy is allowed. Role-specific theme drift is not.
+
+## Visual intent target
+
+- 70-80% neutral workspace: platinum canvas, white panels, slate body text.
+- 10-15% navy/cobalt: active navigation, selected tabs, primary app actions, key links.
+- 5-8% orange: upload/recording intake only.
+- 5-8% semantic accents: AI/provenance, progress, risk, approval, evidence confidence.
+- 0% random page-local color systems.
+
+Do not overshoot. Avoid all-blue, all-slate, all-white, all-gradient, and private page-theme passes. Inactive nav/tab text should be neutral slate; selected states should be cobalt/navy; upload buttons should use `uploadAction`.
+
+## Reusable UI ownership
+
+Prefer shared primitives for reusable UI:
+
+- `Button`
+- `Card` / panel recipe
+- `Badge` / status pill / provenance pill
+- `SegmentedControl` / tabs
+- `EmptyState`
+- `PageSkeleton`
+- `Toolbar`
+- form fields
+- dialogs/sheets
+- alerts/callouts
+- action menus/tooltips
+
+If a page needs a reusable visual pattern, add it to `frontend/src/design-system/recipes.ts` or `frontend/src/components/ui/*` first.
+
+## Banned in new or migrated surfaces
+
+- `.btn-*`
+- `.card`
+- raw gradient classes
+- private arbitrary hex color meanings
+- page-local button recipes
+- page-local tab recipes
+- page-local status badge recipes
+- `transition-all`
+- spinner-only loading for workspace pages
+- raw enum/status labels without human copy
+- color-only status meaning
+- old bright-blue/navy, purple/indigo, amber CTA, or dark-page theme islands
+
+Dashboard loading and empty states must remain cockpit-shaped with next action, review queue, coaching focus/proof, momentum/risk, and upload intake modules. Blank white panel stacks and spinner-only workspace states are not acceptable.
+
+Legacy classes may remain only as token-backed compatibility wrappers during migration.
+
+## Surface migration mechanism
+
+The UI migrates to the design system one surface at a time. Reusable UI (button/card/**status & provenance pill**/tabs/alert/form/empty-loading) routes to the shared primitives (`Button` / `Panel` / `Badge` / …) backed by semantic roles in `frontend/src/design-system/appDesign.ts` + `foundations.ts` `colorRoles` — never page-local raw status classes. **Migrated files are registered in `scripts/check-ui-guardrails.mjs` `migratedSurfaceFiles`**, which then enforces no raw gradient / `brightBlue` / hex on them. Before restyling or migrating a surface, read `frontend/docs/DESIGN_SYSTEM.md` ("Surface migration") + that script's list. To migrate: route the literals to primitives + roles, delete the raw classes, add the file to `migratedSurfaceFiles`, and re-run `npm run check:ui` + `npm run check:ui-continuity`.
+
+## Route and state continuity
+
+UI work must preserve route state and deep-link context:
+
+- `tab`
+- `roleView`
+- `repId`
+- `userId`
+- `sessionId`
+- `sandboxId`
+- `batchId`
+- `candidateId`
+- `objection`
+- `ts`
+- `material`
+
+Dashboard, Team Insights, Call Review, manager approvals, sessions, materials, and improvement plans must not drop context while moving between pages.
+
+## Verification
+
+Run `npm run check:ui-continuity` after UI-system or route work. It should catch stale routes, old visual systems, forbidden shared primitive styles, deep-link param loss, and normal-path use of legacy full-page shells.

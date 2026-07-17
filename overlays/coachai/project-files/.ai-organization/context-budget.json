@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "entrypoint": "CLAUDE.md",
+  "canonical_router": "AGENTS.md",
+  "target_tokens": 4000,
+  "maximum_tokens": 6000,
+  "allowed_always_on_rules": [
+    ".cursor/rules/agent-product-intent.mdc",
+    ".cursor/rules/authority-boundary.mdc"
+  ]
+}

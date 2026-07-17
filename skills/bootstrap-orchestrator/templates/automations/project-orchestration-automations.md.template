@@ -1,9 +1,9 @@
 # Project orchestration automations — {{PROJECT_NAME}}
 
 <!-- TEMPLATE: instantiate these two Codex desktop automations during bootstrap registration.
-     Replace every placeholder, then use the app's automation tool. Do not commit this rendered file
-     into the project unless the project keeps an automation registry; the automation service is the
-     execution authority. Never emit raw automation directives by hand. -->
+     Replace every placeholder, persist their complete secret-free reconstruction spec in the central
+     project overlay, then use the app's automation tool. The automation service is execution authority;
+     the overlay spec is clean-machine bootstrap authority. Never emit raw automation directives by hand. -->
 
 ## Invariants
 
@@ -17,6 +17,9 @@
   provider payloads, recordings, transcripts, or other secrets/PII. Use only allowlisted summaries and
   tracked repo artifacts.
 - A green status is a lead: the report names the underlying file/command/output evidence it opened.
+- The central overlay specification records stable ID/name, RRULE, project-root token, reasoning tier,
+  full prompt, forbidden inputs/actions, exact-name update, and post-write readback. Do not pin a model
+  name in the durable spec. Missing any reconstructive field is a gate failure.
 
 ## `{{PROJECT_SLUG}}-daily-orchestration-drift`
 
@@ -49,4 +52,3 @@ Prompt:
 > create files and do not mutate git or external systems. Return: evidence opened, project-only fixes,
 > universal-promotion candidates, rejected false positives, and exact proposed destination paths. If no
 > reusable lesson exists, say so explicitly.
-

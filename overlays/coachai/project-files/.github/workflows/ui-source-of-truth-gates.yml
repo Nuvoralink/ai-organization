@@ -1,0 +1,48 @@
+name: UI source-of-truth gates
+
+# Enforces the design-system / source-of-truth guardrails on every PR and on
+# pushes to main, so a red gate blocks merge instead of silently drifting.
+# (Before this workflow the only CI was the backend base-image publisher, which
+# is why check:ui and test:doc-code-drift shipped red unnoticed.)
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # One local/CI static authority. `PROOF_LANE=static` makes changed-path proof select every applicable
+      # non-DB profile; the DB workflow owns the same selector's DB lane.
+      - name: verify (static + changed-path risk proof)
+        env:
+          DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
+          PROOF_LANE: static
+          CI: "true"
+        run: npm run verify
+
+      # The gate meta-regressions — prove gate:tx-seam / gate:ephemeral-listen / gate:test-intent actually
+      # FAIL on a seeded violation (a gate that silently no-ops would let its class ship green). tsx scripts
+      # that seed fixtures into an os.tmpdir() scaffold and run each gate with cwd:<scaffold>.
+      - name: Gate meta-tests
+        run: npm run test:regression:gate-meta --workspace=backend

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "authority": "orchestrator-is-single-pm",
+  "branchProtection": "deferred",
+  "actions": {
+    "branch": {
+      "authority": "agent",
+      "conditions": ["authorized-task-scope", "isolated-worktree"]
+    },
+    "commit": {
+      "authority": "agent",
+      "conditions": ["authorized-task-scope", "verified-diff"]
+    },
+    "push": {
+      "authority": "agent",
+      "conditions": ["authorized-task-scope", "non-protected-feature-branch"]
+    },
+    "pull_request": {
+      "authority": "agent",
+      "conditions": ["authorized-task-scope", "evidence-attached"]
+    },
+    "merge": {
+      "authority": "conditional-agent",
+      "conditions": [
+        "low-risk",
+        "additive-or-isolated",
+        "no-conflicts",
+        "independent-verification",
+        "no-production-or-deploy-effect"
+      ]
+    },
+    "production_mutation": { "authority": "human" },
+    "deploy": { "authority": "human" },
+    "production_config_change": { "authority": "human" },
+    "migration": { "authority": "human" },
+    "destructive_action": { "authority": "human" },
+    "billed_action": { "authority": "human" },
+    "external_message_or_contact": { "authority": "human" },
+    "secrets": { "authority": "human" },
+    "product_decision": { "authority": "human" },
+    "design_decision": { "authority": "human" },
+    "material_architecture_decision": { "authority": "human" }
+  }
+}

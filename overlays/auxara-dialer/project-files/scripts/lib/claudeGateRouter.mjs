@@ -1,0 +1,239 @@
+import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const GATE_OUTPUT_LIMIT = 3_000;
+const TOTAL_FAILURE_OUTPUT_LIMIT = 12_000;
+
+export const GATE_ORDER = Object.freeze([
+  'gate:rules-wiring',
+  'gate:agent-context',
+  'gate:agent-control-plane',
+  'gate:organization-overlay',
+  'gate:decision-sprint-linkage',
+  'check:ui-guardrails',
+  'check:layout',
+  'check:ui-source-of-truth',
+  'gate:authority-placeholders',
+  'check:call-drop-gate',
+  'check:ui-testid',
+  'gate:test-intent',
+  'gate:doc-registry-refs',
+  'gate:endpoint-wiring',
+]);
+
+export function normalizeGatePath(filePath) {
+  const normalized = String(filePath ?? '')
+    .replace(/\\/g, '/')
+    .replace(/^\/+/, '');
+  return normalized ? `/${normalized}` : '';
+}
+
+export function gatesForFile(filePath) {
+  const p = normalizeGatePath(filePath);
+  if (!p) return [];
+
+  const gates = new Set();
+  if (
+    /\/(?:AGENTS|CLAUDE)\.md$/.test(p) ||
+    /\/\.claude\/rules\/.*\.md$/.test(p) ||
+    /\/\.claude\/agents\/.*\.md$/.test(p) ||
+    /\/scripts\/check-(?:rules-wiring|agent-context-budget)\.mjs$/.test(p)
+  ) {
+    gates.add('gate:rules-wiring');
+    gates.add('gate:agent-context');
+  }
+  if (
+    /\/\.github\/ISSUE_TEMPLATE\/agent-slice\.yml$/.test(p) ||
+    /\/\.github\/PULL_REQUEST_TEMPLATE\.md$/.test(p) ||
+    /\/\.claude\/settings\.json$/.test(p) ||
+    /\/\.claude\/agents\/.*\.md$/.test(p) ||
+    /\/\.claude\/workflows\/orchestration-drift-audit\.js$/.test(p) ||
+    /\/\.claude\/loop\.md$/.test(p) ||
+    /\/docs\/agent-prompts\/goal-templates\.md$/.test(p) ||
+    /\/docs\/agent-prompts\/orchestration-playbook\.md$/.test(p) ||
+    /\/scripts\/check-agent-control-plane\.mjs$/.test(p)
+  ) {
+    gates.add('gate:agent-control-plane');
+  }
+  if (/\/\.ai-organization\//.test(p) || /\/scripts\/check-organization-overlay\.mjs$/.test(p)) {
+    gates.add('gate:agent-control-plane');
+    gates.add('gate:organization-overlay');
+  }
+  if (
+    /\/docs\/app-plan\/auditability\/decision-log\.md$/.test(p) ||
+    /\/docs\/app-plan\/implementation\/sprints\/sprint-[^/]+\.md$/.test(p) ||
+    /\/scripts\/check-decision-sprint-linkage\.mjs$/.test(p)
+  ) {
+    gates.add('gate:decision-sprint-linkage');
+  }
+  if (/\/frontend\/src\//.test(p)) {
+    gates.add('check:ui-guardrails');
+    gates.add('check:layout');
+    gates.add('check:ui-source-of-truth');
+    gates.add('gate:authority-placeholders');
+  }
+  if (/\/frontend\/src\/(pages|components)\//.test(p)) gates.add('check:call-drop-gate');
+  if (/\/frontend\/src\/components\/ui\//.test(p)) gates.add('check:ui-testid');
+  if (/\.(test|spec)\.(ts|tsx|mts|mjs)$/.test(p) || /Regression[^/]*\.(ts|mjs)$/.test(p)) {
+    gates.add('gate:test-intent');
+  }
+  if (/\/shared\/src\/copy\//.test(p) || /\/(docs|frontend\/docs)\/.*\.md$/.test(p)) {
+    gates.add('gate:doc-registry-refs');
+  }
+  if (
+    /\/shared\/src\/contracts\/endpoints\.ts$/.test(p) ||
+    /\/frontend\/src\/lib\/api\.ts$/.test(p)
+  ) {
+    gates.add('gate:endpoint-wiring');
+  }
+
+  return GATE_ORDER.filter((gate) => gates.has(gate));
+}
+
+export function gatesForFiles(filePaths) {
+  const selected = new Set();
+  for (const filePath of filePaths) {
+    for (const gate of gatesForFile(filePath)) selected.add(gate);
+  }
+  return GATE_ORDER.filter((gate) => selected.has(gate));
+}
+
+const moduleRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const completionPolicy = JSON.parse(
+  fs.readFileSync(path.join(moduleRoot, '.ai-organization', 'completion-profiles.json'), 'utf8'),
+);
+
+export function completionProfilesForFile(filePath) {
+  const p = normalizeGatePath(filePath);
+  if (!p) return [];
+  const profiles = new Set();
+  if (
+    /\/(?:AGENTS|CLAUDE)\.md$/.test(p) ||
+    /\/\.claude\//.test(p) ||
+    /\/\.github\//.test(p) ||
+    /\/\.ai-organization\//.test(p) ||
+    /\/scripts\/(?:check-|lib\/|claude-)/.test(p) ||
+    /\/package(?:-lock)?\.json$/.test(p)
+  ) {
+    profiles.add('control');
+  }
+  if (/\/backend\//.test(p)) profiles.add('backend');
+  if (/\/backend\/prisma\//.test(p)) profiles.add('database');
+  if (/\/frontend\//.test(p)) profiles.add('frontend');
+  if (/\/shared\//.test(p)) profiles.add('shared');
+  if (/\/docs\//.test(p)) profiles.add('docs');
+  if (profiles.size === 0) profiles.add('project');
+  return [...profiles];
+}
+
+export function completionProofForFiles(filePaths) {
+  const profiles = new Set();
+  for (const filePath of filePaths) {
+    for (const profile of completionProfilesForFile(filePath)) profiles.add(profile);
+  }
+  if (profiles.size === 0) profiles.add('project');
+  const commands = new Set();
+  for (const profile of profiles) {
+    const configured = completionPolicy?.profiles?.[profile]?.commands;
+    if (!Array.isArray(configured) || configured.length === 0) {
+      throw new Error(`Completion proof profile ${profile} has no commands.`);
+    }
+    for (const command of configured) commands.add(command);
+  }
+  return { profiles: [...profiles].sort(), commands: [...commands] };
+}
+
+function outputText(value) {
+  if (typeof value === 'string') return value;
+  if (Buffer.isBuffer(value)) return value.toString('utf8');
+  return '';
+}
+
+function tail(value, maxLength = GATE_OUTPUT_LIMIT) {
+  return value.length > maxLength ? value.slice(-maxLength) : value;
+}
+
+export function runGatesForFiles(
+  filePaths,
+  {
+    cwd = process.cwd(),
+    env = process.env,
+    timeoutMs = 90_000,
+    outputLimit = GATE_OUTPUT_LIMIT,
+    totalOutputLimit = TOTAL_FAILURE_OUTPUT_LIMIT,
+  } = {},
+) {
+  const gates = gatesForFiles(filePaths);
+  const failures = [];
+  let remainingOutput = totalOutputLimit;
+
+  for (const gate of gates) {
+    const executable = process.platform === 'win32' ? (process.env.ComSpec ?? 'cmd.exe') : 'npm';
+    const args =
+      process.platform === 'win32' ? ['/d', '/s', '/c', 'npm', 'run', gate] : ['run', gate];
+    const result = spawnSync(executable, args, {
+      cwd,
+      encoding: 'utf8',
+      env: { ...env, CALL_DROP_GATE_STRICT: '1' },
+      timeout: timeoutMs,
+      windowsHide: true,
+    });
+
+    if (result.status === 0 && !result.error) continue;
+
+    const rawOutput = `${outputText(result.stdout)}${outputText(result.stderr)}${
+      result.error ? `\n${result.error.message}` : ''
+    }`;
+    const bounded = tail(rawOutput, Math.min(outputLimit, Math.max(remainingOutput, 0)));
+    remainingOutput = Math.max(remainingOutput - bounded.length, 0);
+    failures.push({ gate, status: result.status, output: bounded });
+  }
+
+  return {
+    gates,
+    failures,
+    passedCount: gates.length - failures.length,
+  };
+}
+
+export function runCompletionProofForFiles(filePaths, options = {}) {
+  const proof = completionProofForFiles(filePaths);
+  const result = runNamedCommands(proof.commands, options);
+  return { ...result, profiles: proof.profiles };
+}
+
+function runNamedCommands(
+  commands,
+  {
+    cwd = process.cwd(),
+    env = process.env,
+    timeoutMs = 120_000,
+    outputLimit = GATE_OUTPUT_LIMIT,
+    totalOutputLimit = TOTAL_FAILURE_OUTPUT_LIMIT,
+  } = {},
+) {
+  const failures = [];
+  let remainingOutput = totalOutputLimit;
+  for (const gate of commands) {
+    const executable = process.platform === 'win32' ? (process.env.ComSpec ?? 'cmd.exe') : 'npm';
+    const args =
+      process.platform === 'win32' ? ['/d', '/s', '/c', 'npm', 'run', gate] : ['run', gate];
+    const result = spawnSync(executable, args, {
+      cwd,
+      encoding: 'utf8',
+      env: { ...env, CALL_DROP_GATE_STRICT: '1' },
+      timeout: timeoutMs,
+      windowsHide: true,
+    });
+    if (result.status === 0 && !result.error) continue;
+    const rawOutput = `${outputText(result.stdout)}${outputText(result.stderr)}${
+      result.error ? `\n${result.error.message}` : ''
+    }`;
+    const bounded = tail(rawOutput, Math.min(outputLimit, Math.max(remainingOutput, 0)));
+    remainingOutput = Math.max(remainingOutput - bounded.length, 0);
+    failures.push({ gate, status: result.status, output: bounded });
+  }
+  return { gates: commands, failures, passedCount: commands.length - failures.length };
+}

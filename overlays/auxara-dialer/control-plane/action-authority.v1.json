@@ -1,0 +1,4 @@
+{
+  "source": "policies/action-authority.v1.json",
+  "purpose": "Installed project pointer; the universal action authority remains canonical."
+}

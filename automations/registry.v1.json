@@ -1,0 +1,39 @@
+{
+  "version": "1.0.0",
+  "authority": "Codex desktop automation service",
+  "note": "Secret-free bootstrap specifications. Create or update exact IDs, then read the stored automation back. The runtime service remains execution truth.",
+  "automations": [
+    {
+      "id": "universal-biweekly-orchestration-backflow",
+      "name": "Universal biweekly orchestration backflow",
+      "scope": "organization",
+      "rrule": "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO;BYHOUR=10;BYMINUTE=0",
+      "reasoningTier": "high",
+      "mode": "read-only",
+      "targetRoot": "${PROJECT:auxara-dialer}",
+      "prompt": "Read-only biweekly universal orchestration backflow audit. Compare tracked orchestration structures added or materially improved in ${PROJECT:auxara-dialer} and ${PROJECT:coachai} during the prior 14 days against this canonical private control-plane checkout and its installed global derivatives under ${HOME}. Inspect actual diffs and artifacts, not status summaries. Check whether each reusable project improvement is already represented in the canonical core, project overlays, agent registry, rules, hooks, lifecycle governor, guardrails, gates, skills, prompts, automation specs, schemas, and mutation tests. Distinguish project-specific product policy from genuinely universal structure; deduplicate against the canonical repository and state the strongest argument against each promotion. Also detect the inverse: a canonical change missing from either project overlay or installed project copy. Return at most five evidence-backed promotion or propagation candidates with source file, canonical destination, affected overlays, why universal, why not already covered, and the smallest safe promotion. If nothing qualifies, say none. Never inspect credentials, tokens, session logs, .env files, secret stores, customer/provider data, transcripts, recordings, histories, caches, build output, or raw telemetry payloads. Do not edit any repo or global file, create or switch branches, commit, push, open or modify issues or pull requests, merge, deploy, publish, delete, purchase, mutate production, or send external messages."
+    },
+    {
+      "id": "project-daily-orchestration-drift",
+      "scope": "template",
+      "cadence": "weekdays",
+      "mode": "read-only",
+      "source": "overlays/<project>/automations/project-automations.v1.json"
+    },
+    {
+      "id": "project-weekly-fleet-doctrine-review",
+      "scope": "template",
+      "cadence": "weekly",
+      "mode": "read-only",
+      "source": "overlays/<project>/automations/project-automations.v1.json"
+    }
+  ],
+  "forbiddenInputs": [
+    "credentials", "tokens", "session logs", ".env files", "secret stores", "customer data", "provider payloads",
+    "recordings", "transcripts", "histories", "caches", "build output", "raw telemetry payloads"
+  ],
+  "forbiddenActions": [
+    "edit", "git ref mutation", "issue or pull-request mutation", "merge", "deploy", "publish", "delete",
+    "purchase", "production mutation", "external message"
+  ]
+}

@@ -1,0 +1,14 @@
+@AGENTS.md
+
+# Claude Code project entry
+
+Load only the irreducible execution core at startup. `AGENTS.md` routes every larger or path-specific rule; read the routed file completely before planning or editing that surface.
+
+@.claude/rules/agent-product-intent.md
+@.claude/rules/decision-discipline.md
+@.claude/rules/loop-discipline.md
+@.claude/rules/doctrine-loop.md
+
+Claude Design is the approved design authority for visible frontend work. Do not use Figma or implement a visible change before the user approves its Claude Design mock/reference.
+
+Use generated repository/runtime state instead of treating a committed handoff as current truth. The orchestrator is the single PM; `.ai-organization/agents.json` inventories the specialist fleet and `.ai-organization/action-authority.json` is the canonical mutation boundary. Agents may branch, commit, push, and open/update pull requests. Merge is conditional on every low-risk policy criterion; production/deploy/config/migration, destructive, billed, external-message/contact, secrets, and product/design/material-architecture actions are human-gated. Branch protection is deferred.

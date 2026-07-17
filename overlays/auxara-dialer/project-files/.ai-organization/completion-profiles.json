@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "profiles": {
+    "control": {
+      "commands": [
+        "gate:rules-wiring",
+        "gate:agent-context",
+        "gate:agent-control-plane",
+        "gate:organization-overlay",
+        "gate:decision-sprint-linkage"
+      ]
+    },
+    "backend": {
+      "commands": ["typecheck", "lint", "gate:test-intent"]
+    },
+    "frontend": {
+      "commands": ["typecheck", "lint", "check:ui", "check:layout", "gate:test-intent"]
+    },
+    "shared": {
+      "commands": ["typecheck", "lint", "gate:test-intent", "gate:endpoint-wiring"]
+    },
+    "database": {
+      "commands": [
+        "typecheck",
+        "lint",
+        "gate:test-intent",
+        "gate:tx-seam",
+        "gate:tx-rollback",
+        "gate:lifecycle-write"
+      ]
+    },
+    "docs": {
+      "commands": ["gate:doc-code-drift", "gate:doc-registry-refs", "gate:decision-sprint-linkage"]
+    },
+    "project": {
+      "commands": ["typecheck", "lint"]
+    }
+  }
+}

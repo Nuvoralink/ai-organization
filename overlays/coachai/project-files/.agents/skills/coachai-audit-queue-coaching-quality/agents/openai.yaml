@@ -1,0 +1,4 @@
+interface:
+  display_name: "CoachAI Audit Queue Quality"
+  short_description: "Poll analysis queue and audit coaching quality"
+  default_prompt: "Use $coachai-audit-queue-coaching-quality to claim analysis audit queue items, inspect analysis.json, fix root bugs, and verify coaching quality."

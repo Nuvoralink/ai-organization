@@ -31,9 +31,17 @@ npm run control:check
 npm run control:install -- --dry-run
 npm run control:install
 npm run control:check
+
+# Apply a registered project's orchestration overlay after cloning that project.
+npm run overlay:install:auxara -- --root 'C:\path\to\Auxara Dialer'
+npm run overlay:check:auxara -- --root 'C:\path\to\Auxara Dialer'
+npm run overlay:install:coachai -- --root 'C:\path\to\Nuvora CoachAi'
+npm run overlay:check:coachai -- --root 'C:\path\to\Nuvora CoachAi'
 ```
 
-The installer never reads excluded secret-bearing locations and never deletes unmanaged files by default. See [Ownership boundaries](docs/ownership-boundaries.md) and [Architecture](docs/architecture.md).
+The installer never reads excluded secret-bearing locations, snapshots every managed target before replacement, and never deletes unmanaged files by default. If an install must be reversed, use `npm run control:rollback -- --install-id <id>` or the matching project-overlay rollback command. See [Operations](docs/operations.md), [Ownership boundaries](docs/ownership-boundaries.md), and [Architecture](docs/architecture.md).
+
+The presentation is [Nuvoralink AI Organization Operating System](artifacts/Nuvoralink-AI-Organization-Operating-System.pptx); its maintainable content outline lives beside it under `artifacts/source/`.
 
 ## Work tracking
 

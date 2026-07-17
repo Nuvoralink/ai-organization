@@ -1,0 +1,136 @@
+---
+alwaysApply: false
+globs:
+  - "backend/src/lib/runAnalysis*"
+  - "backend/src/lib/analysisPipeline*"
+  - "backend/src/lib/analysis/**/*"
+  - "backend/src/lib/gemini*"
+  - "backend/src/lib/openai*"
+  - "backend/src/lib/ai*"
+  - "backend/src/lib/objection*"
+  - "backend/src/lib/pipeline/**/*"
+  - "backend/src/lib/scoreCalculator*"
+---
+# Analysis Pipeline Integrity Rules
+
+Purpose: prevent stage drift, silent overwrites, and invalid machine-consumed data in the coaching pipeline.
+
+Before analysis/coaching pipeline changes, check `docs/ARCHITECTURE_BLAST_RADIUS.md` for the connected AI context, schema, validator, retry, persistence, scoring/ranking, DTO, frontend, saved-session, and regression surfaces. If a pipeline miss reveals a missing relation, update the blast-radius map in the same turn as the fix.
+
+## 1. Stage boundaries stay explicit
+
+- Pipeline stages remain separate:
+  - transcription / audio features
+  - evidence layer assembly
+  - analyzability check
+  - per-call decision scope / vertical applicability
+  - semantic extraction
+  - objection extraction / matching
+  - grounded semantic judgment
+  - call type / checklist evaluation
+  - scoring
+  - coaching generation
+  - entity population
+  - DTO assembly
+- Do not collapse these into a single multi-purpose prompt or a single blob of post-processing.
+- The **grounded semantic judgment** stage is the open-world AI sales judgment layer. It may propose call type candidates, checklist verdict candidates, objections/coaching moments, strengths, misses, material opportunities, labels, and better-line candidates when supported by transcript evidence.
+- Deterministic code must validate and constrain AI semantic judgments; it must not replace open-world judgment with a growing phrase list unless the product explicitly needs a hard policy rule.
+- Deterministic guards are non-blocking signals, never authoritative. A schema-valid AI verdict (valid enum/shape, required fields, rationale) reaches the final checklist/score. Grounding, speaker, time-window, and confidence checks may attach a confidence discount or an `unverified`/low-trust provenance flag — they must NOT reject, discard, override, or substitute the verdict, drive `markDeterministicSemanticFallback` to overwrite it, or trip `score_availability='limited'` on their own. Guards compound: a mislabeled speaker upstream plus a speaker-filtered grounding guard downstream produces a wrong verdict AND a false `limited`. Keep schema + security/policy as the only hard gates; remove window gates and confidence-floor rejections on AI meaning.
+
+## 2. Downstream cannot rewrite upstream facts
+
+- Downstream stages consume structured upstream output.
+- New analysis architecture work must preserve the explicit contract chain: `evidence_layer` → `decision_scope` / `grounded_decision` → `coaching_generation_input`.
+- A later stage may interpret upstream facts for coaching, but it may not silently overwrite upstream factual output without a documented override rule in one place.
+- Narrative text is never proof that a structured stage succeeded.
+- A newly-added semantic artifact is not complete until it is consumed by every intended downstream decision path: scoring/ranking, coaching prompt context, persistence, API/read models, and UI/debug surfaces where applicable.
+- If a stage produces an audit-only side artifact that does not affect the final user-visible judgment, do not describe it as an architecture refactor.
+- If prompt/coaching-generation behavior changes, an entity-only downstream rerun is not proof. Use or preserve the transcript/coaching-only rerun path so Prompt A/B, `Feedback`, `analysis.json`, and final call-review entities are refreshed from the same stored evidence without rerunning audio.
+
+## 3. Validate model output before use
+
+- Any machine-consumed AI output must request strict JSON, then be validated and normalized before downstream use.
+- Invalid model output fails closed: persist warnings, degrade gracefully, and skip dependent logic.
+- Failing closed is a safety response, not the coaching product. If the source evidence is usable and the missing/bad field is behavior-changing coaching, run targeted bounded repair or route to the correct upstream authority before accepting a limited/blank output.
+- A review that accurately says it cannot score can still fail the product if it could have produced qualitative coaching from safe transcript-grounded evidence. Limited score authority must not automatically suppress useful rep coaching when call situation, analyzability, and evidence authority allow it.
+- Do not let fallback parsing silently invent values for business logic.
+- Grounding validation should reject only evidence/policy failures: missing quote, unsupported quote, wrong speaker, material conflict, low confidence, or lane/source restrictions. Unknown phrasing, new labels, or unmapped objection patterns are not rejection reasons by themselves.
+
+## 4. Analyzability gate comes first
+
+- Run analyzability before scoring and coaching entity population.
+- Hard rejection states produce no coaching entities or user-facing scores.
+- Partial analyzability may produce limited output, but those sessions are excluded from trend calculations and benchmark aggregates.
+
+## 5. Provenance is required
+
+- Persist and expose enough provenance for every machine-consumed stage:
+  - model id
+  - prompt version
+  - normalization version
+- decision audit / validation status when AI judgment is accepted, rejected, or downgraded
+- These flow into `provenanceLabels` on `CallReviewDTO` and relevant debug artifacts.
+- Paid model calls also need usage provenance in `AiModelUsageEvent`: org/user/session/trace/source where available, stable stage name, model role, capability, provider, model, operation, status, token counts, and estimated cost when priced. Use explicit `AiUsageContext` around pipeline calls instead of relying on fallback stack-derived stage names.
+- If a new stage appears in usage summaries as `modelRole: "unknown"` or a stack-derived `at.someFunction.file...` stage, treat that as a metering attribution bug. Cost capture alone is not complete reporting.
+
+## 6. Non-critical failure handling
+
+- Non-critical substep failures should not crash the entire analysis unless that substep is required for the user-visible output.
+- Capture warnings, persist them, and return partial results where safe.
+- Never leave the system in a half-written session state without a warning trail.
+
+## 7. Rollout discipline for new detection logic
+
+- New metrics or entity types support staged rollout:
+  - `internal_only`
+  - `manager_beta`
+  - `released`
+- Internal or beta modes must not pollute stable scores, drill assignment, or core trends.
+
+## 8. Three-lane coaching context
+
+- Checklist and prompt logic must preserve:
+  - `manager_accountability` for covered approved-material behavior
+  - `craft_excellence` for universal runtime execution
+  - `material_intelligence` for script/playbook/material improvements
+- Prompt assembly, primary-fix ranking, pivotal moments, and focus selection must use shared checklist lane predicates instead of raw `verdict`/`scriptGap` checks.
+- `weak_script`, `off_script`, and `not_in_script` rows belong outside rep-miss prompt pools unless a separate structured field marks a true rep-actionable miss.
+- Machine footer JSON is advisory enrichment. Normalize it, strip invalid provenance, and never let it override grounded semantic judgment, deterministic call type/applicability, lane attribution, or primary-fix candidate order.
+
+## 9. Correct Order For Coaching Decisions
+
+The intended call-review decision flow is:
+
+1. Transcript/audio and analyzability establish whether the call can be judged.
+2. Active materials establish approved script/playbook/rule authority.
+3. Decision scope decides whether vertical Layer 2 is active, limited, or inactive; clear vertical mismatch means Layer 1 only.
+4. AI detects open-world semantic meaning from the call, including objections, coaching moments, strengths, misses, and material opportunities.
+5. Deterministic validators check transcript grounding, speaker, confidence, material authority, lanes, applicability, scoring policy, and provenance.
+6. Structured validated decisions feed call type, checklist verdicts, scoring, primary-fix ranking, coaching prompt context, generated lines/drills, persistence, and DTO/UI mapping.
+
+Do not invert this order by making deterministic phrase examples the source of semantic truth. Deterministic examples are safety nets and policy constraints, not the main intelligence layer.
+
+## Semantic Decision Safety
+
+For new or changed semantic stages that affect product truth, use the decision matrix template in `docs/AI_DECISION_MATRIX_REGISTER.md`.
+
+Production semantic judgment should stay open-world and evidence-grounded. Examples and counterexamples are teaching material for prompts and tests; they are not production taxonomies unless the feature is exact policy or exact source compliance.
+
+Objection handling needs a strategy-first AI decision matrix. For every resistance moment, the model must decide the correct next sales move toward a quality, cemented booked appointment before judging the rep's chosen path: objection recovery, light timing continuation, legitimate callback fallback, controlled appointment booking, or appointment cementing. Callback timing/control is a downstream branch, not the default authority. Do not add deterministic phrase rules around one observed objection to decide whether callback or appointment recovery was right.
+
+If deterministic semantic logic is unavoidable, add a nearby `SEMANTIC_DETERMINISM_ALLOW:` comment explaining the narrow reason, exact scope, and regression that proves the scope cannot expand silently.
+
+Prompt-only changes require proof that refreshed structured output reaches persistence and the final visible output.
+
+## 10. Architecture Audit Before Done
+
+Before declaring analysis/coaching architecture work complete, answer in code/tests:
+
+- Did the AI judgment layer see the right upstream context?
+- Did deterministic code reject only unsupported or policy-invalid outputs?
+- Did accepted AI judgments actually affect the intended downstream consumer, not only persistence/audit?
+- Are score, ranking, generated coaching, better lines, labels, API payloads, and UI/read models aligned with the same structured decision?
+- Would a newly worded but transcript-grounded example work without adding a phrase-specific rule?
+- Can prompt-only fixes be validated through the coaching-only rerun path, and does the refreshed structured decision drive the final visible card/advice/drill instead of only changing an audit field?
+- If the final coaching is honest but not useful, did the review fail the acceptance bar? The proof must cover business issue selection, elite-coach quality, sayable practice language, and final source-to-screen visibility, not only schema validity or safe degradation.
+- If paid model calls changed, did they still pass through metered provider adapters with explicit stage attribution, non-unknown model role/capability, and passing `ai-metering` / `ai-provider-coverage` regressions?

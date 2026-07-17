@@ -1,0 +1,258 @@
+---
+alwaysApply: false
+globs:
+  - "backend/src/**/*.test.ts"
+  - "backend/src/__tests__/**/*"
+  - "backend/scripts/*Regression*"
+  - "frontend/src/**/*.test.ts"
+---
+# Testing Guardrails
+
+Purpose: require the right kind of test for the kind of logic being changed.
+
+## 0. Intent header — every new or touched test
+
+Every new/touched test file (`*.test.ts|tsx`, `*Regression.ts|mjs`) carries a top-of-file `/** ... */`
+intent header with these fields (the `gate:test-intent` gate + the PostToolUse hook enforce them
+ratchet-on-touch — new/touched tests must comply; the ~300 untouched legacy files stay grandfathered,
+audited via `npm run gate:test-intent:audit`, driven to zero with `--all --strict`):
+
+```
+Proves: <CQ-### / REQ-AREA-### / NFR-### / GROUND-### / G-|IA-|MGR-|OWN-|REP-|ADM-### / #issue>
+Test type: <unit | integration | contract | regression | three-fold-paired | bounded-repair | source-to-screen | tenant-isolation | permissions | visual | smoke | e2e>
+Surface: <the user-visible or system surface under test>
+Authority: <which source-of-truth owns the asserted decision>
+What this test proves about the product: <one line; the regression it defends>
+```
+
+ID resolution: cataloged families RESOLVE against their on-disk source of truth (a typo guard) —
+`CQ-###` → `docs/app-plan/implementation/coaching-quality-upgrade-plan.md`; `GROUND-###` →
+`docs/COACHING_BUG_BACKLOG.md`; the UX/UI-audit families `G-/IA-/MGR-/OWN-/REP-/ADM-###` →
+`docs/design-system/00-UX-UI-AUDIT.md`. `REQ-*` / `NFR-*` / `#issue` stay presence-only (no single
+machine register / a GitHub call is out of scope for a fast offline gate). A cited cataloged ID that
+does not resolve fails the gate.
+
+Full CoachAI example (the bounded-repair header the gate prints on failure):
+```
+/**
+ * Proves: CQ-009
+ * Test type: bounded-repair
+ * Surface: Call Review coaching footer
+ * Authority: semanticJudgment bounded-repair trace
+ * What this test proves about the product: a 2nd-pass repair that still fails
+ *   traces `rejected` (not `repaired`) and the coaching line is stripped from output.
+ */
+```
+
+## A false-passing test is a P0 — fix it the moment it is found (never backlog, never skip)
+
+A test that passes when it *should fail* — one that would still go green against a regressed
+implementation (mocks the System Under Test, asserts a tautology the same patch hardcoded, exercises a
+mocked path instead of the real one, or never reaches the decision it claims to prove) — is worse than no
+test: it certifies broken code as working. The instant one is found, in the same turn:
+
+- **Fix it now.** Never a `COACHING_BUG_BACKLOG` row, never a "follow-up" — a known false-passing test is
+  a live lie in CI. This overrides normal triage.
+- **Never skip-to-green.** No `.skip` / `it.skip` / `xit` / commenting out / loosening the assertion.
+  Skipping trades a lying green for a silent gap — both hide the same broken code.
+- **Make it bite.** Rewrite it to exercise the REAL SUT and FAIL against the regression; name the killer
+  mutation and confirm it breaks. If the only honest path is a DB/provider-backed test, write that.
+- **Then close the loop** (doctrine-loop Arm 1) — if a whole *class* slipped through, strengthen the
+  upstream control too. In addition to, never instead of, fixing the test now.
+
+Canonical CoachAI example: pre-SW-10 the `cq002` assertion asserted the bug AS expected behavior
+("outside-opener evidence rejected") and stayed green while the removed section-1 window gate caused
+`checklist_adjudication_limited` on good calls; the fix flipped it to "evidence KEPT" (§ SW-10 above).
+Secondary: MGR-8's `TeamManagementPage` tests whose mock never stubbed `getCoachPlusSeats()` — the catch
+swallowed the throw, the roster rendered empty, and the test stayed green; and backend scripts run via
+type-stripping `tsx`, so a `pricingCogsRegression` importing a deleted export "merged green".
+
+*Fail-state:* a test that passes against a broken implementation was found and then backlogged, skipped,
+or left green "for now."
+
+## Gate / whole-tree meta-tests isolate their fixtures
+
+A test that spawns a real CLI gate (or any tool that walks the repo) must NOT seed a fixture into the LIVE
+source tree (`backend/src` / `backend/scripts` / `shared/src` / `frontend/src`). Parallel test workers
+walk the same tree, so a sibling can observe an in-flight `__tmp` fixture or hit an ENOENT mid-walk →
+spurious non-zero exit on a PASS-expecting case; a crashed test can also strand a fixture that poisons the
+next gate run. The fix is isolation: build a throwaway `fs.mkdtempSync(os.tmpdir())` scaffold, seed the
+fixtures + any catalog the gate reads under it, and run the gate with `cwd:<scaffold>` (a `runGate(cwd)`
+helper). CoachAI note: the gate meta-tests are `backend/scripts/gate*MetaRegression.ts` tsx scripts and
+`backend/scripts` IS walked by the test-intent + ephemeral-listen gates — so the same isolation applies,
+and a meta-test whose OWN source line contains the pattern it seeds (e.g. `.listen(0`) must assemble that
+literal from a fragment (`` `server.listen(${0}, …)` ``) so it does not trip the gate scanning itself.
+Reviewer-enforced (a precise "live-tree write" static gate needs taint analysis).
+
+*Fail-state:* a `*Regression.ts` / `*.test.ts` writes a fixture under the live source tree instead of an
+`os.tmpdir()` scaffold.
+
+## Forbidden test shapes (a reviewer rejects these)
+
+- tautology / `expect(true).toBe(true)` — non-assertion theater.
+- mock-the-SUT — mocks the very thing under test, so it proves the mock.
+- a literal hardcoded by the same patch (would pass even against a regressed implementation).
+- an AI-feature test without a bounded-repair trace-truth assertion.
+- persisted-derived-state-with-UI without a three-fold paired assertion.
+- happy-path-only (no negative / fail-closed path).
+- a cross-tenant read without a cross-tenant probe negative case.
+- an idempotency claim without a concurrent-duplicate-trigger case.
+- an **atomic-claim / concurrency fix whose ONLY bite is a probabilistic `Promise.all` race** (a single
+  event loop may serialize the racers, so the pre-change code passes too). The concurrent test is a
+  supplement, never the sole defense — it MUST be paired with at least ONE *deterministic* assertion that
+  fails against the pre-change code: e.g. a marker-monotonicity case (pre-seed the "already-billed" marker
+  high, then a shorter/lower re-run must NOT lower it or re-charge — this bites the old unconditional
+  `update`). Mutation-verify the deterministic assertion actually fails against the old shape. (2 sightings:
+  BUG-21 sandbox charge, BUG-08/session charge — 2026-07-05.)
+- a route/authority-layer behavior change (a handler's derivation, a deterministic gate, a status-code
+  split) covered ONLY by client/unit tests that never exercise the handler — add a route/integration test
+  that reaches the real route (frontend + unit tests pass OVER the server authority layer).
+
+## Shared render helper for a heavily-mounted surface (kill the provider/context cascade)
+
+When many test files mount the SAME surface (a page, an app shell, a screen), the provider/context stack they wrap it in gets duplicated per file — and the day that surface gains a new PAGE-LEVEL context dependency, EVERY one of those files breaks at once (`useX must be used within <XProvider>`) and takes the identical patch. Centralize the mount in ONE shared render helper (`renderX(opts?)` + an `XProviders` component) that owns the provider stack; each suite routes its render through it and keeps only its own per-case overrides.
+
+- **Provide a new context dependency as REAL context, not a per-file mock.** Wrap the surface in the real `<Ctx.Provider value={testValue}>` (export the context object if it is module-private — a zero-runtime change) rather than a `vi.mock('…Context', …)` repeated in every file. Real context means the NEXT context dependency the surface gains is satisfied by the helper alone — a one-file change, not an N-file cascade. A `vi.mock` is hoisted per-file and cannot be centralized into a plain helper module, so mocking the context re-creates the very cascade you are trying to kill.
+- **Scope line — centralize the STACK, not the per-suite mocks.** The helper owns the provider stack only. Leave each suite its own `vi.mock`s for the hooks / SDK / api it drives — they are hoisted per-file, vary meaningfully per suite (captured handlers, mutable state holders, different api subsets, a suite that deliberately mocks at the SDK level so it can still exercise the real hooks), and unifying them flattens real differences. Only the shared provider stack belongs in the helper.
+- Name the helper `renderX.tsx` (NOT `*.test.tsx`) so the runner and the `gate:test-intent` scan skip it.
+
+*Fail-state:* a new test for a heavily-mounted surface hand-rolls the provider tree (or a `vi.mock` of a page-level context) inline instead of routing through the shared helper — so the next page-level provider dependency breaks it along with every file that copied the pattern. (Origin: the Auxara Dialer cockpit, 2026-07 — a DLR-016 `useAuth` addition to `SoftphonePage` broke 7 suites at once, each patched with the same `vi.mock('AuthContext')`; the fix was one shared `renderSoftphone` helper providing real `AuthContext`.)
+
+## 1. Pure logic needs unit tests
+
+- Use pure unit tests for:
+  - score calculation
+  - analyzability scoring
+  - priority queue formula
+  - highlight selection
+  - benchmark threshold logic
+  - coaching leverage / severity logic
+
+## 2. Mappers need contract tests
+
+- `CallReviewMapper` and packet mappers need contract-focused tests.
+- Validate DTO shape, version fields, null handling, and historical-session compatibility.
+
+## 3. Pipeline changes need integration coverage
+
+- Stage handoff changes need integration tests or regression scripts that prove one stage feeds the next correctly.
+- **Producer/consumer ref-FORMAT bridge (a value one stage WRITES and a later consumer FETCHES).** When a slice changes what's stored in a field a later provider call or consumer fetches (a media/recording ref, a signed-URL, a webhook/audio URL, a frontend fetch), a green producer-store test + a green consumer test that uses a DIFFERENT fixture format hides a dead seam — the value persists but is dead-on-arrival at the consumer. Add a **bridge test** that runs the PRODUCED value through the REAL consumer resolver and asserts a FETCHABLE/usable value reaches the consumer boundary, not just that the ref persisted. (Origin: sibling-repo INT-D1 B-1 — the Auxara Dialer recording-disclosure clip stored a ref the resolver couldn't turn into a playable Telnyx `audio_url`, dead-on-arrival; a producer-store test + a format-mismatched consumer test were both green.)
+- `not_analyzable` inputs must prove no coaching entities are produced.
+- Coaching-quality changes need dual-lens proof:
+  - system correctness: accepted source truth flows through AI decision, validation/repair, persistence, DTO/API, mapper, frontend, aggregates, reruns, and tests;
+  - business/coach quality: the final review names the highest-leverage issue, explains why it matters, gives a usable practice move, and avoids shallow logistics cleanup when deeper no-show, objection, commitment, decision-maker, or value-risk evidence exists.
+- A test that proves the app fails honestly is incomplete when safe evidence exists and a reasonable repair path should produce useful coaching. Add a negative assertion for the shallow-but-safe output and a positive assertion for the behavior-changing final output.
+
+## Consolidation / single-authority changes need a "the old path can no longer win" test
+
+When a change consolidates logic or introduces a new / central / single authority, classifier, source of truth, validator, or code path, a test must prove the OLD path no longer produces the authoritative output — not merely that the new one works:
+
+- Assert the consolidated decision now resolves from the new authority (e.g. the call-type signal is `ai_semantic_call_type_candidate`, not the demoted estimate's `ai_call_type_authoritative`), AND assert the old producer is deleted or provably non-authoritative (it cannot win when the new authority is present).
+- For a guard converted to a non-blocking signal, assert there is NO remaining copy of the old blocking gate still rejecting/dropping the verdict in another validator. (The section-1 `rejected_outside_evidence_window` gate kept firing after the section-2/4/5-6 soft-guard work shipped — a `limited`-on-good-calls bug.) Grep the old reason/symbol and assert zero call sites, or assert the verdict survives the exact input that used to trip the old gate.
+- A test that only proves "the new path works" passes while the old path silently races it. The required assertion is that the old path is GONE or can no longer win.
+
+Canonical example: SW-10 (2026-06-05) — removing the section-1 opener evidence-window gate; the `cq002` assertion flipped from "outside-opener evidence rejected" to "outside-opener evidence KEPT", proving the removed gate no longer drops a grounded section-1 verdict.
+
+## Three-fold paired assertion for persisted derived state with visible UI
+
+When a slice changes persisted derived state that has visible UI consequences (drill streak, focus area, status badges, score bands, queue counts, progress labels), one test must assert ALL THREE of:
+
+1. **Normalization layer** — the function under test produces the expected normalized value (e.g. `progressionEligible === false` when basis is `practice_only`).
+2. **Source-invariant layer** — the downstream consumer's branch logic respects the normalized value (e.g. `shouldIgnoreEvaluation` guards BOTH the increment AND the reset branches, so a `progressionEligible === false` evaluation neither advances nor resets the streak).
+3. **DTO/mapper output layer** — the final user-visible string/value is exactly as expected (e.g. `progressLabel === "2 of 3 successful uploaded calls in a row"` when the streak stays frozen at 2).
+
+Single-layer assertions silently drift: tests at the normalization layer pass while the downstream consumer or the mapper diverges. Paired assertions catch this drift class. Required for any test touching derived state that reaches the rep or manager UI.
+
+Canonical example: CQ-010 Case 6 fixture (drill progression evidence gate, 2026-05-22) — the `practice_only` + existing `2/3` streak case asserts ineligibility AT normalization, ineligibility-flows-through `shouldIgnoreEvaluation` AT source invariant, AND label preservation `"2 of 3 successful uploaded calls in a row"` AT mapper.
+
+## Bounded-repair trace truth
+
+When AI output goes through a bounded-repair flow (validate → regenerate failed fields → re-validate → reject if still invalid), the trace MUST reflect what the product actually rendered, not what the repair attempted.
+
+If repair output is still invalid and gets stripped from product output:
+- Product output: empty / repair stripped
+- Trace: `validationStatus: 'rejected'` (NOT `'repaired'`)
+- Warning row: `<feature>_repair_rejected:<reason>` so downstream debugging can distinguish "repair never tried" from "repair tried + accepted" from "repair tried + still invalid + stripped"
+
+A trace that says "repaired" while product output is empty is a debugging lie. "Repair attempted" ≠ "repair accepted" — those are different trace states with different downstream implications.
+
+Required regression: for any feature with bounded repair, add a no-LIVE_AI test that forces the repair output to also fail validation, then asserts product output is empty AND trace status is `'rejected'` AND the warning entry is present.
+
+**A trace-status assertion alone is HALF a test — also assert the repair REQUEST payload and the repaired field values (anti-laundering, GROUND-2 2026-07-03).** The repair request must carry each failed finding's RAW pre-demotion fields + the exact validation reasons — never the post-demotion DTO (a demoted payload makes the model echo the demotion back, and a `repaired`-status assertion stays green through it: 56/56 production repaired script-deviation findings were silently `diagnostic_only`). Required assertions alongside trace truth: (a) the captured repair request contains the raw field values and reasons, NOT the demoted values; (b) a successfully repaired finding retains its honest (non-demoted) authoritative fields end-to-end. Canonical example: `scriptDeviationLayerLocalizedRegression.ts` cases (a)/(b) (GROUND-2, mutation-proven).
+
+Canonical example: CQ-009 social proof + assumptive close (Agent A self-review fix, 2026-05-22) — `semanticJudgment.ts:2648` pushes pending candidate IDs to `unresolvedSocialProofAssumptiveCandidateIds`, re-validates repair output, emits `semantic_judgment_coaching_moment_repair_rejected:<issues>`, and the test at `cq009SocialProofAssumptiveRegression.ts:307` asserts all three signals.
+
+## Adversarial mutation regression for deterministic semantic cues — and when to DELETE the cue instead
+
+When you add or change a deterministic cue, heuristic, regex, or scorer that makes a SEMANTIC judgment (who spoke / which role, what kind of objection, did the rep do X), the happy-path test proves almost nothing — the failure mode is the false positive, and that is exactly the case you skip when you trust your own pattern.
+
+Required (while such a cue exists): in the SAME change, add an adversarial mutation regression covering the OPPOSITE-role / false-positive cases, not only the case you were fixing. For an objection/label cue, include the cross-vertical and adjacent-label lines that should NOT match.
+
+Stronger rule (the 2026-06-04 sequel): **if the mutation pass keeps finding false positives, that is the signal to REMOVE the cue, not tighten it.** A deterministic matcher of MEANING (who spoke, was this a merge) that needs adversarial hardening to survive is the wrong layer. The durable fix is to give the meaning decision to the model as its primary, full-context task and let deterministic code validate only STRUCTURE — tiling, grounding, schema, provenance, speaker authority — never *reconstruct* the meaning after the fact. A structural validator that tries to infer an AI semantic decision from the AI's own output (e.g. "was this diarizer run a legit merge or a corrupt split?") cannot distinguish the cases without the model declaring, and will reject correct calls on real data — so verify any such validator on REAL transcripts, never synthetic fixtures alone, before trusting it.
+
+Canonical example: CQ-014 speaker roles (2026-06-04). The SW-6 prospect-identity cues this guardrail first froze (12 rep-vs-prospect cue cases) were themselves the anti-pattern and were REMOVED, along with `reconcileSplitSpeakerRuns` and the `contradicts_obvious_role_cue` baseline backstop. A deterministic per-line structural validator built to police the split next (per-line + a model-emitted "merge" marker) passed synthetic cq014 but rejected BOTH real calls. The durable fix is a per-TURN role-normalizer: the model segments the call into turns (one role each), and `cq014SpeakerRoleRegression.ts` now freezes STRUCTURE — turn tiling (gap/overlap → one bounded whole-segmentation repair), the turns→per-line expansion, the prompt-pin, and the mocked accept/repair/reject/shadow flow — not cue phrases. See `docs/Journey/AI_BUILD_JOURNEY_LESSONS.md` Pattern 15 sequel.
+
+## Trust Testing Ladder
+
+Choose the smallest test ladder that proves the risk:
+
+- schema/static tests for contracts,
+- synthetic severity matrices for source-of-truth logic,
+- local replay from persisted artifacts before live model spend,
+- mapper/DTO consumer tests for downstream consumption,
+- browser/source-to-UI smoke when the final surface matters,
+- one final authority rerun only after local proof is clean and the question requires live model or deployed behavior.
+
+Do not require every rung for every change. Do require enough proof that a sloppy version of the same fix would fail.
+
+When persisted derived state, queues, dispatch rows, retryable provider side effects, projections, aggregates, or lifecycle statuses are involved, tests must cover the row-state matrix. Include fresh eligible rows, stale rows after source changes, retryable failed rows, terminal evidence rows, duplicate triggers, source revoked after row creation, and provider unavailable/disabled states where applicable. Map tests to every relevant source authority, producer/reconciliation path, state transition, unavailable/disabled provider state, provider evidence, idempotency path, final UI/output, and docs. Prove stale or retryable rows cannot produce future side effects after source changes, and prove terminal evidence cannot be overwritten by repair/reconciliation.
+
+## 4. Permissions need explicit tests
+
+- Test booker vs manager visibility.
+- Test manager-only annotations do not leak.
+- Test removed-team-member access is blocked.
+
+## 5. Seed data needs validation
+
+- Seed scripts should have validation checks for expected counts, states, and conflict scenarios.
+
+## 6. Visual surfaces need regression coverage
+
+- Timeline-heavy and state-heavy surfaces should have visual regression coverage once the UI exists:
+  - analyzability states
+  - marker density / clustering
+  - manager annotation vs AI note distinction
+
+## 7. Security, reliability, and deployment gates
+
+- Auth/session changes need `node scripts/preflight-security-check.mjs` and `npm run test:regression:security-auth-hardening --workspace=backend`.
+- RBAC or tenant-scope changes need the focused RBAC/role-policy regressions and, when UI-visible, authenticated manager smoke.
+- Upload, analysis, queue, or realtime progress changes need a regression that proves the final user-visible state is driven by the intended source of truth, not only by a helper or fallback.
+- Deployment-safety changes need a build plus the relevant pre-deploy guard or a documented reason why the guard is not applicable.
+
+## 8. Validation claims are path-scoped; plumbing proof is not behavior proof
+
+- A live/A-B/smoke validation claim must name the exact code path it exercised and flag every diff path it did NOT reach. "Live validation done" that exercised only the unchunked/single-shot/happy variant is a false-confidence claim for the windowed/retry/fallback variants the diff also touches.
+- A regression that asserts a prompt/string/payload was ASSEMBLED correctly (plumbing) must never be cited as proof of how the model/system BEHAVES with it. Name both levels explicitly in report-backs: "plumbing proven by X; behavior proven by Y / behavior NOT yet proven, closed by Z".
+- Origin: #186 Gemini B1 (2026-07-08) — the cross-chunk context tail was "validated live" on a single-shot call while the chunked path it existed for was never exercised, hiding a timestamp double-offset hazard the adversarial review caught.
+
+## 9. Boundary/refinement tests must use an input where the PRE-refinement code produces a DIFFERENT, wrong output
+
+- A test defending a boundary/walk-back/clip/parse refinement proves nothing if its fixture is
+  reachable by the OLD implementation: calibrate the input so the pre-refinement code demonstrably
+  produces a different, wrong result, and assert AGAINST that wrong shape (a
+  `// pre-fix output: <X>` divergence comment, or an explicit `!== wrongShape` assert) in addition
+  to the correct one. A green count on an inert fixture reads as proof and is false-passing (P0
+  per test-intent §4).
+- The named mutation must be INDIVIDUALLY sufficient to redden the test. When a fix is
+  defense-in-depth (two layers guard the same invariant), either exercise each layer on the path
+  where it alone defends, or name the actually-defending layer in the mutation comment — never
+  attribute the whole invariant to one layer unchecked.
+- Cheapest reviewer verification for any clip/boundary/parse refinement: a standalone old-vs-new
+  harness (copy both implementations into a scratch file, run the exact fixture through both). If
+  they agree on the fixture, the test is inert.
+- Origin: COACH-COMPLETE-1 (2026-07-12) — the delimiter-aware-clip regression's first fixture put
+  the in-quote period past the char budget and before a quote char, so the quote-blind and
+  quote-aware clips agreed byte-for-byte and the "Mutation that MUST break this" comment was
+  false; caught by the adversarial reviewer's old-vs-new repro harness.

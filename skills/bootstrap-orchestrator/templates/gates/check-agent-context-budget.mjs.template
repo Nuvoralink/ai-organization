@@ -4,8 +4,9 @@
  * Save as {{SCRIPTS_DIR}}/check-agent-context-budget.mjs and wire into gates:all.
  * Startup authority: CLAUDE.md files + recursive line-form @ imports + every `.claude/rules/*.md`
  * without official `paths:` frontmatter. Imported files count once. External imports fail closed because
- * CI cannot measure them deterministically. Add a temp-tree bite test: oversized import/unscoped rule
- * fail; large path-scoped rule stays outside startup; dangling/external import fails.
+ * CI cannot measure them deterministically. Duplicate reachability fails instead of being silently
+ * deduplicated. Add a temp-tree bite test: oversized import/unscoped rule/duplicate import fail; large
+ * path-scoped rule stays outside startup; dangling/external import fails.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -39,11 +40,15 @@ function imports(source) {
 export function inspectAgentStartupContext(root, maxTokens = DEFAULT_MAX_STARTUP_TOKENS) {
   const repoRoot = path.resolve(root);
   const included = new Map();
+  const firstParent = new Map();
   const failures = [];
 
-  function include(absolute, depth = 0) {
+  function include(absolute, depth = 0, parent = '<entry>') {
     const resolved = path.resolve(absolute);
-    if (included.has(resolved)) return;
+    if (included.has(resolved)) {
+      failures.push(`Duplicate startup import: ${path.relative(repoRoot, resolved)} is reached from ${firstParent.get(resolved)} and ${parent}`);
+      return;
+    }
     if (depth >= 5) {
       failures.push(`Import exceeds Claude's five-hop limit: ${path.relative(repoRoot, resolved)}`);
       return;
@@ -58,18 +63,19 @@ export function inspectAgentStartupContext(root, maxTokens = DEFAULT_MAX_STARTUP
     }
     const source = fs.readFileSync(resolved, 'utf8');
     included.set(resolved, source.length);
+    firstParent.set(resolved, parent);
     for (const target of imports(source)) {
       if (target.startsWith('~') || path.isAbsolute(target)) {
         failures.push(`External startup import cannot be budgeted: ${target}`);
       } else {
-        include(path.resolve(path.dirname(resolved), target), depth + 1);
+        include(path.resolve(path.dirname(resolved), target), depth + 1, path.relative(repoRoot, resolved));
       }
     }
   }
 
   for (const entry of ['CLAUDE.md', path.join('.claude', 'CLAUDE.md')]) {
     const absolute = path.join(repoRoot, entry);
-    if (fs.existsSync(absolute)) include(absolute);
+    if (fs.existsSync(absolute)) include(absolute, 0, '<entry>');
   }
   if (included.size === 0) failures.push('No project CLAUDE.md entry file was found.');
 
@@ -77,7 +83,7 @@ export function inspectAgentStartupContext(root, maxTokens = DEFAULT_MAX_STARTUP
     const source = fs.readFileSync(rule, 'utf8');
     if (!hasPathsFrontmatter(source)) {
       failures.push(`Rule lacks official \`paths:\` and would load at startup: ${path.relative(repoRoot, rule)}`);
-      include(rule);
+      include(rule, 0, '<unscoped-rule>');
     }
   }
 

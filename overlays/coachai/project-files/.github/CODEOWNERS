@@ -1,0 +1,17 @@
+# Review routing only. Branch protection is deferred; this file does not claim required review enforcement.
+* @Nuvoralink
+
+# Organization control plane
+/.ai-organization/ @Nuvoralink
+/.claude/agents/ @Nuvoralink
+/.claude/settings.json @Nuvoralink
+/.cursor/rules/ @Nuvoralink
+/.github/ @Nuvoralink
+/AGENTS.md @Nuvoralink
+/CLAUDE.md @Nuvoralink
+/scripts/check-agent-*.mjs @Nuvoralink
+/scripts/check-rules-wiring.mjs @Nuvoralink
+/scripts/check-overlay-parity.mjs @Nuvoralink
+/scripts/task-governor.mjs @Nuvoralink
+/scripts/claude-lifecycle-hook.mjs @Nuvoralink
+/scripts/run-risk-selected-proof.mjs @Nuvoralink

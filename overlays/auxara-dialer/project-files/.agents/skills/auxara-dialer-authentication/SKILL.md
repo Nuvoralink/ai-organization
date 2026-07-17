@@ -1,0 +1,146 @@
+---
+name: auxara-dialer-authentication
+description: Implement, audit, or fix authentication and authorization in the Auxara Dialer app. Use for login, signup, logout, password changes, invite acceptance, admin signup, JWT cookie/session handling, AuthContext, ProtectedRoute, org membership, role gates (Owner/Admin/Manager/Supervisor/Agent/Compliance-Viewer), secure route middleware, Prisma auth schema, multi-tenant RLS, or auth browser smoke issues. This app uses Express, Prisma, argon2id (`@node-rs/argon2`) password hashing, stack-bound JWT cookies, signed CSRF, and tenant-scoped helpers; do not apply Supabase/Cloud Backend profiles, getSession patterns, or single-tenant assumptions.
+---
+
+# Auxara Dialer Authentication
+
+## Product Intent
+
+Auth in Auxara Dialer protects paid agency tenants (multi-tenant from day one), internal admin tenants, manager/owner/supervisor visibility, agent privacy, **call recordings, transcripts, prospect PII, SMS content, billing, and compliance audit rows**. Frontend auth gates are only UX. The backend is the authority. Postgres RLS is the tenant-isolation backstop, but application code must still be tenant-aware.
+
+When fixing auth, solve the root access-control or session-state problem across the full path: schema, token, backend middleware, authorization helper, API contract, frontend state, route gate, invite/payment/onboarding side effects, RLS predicate, and tests.
+
+## Current Architecture (target, per `docs/app-plan/architecture/06-architecture.md`)
+
+Until the scaffolding lands, treat these paths as the agreed locations:
+
+- Frontend auth context: `frontend/src/context/AuthContext.tsx`
+- Frontend route guard: `frontend/src/components/ProtectedRoute.tsx`
+- API client/session and CSRF handling: `frontend/src/lib/api.ts`
+- Frontend provider wrapping: `frontend/src/main.tsx`
+- Backend routes: `backend/src/routes/auth.ts` and `backend/src/routes/admin.ts`
+- Backend auth middleware: `backend/src/middleware/auth.ts` (sets `app.tenant_id` for RLS after JWT validation)
+- JWT mint/verify: `backend/src/lib/jwt.ts`
+- Auth and CSRF cookies: `backend/src/lib/authCookies.ts`
+- CSRF middleware: `backend/src/middleware/csrf.ts`
+- Password hashing: `backend/src/lib/password.ts`
+- Auth context and server-side authorization helpers: `backend/src/lib/authorize.ts`
+- Org / tenant / role helpers: `backend/src/lib/organizationRoles.ts`
+- Permission registry and effective-permissions cache: `backend/src/lib/permissions.ts`
+- Database source of truth: `backend/prisma/schema.prisma`
+
+## Auth Source Of Truth
+
+The browser auth contract is cookie-first with signed CSRF. Bearer auth, if retained, is an explicit non-browser integration compatibility boundary only (API integrations, mobile manager app for listen/barge). Do not reintroduce browser bearer propagation or persistent browser token storage.
+
+## Data Model Truths (target shape per `docs/app-plan/data-and-api/08-data-model-and-data-contracts.md` + ADR-AUTH-010/011)
+
+- `tenants(id, name, plan, billing_status, dialing_hours_default, …)`
+- `users(id, tenant_id, email, role_id, status, authTokenVersion, passwordHash, …)`
+- `roles(id, tenant_id?, name, is_system)` — system roles: `owner`, `tenant_admin`, `manager`, `supervisor`, `agent`, `compliance_viewer`, `api_integration`
+- `permissions(key PK, description, category)`
+- `role_permissions(role_id, permission_key, scope)` where scope ∈ `{self, team, tenant}`
+- `user_permissions(user_id, permission_key, scope)` — one-off grants
+- `teams(id, tenant_id, parent_id, name)` — recursive hierarchy
+- `role_assignments(id, tenant_id, user_id, role_id, team_id nullable)` — ADR-AUTH-011 (team_id NULL = tenant-wide, SET = pod-scoped; supersedes team_members)
+- `audit_log(id, tenant_id, actor_id, action, target_type, target_id, payload, ts)`
+
+The combination `role × permission × scope` is the authorization source. Effective permissions are cached in Redis 60s TTL; UI hides forbidden actions using the same set.
+
+There is no Supabase `auth.users`, `profiles`, or Cloud Backend dependency in this app.
+
+## Auth Flows (target behavior)
+
+### Public Tenant Signup
+`POST /api/auth/signup` creates a customer tenant, owner user, owner role membership, and Stripe customer; mints stack-bound JWT cookie + signed CSRF cookie.
+
+### Admin Signup
+`POST /api/admin/signup` is internal-stack/admin-secret gated. Bootstrap-only with exactly one `INTERNAL_ADMIN`. `ADMIN_BOOTSTRAP_ENABLED=false` in steady state, temporarily true only for first-admin bootstrap. Strong `ADMIN_SECRET_KEY`, safe secret comparison, transactional audit. No product UI/routes for admin promotion or ownership transfer.
+
+### Login
+`POST /api/auth/login` validates credentials, verifies the argon2id password hash, mints a stack-bound JWT in the httpOnly session cookie, sets a signed readable CSRF cookie, and returns the auth user + CSRF token for in-memory frontend use. Avoid production account enumeration. Login must also enforce active stack/tenant-kind compatibility (paid accepts only `CUSTOMER`, internal accepts only `INTERNAL`).
+
+### Logout
+`POST /api/auth/logout` is a real server-side session revocation path. It increments the user's `authTokenVersion` so older JWT cookies fail rehydration, then clears the session and CSRF cookies.
+
+### Me / Rehydrate
+`GET /api/auth/me` uses `authMiddleware`, rehydrates from the httpOnly session cookie, checks `authTokenVersion`, sets `app.tenant_id` for RLS, and returns the current user plus role + tenant + permission set. Frontend `AuthProvider` rebuilds session/user state from this; it must not depend on browser-stored bearer tokens.
+
+### Password
+Current implemented password flow is authenticated change-password, not email reset. Minimum length aligned with backend validation. If implementing forgot/reset password, design it for this JWT/Prisma multi-tenant app: reset-token table or signed one-time token, expiration, single-use invalidation, generic responses, email delivery, audit logging, tenant scoping.
+
+### Invite Acceptance
+Invite acceptance validates the token, rejects accepted/expired invites, creates the user, adds role membership in the correct tenant, marks the invite accepted, audits the event, sets session + CSRF cookies, and returns tenant context. Preserve cross-stack invite-role guards (paid invite cannot land in internal stack).
+
+## Security Rules
+
+- Never trust frontend auth state for authorization.
+- Every backend route that reads or mutates tenant-scoped data must use `authMiddleware` and server-side scope helpers.
+- Never trust client-supplied `userId`, `targetUserId`, `tenantId`, `numberId`, `listId`, `prospectId`, `callId`, `conversationId`, `appointmentId`, or role fields without checking allowed relationship.
+- Use scope helpers (`requireRole`, `requirePermission(key, scope)`, `assertCanReadCall`, `assertCanReadRecording`, `assertCanManageNumber`) for object-level checks.
+- Preserve stack-bound JWT audience/issuer behavior.
+- Do not log raw JWTs, passwords, reset tokens, invite tokens in bulk, transcripts, recording paths, prospect PII, Telnyx event payloads, or Stripe payloads.
+- Keep `JWT_SECRET` required and strong per stack.
+- Browser auth is secure httpOnly cookie-first with signed CSRF and allowed Origin/Referer checks.
+- AI output must never decide auth, roles, billing, compliance gating, or privacy.
+
+## Frontend Rules
+
+- `AuthProvider` owns `user`, `tenant`, `role`, `permissions`, session status, `isLoading`, `isAuthenticated`, `login`, `signup`, `adminSignup`, `logout`, `refreshUser`, `forceRefreshUser`.
+- Frontend auth state is session/user state only. The browser session itself lives in the httpOnly cookie.
+- `frontend/src/lib/api.ts` attaches `X-CSRF-Token` on unsafe cookie-authenticated requests.
+- Do not store browser auth in `localStorage`, `sessionStorage`, or persistent client-side token helpers.
+- Do not add normal browser `Authorization: Bearer` propagation.
+- 401 responses clear local session/user state and redirect only when appropriate; avoid redirect loops on login/signup/invite pages.
+- `ProtectedRoute` is UX only.
+- After auth mutations that replace the session cookie or CSRF token, update auth state and refresh from `/api/auth/me`.
+- The softphone is a long-lived authenticated surface — token expiry mid-call must be handled gracefully (reconnect, prompt re-auth without dropping the WebRTC leg if possible).
+
+## Implementation Workflow
+
+1. Assess current state:
+   - Identify whether the issue is auth identity, session persistence, role derivation, tenant membership, RLS predicate, route authorization, invite/signup flow, billing stack boundary, or frontend UX.
+2. Define the ideal product/security behavior:
+   - Who should access what?
+   - Which tenant/role owns the decision?
+   - What should happen on expired token, missing membership, wrong stack, deleted user, stale invite, or cross-tenant probe?
+3. Fix upstream:
+   - Schema/migration when the source of truth is missing.
+   - Backend auth/authorization helper when access logic is duplicated or wrong.
+   - RLS predicate when tenant isolation is leaking.
+   - API contract when frontend lacks required role/status fields.
+   - Frontend state/route UI only after backend authority is correct.
+4. Preserve compatibility:
+   - Keep additive response changes when possible.
+   - Do not break existing paid/internal stack behavior.
+5. Verify with targeted tests and smoke:
+   - Backend auth route tests or regression scripts for changed behavior.
+   - Tenant-isolation black-box test for any new route returning object-scope data.
+   - Frontend auth state/route tests if UI changed.
+   - Browser smoke for login/logout/invite when practical.
+   - Backend build/typecheck.
+
+## Common Fix Patterns
+
+- Missing tenant membership: do not invent a fake tenant id. Return `TENANT_MEMBERSHIP_REQUIRED` and repair provisioning.
+- Role drift: centralize in `permissions.ts` or `authorize.ts`, not scattered frontend checks.
+- Cross-tenant leak: add `assertCanReadX` server-side AND confirm the RLS predicate covers the query (RLS is the backstop, not the only line of defense).
+- Invite bugs: validate invite role against active stack and write role membership in the same transaction as user creation.
+- Stale frontend session after invite or signup: update auth context from the response, remember the returned CSRF token, then force refresh from `/api/auth/me`.
+
+## Auth Checklist
+
+- Current architecture inspected before editing.
+- Backend route has authentication middleware where needed.
+- Authorization is server-side, relationship-scoped, and tenant-scoped.
+- Role and tenant kind come from the role/permission helpers.
+- Stack boundaries are preserved for paid vs internal flows.
+- Passwords are hashed with existing password helper.
+- JWT secret, issuer, audience, and expiry behavior remain safe.
+- Cookie, CSRF, and frontend session-state transitions are consistent.
+- 401/403 UX is clear and does not loop.
+- Invite/signup/admin flows write all required user, tenant, membership, audit, and billing/trial state.
+- Browser flows use httpOnly session cookie + signed CSRF; bearer auth is not the browser authority.
+- Sensitive logs avoided.
+- Tests/build/smoke run or explicitly reported if blocked.

@@ -1,0 +1,77 @@
+---
+description: Who is allowed to ACT on a coaching judgment — CoachAI coaches; the human decides
+alwaysApply: true
+---
+# Authority Boundary — CoachAI Coaches, the Human Decides
+
+Purpose: two authorities decide whether software behaves correctly, and conflating them is a recurring
+bug class. **Compute authority** (who JUDGES meaning) is owned by `analysis-pipeline.mdc` +
+`ai-decision-boundary-auditor` — AI owns the coaching/sales meaning-judgment; deterministic code only
+validates grounding/schema/policy/provenance; guards stay non-blocking. This rule owns **action
+authority** (who may ACT on a judgment). Reference Part A, never restate it.
+
+**North star: CoachAI coaches; humans decide.** Coaching output is advisory evidence for a human's
+judgment *about a rep* — never an automated verdict that acts on the rep, the org, or billing.
+
+## Tier 1 — System-enforced hard gates (deterministic, never AI-decided)
+
+The system enforces these autonomously; AI never computes them. Split by who owns the posture:
+
+- **Platform-enforced, never configurable:** schema/contract validation; RBAC + tenant isolation via
+  `requireOrgMembership()` (object-scope, stack compatibility — paid accepts only `CUSTOMER`, internal
+  only `INTERNAL`); CSRF + `authTokenVersion` session revocation; telemetry redaction; paid-AI metering;
+  analyzability hard-rejection (a `not_analyzable` call produces no coaching entities); privacy/retention.
+- **Tenant-owned configurable safety posture:** coaching-line sensitivity (`strict` / `recommended`),
+  with strictest-wins resolution and an `AuditEvent` row on every override. Missing membership fails
+  closed to `strict`. The audit row is the honesty analog: it records what the system actually did,
+  never a fabricated pass.
+
+## Tier 2 — System recommends; a human decides (the default for everything coaching)
+
+- Verdicts / scores / primary fixes are **advisory** to the rep + manager — evidence for a human call,
+  never an automated consequence.
+- AI-suggested lines route through the **manager approval queue** under `strict` (with `AuditEvent`
+  provenance); a rep/booker is never shown a raw unapproved AI line under `strict`.
+- Drill assignment from an annotation is a **manager action**; escalation claim/release is a manager
+  action (409 on a contested claim).
+- Material-intelligence suggestions **queue for the manager** — they never auto-rewrite an org's approved
+  material.
+- The manager packet follows tiered fallback (never padded with fabricated content).
+- Rollout modes (`internal_only` → `manager_beta` → `released`) are the promotion path for ANY new
+  automated signal — autonomy only by explicit opt-in, never on by default.
+
+## Tier 3 — Never system-owned
+
+The system never does these; deterministic code triggers them ONLY from an explicit human action, and AI
+never triggers them at all: employment/performance consequences; billing / entitlement / seat state;
+role / membership changes; org / tenant mutations from AI output; contacting a rep's prospects; deleting
+evidence rows.
+
+## The per-feature test (ask before building anything that acts)
+
+1. **Validation / safety / isolation?** → Tier 1, deterministic, never AI-decided.
+2. **A coaching insight or workflow suggestion?** → Tier 2: surface + recommend, the human acts;
+   autonomy only via explicit config + audit.
+3. **Org / people / billing state?** → Tier 3, human-only.
+
+If a proposed feature has the system *autonomously acting* on a Tier-2/3 concern by default → STOP and
+reframe as detect → surface → recommend → (human acts | explicit opt-in).
+
+## Anti-patterns (bugs even if they compile)
+
+- ❌ auto-assigning a drill from an AI observation with no manager action.
+- ❌ an AI verdict mutating score-visible state while still in `manager_beta`.
+- ❌ a booker/rep shown a raw unapproved AI line under `strict`.
+- ❌ a "coaching score" gating billing, seat, or role logic.
+- ❌ fabricating an `AuditEvent` for a sensitivity override instead of recording what actually happened.
+
+## Evidence-traceability clause
+
+Every manager-facing claim traces to transcript/material evidence (`coaching-entities.mdc` §3 —
+observations must carry validation status, source stage, confidence, and transcript evidence; evidence-free
+observations must not become product truth). A claim that cannot cite evidence may not drive a Tier-2
+recommendation.
+
+*Fail-state:* the system autonomously did a thing CoachAI reserves for a human or an external
+system-of-record (auto-acting on a rep, auto-mutating org/billing/role state, deciding an employment
+consequence from AI output) — or a Tier-1 gate shipped with a fabricated pass instead of an honest audit row.

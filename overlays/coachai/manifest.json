@@ -1,0 +1,158 @@
+{
+  "version": "1.0.0",
+  "project": "coachai",
+  "rootToken": "PROJECT:coachai",
+  "deny": {
+    "segments": [
+      ".git",
+      ".env",
+      "credentials",
+      "secrets",
+      "sessions",
+      "history",
+      "logs",
+      "telemetry",
+      "cache",
+      ".cache",
+      "node_modules",
+      "dist",
+      "build",
+      "coverage",
+      "__pycache__"
+    ],
+    "filenames": [
+      ".credentials.json",
+      "auth.json",
+      "credentials.json",
+      "settings.local.json",
+      "config.toml",
+      "default.rules"
+    ],
+    "prefixes": [
+      ".env"
+    ],
+    "extensions": [
+      ".pem",
+      ".key",
+      ".pfx",
+      ".p12",
+      ".log",
+      ".sqlite",
+      ".db",
+      ".pyc",
+      ".pyo"
+    ]
+  },
+  "mappings": [
+    {
+      "id": "coachai-organization-metadata",
+      "source": "overlays/coachai/control-plane",
+      "captureFrom": "${PROJECT:coachai}/.ai-organization/control-plane",
+      "destinations": [
+        "${PROJECT:coachai}/.ai-organization/control-plane"
+      ],
+      "mode": "tree",
+      "ownership": "generated",
+      "allowedExtensions": [
+        ".json"
+      ],
+      "exclude": [],
+      "detectLocalOnly": true,
+      "renderContentTokens": false,
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "lock": "${HOME}/.nuvoralink-control-plane/project-locks/coachai/overlay-lock.json"
+    },
+    {
+      "id": "coachai-task-governor",
+      "source": "overlays/coachai/project-files/scripts/task-governor.mjs",
+      "captureFrom": "${PROJECT:coachai}/scripts/task-governor.mjs",
+      "destinations": [
+        "${PROJECT:coachai}/scripts/task-governor.mjs"
+      ],
+      "mode": "file",
+      "ownership": "generated",
+      "allowedExtensions": [
+        ".mjs"
+      ],
+      "exclude": [],
+      "detectLocalOnly": false,
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "lock": "${HOME}/.nuvoralink-control-plane/project-locks/coachai/overlay-lock.json"
+    },
+    {
+      "id": "coachai-action-authority",
+      "source": "policies/action-authority.v1.json",
+      "captureFrom": "${PROJECT:coachai}/.ai-organization/policies/action-authority.v1.json",
+      "destinations": [
+        "${PROJECT:coachai}/.ai-organization/policies/action-authority.v1.json"
+      ],
+      "mode": "file",
+      "ownership": "generated",
+      "allowedExtensions": [
+        ".json"
+      ],
+      "exclude": [],
+      "detectLocalOnly": false,
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "lock": "${HOME}/.nuvoralink-control-plane/project-locks/coachai/overlay-lock.json"
+    },
+    {
+      "id": "coachai-agent-role-registry",
+      "source": "registries/agent-roles.v1.json",
+      "captureFrom": "${PROJECT:coachai}/.ai-organization/registries/agent-roles.v1.json",
+      "destinations": [
+        "${PROJECT:coachai}/.ai-organization/registries/agent-roles.v1.json"
+      ],
+      "mode": "file",
+      "ownership": "generated",
+      "allowedExtensions": [
+        ".json"
+      ],
+      "exclude": [],
+      "detectLocalOnly": false,
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "lock": "${HOME}/.nuvoralink-control-plane/project-locks/coachai/overlay-lock.json"
+    },
+    {
+      "id": "coachai-assurance-schemas",
+      "source": "schemas",
+      "captureFrom": "${PROJECT:coachai}/.ai-organization/schemas",
+      "destinations": [
+        "${PROJECT:coachai}/.ai-organization/schemas"
+      ],
+      "mode": "tree",
+      "ownership": "generated",
+      "allowedExtensions": [
+        ".json"
+      ],
+      "exclude": [],
+      "detectLocalOnly": true,
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "lock": "${HOME}/.nuvoralink-control-plane/project-locks/coachai/overlay-lock.json"
+    },
+    {
+      "id": "coachai-automation-specs",
+      "source": "overlays/coachai/automations",
+      "captureFrom": "${PROJECT:coachai}/.ai-organization/automations",
+      "destinations": [
+        "${PROJECT:coachai}/.ai-organization/automations"
+      ],
+      "mode": "tree",
+      "ownership": "generated",
+      "allowedExtensions": [
+        ".json"
+      ],
+      "exclude": [],
+      "detectLocalOnly": true,
+      "renderContentTokens": false,
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "lock": "${HOME}/.nuvoralink-control-plane/project-locks/coachai/overlay-lock.json"
+    }
+  ]
+}

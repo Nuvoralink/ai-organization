@@ -1,0 +1,221 @@
+---
+description: MVP-safe rules for CoachAI — pipeline boundaries, contracts, coaching quality, and backward compatibility
+alwaysApply: false
+---
+
+# CoachAI Project Rules (MVP)
+
+Before non-trivial architecture work, read `docs/ARCHITECTURE_BLAST_RADIUS.md`. Use it to keep source-of-truth changes connected across prompts, validators, persistence, DTOs, frontend consumers, jobs/scripts, security, deploy, docs, and tests. If a miss reveals a missing relation, update the blast-radius map in the same turn as the fix.
+
+## 1. Source of Truth
+
+- Never hardcode objection taxonomies, script taxonomies, coaching rules, or mandatory gates as the primary intelligence layer if user-provided materials or grounded AI judgment exist.
+- Materials uploaded by the user are the source of truth.
+- If the system needs defaults, defaults must live in one clearly named fallback module only.
+- Phrase lists and deterministic examples are safety nets, calibration fixtures, and policy guards. They are not a substitute for AI reading the call semantically.
+
+## 2. Model Role Boundaries
+
+Each model has a single authority; do not blur roles without an explicit architectural decision.
+
+- **Gemini:** Observable evidence extraction only (transcript, audio/delivery signals, call classification from observable cues). It does not own objections, mandatory gate judgments, or playbook matching.
+- **Grounded semantic judgment GPT:** Open-world sales judgment over the transcript and validated context. It may propose call-type candidates, checklist candidates, objections/resistance, coaching moments, strengths, misses, material opportunities, labels, and better-line candidates when it cites transcript evidence.
+- **Deterministic validators/policy:** Validate AI output for transcript grounding, speaker, confidence, material authority, lane ownership, applicability, scoring policy, and provenance. They reject unsupported or policy-invalid output; they do not require the phrase or label to be pre-enumerated.
+- **Objection playbook matcher:** Strict matching against approved playbook entries only. It may attach approved playbook labels/responses to validated objections, but it is not the only way to recognize resistance. If no playbook match exists, preserve the grounded `NEW_OBJECTION` / unmapped state instead of converting it to true none.
+- **GPT coach:** Narrative, synthesis, drills, and better wording on top of structured validated decisions. It may polish and explain; it must not contradict grounding, material authority, score, lane, or primary-fix ranking.
+
+Downstream code must not treat one stage’s narrative as proof that another stage’s structured output occurred.
+
+## 3. AI Pipeline Stages
+
+- Do not use one prompt to do transcription, objection classification, scoring, and coaching all at once.
+- Keep stages separate:
+  - **a.** Transcript and audio / delivery features (Gemini)
+  - **b.** Material/script detection and normalization
+  - **c.** Objection extraction plus strict playbook matching
+  - **d.** Grounded semantic judgment over transcript + validated context
+  - **e.** Deterministic grounding/policy validation, call type, checklist applicability, lane attribution, and scoring
+  - **f.** Coaching generation (GPT) from structured validated decisions
+- Downstream stages consume structured output from upstream; they must **not** reinterpret facts or **silently overwrite** another stage’s factual output without an explicit, documented override rule (e.g. conflict resolution policy in one place).
+
+## 4. Contract and Schema Stability
+
+- **API and persistence shapes** used by the frontend or other services are contracts. Do not break them without a versioned migration path.
+- **Machine-consumed fields** (IDs, enums, counts, status flags, evidence arrays) must remain stable or additive; prefer backward-compatible changes.
+- **Internal** analysis payloads may evolve if the UI and persisted session responses still expose stable view models or compatibility layers.
+- Every **machine-consumed** model output must be **validated and normalized** before any downstream use (scoring, UI mapping, persistence). Never assume JSON shape from the model.
+- The coaching entity Prisma models (`CoachingObservation`, `ObjectionInstance`, `SkillScoreSnapshot`, `CallHighlight`, `CoachingPattern`, `ManagerAnnotation`) and the `CallReviewDTO` are covered contracts. Treat changes to their fields or enums with the same care as changes to `GeminiAnalysisResult` or `FeedbackArtifact`.
+- The Coaching Enhancement contracts (`CallChecklistDTO`, `ProspectSignalsDTO`, `PivotalMomentDTO`, `ScriptCoverageMap`, `ScriptCoverageGapDTO`, the grounded semantic judgment/decision audit artifacts, the `CHECKLIST_REGISTRY` itself, and the persisted pipeline `analysis.json` fields `{semantic_judgment, objection_decision_audit, call_checklist, prospect_signals, missed_opportunities, section_pacing, script_coverage_map}`) are also covered contracts. They are the structured output of grounded AI judgment plus deterministic validation/evaluation and feed the 0-100 score, coaching generation, primary-fix ranking, owner-facing script-coverage digest, and audit/debug surfaces. Changes must be additive or come with a version bump plus a backfill/compat strategy for already-persisted sessions.
+- The three-lane coaching fields (`LaneAttributionDTO`, `CoachingLane`, `CoachingLaneOwner`, `CoachingLaneScoreImpact`, `ChecklistBookerResultType`, `ChecklistScriptQualityState`, `EvidenceEnvelopeDTO`, `StrongUnscriptedLineDTO`, and `ScriptSuggestionDTO.suggestionType/materialQueueStatus`) are covered contracts. They separate rep accountability, craft excellence, and material intelligence; changes must propagate through evaluator, prompt context, mapper, frontend presentation, and regressions in the same work.
+
+## 5. Prompt Versioning and Traceability
+
+- Prompts and normalizers that materially affect behavior should be **traceable by version** (constants such as `PROMPT_VERSIONS`, normalization version bumps, etc.).
+- When behavior changes, bump or add a version identifier and document what changed at a high level (not full prompt text in rules).
+- Store or trace enough metadata (model id, prompt version, normalization version) to **compare analysis behavior over time** for the same or golden inputs.
+
+## 6. Raw vs Normalized Storage
+
+- Prefer a clear split: **raw model text / blobs** (debug, audit) vs **normalized, validated structures** (what the app runs on).
+- Persist normalized artifacts for materials (scripts, gates, playbook) as already designed; session analysis should persist **stable structured fields** the UI needs, not only freeform blobs.
+- Do not rely on re-parsing raw model output at read time for critical path logic.
+
+## 7. Objection Handling
+
+- The system must distinguish **objection/resistance detection** from **playbook matching**.
+- AI may detect grounded open-world resistance even when the label or phrasing is not in the playbook.
+- The playbook matcher must only attach approved playbook labels/responses when a validated objection clearly matches approved playbook entries.
+- No invented playbook categories; no paraphrased category names as approved/canonical playbook labels.
+- If no playbook entry matches clearly, preserve the objection as `NEW_OBJECTION` / unmapped when transcript evidence supports resistance.
+- Every matched objection must include transcript evidence.
+- Every persisted `ObjectionInstance` must include transcript evidence (`prospectQuote`, `agentResponse`).
+- **Absence of a match does not mean** the rep handled the call well or that no resistance occurred — downstream coaching and scoring must not treat “no match” as positive proof of performance.
+- The coaching system must distinguish `no objection detected` from `objection detected but no playbook match`; those are not the same state.
+- Deterministic probable-resistance patterns may trigger recall, audit, or fallback, but should not be the main source of truth. A grounded AI candidate should not be rejected only because its wording is absent from a regex list.
+
+## 8. Uncertainty, Confidence, and Limited Analysis
+
+- If a model is **uncertain**, prefer **empty fields**, **warnings**, **degraded status**, or **explicit low confidence** over invention or definitive claims.
+- **Poor transcript or audio quality:** support or design for a **limited-analysis mode** (partial results, clear user messaging, no fake precision). Do not fabricate steps or quotes to fill gaps.
+- **Missing evidence is not negative evidence:** do not infer failure, skipped script steps, or poor handling solely because evidence fields are empty unless the transcript **strongly supports** that conclusion through other validated signals.
+
+## 9. Prompt Design
+
+- No giant prompt blobs with mixed responsibilities.
+- All AI prompts must request **strict JSON** when the output is **machine-consumed**.
+- All JSON responses must be **validated and normalized** before use.
+- Fail closed, not open: invalid model data → graceful degradation + persisted warnings, not silent business-logic invention.
+
+## 10. Coaching Output Quality
+
+- Coaching should be **evidence-linked**: important claims should tie to transcript (or delivery) evidence, or be marked **low confidence / general guidance**.
+- Prefer **exactly one primary mistake** called out per coaching unit when the product is designed for focus (avoid laundry lists unless explicitly specified).
+- When suggesting a fix, include an **exact replacement line** (or clearly labeled example) the rep can say, grounded in context — not only vague advice.
+- Do not let GPT coaching prose **overwrite** Gemini factual extraction, grounded semantic judgment validation, playbook matcher results, deterministic score, lane attribution, or primary-fix ranking. It may **interpret and explain** them for coaching only.
+- Grounded semantic judgment is upstream of coaching prose. If it identifies strengths/misses/material opportunities, those structured candidates should feed prompt context and ranking instead of being stored as unused audit side data.
+- Keep coaching lane-aware:
+  - `manager_accountability` = rep compared to covered approved materials.
+  - `craft_excellence` = universal sales execution and above-script strengths.
+  - `material_intelligence` = manager/material work such as missing script beats, weak approved wording, and rep lines worth promoting.
+- Do not call material-intelligence rows rep misses, even when raw `verdict` is `no` or `partial`.
+
+## 11. Frontend and UI Safety
+
+- The web app is upload-first for now.
+- Do not show or auto-connect desktop companion functionality unless explicitly re-enabled.
+- Do not leave dead UI paths that suggest a feature works when it is disabled.
+- **Stable view models:** the UI should consume **structured, version-stable** data (analysis DTOs / mapped props). Do not depend on parsing freeform narrative for core UX when a structured field should exist.
+- If the backend adds structured fields, **migrate the UI** to use them rather than scraping prose.
+- UI copy must be lane-aware. Use shared checklist presentation helpers/labels for `Suggestion`, `Script review`, and `Great line`; do not render raw `verdict`, `scriptStatus`, `scriptQualityState`, `notApplicableReason`, or `severity` as user-facing accountability.
+
+## 12. Idempotency
+
+- Writes for session-scoped analysis must be idempotent.
+- Use upsert or transactional update keyed by `sessionId` where appropriate.
+- Re-running analysis for the same session must not create duplicate rows or conflicting state.
+- Any persisted derived row, queue/dispatch row, retry row, provider evidence row, projection, aggregate, or lifecycle status that can later act or make a visible claim must have source-mutation handling for every actionable state, not only the newly scheduled/current state. When the source of truth changes or eligibility is revoked, stale pending/queued/processing/retryable-failed rows must not fire later; terminal sent/completed/failed evidence must remain historical and traceable. The implementation must name the source authority, producer/reconciliation path, row action, parent archive/delete behavior, provider retry behavior, final surface behavior, and regression proof for each relevant state.
+
+## 13. Error Handling
+
+- Never let a non-critical AI substep crash the whole analysis unless that substep is required for core user output.
+- Capture warnings and persist them.
+- Return partial results when safe.
+- Log enough context to debug; do not log secrets or full sensitive transcripts unless explicitly allowed.
+
+## 14. Scalability
+
+- Do not rely on in-memory state for anything that must survive restarts or multiple instances.
+- Long-running analysis should be queue-ready without rewriting core logic.
+- Keep pure transformation logic separate from HTTP route handlers.
+
+## 15. Config and Constants
+
+- Do not scatter magic strings, model names, thresholds, status labels, or fallback copy across files.
+- Centralize config and domain constants.
+- Business-sensitive thresholds: expose through config, not inline literals.
+- Coaching-domain thresholds are centralized in `@ail-sales-coach/shared/coaching/config`. Backend-only thresholds that are not shared with the frontend (for example pipeline timeouts or model token limits) remain in `backend/src/lib/analysisConfig.ts`.
+
+## 16. Safe Refactors and Saved Sessions
+
+- Do not silently change API response shapes used by the frontend.
+- Evolving shapes: **backward-compatible field first**, then migrate callers.
+- Do not delete V2 desktop code unless explicitly asked; disable usage paths first.
+- **Saved sessions / historical analyses** must remain readable: avoid breaking persisted session payloads; use defaults, adapters, or additive fields for old records.
+
+## 17. Testing and Golden Pipeline
+
+- **Objection logic:** transcript fixtures with expected matched objections; no shipment without fixture checks when objection logic changes.
+- **Coaching logic:** fixtures for match, no match, multiple resistance moments, invalid model JSON.
+- **Golden-call regression:** maintain coverage across the **full pipeline** (or layered fixtures that mirror stage outputs) so changes to prompts, normalization, or parsing do not silently regress end-to-end behavior.
+- Regression scripts should be runnable in CI or documented minimal smoke steps.
+
+## 18. Layer 1 vs Layer 2 (vertical packs)
+
+CoachAI separates a **Layer 1 core engine** from **Layer 2 optional vertical intelligence packs** (see repo root **`MVP_VERTICAL_ARCHITECTURE.md`**).
+
+- **Layer 1** — Transcript handling, semantic/evidence frameworks, objection and gate **mechanics**, coaching and scoring **frameworks**, and **stable machine-consumed contracts**. Keep Layer 1 **industry-agnostic** unless a change is **truly general** across verticals.
+- **Layer 2** — Pluggable packs under `backend/src/lib/verticals/` (e.g. insurance): interpretation hints, coaching language, drills, examples. Layer 2 is **not** a replacement for Layer 1 contracts or structured evidence.
+- Layer 2 activation is per call. Use `DecisionScope`: org default vertical is a starting assumption, not proof. If call content clearly does not match the org default, deactivate Layer 2 and produce Layer 1 universal sales coaching.
+- Missing materials and vertical mismatch are different states. No script/playbook for a matching vertical means Layer 2 may be limited; a non-matching call means Layer 2 is inactive.
+- Sparse future vertical packs are valid. Uploaded scripts/rules/playbooks can ground feedback even when a pack has few or no examples.
+- **Do not** put niche insurance (or other vertical) logic in Layer 1 modules, prompts, or contracts when it does not generalize; prefer a vertical pack.
+- Preserve **clear separation** in file structure and comments. Layer 2 must not **pollute** stable API or persistence contracts without an **additive, versioned** migration path.
+- **Conflict resolution:** If Layer 1 structured evidence and Layer 2 vertical hints conflict, **Layer 1 always wins**. Layer 2 must not override evidence or stable machine-consumed contracts. Coaching may **reframe** vertical guidance around the facts, not **contradict** them.
+
+## 19. Repository file map (Git-tracked paths)
+
+- Root **`REPO_FILEMAP.md`** is a tree of every path returned by `git ls-files` (what Git tracks). Regenerate it after adding, renaming, or removing tracked files: **`npm run filemap`** (runs `scripts/generate-repo-filemap.mjs`).
+- When introducing new files that will be committed, run `npm run filemap` and include the updated `REPO_FILEMAP.md` in the same commit when practical.
+
+## 20. Coaching domain contracts
+
+- Import coaching-domain enums and guards from `@ail-sales-coach/shared/coaching/taxonomy`. Do not redefine observation categories, polarities, highlight types, analyzability states, provenance types, annotation visibility, priority queue reasons, or analytics event names as string literals in backend code, frontend code, or prompt templates.
+- Import checklist lane/presentation predicates from `@ail-sales-coach/shared/coaching/checklistLabels` when deciding whether a checklist row is rep-actionable, material-owned, weak approved script, or above-script strength. Do not duplicate raw predicates like `verdict === 'no' && !scriptGap` in rankers, prompts, focus selection, or UI.
+- Import coaching-domain thresholds from `@ail-sales-coach/shared/coaching/config`. Do not inline coaching constants such as confidence cutoffs, benchmark gates, analyzability boundaries, priority queue weights, or drill escalation counts.
+- `CallReviewDTO` from `@ail-sales-coach/shared/coaching/contracts` is the stable contract between backend analysis output and frontend call review rendering. Prefer additive nullable fields; do not add required fields without a versioned compatibility path.
+- Every persisted observation or objection that can influence ranking, drills, highlights, or manager review must carry transcript evidence. Evidence-free observations are not product truth.
+
+## 21. API versioning for coaching endpoints
+
+- Coaching endpoints use `CoachingApiResponse<T>` with `apiVersion`, `data`, and `warnings`.
+- During active rollout, coaching endpoints follow an additive-only rule: fields may be added (nullable), but not removed or renamed, unless the API major version changes.
+- Deprecated fields must remain available for at least one release cycle and be marked in the response envelope before removal.
+- Frontend and backend may deploy independently; endpoint contracts must be safe across mixed-version deployments.
+
+## 22. Docs drift prevention
+
+- Documentation is part of done. When behavior, architecture, API contracts, DTOs, persistence, security/auth, AI pipeline, model routing, runbooks, verification gates, or user-visible product rules change, update the living docs that own that behavior in the same commit. Prefer updating the current authority doc over creating a new parallel plan.
+- Use `docs/DOCUMENTATION_INDEX.md` as the routing layer. If a new doc is created, a doc is retired, or an authority changes, update the index so future agents know which doc is live, historical, generated inventory, marketing, or backlog.
+- When a change adds, removes, renames, or materially changes an authority-bearing route, Prisma model, shared authority export, frontend authority consumer, root script, Cursor rule, AGENTS rule, readiness gate, or source-of-truth guardrail, update `docs/app-plan/v2-authority-source-inventory.json` and the human inventory in `docs/app-plan/v2-authority-migration-inventory.md` in the same change. `npm run test:doc-code-drift` must fail if a discovered source surface is not classified.
+- If a generated or audit doc under `docs/app-plan/` is changed, keep it subordinate to living docs and run the SpecForge repo-doc quality gate when available. Resolve the installed SpecForge root from the active tool environment, then run:
+  `py "${SPECFORGE_ROOT}/skills/_specforge-shared/scripts/check_repo_doc_quality.py" --repo-root . --docs-dir docs/app-plan --profile focused --existing-repo --assurance --strict --final`.
+- Generated file maps are not live architecture truth. `REPO_FILEMAP.md` is generated from tracked files; run `npm run filemap` after tracked file adds, removes, or renames when practical.
+- When changing coaching taxonomy enums, shared contracts, shared config thresholds, or coaching DTOs, update all affected artifacts in the same commit:
+  - shared code
+  - backend mapper / producer
+  - any affected Cursor rules
+  - `MVP_CONTRACTS.md`
+  - `COACHING_ARCHITECTURE.md`
+  - seed data spec when affected
+  - prompts that emit taxonomy values
+- If a change alters a machine-consumed coaching contract, verify both code and documentation stayed aligned before calling the work done.
+
+## 23. AI-First Grounded Decision Architecture
+
+When the product needs judgment, the preferred architecture is:
+
+1. AI reads the call semantically and proposes structured decisions with transcript evidence.
+2. Deterministic code validates grounding, speaker, confidence, material authority, lane, score/applicability policy, and provenance.
+3. Accepted decisions drive downstream behavior: call type, checklist verdicts, score, primary-fix ranking, coaching prose, better lines, labels, persistence, API DTOs, and UI surfaces.
+4. Rejected/downgraded decisions remain auditable with explicit reasons.
+
+- New or changed semantic AI stages that affect product truth need a decision matrix. Use `docs/AI_DECISION_MATRIX_REGISTER.md` for the template.
+- Validators should feed failed semantic fields into bounded repair when safe; do not make validator-only patches the main fix for model reasoning failures.
+- A semantic artifact is not real architecture until accepted decisions drive the intended final consumer, not only audit/debug output.
+
+Anti-patterns:
+
+- Adding another regex phrase to fix a new wording when the real failure is missing open-world AI judgment or missing downstream consumption.
+- Persisting a semantic artifact that does not influence the final user-visible output.
+- Treating `true none` as a safe fallback when there is grounded resistance or an accepted semantic miss.
+- Letting final prose invent or re-rank decisions that were not present in structured validated artifacts.

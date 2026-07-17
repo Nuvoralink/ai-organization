@@ -12,6 +12,13 @@
     "control:install": "node scripts/control-plane.mjs install",
     "control:capture": "node scripts/control-plane.mjs capture",
     "control:inventory": "node scripts/control-plane.mjs inventory",
+    "control:rollback": "node scripts/control-plane.mjs rollback",
+    "overlay:validate:auxara": "node scripts/project-overlay.mjs validate auxara-dialer",
+    "overlay:validate:coachai": "node scripts/project-overlay.mjs validate coachai",
+    "overlay:check:auxara": "node scripts/project-overlay.mjs check auxara-dialer",
+    "overlay:check:coachai": "node scripts/project-overlay.mjs check coachai",
+    "overlay:install:auxara": "node scripts/project-overlay.mjs install auxara-dialer",
+    "overlay:install:coachai": "node scripts/project-overlay.mjs install coachai",
     "test": "node --test tests/*.test.mjs"
   }
 }

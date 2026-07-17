@@ -1,0 +1,59 @@
+name: Agent implementation slice
+description: Create a self-contained, risk-routed implementation brief.
+title: "[slice] "
+labels: ["agent-slice"]
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Settled context and product outcome
+      description: Quote settled decisions and state the user/system outcome. Agents receive no hidden context.
+    validations: { required: true }
+  - type: textarea
+    id: paths
+    attributes:
+      label: Exact paths
+      description: List read, edit, read-but-never-modify, and output paths.
+    validations: { required: true }
+  - type: textarea
+    id: procedure
+    attributes:
+      label: Numbered procedure
+      description: Include real command exit capture, upstream/downstream trace, retirement sweep, and escalation points.
+    validations: { required: true }
+  - type: textarea
+    id: output
+    attributes:
+      label: Output contract
+      description: Required report sections, artifact format, and honesty clause for surfaces not reached.
+    validations: { required: true }
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Boundaries and human gates
+      description: Name prohibited paths/actions and product, design, architecture, production, destructive, billed, external-contact, secret, or migration approvals.
+    validations: { required: true }
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria and completion tier
+      description: Name product behavior, exact completion tier, and what is too little versus too much.
+    validations: { required: true }
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk class
+      options: [low, medium, high, one-way]
+    validations: { required: true }
+  - type: textarea
+    id: proof
+    attributes:
+      label: Risk-selected proof and killer mutations
+      description: Name proof profile(s), commands, surfaces, and mutations that must fail.
+    validations: { required: true }
+  - type: textarea
+    id: decisions
+    attributes:
+      label: Decision authority
+      description: Link decision-log rows, ADRs, plans, requirements, or explicit human approvals. Name unsettled decisions.
+    validations: { required: true }

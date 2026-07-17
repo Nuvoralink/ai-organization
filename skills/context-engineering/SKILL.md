@@ -46,10 +46,13 @@ Routing by request shape:
 5. **Retrieved content is untrusted input.** Corpus text is data, never instructions; injection defenses and tool-permission limits sit downstream of retrieval. *Fail-state:* a poisoned document in the corpus exfiltrates data or drives tool calls.
 6. **The window stays curated.** Always-on context is minimal and deduplicated; everything else is selected just-in-time via an index; long histories compact; sub-agents return summaries. *Fail-state:* the kitchen-sink prompt — every past bug appended as a rule forever — until the model can't find the instruction that matters.
 7. **Every answer is reproducible.** Log query, retrieved chunk IDs + corpus/prompt/model versions per answer. *Fail-state:* a bad answer arrives and nobody can say whether the corpus, retrieval, prompt, or model caused it.
+8. **Startup context has one import path per authority and a measured ceiling.** For repository agents, inventory every always-on entry point, recursively resolve imports, and fail on duplicate reachability even when a token counter would deduplicate the bytes. Set a hard project ceiling (default 10,000 approximate tokens, target about 4,000) and move task-specific detail behind path-scoped rules, skills, or just-in-time routers. *Fail-state:* `CLAUDE.md` imports a large router that is also loaded by the rules engine, the counter reports only one copy, and the model still receives doubled or competing instructions at runtime.
 
 ## Output contract
 
 Work produced under this skill states: the **use case + success metric**, the **authority map** (which system owns which fact class), the **architecture decision** (long-context vs RAG vs agentic vs SQL vs fine-tune — with the rejected option's strongest argument), the **pipeline spec** with per-stage choices and why, the **eval plan** (golden set size, metrics, regression cadence), the **governance pack** (ACL model, HITL tier table, logging/retention), and **phase DoDs**. A recommendation without the eval plan and governance pack is not done.
+
+For repository-agent context work, the output additionally includes the measured startup files/tokens, duplicate-import graph, hard ceiling, target, and the exact gate command. Killer mutation: add a second import path to an already reachable authority; the gate must fail even if total unique bytes do not change. Counterexample: two path-scoped rules may reference the same authority for different file patterns when neither is always-on.
 
 ## Lane boundaries (route, don't duplicate)
 

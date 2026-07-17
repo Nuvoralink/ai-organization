@@ -1,0 +1,77 @@
+---
+alwaysApply: false
+globs:
+  - "backend/src/**/*coaching*"
+  - "backend/src/**/*observation*"
+  - "backend/src/**/*highlight*"
+  - "backend/src/**/*drill*"
+  - "backend/src/**/*priority*"
+  - "backend/src/**/*callReview*"
+---
+# Coaching Entity Rules
+
+Purpose: keep structured coaching entities consistent, evidence-backed, and safe to evolve.
+
+## 1. Canonical taxonomy only
+
+- Import coaching-domain enums and guards from `@ail-sales-coach/shared/coaching/taxonomy`.
+- Do not redefine observation categories, polarities, highlight types, analyzability states, provenance types, or priority queue reasons as string literals in backend code.
+- If a prompt emits these values, keep the prompt examples in lockstep with the shared taxonomy.
+
+## 2. Thresholds come from shared config
+
+- Import confidence thresholds, benchmark gates, analyzability boundaries, drill escalation counts, and priority queue weights from `@ail-sales-coach/shared/coaching/config`.
+- Do not inline magic numbers such as `0.75`, `0.50`, `8`, `15`, `3`, or `5` for coaching-domain logic.
+
+## 3. Evidence is required
+
+- Every persisted `CoachingObservation` that can influence ranking, drill assignment, highlights, or manager review must include a non-empty `transcriptQuote`.
+- Every persisted `ObjectionInstance` must include both `prospectQuote` and `agentResponse`.
+- Grounded semantic judgment candidates that influence observations, highlights, top fixes, drills, or manager review must carry validation status, reasons, source stage, confidence, and transcript evidence.
+- If the pipeline cannot extract evidence for an observation, either:
+  - discard the observation, or
+  - persist it below the display threshold (`confidence < MEDIUM_CONFIDENCE`) so it cannot drive user-facing logic
+- Do not let evidence-free observations become product truth.
+
+## 4. Entity shape requirements
+
+- `CoachingObservation` must include: category, polarity, severity (1-10), coaching leverage (1-10), confidence (0-1), transcript quote, timestamp, and optional replacement line + provenance.
+- `CallHighlight` extraction follows fixed rules:
+  - worst = weakest handled objection or highest-confidence negative with strongest leverage when no objection anchor exists
+  - best = best handled objection or highest-confidence positive with strong evidence
+  - objection = shared primary-objection ranker, not raw array order
+- `SkillScoreSnapshot` is one row per skill per session; upsert on re-analysis, do not duplicate.
+- `CoachingPriorityScore` must store top 2 contributing reasons alongside the numeric score.
+
+## 5. Mapper contract discipline
+
+- The `CallReviewMapper` must return `CallReviewDTO` from `@ail-sales-coach/shared/coaching/contracts`.
+- Do not return raw Prisma joins or partial entity blobs to the frontend.
+- Apply benchmark display gates in the mapper, not in frontend code.
+- Preserve lane fields (`laneAttribution`, `evidenceEnvelope`, `bookerResultType`, `scriptQualityState`, material queue status/reason) on every surfaced checklist item, script suggestion, strong unscripted line, and unified coaching moment that can affect ranking, drills, highlights, or manager review.
+- Mapper fallbacks for legacy rows must be safe and conservative: missing lane data may render generic coaching, but must not upgrade material/script rows into rep misses.
+- `unifiedCoachingMoments` is the canonical call-review moment surface. `middleCard` is deprecated compatibility data only and should not be rebuilt as the active UI contract.
+- Script suggestions must be produced through the typed material-intelligence builder (`materialIntelligenceSuggestions.ts`) or an equivalent shared helper that returns `ScriptSuggestionDTO[]`; do not rebuild ad hoc `unknown[]` script suggestion payloads inside pipeline orchestration.
+
+## 5a. Lane-aware ranking and drills
+
+- Primary fix, pivotal moment, and improvement-plan focus selection must use shared rep-actionable predicates from `@ail-sales-coach/shared/coaching/checklistLabels`.
+- Do not select `material_intelligence`, `weak_script`, `off_script`, or `not_in_script` rows as rep drill anchors.
+- Strong above-script lines are saved for manager/material review and may be praised, but they are not denominator-inflating checklist evidence.
+- Grounded AI coaching moments may seed strengths, missed opportunities, and recognition candidates only after transcript grounding and lane/policy checks. They must not bypass the same primary-fix and drill eligibility rules as checklist rows.
+
+## 6. Rollout safety
+
+- Every new scoring feature or coaching detection must support rollout modes:
+  - `internal_only`
+  - `manager_beta`
+  - `released`
+- New features start in `internal_only`.
+- `manager_beta` features must carry an explicit experimental label and must not drive drills, patterns, or booker-visible scores.
+- Rollout mode is controlled by centralized config, not scattered conditionals.
+
+## 7. Idempotency and re-population
+
+- Coaching entities are derived artifacts.
+- Re-running analysis for the same session must replace or upsert entity rows deterministically rather than append duplicates.
+- Session-scoped cleanup for entity re-population must be safe (`DELETE WHERE sessionId = ?` + rebuild or equivalent transactional upsert flow).

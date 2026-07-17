@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "dispatch_authority": "orchestrator",
+  "global_roles": [
+    { "name": "orchestrator", "kind": "orchestrator", "dispatch": true, "mutates_source": false },
+    { "name": "implementer", "kind": "global", "dispatch": false, "mutates_source": true },
+    { "name": "security-auditor", "kind": "global", "dispatch": false, "mutates_source": false }
+  ],
+  "project_roles": [
+    { "name": "premise-and-architecture-challenger", "file": ".claude/agents/premise-and-architecture-challenger.md", "purpose": "challenge need, premise, placement, alternatives, and durable authority before commitment", "read_only": true, "dispatch": false },
+    { "name": "sprint-kickoff-auditor", "file": ".claude/agents/sprint-kickoff-auditor.md", "purpose": "verify a sprint is executable before implementation starts", "read_only": true, "dispatch": false },
+    { "name": "adversarial-reviewer", "file": ".claude/agents/adversarial-reviewer.md", "purpose": "attempt to refute a done claim from diff and evidence", "read_only": true, "dispatch": false },
+    { "name": "ai-decision-boundary-auditor", "file": ".claude/agents/ai-decision-boundary-auditor.md", "purpose": "audit semantic and deterministic authority boundaries", "read_only": true, "dispatch": false },
+    { "name": "doctrine-drift-auditor", "file": ".claude/agents/doctrine-drift-auditor.md", "purpose": "find code and doctrine contradictions", "read_only": true, "dispatch": false },
+    { "name": "functionality-parity-auditor", "file": ".claude/agents/functionality-parity-auditor.md", "purpose": "trace decided to built to wired to called to persona-reachable", "read_only": true, "dispatch": false },
+    { "name": "performance-auditor", "file": ".claude/agents/performance-auditor.md", "purpose": "audit scale, query, payload, bundle, render, and worker hazards", "read_only": true, "dispatch": false },
+    { "name": "release-verifier", "file": ".claude/agents/release-verifier.md", "purpose": "verify deployed readiness and smoke without mutation", "read_only": true, "dispatch": false },
+    { "name": "source-to-screen-auditor", "file": ".claude/agents/source-to-screen-auditor.md", "purpose": "trace authority and lifecycle to the final surface", "read_only": true, "dispatch": false },
+    { "name": "test-runner", "file": ".claude/agents/test-runner.md", "purpose": "run named proof batteries and report real exits", "read_only": true, "dispatch": false },
+    { "name": "ui-verifier", "file": ".claude/agents/ui-verifier.md", "purpose": "verify approved Claude Design fidelity and rendered states", "read_only": true, "dispatch": false },
+    { "name": "user-journey-auditor", "file": ".claude/agents/user-journey-auditor.md", "purpose": "walk persona jobs, recovery, discoverability, and later change", "read_only": true, "dispatch": false }
+  ]
+}

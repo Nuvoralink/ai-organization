@@ -56,6 +56,31 @@ test('Proves: ORG-FLEET-001; Test type: mutation; Surface: bootstrap roster; Aut
   assert.equal(validates(skill.replaceAll('sprint-kickoff', 'kickoff-removed')), false);
 });
 
+test('Proves: ORG-OVERLAY-001; Test type: mutation; Surface: existing-project bootstrap; Authority: overlay ownership manifest; Killer mutation: permit copy-all or overwrite a dirty managed target; Gated command: npm test', () => {
+  const skill = fs.readFileSync(path.join(root, 'skills', 'bootstrap-orchestrator', 'SKILL.md'), 'utf8');
+  assert.match(skill, /Existing-project overlay mode/u);
+  assert.match(skill, /refuses dirty managed targets/u);
+  assert.match(skill, /Never use copy-all discovery as authority/u);
+  assert.match(skill, /project-owned product doc must remain outside overlay parity/u);
+});
+
+test('Proves: ORG-CONTEXT-001; Test type: mutation; Surface: startup context; Authority: context-engineering; Killer mutation: add a second import path without changing unique bytes; Gated command: npm test', () => {
+  const skill = fs.readFileSync(path.join(root, 'skills', 'context-engineering', 'SKILL.md'), 'utf8');
+  const gate = read('templates/gates/check-agent-context-budget.mjs.template');
+  assert.match(skill, /one import path per authority/u);
+  assert.match(gate, /Duplicate startup import/u);
+  assert.match(gate, /firstParent/u);
+});
+
+test('Proves: ORG-GOV-005; Test type: architecture; Surface: cross-vendor lifecycle; Authority: vendor-neutral task governor; Killer mutation: let one vendor bypass the shared governor; Gated command: npm test', () => {
+  const skill = fs.readFileSync(path.join(root, 'skills', 'bootstrap-orchestrator', 'SKILL.md'), 'utf8');
+  const governor = fs.readFileSync(path.join(root, 'core', 'lifecycle', 'task-governor.mjs'), 'utf8');
+  assert.match(skill, /Claude and Codex adapters/u);
+  assert.match(skill, /neither adapter may reduce proof or path checks/u);
+  assert.match(governor, /Changed file is outside editable paths/u);
+  assert.match(governor, /Killer mutation was not observed/u);
+});
+
 test('Proves: ORG-REL-001; Test type: mutation; Surface: release-verifier template; Authority: deployed-verification truth table; Killer mutation: allow DEPLOY-VERIFIED with a skipped check or shell-only core flow; Gated command: npm test', () => {
   const source = read('templates/agents/release-verifier.template.md');
   const validates = (text) => text.includes('There is no DEPLOY-VERIFIED-with-skips state')

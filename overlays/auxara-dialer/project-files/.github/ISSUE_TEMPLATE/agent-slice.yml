@@ -1,0 +1,124 @@
+name: Agent slice
+description: Dispatch a bounded agent slice with complete context, evidence, and human gates.
+title: '[Agent slice]: '
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This issue is the durable handoff artifact. Quote settled decisions verbatim, pin the worktree,
+        and require command-owned exit codes. An agent status is a lead; attach the output that proves it.
+        `.ai-organization/action-authority.json` is canonical: branch/commit/push/PR are task-authorized;
+        conditional merge requires every low-risk criterion; human-gated actions never inherit approval.
+
+  - type: dropdown
+    id: completion_tier
+    attributes:
+      label: Completion tier
+      description: Choose the highest authorized tier. A lower tier cannot silently expand itself.
+      options:
+        - read-only
+        - implementation
+    validations:
+      required: true
+
+  - type: textarea
+    id: settled_context
+    attributes:
+      label: 1. Context and settled decisions (quoted)
+      description: Quote every load-bearing MUST, MUST NOT, product decision, and current-state fact inline.
+      placeholder: |
+        Product intent:
+        - "<verbatim settled decision>"
+        Current state verified from:
+        - <artifact and evidence>
+    validations:
+      required: true
+
+  - type: textarea
+    id: exact_paths
+    attributes:
+      label: 2. Exact paths
+      description: Separate read-first, may-edit/create, read-only/never-modify, and output paths. Pin the worktree.
+      placeholder: |
+        Work ONLY under: <absolute worktree>
+        Read first, completely:
+        - <path> — <what it proves>
+        May edit/create ONLY:
+        - <path>
+        Read but NEVER modify:
+        - <path> — <cross-consumer reason>
+        Output artifact:
+        - <path or report destination>
+    validations:
+      required: true
+
+  - type: textarea
+    id: numbered_procedure
+    attributes:
+      label: 3. Numbered procedure
+      description: Include the proof ladder and commands that expose their OWN exit status, never a pipe's status.
+      placeholder: |
+        1. Verify the pinned branch/worktree and read the authorities.
+        2. Declare blast radius and a two-option decision matrix.
+        3. Implement within the allowlist.
+        4. Run `<command>; capture its own exit code immediately`.
+        5. Run a temporary-fixture killer mutation, then restore through fixture cleanup.
+        6. Self-review the actual diff and repo-wide references.
+    validations:
+      required: true
+
+  - type: textarea
+    id: output_contract
+    attributes:
+      label: 4. Output contract
+      description: Define the exact report fields and raw evidence the orchestrator must receive.
+      placeholder: |
+        Return: outcome; commit SHA; changed paths; decision matrix; blast radius; exact commands + own
+        exit codes; raw key output; killer mutation; acceptance evidence; not-reached surfaces; risks;
+        Doctrine-loop findings (or explicit none).
+    validations:
+      required: true
+
+  - type: textarea
+    id: boundaries_escalation
+    attributes:
+      label: 5. Boundaries and escalation
+      description: State concrete prohibitions, forbidden files, and the one escalation path when blocked.
+      placeholder: |
+        MUST NOT:
+        - edit outside the allowlist or cross any human-gated action in action-authority.json
+        MAY:
+        - branch, commit, push, and open/update a PR inside this authorized task
+        CONDITIONAL MERGE:
+        - only when low-risk, additive/isolated, conflict-free, independently verified, and with no
+          production/deploy effect
+        If blocked:
+        - finish safe independent work; report the exact path/change blocked and one unblock action
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: 6. Self-verifiable acceptance criteria
+      description: Use observable checks the agent can prove from its own seat; include negative paths.
+      placeholder: |
+        - [ ] Product/system/drift-prevention outcomes are proven.
+        - [ ] Every changed authority has upstream feeders and downstream consumers reconciled.
+        - [ ] Positive liveness and negative fixture tests pass.
+        - [ ] Named killer mutation fails.
+        - [ ] Worktree scope and cleanliness are verified.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: irreversible_boundary
+    attributes:
+      label: Irreversible boundary
+      description: This records the stop line; it never grants an agent permission to cross it.
+      options:
+        - Agent Git actions; merge only if every conditional criterion passes; stop before all human-gated actions
+        - Stop before merge and every human-gated action
+        - Read-only; no repository or external mutation
+    validations:
+      required: true

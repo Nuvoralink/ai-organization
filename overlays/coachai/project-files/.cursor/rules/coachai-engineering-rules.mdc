@@ -1,0 +1,155 @@
+---
+alwaysApply: false
+---
+# CoachAI Engineering Rules
+
+Purpose: keep development consistent, fast, typed, testable, and maintainable across frontend, backend, shared, and desktop.
+
+Before any non-trivial backend, shared-contract, database, security, AI-pipeline, billing, upload, queue, storage, deploy, or cross-layer architecture change, read `docs/ARCHITECTURE_BLAST_RADIUS.md` and use it to identify connected producers, validators, persistence/read models, API contracts, jobs/scripts, frontend consumers, docs, and verification gates. If debugging or implementation reveals a missing relationship that caused a miss, update `docs/ARCHITECTURE_BLAST_RADIUS.md` in the same turn so the map learns from the failure. Make newly discovered relationships explicit by naming the exact route, DTO, script, job, package export, prompt stage, migration path, frontend consumer, or smoke test that must travel with future changes.
+
+When a change creates or modifies persisted derived rows, retry/outbox rows, queue or dispatch rows, cache/projection rows, aggregates, provider evidence rows, or any row that can later act or make a visible claim, do not treat only the "current", "scheduled", or "visible" row as the blast radius. A persisted derived state lifecycle matrix is mandatory when rows can stale, retry, dispatch, display, aggregate, or outlive the source mutation.
+
+That lifecycle matrix must cover every source-of-truth mutation and every applicable existing row state: pending, scheduled/queued, processing/claimed, retryable failed, terminal failed, sent/completed, indeterminate/ambiguous provider result, canceled/skipped, and test-only. For each row, answer: which source authority created it, whether it can still act or make a visible claim, what happens when the source changes, what happens when eligibility is revoked, what happens when the parent is archived/deleted, what happens after provider failure if retry remains possible, what happens after terminal evidence exists, whether the row is updated/canceled/skipped/superseded/preserved/ignored, what evidence must never be overwritten, what final surface should show, and which test proves it. Tests must map to every relevant source authority, producer/reconciliation path, state transition, unavailable/disabled provider state, provider evidence, idempotency path, final UI/output, and doc update.
+
+## 1. Core priorities
+
+Optimize for:
+1. correctness
+2. safety
+3. maintainability
+4. consistency
+5. speed
+
+Do not optimize for short-term convenience if it increases architectural drift.
+- Start from the intended user or business outcome, not only the literal requested code change.
+- Prefer focused changes that improve clarity, trust, usability, or maintainability with real product value; avoid information-dump solutions.
+- When fixing bugs, find the root cause and prefer a durable generic fix over a brittle workaround or bug-specific hardcoded patch.
+- Replace, don't layer: when you consolidate or introduce a new/central/single version of something (an authority, classifier, source of truth, validator, or code path), DELETE or explicitly demote the old path in the SAME change — do not add the new solution on top of the old one. Two producers of the same authoritative output race and the wrong (often less-informed) one wins on some input (the call-type "central classifier on top of the old paths" and the section-1 window-gate-left-firing bugs). After the change there must be exactly one authority for the decision; grep the old symbol/path to confirm it is removed, not orphaned. "Added the new X" is not done until "the old X is gone or provably reduced to one named non-authoritative role with the reason stated."
+- When you discover a real bug that should be fixed but is not being handled in the current task, add it to `docs/COACHING_BUG_BACKLOG.md` before finishing. Include the symptom, suspected/root cause if known, current status, and the validation needed later.
+
+## 2. Repo architecture
+
+- Respect workspace boundaries:
+  - `frontend` for web UI
+  - `backend` for API, auth, billing, analysis orchestration
+  - `shared` for shared types and contracts
+  - `desktop` for desktop-specific behavior
+- Do not move logic into a different workspace just because it is faster to patch there.
+- Keep web-only code out of backend and desktop-only code out of frontend.
+- Shared contracts belong in shared modules when both frontend and backend rely on them.
+
+## 3. File responsibilities
+
+- Routes should stay thin.
+- Validation belongs in schema modules or explicit validation blocks.
+- Business logic belongs in services, domain helpers, or pipeline modules.
+- Pure transformation logic should be separated from HTTP handlers.
+- Avoid large catch-all files that mix transport, business logic, persistence, and mapping.
+
+## 4. Reuse before create
+
+Before creating a new component, hook, helper, endpoint helper, mapper, or utility:
+- search for an existing equivalent
+- extend the existing abstraction if it is the same concept
+- create a new abstraction only when the concept is genuinely new
+
+Do not create duplicate helpers with slightly different names.
+
+## 5. Type safety
+
+- Prefer strict typing end to end.
+- Avoid `any` in production code.
+- If `any` is temporarily required, localize it and add a comment explaining why.
+- Prefer explicit DTOs and domain types for machine-consumed data.
+- Frontend should not rely on loose blobs when stable response shapes can exist.
+- Backend should not leak raw persistence models when API DTOs are clearer and safer.
+
+## 6. API contracts
+
+- Keep response shapes stable.
+- Additive changes are preferred over breaking changes.
+- Do not rename machine-consumed fields casually.
+- When changing contracts, update both producer and consumer in the same change.
+- Document contract-sensitive changes in code comments when they affect analysis, billing, auth, or team access.
+
+## 7. Database and migrations
+
+- Treat Prisma schema changes as product-level changes, not simple refactors.
+- Any schema change must consider migration impact, old data, nullable transitions, defaults, and rollback risk.
+- Do not assume production data is clean.
+- Do not change or remove fields used by old sessions, traces, billing history, or saved analysis without a migration plan.
+
+## 8. Quality gates
+
+No task is complete until the changed code passes the relevant checks for the touched area.
+
+Required by default:
+- build must pass
+- lint must pass
+- typecheck must pass
+- no obvious dead code or placeholder logic should remain
+
+Required when touching analysis or scoring behavior:
+- run relevant regression scripts
+- confirm contract compatibility with existing saved analysis
+
+Required when touching UI behavior:
+- verify loading, empty, success, and error states
+- update or add stable selectors where needed
+
+## 9. Refactor discipline
+
+- Prefer small, composable refactors over giant rewrites.
+- Preserve behavior unless the task explicitly changes behavior.
+- When replacing legacy code, remove the dead path instead of leaving confusing no-op shims unless there is a real compatibility need.
+- If compatibility code must remain, mark why it exists, whether it may override current product truth, and what condition allows its removal; if no expiry is possible, explain why it is permanent compatibility.
+
+## 10. Logging and observability
+
+- Log enough to diagnose issues.
+- Do not log secrets, tokens, payment payloads, full transcripts, or personal content unless explicitly required and protected.
+- Prefer structured logs for high-value backend operations.
+- Add traceability for analysis pipeline changes, billing actions, and admin actions.
+- All paid AI provider calls must be usage-metered. Use the canonical metered provider adapters (`backend/src/lib/openai.ts`, `gemini.ts`, and `aiOpenAiGateway.ts`) instead of direct provider SDK clients. If a new paid model call is added, preserve or add explicit `AiUsageContext` stage/source metadata, update model-role/capability inference when needed, and run the AI metering/provider-coverage regressions.
+- Usage metering metadata is operational only. Never persist raw prompts, transcripts, raw audio, customer content, API keys, auth tokens, secrets, passwords, or payment payloads in `AiModelUsageEvent.metadata`.
+- Tier and model-routing behavior must stay centralized in `aiTierPolicy.ts` and `aiModelPolicy.ts`. Do not add scattered plan checks in prompts, routes, or UI to change AI quality/depth unless the central policy and its tests are updated first.
+
+## 11. Definition of done
+
+Before finishing a change, confirm:
+- checked `docs/ARCHITECTURE_BLAST_RADIUS.md` for connected backend/shared/database/API/job/frontend/deploy surfaces when the change is non-trivial or cross-layer
+- updated `docs/ARCHITECTURE_BLAST_RADIUS.md` if the work exposed a missing relation that should be remembered
+- architecture still makes sense
+- no duplicate abstraction was introduced
+- types remain coherent
+- contracts remain stable
+- relevant tests or regressions were considered
+- security or privacy impact was considered for data, auth, billing, uploads, or AI flows
+- paid AI calls are still routed through metered adapters and have useful stage/model-role/capability attribution when this task touches model providers, prompts, analysis stages, normalization, eval scripts, or AI reporting
+
+## 12. Drift prevention
+
+When in doubt, prefer:
+- extending shared types
+- reusing existing UI primitives
+- keeping route handlers thin
+- validating inputs explicitly
+- writing code that a future developer can reason about quickly
+
+## 13. Button interaction standard
+
+Every clickable button (or button-like affordance) MUST inherit the
+canonical interactive motion from `foundations.motion.interactive` — a
+subtle 1px hover-lift, press grounded, smooth colour/shadow/transform
+tween. This is the app's button feel across rep, manager, and admin
+surfaces.
+
+Two ways to comply:
+1. Use the `<Button>` primitive from `frontend/src/components/ui/Button.tsx` (preferred).
+2. Compose `${foundations.motion.interactive}` into the `className` of a
+   raw `<button>` element when the primitive is too constrained.
+
+A `<button>` element without this transition is a bug. Review checklist
+asks for it explicitly. Routing through the token (rather than reinventing
+hover/active classes inline) is what keeps the feel uniform — and what
+lets us tune the lift system-wide later without hunting every call site.

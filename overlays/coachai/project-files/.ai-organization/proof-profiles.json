@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "profiles": [
+    {
+      "id": "organization-control",
+      "lane": "static",
+      "risk": "control_plane",
+      "include": ["AGENTS.md", "CLAUDE.md", ".ai-organization/**", ".claude/agents/**", ".claude/settings.json", ".cursor/rules/**", ".github/**", "scripts/check-agent-*.mjs", "scripts/check-rules-wiring.mjs", "scripts/check-overlay-parity.mjs", "scripts/check-test-intent.mjs", "scripts/check-doc-code-drift.mjs", "scripts/task-governor.mjs", "scripts/claude-lifecycle-hook.mjs", "scripts/claude-posttooluse-gate.mjs", "scripts/run-risk-selected-proof.mjs", "scripts/ci-local.mjs", "scripts/tests/**", "package.json"],
+      "commands": ["npm run gate:organization", "npm run test:organization-control-plane"]
+    },
+    {
+      "id": "documentation",
+      "lane": "static",
+      "risk": "documentation_contract",
+      "include": ["docs/**"],
+      "commands": ["npm run test:doc-code-drift"]
+    },
+    {
+      "id": "frontend",
+      "lane": "static",
+      "risk": "visible_or_client_behavior",
+      "include": ["frontend/**", "shared/**"],
+      "commands": ["npm run build:shared", "npm run build:frontend", "npm run lint:typography --workspace=frontend", "npm run test --workspace=frontend", "npm run check:ui", "npm run check:ui-continuity"]
+    },
+    {
+      "id": "backend-static",
+      "lane": "static",
+      "risk": "backend_contract_or_behavior",
+      "include": ["backend/**", "shared/**"],
+      "commands": ["npm run prisma:generate", "npm run build:shared", "npm run build:backend", "npm run typecheck --workspace=backend", "npm run check:script-imports", "npm run gate:tx-seam"]
+    },
+    {
+      "id": "ai-semantic",
+      "lane": "static",
+      "risk": "ai_semantic_authority",
+      "include": ["backend/src/lib/runAnalysis*", "backend/src/lib/analysis/**", "backend/src/lib/gemini*", "backend/src/lib/ai*", "backend/src/lib/coaching/**", "backend/src/**/prompt*", "backend/src/**/semantic*", "shared/src/coaching/**"],
+      "commands": ["npm run gate:ai-output-authority", "npm run gate:role-battery"]
+    },
+    {
+      "id": "backend-db",
+      "lane": "db",
+      "risk": "persistence_tenancy_idempotency_or_provider_ingest",
+      "include": ["backend/prisma/**", "backend/src/routes/**", "backend/src/**/*Repository*", "backend/src/**/*Store*", "backend/src/**/queue/**", "backend/src/**/*Queue*", "backend/src/**/*Ingest*", "backend/scripts/*Regression*"],
+      "requires_env_any": ["CI_LOCAL_DB_URL", "DIALER_INGEST_TEST_DATABASE_URL"],
+      "commands": ["npm run verify:db"]
+    },
+    {
+      "id": "dependency-supply-chain",
+      "lane": "static",
+      "risk": "dependency_build_and_supply_chain",
+      "include": ["package.json", "package-lock.json", "backend/package.json", "frontend/package.json", "shared/package.json"],
+      "commands": ["npm run gate:preflight-security", "npm run build"]
+    }
+  ],
+  "unknown_path_policy": "fail"
+}

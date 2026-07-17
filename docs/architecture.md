@@ -9,9 +9,11 @@ Connect a clean machine to this private repository and begin safe, consistent Cl
 1. The manifest declares canonical source trees, install destinations, allowed file types, denials, ownership, and whether extra destination files are errors.
 2. A machine-local root registry resolves user-home and project tokens without committing machine-specific paths.
 3. `install --dry-run` computes a deterministic plan and performs no writes.
-4. `install` creates or updates only declared destinations, records hashes, and never deletes unmanaged files unless a future separately approved migration says so.
-5. `check` compares canonical and installed bytes, detects missing/drifted/local-only managed assets, validates schemas and role/skill identities, and rejects unsafe or unresolved paths.
+4. `install` snapshots every managed target, creates or updates only declared destinations, records hashes, and never deletes unmanaged files unless a future separately approved migration says so. A partial failure restores the pre-install snapshot.
+5. `check` compares canonical and installed bytes, detects missing/drifted/local-only managed assets, validates schemas and role/skill identities, and rejects unsafe, overlapping, or unresolved paths.
 6. `capture` is an explicit migration tool. It imports only manifest-declared orchestration paths after all deny rules pass; it is never an open-ended home-directory copier.
+7. Project overlays install the same universal contracts plus project-specific routers, agents, hooks, gates, and automation specifications into a registered product repository without copying its application tree.
+8. The task governor and action evaluator turn task scope, risk, proof, mutation, review, and action permissions into machine-checked decisions shared by Claude and Codex.
 
 ## Authority seams
 
@@ -21,6 +23,9 @@ Connect a clean machine to this private repository and begin safe, consistent Cl
 - Assets: `global`, `skills`, and `overlays` own portable files.
 - Location: `registries/project-roots.local.json` owns machine-specific paths and is never committed.
 - Product truth: referenced product repositories remain authoritative.
+- Task lifecycle: `core/lifecycle/task-governor.mjs` owns cross-vendor start/completion evidence checks.
+- Action evaluation: `core/authority/assess-action.mjs` owns fail-closed autonomous/conditional/human-required decisions.
+- Recovery: install snapshots beside each lock own reversible generated-copy changes.
 
 ## Why copy-with-manifest instead of symlinks
 

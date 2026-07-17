@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "overlay_source": "universal-private-orchestrator/overlays/coachai",
+  "managed_roots": [
+    ".ai-organization",
+    ".claude/agents",
+    ".cursor/rules",
+    "scripts/tests"
+  ],
+  "managed_files": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    ".github/CODEOWNERS",
+    ".github/ISSUE_TEMPLATE/agent-slice.yml",
+    ".github/pull_request_template.md",
+    ".github/workflows/ui-source-of-truth-gates.yml",
+    ".github/workflows/backend-db-regressions.yml",
+    "scripts/check-agent-context.mjs",
+    "scripts/check-rules-wiring.mjs",
+    "scripts/check-agent-control-plane.mjs",
+    "scripts/check-overlay-parity.mjs",
+    "scripts/task-governor.mjs",
+    "scripts/claude-lifecycle-hook.mjs",
+    "scripts/run-risk-selected-proof.mjs",
+    "scripts/claude-posttooluse-gate.mjs",
+    "scripts/ci-local.mjs",
+    "scripts/check-test-intent.mjs",
+    "scripts/check-doc-code-drift.mjs"
+  ],
+  "managed_json_sections": {
+    ".claude/settings.json": ["hooks"],
+    "package.json": ["scripts.gate:agent-context", "scripts.gate:rules-wiring", "scripts.gate:agent-control-plane", "scripts.gate:overlay-parity", "scripts.gate:organization", "scripts.proof:changed", "scripts.test:organization-control-plane", "scripts.gates:all", "scripts.verify", "scripts.verify:db", "scripts.ci:local"]
+  },
+  "excluded_project_owned": [
+    "backend/**",
+    "frontend/**",
+    "shared/**",
+    "docs/app-plan/product/**",
+    "docs/app-plan/architecture/**",
+    "docs/app-plan/decision-log.md",
+    "**/.env*",
+    "**/node_modules/**",
+    "**/__pycache__/**",
+    "tmp/**"
+  ],
+  "lock_file": ".ai-organization/overlay-lock.json"
+}

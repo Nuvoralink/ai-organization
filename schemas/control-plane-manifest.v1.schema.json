@@ -35,6 +35,7 @@
           "detectLocalOnly": { "type": "boolean" },
           "allowRootLink": { "type": "boolean" },
           "allowInstalledRootLink": { "type": "boolean" },
+          "renderContentTokens": { "type": "boolean" },
           "lock": { "type": "string", "pattern": "^\\$\\{[^}]+\\}(?:/.*)?$" }
         }
       }

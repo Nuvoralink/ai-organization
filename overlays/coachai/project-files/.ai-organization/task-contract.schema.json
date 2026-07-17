@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "coachai-agent-task-contract-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["task_id", "context", "paths", "procedure", "output_contract", "boundaries", "acceptance", "risk", "completion_tier"],
+  "properties": {
+    "task_id": { "type": "string", "minLength": 3 },
+    "context": { "type": "string", "minLength": 40 },
+    "paths": { "type": "object", "required": ["read", "edit", "never_modify"], "properties": { "read": { "$ref": "#/$defs/strings" }, "edit": { "$ref": "#/$defs/strings" }, "never_modify": { "$ref": "#/$defs/strings" } } },
+    "procedure": { "$ref": "#/$defs/strings" },
+    "output_contract": { "type": "string", "minLength": 30 },
+    "boundaries": { "type": "string", "minLength": 30 },
+    "acceptance": { "$ref": "#/$defs/strings" },
+    "risk": { "type": "object", "required": ["class", "proof_profiles", "human_gates"], "properties": { "class": { "enum": ["low", "medium", "high", "one_way"] }, "proof_profiles": { "$ref": "#/$defs/strings" }, "human_gates": { "$ref": "#/$defs/stringsOrEmpty" } } },
+    "completion_tier": { "enum": ["implemented_unverified", "locally_verified", "independently_verified", "merged", "deployed_verified"] }
+  },
+  "$defs": {
+    "strings": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 3 } },
+    "stringsOrEmpty": { "type": "array", "items": { "type": "string", "minLength": 3 } }
+  }
+}

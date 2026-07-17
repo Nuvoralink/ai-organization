@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "excluded": [
+    ".env*", "**/secrets/**", "**/credentials/**", "**/logs/**", "**/telemetry/**", "**/cache/**",
+    "**/history/**", "**/sessions/**", "**/worktrees/**", "**/node_modules/**", "**/dist/**", "**/build/**",
+    "**/__pycache__/**", "**/*.pyc", "backend/**", "frontend/**", "shared/**", "docs/app-plan/product/**",
+    "customer-data/**", "provider-payloads/**", "recordings/**", "transcripts/**"
+  ],
+  "reason": "The overlay owns orchestration only; project truth, runtime state, data, and secrets stay outside central capture."
+}

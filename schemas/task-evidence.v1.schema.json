@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nuvoralink.internal/schemas/task-evidence.v1.schema.json",
+  "title": "Cross-vendor task completion evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["task_id", "changed_files", "proofs", "independent_review", "unreached_surfaces", "doctrine_loop"],
+  "properties": {
+    "task_id": { "type": "string", "minLength": 1 },
+    "changed_files": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "proofs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "command", "exit_code", "artifact_opened", "killer_mutation_observed"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "command": { "type": "string", "minLength": 1 },
+          "exit_code": { "type": "integer" },
+          "artifact_opened": { "type": "boolean" },
+          "killer_mutation_observed": { "type": "boolean" },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "independent_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "reviewer", "verdict"],
+      "properties": {
+        "required": { "type": "boolean" },
+        "reviewer": { "type": ["string", "null"] },
+        "verdict": { "enum": ["pass", "findings", "not_required"] }
+      }
+    },
+    "unreached_surfaces": { "type": "array", "items": { "type": "string" } },
+    "doctrine_loop": { "type": "string", "minLength": 1 }
+  }
+}

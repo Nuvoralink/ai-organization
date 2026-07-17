@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nuvoralink.internal/schemas/project-overlay.v1.schema.json",
+  "title": "Project orchestration overlay",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "project", "rootToken", "deny", "mappings"],
+  "properties": {
+    "version": { "type": "string" },
+    "project": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]+$" },
+    "rootToken": { "type": "string", "pattern": "^PROJECT:.+$" },
+    "deny": { "$ref": "control-plane-manifest.v1.schema.json#/properties/deny" },
+    "mappings": { "$ref": "control-plane-manifest.v1.schema.json#/properties/mappings" }
+  }
+}
