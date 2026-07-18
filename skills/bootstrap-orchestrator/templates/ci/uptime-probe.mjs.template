@@ -1,0 +1,49 @@
+#!/usr/bin/env node
+// TEMPLATE: the between-merge uptime probe. FILL {{PLACEHOLDER}}s, save to {{SCRIPTS_DIR}}/uptime-probe.mjs, and schedule it
+// (see uptime-runbook.md.template). It catches the "detached-domain outage" class: a deployed surface that silently goes
+// unhealthy BETWEEN merges, when no one is deploying (release-verifier catches a bad DEPLOY; this catches a drift-into-unhealthy).
+//
+// Read-only observation only — it NEVER redeploys/rolls back/mutates. It reports; the human acts. Exit 0 = healthy, 1 = degraded.
+import process from 'node:process';
+
+const READINESS_URL = '{{BACKEND_URL}}{{READINESS_PATH}}';   // FILL: e.g. https://api.example.com/api/ready
+const FRONTEND_URL = '{{FRONTEND_URL}}';                     // FILL: e.g. https://app.example.com
+const TIMEOUT_MS = 15_000;
+
+async function probe(url, expectJson) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal, redirect: 'manual' });
+    const body = await res.text();
+    return { transportOk: res.status >= 200 && res.status < 400, status: res.status, body: expectJson ? body.slice(0, 800) : `${body.length} bytes` };
+  } catch (e) {
+    return { transportOk: false, status: 0, body: `fetch failed: ${e.message}` };
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+const readiness = await probe(READINESS_URL, true);
+const frontend = await probe(FRONTEND_URL, false);
+
+function readinessContract(probeResult) {
+  if (!probeResult.transportOk || probeResult.status !== 200) return false;
+  let payload;
+  try { payload = JSON.parse(probeResult.body); } catch { return false; }
+  return {{READINESS_JSON_ASSERTION}};
+  // FILL with explicit documented component assertions, e.g. payload.status === 'ready' && payload.db === 'healthy'.
+  // Never use a generic 2xx or absence-of-"unhealthy" heuristic as readiness proof.
+}
+
+const ready = readinessContract(readiness);
+
+const degraded = !ready || !frontend.transportOk;
+const stamp = new Date().toISOString();
+console.log(`[uptime ${stamp}] readiness=${readiness.status} frontend=${frontend.status} → ${degraded ? 'DEGRADED' : 'healthy'}`);
+if (degraded) {
+  console.error(`[uptime] DEGRADED — readiness body: ${readiness.body}`);
+  // FILL (optional): alert to the wired channel here (curl to the bot API; never log the token). Keep read-only — do NOT redeploy.
+  process.exit(1);
+}
+process.exit(0);

@@ -1,0 +1,8 @@
+{
+  "project": "auxara-dialer",
+  "orchestrator": "single-pm",
+  "premiseChallenger": "required-for-material-work",
+  "productionEffectFromMainMerge": true,
+  "autoMerge": false,
+  "branchProtection": "deferred"
+}

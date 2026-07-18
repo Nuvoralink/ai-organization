@@ -1,0 +1,4 @@
+interface:
+  display_name: "Source To Screen Verification"
+  short_description: "Prove authoritative source data reaches the final UI, API, report, export, or notification."
+  default_prompt: "Verify this source-to-screen path. Trace authority through decisions, persistence, API/DTO, mappers, final output, consumers, and tests."

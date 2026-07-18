@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Decision Contract Builder"
+  short_description: "Design AI semantic decision matrices, prompt contracts, validators, repair paths, and tests."
+  default_prompt: "Build an AI decision contract. Define source authority, inputs, allowed outputs, uncertainty, validation, repair, downstream consumers, and tests."

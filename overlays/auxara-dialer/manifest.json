@@ -1,0 +1,177 @@
+{
+  "version": "1.0.0",
+  "project": "auxara-dialer",
+  "rootToken": "PROJECT:auxara-dialer",
+  "deny": {
+    "segments": [
+      ".git",
+      ".env",
+      "credentials",
+      "secrets",
+      "sessions",
+      "history",
+      "logs",
+      "telemetry",
+      "cache",
+      ".cache",
+      "node_modules",
+      "dist",
+      "build",
+      "coverage",
+      "__pycache__"
+    ],
+    "filenames": [
+      ".credentials.json",
+      "auth.json",
+      "credentials.json",
+      "settings.local.json",
+      "config.toml",
+      "default.rules"
+    ],
+    "prefixes": [
+      ".env"
+    ],
+    "extensions": [
+      ".pem",
+      ".key",
+      ".pfx",
+      ".p12",
+      ".log",
+      ".sqlite",
+      ".db",
+      ".pyc",
+      ".pyo"
+    ]
+  },
+  "mappings": [
+    {
+      "id": "auxara-organization-metadata",
+      "source": "overlays/auxara-dialer/control-plane",
+      "captureFrom": "${PROJECT:auxara-dialer}/.ai-organization/control-plane",
+      "destinations": [
+        "${PROJECT:auxara-dialer}/.ai-organization/control-plane"
+      ],
+      "mode": "tree",
+      "ownership": "generated",
+      "allowedExtensions": [
+        ".json"
+      ],
+      "exclude": [],
+      "detectLocalOnly": true,
+      "renderContentTokens": false,
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "lock": "${HOME}/.nuvoralink-control-plane/project-locks/auxara-dialer/overlay-lock.json"
+    },
+    {
+      "id": "auxara-action-authority",
+      "source": "policies/action-authority.v1.json",
+      "captureFrom": "${PROJECT:auxara-dialer}/.ai-organization/policies/action-authority.v1.json",
+      "destinations": [
+        "${PROJECT:auxara-dialer}/.ai-organization/policies/action-authority.v1.json"
+      ],
+      "mode": "file",
+      "ownership": "generated",
+      "allowedExtensions": [
+        ".json"
+      ],
+      "exclude": [],
+      "detectLocalOnly": false,
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "lock": "${HOME}/.nuvoralink-control-plane/project-locks/auxara-dialer/overlay-lock.json"
+    },
+    {
+      "id": "auxara-risk-controls",
+      "source": "policies/risk-controls.v1.json",
+      "captureFrom": "${PROJECT:auxara-dialer}/.ai-organization/policies/risk-controls.v1.json",
+      "destinations": [
+        "${PROJECT:auxara-dialer}/.ai-organization/policies/risk-controls.v1.json"
+      ],
+      "mode": "file",
+      "ownership": "generated",
+      "allowedExtensions": [
+        ".json"
+      ],
+      "exclude": [],
+      "detectLocalOnly": false,
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "lock": "${HOME}/.nuvoralink-control-plane/project-locks/auxara-dialer/overlay-lock.json"
+    },
+    {
+      "id": "auxara-agent-role-registry",
+      "source": "registries/agent-roles.v1.json",
+      "captureFrom": "${PROJECT:auxara-dialer}/.ai-organization/registries/agent-roles.v1.json",
+      "destinations": [
+        "${PROJECT:auxara-dialer}/.ai-organization/registries/agent-roles.v1.json"
+      ],
+      "mode": "file",
+      "ownership": "generated",
+      "allowedExtensions": [
+        ".json"
+      ],
+      "exclude": [],
+      "detectLocalOnly": false,
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "lock": "${HOME}/.nuvoralink-control-plane/project-locks/auxara-dialer/overlay-lock.json"
+    },
+    {
+      "id": "auxara-assurance-schemas",
+      "source": "schemas",
+      "captureFrom": "${PROJECT:auxara-dialer}/.ai-organization/schemas",
+      "destinations": [
+        "${PROJECT:auxara-dialer}/.ai-organization/schemas"
+      ],
+      "mode": "tree",
+      "ownership": "generated",
+      "allowedExtensions": [
+        ".json"
+      ],
+      "exclude": [],
+      "detectLocalOnly": true,
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "lock": "${HOME}/.nuvoralink-control-plane/project-locks/auxara-dialer/overlay-lock.json"
+    },
+    {
+      "id": "auxara-shared-runtime",
+      "source": "core",
+      "captureFrom": "${PROJECT:auxara-dialer}/.ai-organization/runtime/core",
+      "destinations": [
+        "${PROJECT:auxara-dialer}/.ai-organization/runtime/core"
+      ],
+      "mode": "tree",
+      "ownership": "generated",
+      "allowedExtensions": [
+        ".md",
+        ".mjs"
+      ],
+      "exclude": [],
+      "detectLocalOnly": true,
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "lock": "${HOME}/.nuvoralink-control-plane/project-locks/auxara-dialer/overlay-lock.json"
+    },
+    {
+      "id": "auxara-automation-specs",
+      "source": "overlays/auxara-dialer/automations",
+      "captureFrom": "${PROJECT:auxara-dialer}/.ai-organization/automations",
+      "destinations": [
+        "${PROJECT:auxara-dialer}/.ai-organization/automations"
+      ],
+      "mode": "tree",
+      "ownership": "generated",
+      "allowedExtensions": [
+        ".json"
+      ],
+      "exclude": [],
+      "detectLocalOnly": true,
+      "renderContentTokens": false,
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "lock": "${HOME}/.nuvoralink-control-plane/project-locks/auxara-dialer/overlay-lock.json"
+    }
+  ]
+}

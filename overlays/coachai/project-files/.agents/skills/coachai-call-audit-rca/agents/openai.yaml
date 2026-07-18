@@ -1,0 +1,4 @@
+interface:
+  display_name: "CoachAI Call Audit RCA"
+  short_description: "Audit calls and fix root causes"
+  default_prompt: "Audit these session IDs and fix mismatches at the root."

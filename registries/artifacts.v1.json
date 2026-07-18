@@ -1,0 +1,862 @@
+{
+  "version": "1.0.0",
+  "artifacts": [
+    {
+      "id": "global-claude-doctrine",
+      "family": "global-doctrine",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "global/claude/CLAUDE.md",
+      "destinations": [
+        "${HOME}/.claude/CLAUDE.md"
+      ],
+      "provenance": "user-authored-global",
+      "sensitivity": "orchestration-only"
+    },
+    {
+      "id": "global-claude-rules",
+      "family": "global-rules",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "global/claude/rules",
+      "destinations": [
+        "${HOME}/.claude/rules"
+      ],
+      "provenance": "user-authored-global",
+      "sensitivity": "orchestration-only"
+    },
+    {
+      "id": "global-claude-agents",
+      "family": "global-agents",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "global/claude/agents",
+      "destinations": [
+        "${HOME}/.claude/agents"
+      ],
+      "provenance": "user-authored-global",
+      "sensitivity": "orchestration-only"
+    },
+    {
+      "id": "global-codex-doctrine",
+      "family": "global-doctrine",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "global/codex/AGENTS.md",
+      "destinations": [
+        "${HOME}/.codex/AGENTS.md"
+      ],
+      "provenance": "user-authored-global",
+      "sensitivity": "orchestration-only"
+    },
+    {
+      "id": "skill-ai-decision-contract-builder",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/ai-decision-contract-builder",
+      "destinations": [
+        "${HOME}/.codex/skills/ai-decision-contract-builder",
+        "${HOME}/.claude/skills/ai-decision-contract-builder"
+      ],
+      "declaredName": "ai-decision-contract-builder",
+      "installDirectory": "ai-decision-contract-builder",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-ai-output-source-truth-audit",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/ai-output-source-truth-audit",
+      "destinations": [
+        "${HOME}/.codex/skills/ai-output-source-truth-audit",
+        "${HOME}/.claude/skills/ai-output-source-truth-audit"
+      ],
+      "declaredName": "ai-output-source-truth-audit",
+      "installDirectory": "ai-output-source-truth-audit",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-api-interface-design",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/api-interface-design",
+      "destinations": [
+        "${HOME}/.codex/skills/api-interface-design",
+        "${HOME}/.claude/skills/api-interface-design"
+      ],
+      "declaredName": "api-interface-design",
+      "installDirectory": "api-interface-design",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-architecture-saas-design",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/architecture-saas-design",
+      "destinations": [
+        "${HOME}/.codex/skills/architecture-saas-design",
+        "${HOME}/.claude/skills/architecture-saas-design"
+      ],
+      "declaredName": "architecture-saas-design",
+      "installDirectory": "architecture-saas-design",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-bootstrap-orchestrator",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/bootstrap-orchestrator",
+      "destinations": [
+        "${HOME}/.codex/skills/bootstrap-orchestrator",
+        "${HOME}/.claude/skills/bootstrap-orchestrator"
+      ],
+      "declaredName": "bootstrap-orchestrator",
+      "installDirectory": "bootstrap-orchestrator",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-brandkit",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/brandkit",
+      "destinations": [
+        "${HOME}/.codex/skills/brandkit",
+        "${HOME}/.claude/skills/brandkit"
+      ],
+      "declaredName": "brandkit",
+      "installDirectory": "brandkit",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-brutalist-skill",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/brutalist-skill",
+      "destinations": [
+        "${HOME}/.codex/skills/brutalist-skill",
+        "${HOME}/.claude/skills/brutalist-skill"
+      ],
+      "declaredName": "industrial-brutalist-ui",
+      "installDirectory": "brutalist-skill",
+      "aliases": [
+        "brutalist-skill"
+      ],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-code-review-quality",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/code-review-quality",
+      "destinations": [
+        "${HOME}/.codex/skills/code-review-quality",
+        "${HOME}/.claude/skills/code-review-quality"
+      ],
+      "declaredName": "code-review-quality",
+      "installDirectory": "code-review-quality",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-context-engineering",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/context-engineering",
+      "destinations": [
+        "${HOME}/.codex/skills/context-engineering",
+        "${HOME}/.claude/skills/context-engineering"
+      ],
+      "declaredName": "context-engineering",
+      "installDirectory": "context-engineering",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-cookie-rbac-auth-hardening",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/cookie-rbac-auth-hardening",
+      "destinations": [
+        "${HOME}/.codex/skills/cookie-rbac-auth-hardening",
+        "${HOME}/.claude/skills/cookie-rbac-auth-hardening"
+      ],
+      "declaredName": "cookie-rbac-auth-hardening",
+      "installDirectory": "cookie-rbac-auth-hardening",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-database-design-engineering",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/database-design-engineering",
+      "destinations": [
+        "${HOME}/.codex/skills/database-design-engineering",
+        "${HOME}/.claude/skills/database-design-engineering"
+      ],
+      "declaredName": "database-design-engineering",
+      "installDirectory": "database-design-engineering",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-docs-rules-guardrail-promotion",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/docs-rules-guardrail-promotion",
+      "destinations": [
+        "${HOME}/.codex/skills/docs-rules-guardrail-promotion",
+        "${HOME}/.claude/skills/docs-rules-guardrail-promotion"
+      ],
+      "declaredName": "docs-rules-guardrail-promotion",
+      "installDirectory": "docs-rules-guardrail-promotion",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-emil-design-eng",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/emil-design-eng",
+      "destinations": [
+        "${HOME}/.codex/skills/emil-design-eng",
+        "${HOME}/.claude/skills/emil-design-eng"
+      ],
+      "declaredName": "emil-design-eng",
+      "installDirectory": "emil-design-eng",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-frontend-ui-engineering",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/frontend-ui-engineering",
+      "destinations": [
+        "${HOME}/.codex/skills/frontend-ui-engineering",
+        "${HOME}/.claude/skills/frontend-ui-engineering"
+      ],
+      "declaredName": "frontend-ui-engineering",
+      "installDirectory": "frontend-ui-engineering",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-full-slice-planner",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/full-slice-planner",
+      "destinations": [
+        "${HOME}/.codex/skills/full-slice-planner",
+        "${HOME}/.claude/skills/full-slice-planner"
+      ],
+      "declaredName": "full-slice-planner",
+      "installDirectory": "full-slice-planner",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-github-project-work-tracking",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/github-project-work-tracking",
+      "destinations": [
+        "${HOME}/.codex/skills/github-project-work-tracking",
+        "${HOME}/.claude/skills/github-project-work-tracking"
+      ],
+      "declaredName": "github-project-work-tracking",
+      "installDirectory": "github-project-work-tracking",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-golden-mutation-trust-harness",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/golden-mutation-trust-harness",
+      "destinations": [
+        "${HOME}/.codex/skills/golden-mutation-trust-harness",
+        "${HOME}/.claude/skills/golden-mutation-trust-harness"
+      ],
+      "declaredName": "golden-mutation-trust-harness",
+      "installDirectory": "golden-mutation-trust-harness",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-image-to-code-skill",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/image-to-code-skill",
+      "destinations": [
+        "${HOME}/.codex/skills/image-to-code-skill",
+        "${HOME}/.claude/skills/image-to-code-skill"
+      ],
+      "declaredName": "image-to-code",
+      "installDirectory": "image-to-code-skill",
+      "aliases": [
+        "image-to-code-skill"
+      ],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-imagegen-frontend-mobile",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/imagegen-frontend-mobile",
+      "destinations": [
+        "${HOME}/.codex/skills/imagegen-frontend-mobile",
+        "${HOME}/.claude/skills/imagegen-frontend-mobile"
+      ],
+      "declaredName": "imagegen-frontend-mobile",
+      "installDirectory": "imagegen-frontend-mobile",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-imagegen-frontend-web",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/imagegen-frontend-web",
+      "destinations": [
+        "${HOME}/.codex/skills/imagegen-frontend-web",
+        "${HOME}/.claude/skills/imagegen-frontend-web"
+      ],
+      "declaredName": "imagegen-frontend-web",
+      "installDirectory": "imagegen-frontend-web",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-impeccable",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/impeccable",
+      "destinations": [
+        "${HOME}/.codex/skills/impeccable",
+        "${HOME}/.claude/skills/impeccable"
+      ],
+      "declaredName": "impeccable",
+      "installDirectory": "impeccable",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-implementation-review-against-plan",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/implementation-review-against-plan",
+      "destinations": [
+        "${HOME}/.codex/skills/implementation-review-against-plan",
+        "${HOME}/.claude/skills/implementation-review-against-plan"
+      ],
+      "declaredName": "implementation-review-against-plan",
+      "installDirectory": "implementation-review-against-plan",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-minimalist-skill",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/minimalist-skill",
+      "destinations": [
+        "${HOME}/.codex/skills/minimalist-skill",
+        "${HOME}/.claude/skills/minimalist-skill"
+      ],
+      "declaredName": "minimalist-ui",
+      "installDirectory": "minimalist-skill",
+      "aliases": [
+        "minimalist-skill"
+      ],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-observability-release-engineering",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/observability-release-engineering",
+      "destinations": [
+        "${HOME}/.codex/skills/observability-release-engineering",
+        "${HOME}/.claude/skills/observability-release-engineering"
+      ],
+      "declaredName": "observability-release-engineering",
+      "installDirectory": "observability-release-engineering",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-output-skill",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/output-skill",
+      "destinations": [
+        "${HOME}/.codex/skills/output-skill",
+        "${HOME}/.claude/skills/output-skill"
+      ],
+      "declaredName": "full-output-enforcement",
+      "installDirectory": "output-skill",
+      "aliases": [
+        "output-skill"
+      ],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-persisted-artifact-reprocess",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/persisted-artifact-reprocess",
+      "destinations": [
+        "${HOME}/.codex/skills/persisted-artifact-reprocess",
+        "${HOME}/.claude/skills/persisted-artifact-reprocess"
+      ],
+      "declaredName": "persisted-artifact-reprocess",
+      "installDirectory": "persisted-artifact-reprocess",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-persisted-derived-state-lifecycle",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/persisted-derived-state-lifecycle",
+      "destinations": [
+        "${HOME}/.codex/skills/persisted-derived-state-lifecycle",
+        "${HOME}/.claude/skills/persisted-derived-state-lifecycle"
+      ],
+      "declaredName": "persisted-derived-state-lifecycle",
+      "installDirectory": "persisted-derived-state-lifecycle",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-persona-lens-product-audit",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/persona-lens-product-audit",
+      "destinations": [
+        "${HOME}/.codex/skills/persona-lens-product-audit",
+        "${HOME}/.claude/skills/persona-lens-product-audit"
+      ],
+      "declaredName": "persona-lens-product-audit",
+      "installDirectory": "persona-lens-product-audit",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-plan-pressure-test",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/plan-pressure-test",
+      "destinations": [
+        "${HOME}/.codex/skills/plan-pressure-test",
+        "${HOME}/.claude/skills/plan-pressure-test"
+      ],
+      "declaredName": "plan-pressure-test",
+      "installDirectory": "plan-pressure-test",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-product-development-workflow",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/product-development-workflow",
+      "destinations": [
+        "${HOME}/.codex/skills/product-development-workflow",
+        "${HOME}/.claude/skills/product-development-workflow"
+      ],
+      "declaredName": "product-development-workflow",
+      "installDirectory": "product-development-workflow",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-redesign-skill",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/redesign-skill",
+      "destinations": [
+        "${HOME}/.codex/skills/redesign-skill",
+        "${HOME}/.claude/skills/redesign-skill"
+      ],
+      "declaredName": "redesign-existing-projects",
+      "installDirectory": "redesign-skill",
+      "aliases": [
+        "redesign-skill"
+      ],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-security-review-hardening",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/security-review-hardening",
+      "destinations": [
+        "${HOME}/.codex/skills/security-review-hardening",
+        "${HOME}/.claude/skills/security-review-hardening"
+      ],
+      "declaredName": "security-review-hardening",
+      "installDirectory": "security-review-hardening",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-source-to-screen-verification",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/source-to-screen-verification",
+      "destinations": [
+        "${HOME}/.codex/skills/source-to-screen-verification",
+        "${HOME}/.claude/skills/source-to-screen-verification"
+      ],
+      "declaredName": "source-to-screen-verification",
+      "installDirectory": "source-to-screen-verification",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-spider-debugging-methodology",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/spider-debugging-methodology",
+      "destinations": [
+        "${HOME}/.codex/skills/spider-debugging-methodology",
+        "${HOME}/.claude/skills/spider-debugging-methodology"
+      ],
+      "declaredName": "spider-debugging-methodology",
+      "installDirectory": "spider-debugging-methodology",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-stitch-skill",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/stitch-skill",
+      "destinations": [
+        "${HOME}/.codex/skills/stitch-skill",
+        "${HOME}/.claude/skills/stitch-skill"
+      ],
+      "declaredName": "stitch-design-taste",
+      "installDirectory": "stitch-skill",
+      "aliases": [
+        "stitch-skill"
+      ],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-testing-strategy-and-tdd",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/testing-strategy-and-tdd",
+      "destinations": [
+        "${HOME}/.codex/skills/testing-strategy-and-tdd",
+        "${HOME}/.claude/skills/testing-strategy-and-tdd"
+      ],
+      "declaredName": "testing-strategy-and-tdd",
+      "installDirectory": "testing-strategy-and-tdd",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-design-taste-frontend",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/design-taste-frontend",
+      "destinations": [
+        "${HOME}/.agents/skills/design-taste-frontend",
+        "${HOME}/.claude/skills/design-taste-frontend"
+      ],
+      "declaredName": "design-taste-frontend",
+      "installDirectory": "design-taste-frontend",
+      "aliases": [],
+      "provenance": "user-authored-agents-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-find-skills",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/find-skills",
+      "destinations": [
+        "${HOME}/.agents/skills/find-skills",
+        "${HOME}/.claude/skills/find-skills"
+      ],
+      "declaredName": "find-skills",
+      "installDirectory": "find-skills",
+      "aliases": [],
+      "provenance": "user-authored-agents-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-frontend-design-director",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/frontend-design-director",
+      "destinations": [
+        "${HOME}/.agents/skills/frontend-design-director",
+        "${HOME}/.claude/skills/frontend-design-director"
+      ],
+      "declaredName": "frontend-design-director",
+      "installDirectory": "frontend-design-director",
+      "aliases": [],
+      "provenance": "user-authored-agents-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-product-ui-design-taste",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/product-ui-design-taste",
+      "destinations": [
+        "${HOME}/.agents/skills/product-ui-design-taste",
+        "${HOME}/.claude/skills/product-ui-design-taste"
+      ],
+      "declaredName": "product-ui-design-taste",
+      "installDirectory": "product-ui-design-taste",
+      "aliases": [],
+      "provenance": "user-authored-agents-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-remotion-best-practices",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/remotion-best-practices",
+      "destinations": [
+        "${HOME}/.agents/skills/remotion-best-practices",
+        "${HOME}/.claude/skills/remotion-best-practices"
+      ],
+      "declaredName": "remotion-best-practices",
+      "installDirectory": "remotion-best-practices",
+      "aliases": [],
+      "provenance": "user-authored-agents-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-skill-evolution-loop",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/skill-evolution-loop",
+      "destinations": [
+        "${HOME}/.agents/skills/skill-evolution-loop",
+        "${HOME}/.claude/skills/skill-evolution-loop"
+      ],
+      "declaredName": "skill-evolution-loop",
+      "installDirectory": "skill-evolution-loop",
+      "aliases": [],
+      "provenance": "user-authored-agents-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-neon-postgres",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/neon-postgres",
+      "destinations": [
+        "${HOME}/.agents/skills/neon-postgres",
+        "${HOME}/.claude/skills/neon-postgres"
+      ],
+      "declaredName": "neon-postgres",
+      "installDirectory": "neon-postgres",
+      "aliases": [],
+      "provenance": "user-authored-claude-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-ui-ux-pro-max",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/ui-ux-pro-max",
+      "destinations": [
+        "${HOME}/.agents/skills/ui-ux-pro-max",
+        "${HOME}/.claude/skills/ui-ux-pro-max"
+      ],
+      "declaredName": "ui-ux-pro-max",
+      "installDirectory": "ui-ux-pro-max",
+      "aliases": [],
+      "provenance": "user-authored-claude-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "dependency-council-studio",
+      "family": "engine-dependency",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/llm-council",
+      "destinations": [
+        "${DEPENDENCY:council-studio}"
+      ],
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-council",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/llm-council/.claude/skills/council",
+      "destinations": [
+        "${HOME}/.codex/skills/council",
+        "${HOME}/.claude/skills/council"
+      ],
+      "declaredName": "council",
+      "installDirectory": "council",
+      "aliases": [],
+      "dependency": "dependency-council-studio",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-studio",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/llm-council/.claude/skills/studio",
+      "destinations": [
+        "${HOME}/.codex/skills/studio",
+        "${HOME}/.claude/skills/studio"
+      ],
+      "declaredName": "studio",
+      "installDirectory": "studio",
+      "aliases": [],
+      "dependency": "dependency-council-studio",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    }
+  ]
+}

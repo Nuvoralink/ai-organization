@@ -1,0 +1,56 @@
+---
+description: Require compile checks for backend TypeScript and Prisma changes
+globs:
+  - "backend/src/**/*.ts"
+  - "backend/prisma/**/*.prisma"
+  - "backend/prisma/migrations/**/*.sql"
+  - "backend/prisma.config.ts"
+alwaysApply: false
+---
+# Backend Prisma Build Checks
+
+- Before backend TypeScript or Prisma changes, check `docs/ARCHITECTURE_BLAST_RADIUS.md` for connected route, service, migration, script, DTO, frontend, deploy, and verification surfaces.
+- If a backend/Prisma failure reveals a missing relation that should have been in the blast radius, update `docs/ARCHITECTURE_BLAST_RADIUS.md` in the same turn as the fix.
+- Backend TypeScript or Prisma changes are not done until a real compile check has been considered and the outcome is reported.
+- Minimum expectation:
+  - run backend TypeScript build or typecheck when the environment supports it
+  - if the environment blocks that check, explicitly say so before finishing
+- Prisma changes must stay synchronized:
+  - update `backend/prisma/schema.prisma`
+  - add or update the matching migration under `backend/prisma/migrations/`
+  - keep runtime Prisma config aligned with `DATABASE_URL`
+- Be especially careful with nested `try/catch` edits, async helpers, and ffmpeg/prisma utility files because small syntax mistakes can break Railway builds before migrations run.
+- If a deploy/build failure points at a backend TS file, inspect that file first before assuming the database or env vars are wrong.
+
+## Transaction-write seams must be Prisma-typed, never `unknown` (gate: `gate:tx-seam`)
+
+When a service/worker performs DB writes inside `prisma.$transaction((tx) => …)` — or accepts an injected
+tx client for testability — type that seam against `Prisma.TransactionClient`, or a
+`Pick<Prisma.TransactionClient, 'auditEvent' | 'session' | …>` of just the delegates it uses, or the real
+`Prisma.<Model><Op>Args` for the argument. **Never hand-roll a loose seam that types the write argument as
+`unknown`** (e.g. `auditEvent: { create(args: unknown) }`).
+
+Why (cross-repo lesson): a loose `create(args: unknown)` seam let a runtime-breaking write with nonexistent
+Prisma fields pass `tsc` (`unknown` accepts anything); the test mocked the transitioner so the real write
+never ran, and `verify` + `tsc` were both green over a Prisma `Unknown argument` crash on the one
+autonomous mutation. A `Prisma.TransactionClient`-typed seam fails the compile on the wrong field names —
+the bug never ships. CoachAI has 46 `prisma.$transaction(...)` sites across 21 backend files, any of which
+can grow such a seam.
+
+- `npm run gate:tx-seam` (`scripts/check-tx-seam.mjs`, in `gates:all`) fails the build on any
+  `create|update|upsert|delete(arg: unknown)` write-method signature under `backend/src` / `shared/src`.
+  Escape hatch: `// tx-seam-ok: <reason>` on the line, for a genuine non-Prisma adapter seam.
+- Pairs with `testing-guardrails.mdc` §"A false-passing test is a P0": the gate stops the typecheck-evasion
+  half; an injectable that performs the real persistence needs ≥1 non-mocked DB-backed test running the
+  default impl to stop the mock-the-SUT half. Both halves, closed.
+
+## A `$transaction` callback that WRITES must ROLL BACK via a THROW, never a `return` (reviewer-enforced)
+
+`prisma.$transaction(cb)` COMMITS when the callback resolves and ROLLS BACK only when it throws. So a
+callback that performs a write (`tx.<model>.create/update/delete`) and then takes a non-throwing early
+`return` of a blocked / fail-closed / not-found value **silently COMMITS that write** — an early `return`
+is NOT a rollback. Inside a `$transaction` callback, once a write has happened, a block / fail-closed /
+not-found exit MUST be a `throw` (caught outside the tx and mapped to the result), never a bare `return`.
+Reviewer-enforced (no static gate — precise "write-then-non-throwing-return" detection needs data-flow
+analysis). Pairs with `testing-guardrails.mdc` §"A false-passing test is a P0": a write-path rollback claim
+needs a DB-backed test that actually RUNS (a locally-skipped disposable-DB suite is not evidence).

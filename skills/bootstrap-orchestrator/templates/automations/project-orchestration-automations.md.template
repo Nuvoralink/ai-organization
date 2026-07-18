@@ -1,0 +1,54 @@
+# Project orchestration automations — {{PROJECT_NAME}}
+
+<!-- TEMPLATE: instantiate these two Codex desktop automations during bootstrap registration.
+     Replace every placeholder, persist their complete secret-free reconstruction spec in the central
+     project overlay, then use the app's automation tool. The automation service is execution authority;
+     the overlay spec is clean-machine bootstrap authority. Never emit raw automation directives by hand. -->
+
+## Invariants
+
+- Execution environment: local, bound to the registered `{{PROJECT_NAME}}` project at `{{PROJECT_PATH}}`.
+- Both automations are read-only reports. They MUST NOT edit files, mutate git refs or worktrees, create
+  issues/PRs, push, merge, deploy, publish, contact anyone, invoke paid providers, or change production.
+- Before creation, inspect existing automation definitions and update an exact-name match. Never create a
+  duplicate. After creation/update, read the stored automation back and verify name, project, prompt,
+  active status, and schedule.
+- Never inspect credential stores, `.env*`, session/token stores, raw telemetry events, customer data,
+  provider payloads, recordings, transcripts, or other secrets/PII. Use only allowlisted summaries and
+  tracked repo artifacts.
+- A green status is a lead: the report names the underlying file/command/output evidence it opened.
+- The central overlay specification records stable ID/name, RRULE, project-root token, reasoning tier,
+  full prompt, forbidden inputs/actions, exact-name update, and post-write readback. Do not pin a model
+  name in the durable spec. Missing any reconstructive field is a gate failure.
+
+## `{{PROJECT_SLUG}}-daily-orchestration-drift`
+
+Schedule: weekdays at 09:10 in the user's local timezone.
+
+Prompt:
+
+> Work read-only in `{{PROJECT_PATH}}`. Audit orchestration drift since the most recent local commit using
+> tracked rules, agent definitions, generated orchestration state, lifecycle/control-plane gates, saved
+> workflow/goals/loop artifacts, and the real `git status`/`git diff`/recent log. Check for incomplete
+> six-part dispatch briefs, unscoped startup rules, context-budget growth, missing test-intent coverage,
+> dirty or stale worktrees, weakened human gates, lifecycle-hook failures, and claimed outputs whose
+> artifacts were not opened. Run only the project's safe read-only checks: `{{FAST_ORCHESTRATION_GATES}}`.
+> Do not edit or create files and do not mutate git or external systems. Return: evidence opened, findings
+> ordered by severity, exact file:line/command proof, false-positive checks, and the smallest proposed
+> control fix. Say `No actionable drift found` only after the evidence is independently re-derived.
+
+## `{{PROJECT_SLUG}}-weekly-fleet-doctrine-review`
+
+Schedule: Mondays at 09:25 in the user's local timezone.
+
+Prompt:
+
+> Work read-only in `{{PROJECT_PATH}}`. Review the last seven days of tracked commits and current
+> orchestration artifacts for reusable doctrine-loop findings. Compare caught/missed bug classes against
+> the project agents' `Learned classes (live log)`, gates, dispatch brief, journey lessons, decision log,
+> architecture blast-radius map, and the universal bootstrap contract. Identify: repeated classes not yet
+> mechanized, project lessons that should be promoted universally, stale rules/docs, parallel authorities,
+> unverified green checks, and fleet roles that are missing a trigger-sharp checklist row. Do not edit or
+> create files and do not mutate git or external systems. Return: evidence opened, project-only fixes,
+> universal-promotion candidates, rejected false positives, and exact proposed destination paths. If no
+> reusable lesson exists, say so explicitly.

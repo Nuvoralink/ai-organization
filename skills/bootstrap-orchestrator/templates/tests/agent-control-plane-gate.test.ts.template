@@ -1,0 +1,61 @@
+/**
+ * Proves: {{CONTROL_PLANE_REQUIREMENT_ID}}
+ * Test type: regression
+ * Surface: scripts/check-agent-control-plane.mjs + durable orchestration artifacts
+ * Authority: {{CONTROL_PLANE_AUTHORITY}}
+ *
+ * What this test proves about the product: the real gate passes a complete disposable control plane and
+ * rejects missing brief fields, a pre-checked human gate, prompt-only read-only overclaims, missing plan-mode
+ * boundaries, active retired Figma tooling, and missing substantive lifecycle/report enforcement.
+ *
+ * Killer mutation: each mutation below must make the real CLI exit 1 while the unmodified fixture exits 0.
+ */
+import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from '{{TEST_RUNNER_IMPORT}}';
+import { ARTIFACTS } from '../../../scripts/check-agent-control-plane.mjs';
+
+const repoRoot = path.resolve(process.cwd(), '..');
+const gate = path.join(repoRoot, 'scripts', 'check-agent-control-plane.mjs');
+
+describe('agent control-plane gate', () => {
+  let root: string;
+  beforeEach(() => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-control-plane-'));
+    for (const relative of Object.values(ARTIFACTS)) {
+      const target = path.join(root, relative);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.copyFileSync(path.join(repoRoot, relative), target);
+    }
+  });
+  afterEach(() => fs.rmSync(root, { recursive: true, force: true }));
+
+  const run = () => spawnSync(process.execPath, [gate, root], { cwd: repoRoot, encoding: 'utf8' });
+  const mutate = (key: keyof typeof ARTIFACTS, fn: (source: string) => string) => {
+    const file = path.join(root, ARTIFACTS[key]);
+    fs.writeFileSync(file, fn(fs.readFileSync(file, 'utf8')), 'utf8');
+  };
+
+  it('passes a complete fixture and rejects weakened independent controls', () => {
+    expect(run().status).toBe(0);
+
+    mutate('issue', (source) => source.replace('id: output_contract', 'id: output_removed'));
+    mutate('pullRequest', (source) => source.replace('- [ ] Human approves any merge that deploys or mutates production.', '- [x] Human approves any merge that deploys or mutates production.'));
+    mutate('capabilities', (source) => source.replace('"push_branch",', '').replace('"no_deploy_or_production_effect",', ''));
+    mutate('workflow', (source) => source.replace('readOnlyIntent: true', 'readOnly: true'));
+    mutate('playbook', (source) => source.replace('Enter Claude plan mode first', 'Run it directly'));
+    mutate('settings', (source) => source.replace('"Bash(npm run typecheck)"', '"mcp__figma__get_screenshot"'));
+    mutate('settings', (source) => source.replace('"TaskCompleted":', '"TaskCompletedRemoved":'));
+    mutate('settings', (source) => source.replace('node scripts/claude-posttooluse-gate.mjs', 'node scripts/wrong-gate.mjs'));
+    mutate('lifecycle', (source) => source.replace('Procedure needs a numbered step', 'Procedure heading exists'));
+
+    const result = run();
+    expect(result.status).toBe(1);
+    const output = `${result.stdout}${result.stderr}`;
+    for (const fragment of ['output_contract', 'pre-checked', 'push_branch must be autonomous', 'conditional merge missing no_deploy_or_production_effect', 'readOnlyIntent: true', 'Enter Claude plan mode first', 'Figma', 'numbered step', 'hook events must be exactly', 'PostToolUse must be Edit|Write']) {
+      expect(output).toContain(fragment);
+    }
+  });
+});

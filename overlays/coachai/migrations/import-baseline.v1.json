@@ -1,0 +1,13 @@
+{
+  "version": "1.0.0",
+  "status": "in_progress",
+  "knownGaps": [
+    "no deterministic task lifecycle on baseline",
+    "startup context exceeds the intended budget and duplicates imports",
+    "decision log has no live ADR authority",
+    "default verification under-selects backend and AI proof",
+    "design authority still contains stale Figma wording",
+    "shared skill copies drift across tool homes"
+  ],
+  "mustNotCanonizeAsCorrect": true
+}

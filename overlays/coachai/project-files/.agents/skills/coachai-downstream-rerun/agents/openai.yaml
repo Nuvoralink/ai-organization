@@ -1,0 +1,4 @@
+interface:
+  display_name: "CoachAI Downstream Rerun"
+  short_description: "Reprocess sessions without Gemini"
+  default_prompt: "/rerun <session-id>"

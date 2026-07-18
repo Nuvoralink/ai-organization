@@ -1,0 +1,83 @@
+---
+description: Re-run §17-lite smoke when touching the gated surfaces
+globs:
+  - "shared/src/coaching/nextActionDispatch.ts"
+  - "shared/src/coaching/teamRosterView.ts"
+  - "shared/src/coaching/activation.ts"
+  - "shared/src/coaching/window.ts"
+  - "shared/src/coaching/nextAction.ts"
+  - "shared/src/coaching/contracts.ts"
+  - "backend/src/lib/coaching/annotationService.ts"
+  - "scripts/runEndToEndSurfaceSmoke.mjs"
+  - "backend/scripts/e2eSurfaceSmokeSetup.ts"
+  - "backend/scripts/e2eSurfaceSmokeCleanup.ts"
+  - "backend/scripts/cleanupE2eSurfaceSmokeFixtures.ts"
+  - "backend/package.json"
+alwaysApply: false
+---
+
+# Manual Verification Smoke (§17-lite)
+
+## Authenticated Frontend Smoke First
+
+For any frontend/browser verification, especially dashboard, Team
+Insights, manager Call Review, roster, approvals, or objections, start
+with the maintained auth/dev-server harness instead of manually
+rediscovering ports or login state:
+
+```
+npm run test:manager-frontend-smoke
+```
+
+It starts backend/frontend if needed, uses the CORS-safe frontend origin,
+loads ignored local manager smoke credentials when available, runs the
+authenticated manager smoke, captures screenshots, and stops only the
+dev servers it started. If this script fails for reusable setup reasons,
+fix the script rather than bypassing it.
+
+These source, contract, and fixture-cleanup files are gated by
+`backend/scripts/manualVerificationSmokeRegression.ts`. After editing
+any of them, run the smoke before finishing the turn:
+
+```
+cd backend && npm run test:regression:manual-verification-smoke
+```
+
+Expected: `Manual Verification Smoke (§17-lite): passed=92 failed=0`.
+
+If a check fails, fix at the root — keep the dispatch / contract /
+clamp policy in `shared/` (or its backend pure helper). Do not
+silence a failing assertion or weaken a check to make it green.
+
+## What each file gates
+
+- `shared/src/coaching/nextActionDispatch.ts` — `describeManagerIntent`
+  / `describeRepIntent`; total over every `NextActionKind` and every
+  rep sentinel href. A new kind on the server must add a branch here.
+- `shared/src/coaching/nextAction.ts` — adding a new `NextActionKind`
+  changes the exhaustiveness surface above.
+- `shared/src/coaching/teamRosterView.ts` — SavedView serializer /
+  deserializer for the `team_roster` scope. Round-trip must be an
+  identity; unknown enum values must fall back per-field.
+- `shared/src/coaching/activation.ts` — engagement vs coaching queue
+  partition. Exactly `active` is coaching-eligible; the other five
+  feed engagement.
+- `shared/src/coaching/window.ts` — preset window math. `from < to`,
+  `isInsideWindow` includes both boundaries.
+- `shared/src/coaching/contracts.ts` — `SkillScoreDTO` 0..100 absolute
+  scale. Scores and `benchmark.teamAvg` must clamp to `[0, 100]`.
+- `backend/src/lib/coaching/annotationService.ts` —
+  `normalizeAnnotationRange`. Negative start clamped, non-finite or
+  collapsed range discarded, fractional ms rounded.
+- `scripts/runEndToEndSurfaceSmoke.mjs` — must call the generated-fixture
+  cleanup path by default, honor the explicit keep-fixture override, and fail
+  a successful smoke when generated-fixture cleanup fails.
+- `backend/scripts/e2eSurfaceSmokeSetup.ts` — must use stack-aware org
+  provisioning helpers, seed only paid/CUSTOMER fixtures, and refuse accidental
+  remote database seeding unless explicitly opted in for a disposable DB.
+- `backend/scripts/e2eSurfaceSmokeCleanup.ts` — must target generated run/org
+  fixture rows only.
+- `backend/scripts/cleanupE2eSurfaceSmokeFixtures.ts` — must stay dry-run by
+  default and remain scoped to generated surface-smoke fixture identifiers.
+- `backend/package.json` — must keep the explicit
+  `cleanup:e2e-surface-fixtures` command registered.

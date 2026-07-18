@@ -1,0 +1,4 @@
+interface:
+  display_name: "Docs Rules Guardrail Promotion"
+  short_description: "Promote reusable lessons into the right docs, rules, skills, runbooks, tests, or backlog."
+  default_prompt: "Decide where this lesson belongs. Turn the mistake pattern into durable docs, rules, tests, skills, runbooks, or backlog without duplicating generic process."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Plan Pressure Test"
+  short_description: "Pressure-test implementation plans for root cause, blast radius, and proof before coding."
+  default_prompt: "Pressure-test this plan before implementation. Restate product intent, trace the full pipeline, find root-cause gaps, improve the plan, define done, and name tests/proofs."

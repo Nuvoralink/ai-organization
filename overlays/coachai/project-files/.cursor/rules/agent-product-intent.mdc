@@ -1,0 +1,55 @@
+---
+description: Keep agent work anchored to product intent, business value, UX, psychology, and root-cause fixes
+alwaysApply: true
+---
+
+# Agent Product Intent Rules
+
+Purpose: keep implementation work outcome-oriented, valuable, and durable instead of technically correct but low-signal.
+
+## 1. Start from intent
+
+- Before applying a fix, adding a feature, or wiring a flow, ask what the original intention was.
+- Identify the user outcome, business outcome, or product risk the change is supposed to improve.
+- Do not optimize only for "request completed"; optimize for the reason the request exists.
+
+## 2. Prefer value over output volume
+
+- Favor changes that improve clarity, trust, conversion, usability, maintainability, or decision quality.
+- Do not turn the product into an information dump.
+- Prefer focused, actionable experiences that help the user understand what matters and what to do next.
+- If extra information does not improve action, confidence, or understanding, it is probably noise.
+
+## 2.1 Coaching Quality Beats Graceful Failure
+
+- In CoachAI, the main product value is a properly coached call: the rep or manager should understand the real business issue, why it matters, and what behavior to change next.
+- Honest, limited, unavailable, or degraded states are required when evidence is truly missing, unsafe, stale, unauthorized, or not analyzable. They protect trust; they do not replace product value.
+- If transcript/material evidence exists and the output is blank, generic, low-leverage, or missing a usable practice move, treat that as a product defect. Repair the upstream source, AI contract, validation/repair loop, persistence, DTO, mapper, or UI consumer instead of accepting a graceful failure.
+- Do not call a coaching implementation done because it avoided lying. It is done when it reliably produces useful, behavior-changing coaching or proves with evidence why useful coaching cannot be produced.
+
+## 3. Keep UX and psychology in mind
+
+- Reduce confusion, friction, cognitive load, and unnecessary choice overload.
+- Prefer wording and flows that feel clear, reassuring, and motivating.
+- Surface the right amount of information at the right moment, not everything at once.
+- Protect user trust: avoid misleading states, fake precision, or technically correct but confusing UX.
+
+## 4. Fix the cause, not the symptom
+
+- When fixing a bug, look for the root cause and solve that cause directly.
+- Do not ship lazy workarounds or brittle patches that only hide the current symptom.
+- Do not hardcode logic around one failing case if the same underlying issue can appear in similar scenarios.
+- Prefer generic, durable fixes that address the broader failure mode without overengineering.
+
+## 5. Definition of a good solution
+
+- A good solution is technically sound and meaningfully improves the product outcome.
+- The best fix is usually the smallest change that solves the real problem well for this case and related cases.
+- If a requested approach adds complexity without clear business or user value, say so and prefer a better alternative.
+
+## 6. Calibrate scope before acting
+
+- Before planning or implementing a fix, feature, edit, or architecture addition, define the target product outcome, the proper blast radius, and what "good work done" means.
+- Check whether the radius should stay local or expand upstream/downstream to contracts, source-of-truth registries, persistence, tests, UI states, docs, or guardrails.
+- Explicitly avoid both undershoot (symptom patch, stale consumers, duplicated local logic) and overshoot (unrelated rewrites, one-note visual swings, complexity without user value).
+- Add tests, smokes, or guardrails that prove the work makes logical sense for the user, not just code sense for the compiler.

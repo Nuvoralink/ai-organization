@@ -1,0 +1,24 @@
+<!-- TEMPLATE: how to schedule + operate the uptime probe. Save to {{DOCS_DIR}}/runbooks/uptime-monitor.md. FILL {{PLACEHOLDER}}s. -->
+# Uptime monitor — {{PROJECT}}
+
+Purpose: catch the **detached-domain outage** class — a deployed surface that silently goes unhealthy BETWEEN merges, when nobody is deploying. `release-verifier` catches a bad *deploy*; this catches a *drift into unhealthy* while no deploy is happening. The probe (`{{SCRIPTS_DIR}}/uptime-probe.mjs`) is a read-only liveness/readiness check that alerts on a red — it NEVER redeploys, rolls back, or mutates (it informs; the human acts).
+
+## What it checks
+- `{{BACKEND_URL}}{{READINESS_PATH}}` returns healthy (all components — {{READINESS_COMPONENTS}}).
+- `{{FRONTEND_URL}}` returns a 2xx/3xx and the app shell is reachable.
+Exit 0 = healthy; exit 1 = degraded (with the readiness body quoted).
+
+## How to schedule it (pick ONE — no dev knowledge needed for option A)
+**A. A scheduled cloud agent / cron (simplest).** Create a scheduled task that runs `node {{SCRIPTS_DIR}}/uptime-probe.mjs` every {{INTERVAL}} (e.g. 5 minutes). On a non-zero exit it should notify {{ALERT_CHANNEL}}. (If using the assistant's scheduled-task tooling, this is a one-line setup — ask the orchestrator to wire it.)
+**B. A GitHub Actions scheduled workflow.** A `schedule: - cron: '{{CRON}}'` workflow that runs the probe; on failure, the `notify-failure` pattern from `ci.yml`.
+**C. An external uptime service** (Better Uptime / UptimeRobot / a hosting-provider monitor) pointed at `{{READINESS_PATH}}`.
+
+## When it fires (degraded)
+1. Read the quoted readiness body — which component is down ({{READINESS_COMPONENTS}})?
+2. Check the host's deploy status (was there a recent deploy? did a migration fail?).
+3. This is a Tier-2 signal: the monitor RECOMMENDS; the orchestrator/human decides the action (restart / rollback / hotfix). Never let the monitor act autonomously on the irreversible step.
+4. If it was a real outage with a preventable cause, add a journey-doc lesson + (if a gate could have caught it pre-merge) a doctrine-loop control fix.
+
+## Human setup step (if an alert channel is used)
+1. Open your alert provider (e.g. the bot's settings) and copy the token + target id.
+2. Add them to the schedule's secrets (the orchestrator can wire the probe to read them via env — never hardcode a token in the probe).

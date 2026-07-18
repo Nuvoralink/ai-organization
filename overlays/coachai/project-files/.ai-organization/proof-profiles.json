@@ -1,0 +1,129 @@
+{
+  "version": 1,
+  "integration_branch": "main",
+  "lifecycle_hook_timeout_ms": 1800000,
+  "lifecycle_timeout_safety_margin_ms": 60000,
+  "lifecycle_roles_by_completion_mode": {
+    "read-only": ["implementer", "adversarial-reviewer"],
+    "implementation": ["implementer"]
+  },
+  "lifecycle_supported_risk_classes": ["control_plane"],
+  "risk_path_rules": [{ "risk_class": "control_plane", "profile_id": "organization-control" }],
+  "profiles": [
+    {
+      "id": "organization-control",
+      "lane": "static",
+      "risk": "control_plane",
+      "include": ["AGENTS.md", "CLAUDE.md", ".ai-organization/**", ".claude/agents/**", ".claude/settings.json", ".cursor/rules/**", ".github/**", "scripts/check-agent-*.mjs", "scripts/check-rules-wiring.mjs", "scripts/check-overlay-parity.mjs", "scripts/check-test-intent.mjs", "scripts/check-doc-code-drift.mjs", "scripts/task-governor.mjs", "scripts/claude-lifecycle-hook.mjs", "scripts/claude-posttooluse-gate.mjs", "scripts/run-risk-selected-proof.mjs", "scripts/ci-local.mjs", "scripts/tests/**", "package.json"],
+      "commands": ["npm run gate:organization", "npm run test:organization-control-plane"],
+      "assurance": {
+        "version": 1,
+        "classification": "local_non_mutating",
+        "safe_local_only": true,
+        "capabilities": ["control_plane_completion"],
+        "env_allowlist": [],
+        "commands": [
+          {
+            "id": "organization-gates",
+            "argv": ["npm", "run", "gate:organization"],
+            "timeout_ms": 300000,
+            "parser": {
+              "kind": "patterns",
+              "minimum_output_bytes": 1,
+              "minimum_executed": 1,
+              "required_patterns": ["overlay-parity: PASS"]
+            }
+          },
+          {
+            "id": "organization-regressions",
+            "argv": ["npm", "run", "test:organization-control-plane"],
+            "timeout_ms": 300000,
+            "parser": {
+              "kind": "tap",
+              "minimum_output_bytes": 1,
+              "minimum_executed": 1,
+              "forbid_skips": true
+            }
+          }
+        ],
+        "mutation": {
+          "case_id": "forged-runner-attestation-rejected",
+          "argv": ["npm", "run", "test:evidence-integrity-mutation"],
+          "timeout_ms": 60000,
+          "receipt_marker": "MUTATION_RECEIPT_JSON:",
+        "expected_diagnostic": "forged runner attestation was accepted"
+        }
+      }
+    },
+    {
+      "id": "internal-read-only",
+      "lane": "internal",
+      "risk": "read_only_integrity",
+      "include": [],
+      "commands": [],
+      "assurance": {
+        "version": 1,
+        "classification": "internal_read_only",
+        "safe_local_only": true,
+        "capabilities": ["read_only_integrity"],
+        "commands": [
+          {
+            "id": "repository-binding",
+            "argv": ["internal", "repository-binding"],
+            "timeout_ms": 1000,
+            "parser": {
+              "kind": "patterns",
+              "minimum_output_bytes": 1,
+              "minimum_executed": 1,
+              "required_patterns": ["READ_ONLY_REPOSITORY_BINDING:"]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "documentation",
+      "lane": "static",
+      "risk": "documentation_contract",
+      "include": ["docs/**"],
+      "commands": ["npm run test:doc-code-drift"]
+    },
+    {
+      "id": "frontend",
+      "lane": "static",
+      "risk": "visible_or_client_behavior",
+      "include": ["frontend/**", "shared/**"],
+      "commands": ["npm run build:shared", "npm run build:frontend", "npm run lint:typography --workspace=frontend", "npm run test --workspace=frontend", "npm run check:ui", "npm run check:ui-continuity"]
+    },
+    {
+      "id": "backend-static",
+      "lane": "static",
+      "risk": "backend_contract_or_behavior",
+      "include": ["backend/**", "shared/**"],
+      "commands": ["npm run prisma:generate", "npm run build:shared", "npm run build:backend", "npm run typecheck --workspace=backend", "npm run check:script-imports", "npm run gate:tx-seam"]
+    },
+    {
+      "id": "ai-semantic",
+      "lane": "static",
+      "risk": "ai_semantic_authority",
+      "include": ["backend/src/lib/runAnalysis*", "backend/src/lib/analysis/**", "backend/src/lib/gemini*", "backend/src/lib/ai*", "backend/src/lib/coaching/**", "backend/src/**/prompt*", "backend/src/**/semantic*", "shared/src/coaching/**"],
+      "commands": ["npm run gate:ai-output-authority", "npm run gate:role-battery"]
+    },
+    {
+      "id": "backend-db",
+      "lane": "db",
+      "risk": "persistence_tenancy_idempotency_or_provider_ingest",
+      "include": ["backend/prisma/**", "backend/src/routes/**", "backend/src/**/*Repository*", "backend/src/**/*Store*", "backend/src/**/queue/**", "backend/src/**/*Queue*", "backend/src/**/*Ingest*", "backend/scripts/*Regression*"],
+      "requires_env_any": ["CI_LOCAL_DB_URL", "DIALER_INGEST_TEST_DATABASE_URL"],
+      "commands": ["npm run verify:db"]
+    },
+    {
+      "id": "dependency-supply-chain",
+      "lane": "static",
+      "risk": "dependency_build_and_supply_chain",
+      "include": ["package.json", "package-lock.json", "backend/package.json", "frontend/package.json", "shared/package.json"],
+      "commands": ["npm run gate:preflight-security", "npm run build"]
+    }
+  ],
+  "unknown_path_policy": "fail"
+}

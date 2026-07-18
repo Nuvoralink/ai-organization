@@ -1,6 +1,6 @@
 # Portable AI organization control plane — implementation plan
 
-Status: In progress
+Status: Implementation and independent verification in progress
 Tracking: issue #1 / private Project 8
 Branch protection: explicitly deferred by user
 
@@ -61,6 +61,16 @@ Too little is adding another orchestration document without installing it, gatin
 ## Rollout and rollback
 
 Install begins with `--dry-run`; capture never overwrites canonical data without a reviewed diff. Product changes occur in isolated fetched-base worktrees. Existing installed files are backed up by hash-addressed snapshots before replacement. Rollback restores the previous manifest release and reinstalls; no application schema/data migration is involved.
+
+## Implemented control surface
+
+- Safe canonical boundary enforcement, secret/path refusal, destination-collision detection, deterministic install/check, local-only detection, snapshots, failure rollback, and explicit rollback.
+- Executed JSON schemas plus semantic action-policy invariants and a fail-closed action evaluator.
+- Cross-vendor task assurance runtime with immutable attempts, registry-resolved local proof profiles, parsed artifact digests, structural mutation receipts, risk-derived independent review/human gates, and replay-safe completion.
+- Auxara and CoachAI overlay authorities plus daily/weekly project checks and a biweekly universal backflow comparison.
+- Pull-request CI, ownership/review templates, and an editable 19-slide operating-model presentation with structural and rendered QA.
+
+Project-repository PRs remain separate because merging them can trigger product deployment. The central control-plane PR also remains human-reviewed because it changes broad organization authority rather than an isolated low-risk leaf.
 
 ## Remaining human gates
 

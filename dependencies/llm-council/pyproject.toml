@@ -1,0 +1,13 @@
+[project]
+name = "idea-council"
+version = "0.1.0"
+description = "A multi-LLM council that pressure-tests an idea and returns a decision-complete memo."
+requires-python = ">=3.10"
+dependencies = [
+    "httpx>=0.27",      # async HTTP for the REST seats (Gemini / DeepSeek / Fireworks)
+    "python-dotenv>=1.0",  # load API keys from .env
+    "jsonschema>=4.21",    # validate each stage's structured output against council/schema.py
+]
+
+[tool.uv]
+package = false

@@ -1,0 +1,332 @@
+#!/usr/bin/env node
+
+// TEMPLATE — decision log ↔ sprint/iteration plan linkage gate.
+// FILL every {{PLACEHOLDER}} and delete this line. Pair with a tmpdir meta-test that proves:
+// orphan fail + clean pass; table/prose formats; decision rows after a blank separator; explicit
+// Approved status whose explanation says "deferred"; unknown/Scrapped/Deferred inverse failures;
+// missing/deleted target failures; exact pending success + different-ID scope boundary; and
+// stale/dead/invalid/duplicate pending failures. Each skip/allow/parser boundary needs a killer mutation.
+//
+// Class: settled decisions continued landing after plan inventories froze. Without this gate, planning
+// could omit approved work while every implementation check stayed green.
+//
+// PENDING_LINKAGE is the ONLY product/scheduling deferral escape. Every row is exact and structured:
+// `{ id, reason, owner, addedAt, decision }`. Invalid, duplicate, dead, and stale rows FAIL. A pending
+// row may cover only that decision's orphan/missing-target or Deferred-inverse finding. It never excuses
+// an unknown or Scrapped decision. Pair every live row with a durable backlog/escalation entry.
+//
+// SCOPE: only exact `X.Y` tokens outside explanatory parentheticals are mechanical iteration targets.
+// Trigger-based/TBD/non-exact targets stay with the kickoff auditor until assigned. The scanner never
+// decides product ownership or timing.
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const DECISION_LOG_FILE = '{{DECISION_LOG_FILE}}';
+const PLANS_DIR = '{{SPRINT_OR_ITERATION_PLANS_DIR}}';
+const PLAN_INDEX_FILE = '{{SPRINT_OR_ITERATION_INDEX_FILE}}';
+const DECISION_TABLE_HEADING = '{{DECISION_TABLE_HEADING}}';
+const INCLUDED_IDS_HEADING_RE = /^## Included decision IDs(?:\s|$)/;
+const DECISION_HEADER = ['ID', 'Title', 'Area', 'Phase', 'Sprint', 'Status', 'Notes'];
+const ID_RE = /^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$/;
+const ID_CANDIDATE_RE = /\b[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+\b/g;
+const NON_DECISION_PREFIXES = ['ADR-', 'REQ-', 'NFR-', 'BENCH-'];
+const TARGET_RE = /(?<![\d.])(\d+\.\d+)(?![\d.])/g;
+const PLAN_FILE_RE = /^sprint-(\d+)-(\d+)\.md$/; // FILL if the project uses another filename grammar.
+const REQUIRED_PENDING_FIELDS = ['id', 'reason', 'owner', 'addedAt', 'decision'];
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+export const PENDING_LINKAGE = [
+  // {
+  //   id: '{{DECISION_ID}}',
+  //   reason: '{{WHY_THIS_IS_A_REAL_PRODUCT_OR_SCHEDULING_FORK}}',
+  //   owner: '{{HUMAN_DECISION_OWNER}}',
+  //   addedAt: 'YYYY-MM-DD',
+  //   decision: '{{EXACT_CHOICE_REQUIRED_TO_REMOVE_THIS_ROW}}',
+  // },
+];
+
+function readLines(root, relativePath) {
+  const target = path.join(root, relativePath);
+  if (!fs.existsSync(target)) return null;
+  return fs.readFileSync(target, 'utf8').replace(/\r\n/g, '\n').split('\n');
+}
+
+export function splitMarkdownRow(line) {
+  const text = line.trim();
+  if (!text.startsWith('|') || !text.endsWith('|')) return null;
+  const cells = [];
+  let cell = '';
+  for (let index = 1; index < text.length - 1; index += 1) {
+    if (text[index] === '\\' && text[index + 1] === '|') {
+      cell += '|';
+      index += 1;
+    } else if (text[index] === '|') {
+      cells.push(cell.trim());
+      cell = '';
+    } else {
+      cell += text[index];
+    }
+  }
+  cells.push(cell.trim());
+  return cells;
+}
+
+function stripBalancedParentheticals(value) {
+  let depth = 0;
+  let output = '';
+  for (const char of value) {
+    if (char === '(') depth += 1;
+    else if (char === ')') {
+      if (depth > 0) depth -= 1;
+    } else if (depth === 0) output += char;
+  }
+  return { value: output, balanced: depth === 0 };
+}
+
+function statusKind(status) {
+  // Explicit status markers outrank explanatory words: "✅ Approved (exact tier deferred)" is Approved.
+  if (status.includes('✅') || /^Approved\b/i.test(status.trim())) return 'approved';
+  if (/[❌⛔]/u.test(status) || /Dropped|Scrapped|N\/A/i.test(status)) return 'scrapped';
+  if (/Deferred/i.test(status)) return 'deferred';
+  return 'other';
+}
+
+function targetsFrom(sprintCell) {
+  const stripped = stripBalancedParentheticals(sprintCell);
+  return {
+    balanced: stripped.balanced,
+    targets: [...stripped.value.matchAll(TARGET_RE)].map((match) => match[1]),
+  };
+}
+
+function isDecisionCandidate(id) {
+  return !NON_DECISION_PREFIXES.some((prefix) => id.startsWith(prefix));
+}
+
+export function collectDecisions(root = process.cwd()) {
+  const lines = readLines(root, DECISION_LOG_FILE);
+  const decisions = new Map();
+  const errors = [];
+  if (lines == null) return { decisions, errors: [`${DECISION_LOG_FILE} is missing`] };
+  const heading = lines.findIndex((line) => line.trim() === DECISION_TABLE_HEADING);
+  if (heading < 0) return { decisions, errors: [`missing ${DECISION_TABLE_HEADING}`] };
+  const headerIndex = lines.findIndex(
+    (line, index) => index > heading && /^\|\s*ID\s*\|/.test(line),
+  );
+  const header = splitMarkdownRow(lines[headerIndex] ?? '');
+  if (headerIndex < 0 || header?.join('|') !== DECISION_HEADER.join('|')) {
+    return { decisions, errors: [`${DECISION_LOG_FILE} must use ${DECISION_HEADER.join(' | ')}`] };
+  }
+  const divider = splitMarkdownRow(lines[headerIndex + 1] ?? '');
+  if (divider == null || divider.length !== DECISION_HEADER.length || divider.some((c) => !/^:?-{3,}:?$/.test(c))) {
+    errors.push(`${DECISION_LOG_FILE}:${headerIndex + 2} has an invalid divider`);
+  }
+  for (let index = headerIndex + 2; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (/^##\s/.test(line)) break;
+    if (line.trim() === '') continue; // real decision tables may contain a deliberate blank separator.
+    if (!line.trim().startsWith('|')) {
+      let tableResumesBeforeNextHeading = false;
+      for (let laterIndex = index + 1; laterIndex < lines.length; laterIndex += 1) {
+        if (/^##\s/.test(lines[laterIndex])) break;
+        if (lines[laterIndex].trim().startsWith('|')) {
+          tableResumesBeforeNextHeading = true;
+          break;
+        }
+      }
+      if (tableResumesBeforeNextHeading) {
+        errors.push(`${DECISION_LOG_FILE}:${index + 1} interrupts the decision table before later rows`);
+      }
+      break;
+    }
+    const cells = splitMarkdownRow(line);
+    if (cells == null || cells.length !== DECISION_HEADER.length) {
+      errors.push(`${DECISION_LOG_FILE}:${index + 1} decision row must contain ${DECISION_HEADER.length} cells`);
+      continue;
+    }
+    const [id, title, area, phase, sprint, status, notes] = cells;
+    if (!ID_RE.test(id) || decisions.has(id)) {
+      errors.push(`${DECISION_LOG_FILE}:${index + 1} has invalid/duplicate ID ${id}`);
+      continue;
+    }
+    if ([title, area, phase, sprint, status, notes].some((cell) => cell === '')) {
+      errors.push(`${DECISION_LOG_FILE}:${index + 1} has a blank required cell for ${id}`);
+      continue;
+    }
+    const targetResult = targetsFrom(sprint);
+    if (!targetResult.balanced) {
+      errors.push(`${DECISION_LOG_FILE}:${index + 1} has unbalanced Sprint-cell parentheses for ${id}`);
+    }
+    decisions.set(id, {
+      id,
+      sprint,
+      status,
+      statusKind: statusKind(status),
+      targets: targetResult.targets,
+      line: index + 1,
+    });
+  }
+  if (decisions.size === 0) errors.push(`${DECISION_LOG_FILE} parsed zero decisions`);
+  return { decisions, errors };
+}
+
+function includedIds(block, file, line, errors) {
+  const ids = new Set();
+  const tableRows = block.filter((entry) => entry.trim().startsWith('|'));
+  if (tableRows.length > 0) {
+    const header = splitMarkdownRow(tableRows[0]);
+    const divider = splitMarkdownRow(tableRows[1] ?? '');
+    if (header?.[0] !== 'ID' || !/^:?-{3,}:?$/.test(divider?.[0] ?? '')) {
+      errors.push(`${file}:${line} Included-IDs table must start with ID + a valid divider`);
+      return ids;
+    }
+    for (const row of tableRows.slice(2)) {
+      const cells = splitMarkdownRow(row);
+      const candidates = (cells?.[0]?.match(ID_CANDIDATE_RE) ?? []).filter(isDecisionCandidate);
+      if (cells == null || cells.length !== header.length || candidates.length !== 1) {
+        errors.push(`${file} has an invalid Included-IDs table row`);
+      } else ids.add(candidates[0]);
+    }
+    return ids;
+  }
+  const prose = stripBalancedParentheticals(block.join('\n'));
+  if (!prose.balanced) {
+    errors.push(`${file}:${line} Included-IDs prose has unbalanced parentheses`);
+    return ids;
+  }
+  for (const id of prose.value.match(ID_CANDIDATE_RE) ?? []) {
+    if (isDecisionCandidate(id)) ids.add(id);
+  }
+  return ids;
+}
+
+export function collectPlans(root = process.cwd()) {
+  const plans = new Map();
+  const errors = [];
+  const dir = path.join(root, PLANS_DIR);
+  if (!fs.existsSync(dir)) return { plans, errors: [`${PLANS_DIR} is missing`] };
+  const files = fs.readdirSync(dir).filter((file) => PLAN_FILE_RE.test(file)).sort();
+  for (const file of files) {
+    const match = file.match(PLAN_FILE_RE);
+    const target = `${Number(match[1])}.${Number(match[2])}`;
+    const relative = `${PLANS_DIR}/${file}`;
+    const lines = readLines(root, relative);
+    const headings = lines
+      .map((line, index) => (INCLUDED_IDS_HEADING_RE.test(line.trim()) ? index : -1))
+      .filter((index) => index >= 0);
+    if (headings.length !== 1) {
+      errors.push(`${relative} must contain exactly one ## Included decision IDs section`);
+      continue;
+    }
+    let end = lines.length;
+    for (let index = headings[0] + 1; index < lines.length; index += 1) {
+      if (/^##\s/.test(lines[index])) {
+        end = index;
+        break;
+      }
+    }
+    const block = lines.slice(headings[0] + 1, end).filter((line) => line.trim() !== '');
+    const ids = includedIds(block, relative, headings[0] + 2, errors);
+    if (ids.size === 0) errors.push(`${relative} resolved zero Included decision IDs`);
+    plans.set(target, { target, file: relative, ids });
+  }
+  if (plans.size === 0) errors.push(`${PLANS_DIR} parsed zero plans`);
+  return { plans, errors };
+}
+
+export function collectDeletedTargets(root = process.cwd()) {
+  const lines = readLines(root, PLAN_INDEX_FILE);
+  const deleted = new Set();
+  const errors = [];
+  if (lines == null) return { deleted, errors: [`${PLAN_INDEX_FILE} is missing`] };
+  for (const [index, line] of lines.entries()) {
+    const match = line.match(/\|\s*~~(\d+\.\d+)~~\s*\|.*\|\s*(?:Removed|Scrapped)\s*\|\s*$/i);
+    if (match) deleted.add(match[1]);
+    else if (/~~\d+\.\d+~~.*(?:Removed|Scrapped)/i.test(line)) {
+      errors.push(`${PLAN_INDEX_FILE}:${index + 1} has an unparseable deleted-target row`);
+    }
+  }
+  return { deleted, errors };
+}
+
+function pendingError(row) {
+  if (row == null || typeof row !== 'object' || Array.isArray(row)) return 'row must be an object';
+  for (const field of REQUIRED_PENDING_FIELDS) {
+    if (typeof row[field] !== 'string' || row[field].trim() === '') return `missing ${field}`;
+  }
+  const parsed = Date.parse(`${row.addedAt}T00:00:00Z`);
+  if (!ID_RE.test(row.id)) return 'invalid decision ID';
+  if (!ISO_DATE_RE.test(row.addedAt) || Number.isNaN(parsed) || new Date(parsed).toISOString().slice(0, 10) !== row.addedAt) {
+    return 'addedAt must be a real YYYY-MM-DD date';
+  }
+  return null;
+}
+
+export function runGate(root = process.cwd(), pending = PENDING_LINKAGE) {
+  const decisionResult = collectDecisions(root);
+  const planResult = collectPlans(root);
+  const deletedResult = collectDeletedTargets(root);
+  const formatErrors = [...decisionResult.errors, ...planResult.errors, ...deletedResult.errors];
+  const raw = [];
+  for (const decision of decisionResult.decisions.values()) {
+    if (decision.statusKind !== 'approved') continue;
+    for (const target of decision.targets) {
+      if (deletedResult.deleted.has(target)) raw.push({ type: 'dangling', id: decision.id, target, reason: 'deleted' });
+      else if (!planResult.plans.has(target)) raw.push({ type: 'dangling', id: decision.id, target, reason: 'missing' });
+      else if (!planResult.plans.get(target).ids.has(decision.id)) raw.push({ type: 'orphan', id: decision.id, target });
+    }
+  }
+  for (const plan of planResult.plans.values()) {
+    for (const id of plan.ids) {
+      const decision = decisionResult.decisions.get(id);
+      if (!decision) raw.push({ type: 'inverse', id, target: plan.target, reason: 'unknown' });
+      else if (decision.statusKind === 'scrapped') raw.push({ type: 'inverse', id, target: plan.target, reason: 'scrapped' });
+      else if (decision.statusKind === 'deferred') raw.push({ type: 'inverse', id, target: plan.target, reason: 'deferred' });
+    }
+  }
+
+  const deferrable = new Set(raw.filter((issue) => issue.type !== 'inverse' || issue.reason === 'deferred').map((issue) => issue.id));
+  const pendingIssues = [];
+  const valid = new Set();
+  const seen = new Set();
+  if (!Array.isArray(pending)) pendingIssues.push({ type: 'invalid', id: '(root)' });
+  else for (const row of pending) {
+    const error = pendingError(row);
+    if (error) pendingIssues.push({ type: 'invalid', id: row?.id ?? '(unknown)', reason: error });
+    else if (seen.has(row.id)) pendingIssues.push({ type: 'duplicate', id: row.id });
+    else if (!decisionResult.decisions.has(row.id)) pendingIssues.push({ type: 'dead', id: row.id });
+    else if (!deferrable.has(row.id)) pendingIssues.push({ type: 'stale', id: row.id });
+    else valid.add(row.id);
+    if (typeof row?.id === 'string') seen.add(row.id);
+  }
+  const issues = raw.filter(
+    (issue) => !valid.has(issue.id) || (issue.type === 'inverse' && issue.reason !== 'deferred'),
+  );
+  return {
+    issues,
+    pendingIssues,
+    formatErrors,
+    decisionCount: decisionResult.decisions.size,
+    planCount: planResult.plans.size,
+  };
+}
+
+function main() {
+  const pending = process.env.DECISION_SPRINT_LINKAGE_PENDING
+    ? JSON.parse(process.env.DECISION_SPRINT_LINKAGE_PENDING)
+    : PENDING_LINKAGE;
+  const result = runGate(process.cwd(), pending);
+  if (result.issues.length === 0 && result.pendingIssues.length === 0 && result.formatErrors.length === 0) {
+    console.log(`check-decision-sprint-linkage: OK — ${result.decisionCount} decisions and ${result.planCount} plans reconciled or explicitly pending.`);
+    return;
+  }
+  console.error('check-decision-sprint-linkage FAILED:');
+  for (const issue of result.issues) console.error(`  - ${issue.type.toUpperCase()} ${issue.id} @ ${issue.target}${issue.reason ? ` (${issue.reason})` : ''}`);
+  for (const issue of result.pendingIssues) console.error(`  - ${issue.type.toUpperCase()} PENDING_LINKAGE ${issue.id}${issue.reason ? ` — ${issue.reason}` : ''}`);
+  for (const error of result.formatErrors) console.error(`  - FORMAT ${error}`);
+  process.exitCode = 1;
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

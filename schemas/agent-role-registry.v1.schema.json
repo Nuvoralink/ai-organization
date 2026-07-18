@@ -4,8 +4,9 @@
   "title": "Agent role registry",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version", "roles"],
+  "required": ["$schema", "version", "roles"],
   "properties": {
+    "$schema": { "const": "../schemas/agent-role-registry.v1.schema.json" },
     "version": { "type": "string" },
     "roles": {
       "type": "array",

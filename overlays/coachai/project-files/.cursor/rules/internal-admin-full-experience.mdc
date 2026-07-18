@@ -1,0 +1,13 @@
+---
+description: Internal admin should inherit full agency-owner product access plus admin tools
+alwaysApply: false
+---
+
+# Internal Admin = Full Agency Owner Plus Admin
+
+- Treat `INTERNAL_ADMIN` as having the full product experience of an agency owner, not a reduced admin-only shell.
+- Internal admin should see the same primary product surfaces as an owner with team access: `Dashboard`, `Plan`, `Account`, `Sessions`, `Team`, `Team coaching`, `Feedbacks`, and `Materials`.
+- Internal admin keeps all admin-only tools and settings on top of that owner experience.
+- Do not create separate placeholder admin variants of product pages when the real owner-facing surface already exists.
+- If a page is available to an agency owner and useful for validating production wiring, internal admin should be able to reach it directly.
+- The admin page should expose clear links to the live product surfaces so internal admin can verify working flows from one place.

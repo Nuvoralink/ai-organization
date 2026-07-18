@@ -1,0 +1,2226 @@
+{
+  "version": "1.0.0",
+  "scope": "orchestration-only",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "class": "repository-metadata"
+    },
+    {
+      "path": ".github/CODEOWNERS",
+      "class": "github-orchestration"
+    },
+    {
+      "path": ".github/PULL_REQUEST_TEMPLATE.md",
+      "class": "github-orchestration"
+    },
+    {
+      "path": ".github/workflows/control-plane.yml",
+      "class": "github-orchestration"
+    },
+    {
+      "path": ".gitignore",
+      "class": "repository-metadata"
+    },
+    {
+      "path": ".gitleaks.toml",
+      "class": "repository-metadata"
+    },
+    {
+      "path": ".gitleaksignore",
+      "class": "repository-metadata"
+    },
+    {
+      "path": "AGENTS.md",
+      "class": "repository-metadata"
+    },
+    {
+      "path": "CLAUDE.md",
+      "class": "repository-metadata"
+    },
+    {
+      "path": "README.md",
+      "class": "repository-metadata"
+    },
+    {
+      "path": "artifacts/Nuvoralink-AI-Organization-Operating-System.pptx",
+      "class": "presentation-artifact"
+    },
+    {
+      "path": "artifacts/source/operating-model-outline.md",
+      "class": "presentation-artifact"
+    },
+    {
+      "path": "automations/registry.v1.json",
+      "class": "automation-specification"
+    },
+    {
+      "path": "control-plane.manifest.json",
+      "class": "repository-metadata"
+    },
+    {
+      "path": "core/authority/assess-action.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/lifecycle/README.md",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/lifecycle/codex-task-status.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/lifecycle/evidence-runtime.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/lifecycle/lifecycle-controller.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/lifecycle/run-evidence-integrity-mutation.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/lifecycle/task-governor.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/schema/validate-json-schema.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "dependencies/llm-council/.claude/agents/council-integrity-auditor.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/.claude/skills/council/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/.claude/skills/studio/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/.gitignore",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/README.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/council/__init__.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/council/config.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/council/council.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/council/prompts.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/council/providers.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/council/schema.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/council/store.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/council/validators.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/docs/DECISIONS.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/pyproject.toml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/run_council.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/run_studio.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/scripts/council_posttooluse_gate.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/scripts/ground_compliance.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/studio/__init__.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/studio/config.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/studio/playbook.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/studio/prompts.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/studio/schema.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/studio/studio.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/tests/test_council_offline.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/tests/test_studio_offline.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/llm-council/uv.lock",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "docs/architecture.md",
+      "class": "documentation"
+    },
+    {
+      "path": "docs/implementation-plan.md",
+      "class": "documentation"
+    },
+    {
+      "path": "docs/operations.md",
+      "class": "documentation"
+    },
+    {
+      "path": "docs/ownership-boundaries.md",
+      "class": "documentation"
+    },
+    {
+      "path": "docs/provenance-and-licensing.md",
+      "class": "documentation"
+    },
+    {
+      "path": "global/claude/CLAUDE.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/agents/adversarial-reviewer.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/agents/implementer.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/agents/security-auditor.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/rules/authority-boundary.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/rules/decision-discipline.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/rules/doctrine-loop.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/rules/loop-discipline.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/rules/orchestrator-mode.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/rules/slice-rigor.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/rules/test-intent.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/AGENTS.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "overlays/auxara-dialer/automations/project-automations.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/control-plane/action-authority.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/control-plane/project-profile.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/exclusions.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/manifest.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/migrations/import-baseline.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/ownership.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/profile.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.agents/skills/auxara-dialer-authentication/SKILL.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.agents/skills/auxara-dialer-downstream-rerun/SKILL.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.agents/skills/auxara-dialer-journey-documentation/SKILL.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.agents/skills/auxara-dialer-source-of-truth-architecture/SKILL.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.ai-organization/agents.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.ai-organization/completion-profiles.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.ai-organization/ownership.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/agents/adversarial-reviewer.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/agents/compliance-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/agents/cybersecurity-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/agents/doctrine-drift-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/agents/functionality-parity-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/agents/performance-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/agents/premise-and-architecture-challenger.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/agents/release-verifier.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/agents/sprint-implementer.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/agents/sprint-kickoff-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/agents/test-runner.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/agents/ui-verifier.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/agents/user-journey-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/launch.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/loop.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/rules/agent-product-intent.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/rules/authority-boundary.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/rules/auxara-dialer-engineering-rules.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/rules/auxara-dialer-frontend-rules.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/rules/auxara-dialer-project-rules.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/rules/auxara-dialer-security-rules.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/rules/backend-prisma-build-checks.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/rules/centralization-doctrine.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/rules/decision-discipline.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/rules/doctrine-loop.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/rules/instrumentation.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/rules/internal-admin-full-experience.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/rules/loop-discipline.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/rules/product-first-planning.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/rules/sprint-rigor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/rules/test-intent.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/rules/testing-guardrails.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/settings.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.github/ISSUE_TEMPLATE/agent-slice.yml",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.github/PULL_REQUEST_TEMPLATE.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/AGENTS.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/CLAUDE.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/docs/agent-prompts/goal-templates.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/docs/agent-prompts/orchestration-playbook.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/docs/agent-prompts/orchestrator-handoff-context.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/scripts/check-agent-context-budget.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/scripts/check-agent-control-plane.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/scripts/check-call-drop-gate.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/scripts/check-decision-sprint-linkage.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/scripts/check-doc-code-drift.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/scripts/check-filemap.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/scripts/check-organization-overlay.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/scripts/check-rules-wiring.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/scripts/check-test-intent.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/scripts/claude-lifecycle-hook.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/scripts/claude-posttooluse-gate.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/scripts/generate-repo-filemap.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/scripts/lib/agentTelemetry.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/scripts/lib/claudeGateRouter.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/scripts/orchestration-state.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/scripts/summarize-agent-telemetry.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/automations/project-automations.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/control-plane/action-authority.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/control-plane/project-profile.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/exclusions.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/manifest.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/migrations/import-baseline.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/ownership.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/profile.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.agents/skills/coachai-audit-queue-coaching-quality/SKILL.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.agents/skills/coachai-audit-queue-coaching-quality/agents/openai.yaml",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.agents/skills/coachai-audit-queue-coaching-quality/references/sales-coaching-quality-lens.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.agents/skills/coachai-authentication/SKILL.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.agents/skills/coachai-call-audit-rca/SKILL.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.agents/skills/coachai-call-audit-rca/agents/openai.yaml",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.agents/skills/coachai-downstream-rerun/SKILL.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.agents/skills/coachai-downstream-rerun/agents/openai.yaml",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.agents/skills/coachai-journey-documentation/SKILL.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.agents/skills/coachai-persona-new-agent-audit/SKILL.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.agents/skills/coachai-persona-overloaded-manager-audit/SKILL.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.agents/skills/coachai-persona-owner-delegated-coaching-audit/SKILL.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.agents/skills/coachai-source-of-truth-architecture/SKILL.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.ai-organization/README.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.ai-organization/context-budget.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.ai-organization/lifecycle-policy.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.ai-organization/overlay-lock.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.ai-organization/ownership.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.ai-organization/proof-profiles.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.ai-organization/roles.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.claude/agents/adversarial-reviewer.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.claude/agents/ai-decision-boundary-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.claude/agents/doctrine-drift-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.claude/agents/functionality-parity-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.claude/agents/performance-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.claude/agents/premise-and-architecture-challenger.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.claude/agents/release-verifier.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.claude/agents/source-to-screen-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.claude/agents/sprint-kickoff-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.claude/agents/test-runner.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.claude/agents/ui-verifier.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.claude/agents/user-journey-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.claude/settings.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.cursor/rules/agent-product-intent.mdc",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.cursor/rules/analysis-pipeline.mdc",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.cursor/rules/authority-boundary.mdc",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.cursor/rules/backend-prisma-build-checks.mdc",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.cursor/rules/centralization-doctrine.mdc",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.cursor/rules/coachai-engineering-rules.mdc",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.cursor/rules/coachai-frontend-rules.mdc",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.cursor/rules/coachai-project-rules.mdc",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.cursor/rules/coachai-security-rules.mdc",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.cursor/rules/coaching-entities.mdc",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.cursor/rules/coaching-frontend.mdc",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.cursor/rules/coaching-lanes.mdc",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.cursor/rules/instrumentation.mdc",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.cursor/rules/internal-admin-full-experience.mdc",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.cursor/rules/manager-surfaces.mdc",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.cursor/rules/manual-verification-smoke.mdc",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.cursor/rules/product-first-planning.mdc",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.cursor/rules/slice-rigor.mdc",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.cursor/rules/testing-guardrails.mdc",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.cursor/rules/ui-design-tokens.mdc",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.github/CODEOWNERS",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.github/ISSUE_TEMPLATE/agent-slice.yml",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.github/pull_request_template.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.github/workflows/backend-db-regressions.yml",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/.github/workflows/ui-source-of-truth-gates.yml",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/AGENTS.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/CLAUDE.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/scripts/check-agent-context.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/scripts/check-agent-control-plane.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/scripts/check-doc-code-drift.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/scripts/check-overlay-parity.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/scripts/check-rules-wiring.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/scripts/check-test-intent.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/scripts/ci-local.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/scripts/claude-lifecycle-hook.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/scripts/claude-posttooluse-gate.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/scripts/run-risk-selected-proof.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/scripts/task-governor.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/scripts/tests/contextAndRulesRegression.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/scripts/tests/controlPlaneRegression.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/scripts/tests/fixture-helpers.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/scripts/tests/overlayParityRegression.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/scripts/tests/riskSelectedProofRegression.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/scripts/tests/taskLifecycleRegression.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "package.json",
+      "class": "repository-metadata"
+    },
+    {
+      "path": "policies/action-authority.v1.json",
+      "class": "policy"
+    },
+    {
+      "path": "policies/risk-controls.v1.json",
+      "class": "policy"
+    },
+    {
+      "path": "registries/agent-roles.v1.json",
+      "class": "registry"
+    },
+    {
+      "path": "registries/artifacts.v1.json",
+      "class": "registry"
+    },
+    {
+      "path": "registries/project-roots.example.json",
+      "class": "registry"
+    },
+    {
+      "path": "registries/tracked-scope.v1.json",
+      "class": "scope-registry"
+    },
+    {
+      "path": "schemas/action-authority.v1.schema.json",
+      "class": "schema"
+    },
+    {
+      "path": "schemas/agent-role-registry.v1.schema.json",
+      "class": "schema"
+    },
+    {
+      "path": "schemas/control-plane-manifest.v1.schema.json",
+      "class": "schema"
+    },
+    {
+      "path": "schemas/project-overlay.v1.schema.json",
+      "class": "schema"
+    },
+    {
+      "path": "schemas/task-assurance.v2.schema.json",
+      "class": "schema"
+    },
+    {
+      "path": "schemas/task-evidence.v2.schema.json",
+      "class": "schema"
+    },
+    {
+      "path": "scripts/control-plane.mjs",
+      "class": "control-plane-tooling"
+    },
+    {
+      "path": "scripts/generate-baseline-registry.mjs",
+      "class": "control-plane-tooling"
+    },
+    {
+      "path": "scripts/lib/control-plane.mjs",
+      "class": "control-plane-tooling"
+    },
+    {
+      "path": "scripts/project-overlay.mjs",
+      "class": "control-plane-tooling"
+    },
+    {
+      "path": "scripts/refresh-tracked-scope.mjs",
+      "class": "control-plane-tooling"
+    },
+    {
+      "path": "skills/ai-decision-contract-builder/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ai-decision-contract-builder/agents/openai.yaml",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ai-output-source-truth-audit/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/api-interface-design/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/api-interface-design/references/ai-metering-billing.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/api-interface-design/references/api-and-interface-design.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/api-interface-design/references/api-design-first.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/architecture-saas-design/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/architecture-saas-design/references/ai-metering-billing.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/architecture-saas-design/references/dual-auth-rbac.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/architecture-saas-design/references/multi-tenant-saas-architecture.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/architecture-saas-design/references/system-architecture-design.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/ARCHITECTURE.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/HOWTO.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/UNIVERSAL_BACKFLOW_MONITOR.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/AGENTS.md.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/CLAUDE.md.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/agents/adversarial-reviewer.template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/agents/doctrine-drift-auditor.template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/agents/domain-auditor.template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/agents/functionality-parity-auditor.template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/agents/implementer.template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/agents/performance-auditor.template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/agents/premise-and-architecture-challenger.template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/agents/release-verifier.template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/agents/security-auditor.template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/agents/sprint-kickoff-auditor.template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/agents/test-runner.template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/agents/ui-verifier.template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/agents/user-journey-auditor.template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/automations/project-orchestration-automations.md.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/briefs/dispatch-brief.template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/briefs/plan-first-planner.template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/briefs/worktree-slice-preamble.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/ci/ci.yml.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/ci/uptime-probe.mjs.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/ci/uptime-runbook.md.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/claude-posttooluse-gate.mjs.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/control-plane/agent-slice.yml.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/control-plane/goal-templates.md.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/control-plane/loop.md.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/control-plane/orchestration-drift-audit.js.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/control-plane/orchestration-playbook.md.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/control-plane/pull_request_template.md.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/control-plane/roles.json.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/docs/ARCHITECTURE_BLAST_RADIUS.md.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/docs/BUG_BACKLOG.md.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/docs/DOCUMENTATION_INDEX.md.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/docs/JOURNEY_LESSONS.md.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/docs/adr-template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/docs/decision-log.md.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/gates/check-agent-context-budget.mjs.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/gates/check-agent-control-plane.mjs.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/gates/check-decision-sprint-linkage.mjs.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/gates/check-rules-wiring.mjs.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/gates/check-shared-resolution.mjs.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/gates/check-test-intent.mjs.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/gates/gates-all-wiring.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/lifecycle/claude-lifecycle-hook.mjs.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/rules/DOMAIN-RULES-AUTHORING-GUIDE.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/rules/README.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/rules/centralization-doctrine.template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/rules/engineering-rules.template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/rules/frontend-rules.template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/rules/security-rules.template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/rules/test-intent.template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/settings.json.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/tests/agent-control-plane-gate.test.ts.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/tests/claude-lifecycle-hook.test.ts.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/brandkit/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/brutalist-skill/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/code-review-quality/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/code-review-quality/references/code-maturity-assessor.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/code-review-quality/references/code-review-and-quality.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/code-review-quality/references/differential-review.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/code-review-quality/references/sharp-edges.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/code-review-quality/scripts/check_reference_integrity.ps1",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/context-engineering/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/context-engineering/references/client-engagement-playbook.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/context-engineering/references/context-engineering-fundamentals.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/context-engineering/references/enterprise-data-and-context-readiness.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/context-engineering/references/governance-and-human-policies.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/context-engineering/references/rag-playbook.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/cookie-rbac-auth-hardening/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/database-design-engineering/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/database-design-engineering/references/data-review-checklist.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/database-design-engineering/references/database-design-engineering.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/database-design-engineering/references/database-reliability.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/database-design-engineering/references/live-data-evolution.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/database-design-engineering/scripts/check-reference-links.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/design-taste-frontend/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/docs-rules-guardrail-promotion/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/docs-rules-guardrail-promotion/agents/openai.yaml",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/emil-design-eng/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/find-skills/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/frontend-design-director/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/frontend-design-director/agents/openai.yaml",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/frontend-design-director/references/process-and-prompts.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/frontend-ui-engineering/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/frontend-ui-engineering/references/3d-web-experience.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/frontend-ui-engineering/references/anti-ai-design-slop.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/frontend-ui-engineering/references/frontend-ui-engineering.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/frontend-ui-engineering/references/polish.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/frontend-ui-engineering/references/react-best-practices.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/frontend-ui-engineering/references/responsive-design.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/frontend-ui-engineering/references/web-design-guidelines.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/full-slice-planner/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/full-slice-planner/agents/openai.yaml",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/github-project-work-tracking/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/github-project-work-tracking/agents/openai.yaml",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/golden-mutation-trust-harness/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/golden-mutation-trust-harness/agents/openai.yaml",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/image-to-code-skill/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/imagegen-frontend-mobile/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/imagegen-frontend-web/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/adapt.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/animate.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/audit.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/bolder.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/brand.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/clarify.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/cognitive-load.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/color-and-contrast.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/colorize.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/craft.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/critique.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/delight.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/distill.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/document.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/extract.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/harden.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/heuristics-scoring.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/interaction-design.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/layout.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/live.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/motion-design.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/onboard.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/optimize.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/overdrive.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/personas.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/polish.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/product.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/quieter.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/responsive-design.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/shape.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/spatial-design.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/teach.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/typeset.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/typography.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/reference/ux-writing.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/cleanup-deprecated.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/command-metadata.json",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/design-parser.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/detect-csp.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/impeccable-paths.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/is-generated.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/live-accept.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/live-browser-session.js",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/live-browser.js",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/live-complete.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/live-completion.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/live-inject.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/live-poll.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/live-resume.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/live-server.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/live-session-store.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/live-status.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/live-wrap.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/live.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/load-context.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/modern-screenshot.umd.js",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/impeccable/scripts/pin.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/implementation-review-against-plan/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/implementation-review-against-plan/agents/openai.yaml",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/minimalist-skill/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/neon-postgres/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/observability-release-engineering/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/observability-release-engineering/references/ci-cd-and-automation.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/observability-release-engineering/references/deployment-release-engineering.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/observability-release-engineering/references/observability-monitoring.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/observability-release-engineering/references/openai-sentry.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/observability-release-engineering/references/reliability-engineering.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/observability-release-engineering/references/shipping-and-launch.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/output-skill/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/persisted-artifact-reprocess/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/persisted-derived-state-lifecycle/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/persisted-derived-state-lifecycle/agents/openai.yaml",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/persona-lens-product-audit/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/plan-pressure-test/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/plan-pressure-test/agents/openai.yaml",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/product-development-workflow/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/product-development-workflow/references/incremental-implementation.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/product-development-workflow/references/planning-and-task-breakdown.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/product-development-workflow/references/spec-driven-development.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/product-ui-design-taste/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/product-ui-design-taste/agents/openai.yaml",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/product-ui-design-taste/references/dashboards-and-data.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/product-ui-design-taste/references/mock-and-critique-prompts.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/product-ui-design-taste/references/product-context-and-concepts.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/product-ui-design-taste/references/product-visual-craft.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/product-ui-design-taste/references/research-basis.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/product-ui-design-taste/references/states-responsive-accessibility.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/product-ui-design-taste/references/verification-rubric.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/redesign-skill/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/3d.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/assets/charts-bar-chart.tsx",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/assets/text-animations-typewriter.tsx",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/assets/text-animations-word-highlight.tsx",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/audio-visualization.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/audio.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/calculate-metadata.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/compositions.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/display-captions.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/ffmpeg.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/get-audio-duration.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/get-video-dimensions.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/get-video-duration.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/gifs.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/google-fonts.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/html-in-canvas.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/images.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/import-srt-captions.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/light-leaks.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/local-fonts.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/lottie.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/maplibre.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/measuring-dom-nodes.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/measuring-text.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/parameters.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/sequencing.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/sfx.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/silence-detection.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/subtitles.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/tailwind.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/text-animations.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/timing.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/transcribe-captions.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/transitions.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/transparent-videos.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/trimming.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/videos.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/remotion-best-practices/rules/voiceover.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/security-review-hardening/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/security-review-hardening/references/ai-metering-billing.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/security-review-hardening/references/ai-security.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/security-review-hardening/references/audit-prep-assistant.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/security-review-hardening/references/cicd-devsecops.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/security-review-hardening/references/codeql.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/security-review-hardening/references/graphql-security.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/security-review-hardening/references/insecure-defaults.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/security-review-hardening/references/openai-security-best-practices.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/security-review-hardening/references/openai-security-ownership-map.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/security-review-hardening/references/openai-security-threat-model.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/security-review-hardening/references/secure-workflow-guide.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/security-review-hardening/references/security-and-hardening.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/security-review-hardening/references/security-checklist.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/security-review-hardening/references/semgrep.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/security-review-hardening/references/supply-chain-risk-auditor.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/security-review-hardening/references/variant-analysis.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/security-review-hardening/references/vibe-security-skill.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/security-review-hardening/resources/EXAMPLE_REPORT.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/security-review-hardening/resources/WORKFLOW_STEPS.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/security-review-hardening/scripts/check_reference_integrity.ps1",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/skill-evolution-loop/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/skill-evolution-loop/agents/openai.yaml",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/source-to-screen-verification/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/source-to-screen-verification/agents/openai.yaml",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/spider-debugging-methodology/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/spider-debugging-methodology/agents/openai.yaml",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/stitch-skill/DESIGN.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/stitch-skill/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/testing-strategy-and-tdd/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/testing-strategy-and-tdd/references/advanced-testing-strategy.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/testing-strategy-and-tdd/references/coverage-analysis.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/testing-strategy-and-tdd/references/property-based-testing.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/testing-strategy-and-tdd/references/test-driven-development.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/testing-strategy-and-tdd/references/verifying-tests-mutation-probes-and-boundaries.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/charts.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/colors.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/icons.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/landing.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/products.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/react-performance.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/stacks/astro.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/stacks/flutter.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/stacks/html-tailwind.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/stacks/jetpack-compose.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/stacks/nextjs.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/stacks/nuxt-ui.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/stacks/nuxtjs.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/stacks/react-native.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/stacks/react.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/stacks/shadcn.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/stacks/svelte.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/stacks/swiftui.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/stacks/vue.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/styles.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/typography.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/ui-reasoning.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/ux-guidelines.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/web-interface.csv",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/scripts/core.py",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/scripts/design_system.py",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/ui-ux-pro-max/scripts/search.py",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "tests/action-authority.test.mjs",
+      "class": "control-plane-test"
+    },
+    {
+      "path": "tests/automation-specs.test.mjs",
+      "class": "control-plane-test"
+    },
+    {
+      "path": "tests/bootstrap-templates.test.mjs",
+      "class": "control-plane-test"
+    },
+    {
+      "path": "tests/control-plane.test.mjs",
+      "class": "control-plane-test"
+    },
+    {
+      "path": "tests/project-overlay.test.mjs",
+      "class": "control-plane-test"
+    },
+    {
+      "path": "tests/task-governor.test.mjs",
+      "class": "control-plane-test"
+    }
+  ]
+}

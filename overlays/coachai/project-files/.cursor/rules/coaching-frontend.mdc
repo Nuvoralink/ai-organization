@@ -1,0 +1,117 @@
+---
+alwaysApply: false
+globs:
+  - "frontend/src/**/*call*"
+  - "frontend/src/**/*review*"
+  - "frontend/src/**/*coaching*"
+  - "frontend/src/**/*drill*"
+  - "frontend/src/**/*observation*"
+  - "frontend/src/**/*highlight*"
+  - "frontend/src/**/*progress*"
+  - "frontend/src/**/*timeline*"
+  - "frontend/src/**/*team*"
+  - "frontend/src/**/*manager*"
+---
+# Coaching Frontend Rules
+
+Purpose: keep coaching surfaces trustworthy, explainable, accessible, and fast.
+
+## 1. Backend owns coaching truth
+
+- Render coaching data from `CallReviewDTO` and related shared contracts.
+- Do not reconstruct meaning from raw entities in frontend code.
+- Frontend may choose presentation, but not business meaning.
+- Do not semantically scrub, rewrite, or replace accepted AI coaching copy in the UI. If a generated line is bad, the prompt/repair/provenance contract must be fixed upstream. Rep-facing views may hide policy-failed lines, but manager views should expose them with gate diagnostics so the failure is visible.
+
+## 2. No hidden scoring logic in the frontend
+
+- Frontend may not compute benchmark comparisons.
+- Frontend may not filter observations by confidence tier.
+- Frontend may not average or combine scores into new derived scores.
+- If new display logic requires data not in the DTO, add it to the backend mapper.
+- Frontend may not reinterpret raw checklist fields into accountability. Use shared lane/presentation helpers from `@ail-sales-coach/shared/coaching/checklistLabels`.
+
+## 2a. Lane-aware coaching presentation
+
+- Rep-facing checklist labels must be derived in this order:
+  - above-script strength -> `Great line`
+  - weak approved script -> `Script review`
+  - missing/off-script/material suggestion -> `Suggestion`
+  - only then raw verdict labels such as `Missed` / `Partial` / `Did this`
+- Do not show `Missed` or `Could improve` for `material_intelligence`, `weak_script`, `off_script`, or `not_in_script` rows.
+- Script suggestions must distinguish missing script beats, weak approved wording, and promoted rep lines.
+- Unknown slugs, enum values, and telemetry-style analysis tokens must use safe human copy; do not title-case raw ids into visible UI.
+- The active Call Review surface must render fixes, strengths, matched objections, and unmatched objection highlights from `unifiedCoachingMoments`. Do not reintroduce a standalone objections card or render `middleCard` as an active product surface.
+- `FeedbackDetailView` is a legacy full-feedback shell. Structured Call Review may use a narrow saved-feedback fallback when the review endpoint fails, but must not mount the full legacy coaching experience inside the normal structured page.
+- Team objection insights should use the Rep x Objection matrix as the primary decision surface. Bar charts can filter/summarize; avoid competing leaderboard or weakest-rep cards that answer the same question differently.
+
+## 3. Required UI states
+
+Every major coaching surface must explicitly handle:
+
+- loading
+- partial result
+- insufficient data
+- no evidence
+- not analyzable
+- permission denied
+- stale data
+- no benchmark available
+
+Missing states are product bugs, not polish items.
+
+## 4. Optimistic UX rules
+
+- Optimistic:
+  - annotation creation
+  - drill acknowledgment
+  - lightweight UI preference changes
+- Optimistic with rollback notice:
+  - drill assignment from annotation
+- Non-optimistic:
+  - analysis results
+  - destructive deletes
+  - template upgrade acceptance
+- Never optimistic:
+  - scoring changes
+  - drill evaluation
+  - pattern detection
+
+## 5. Semantic design tokens
+
+Use one shared visual language across all coaching surfaces:
+
+- negative observation / worst moment = danger treatment
+- positive observation / best moment = success treatment
+- objection marker = warning treatment
+- manager note = visually distinct from AI
+- AI note = explicit `CoachAI` source badge
+- limited reliability = muted warning badge
+- provenance badges = stable styles by provenance source
+- experimental metrics = explicit beta badge
+
+Do not invent per-page color meanings for the same coaching concepts.
+
+## 6. Accessibility is required
+
+- Timeline markers must be keyboard accessible.
+- Color is never the only signal.
+- Badges must include text labels.
+- Timeline surfaces need a non-visual summary.
+- Expandable evidence and fixes need clear focus handling.
+- Long transcripts need navigable, non-visual alternatives.
+
+## 7. Performance budgets
+
+- Manager dashboard meaningful render target: under 2s.
+- Call review route summary target: under 1s.
+- Cluster dense marker sets; do not render unbounded marker piles.
+- Virtualize long transcripts.
+- Lazy-load waveform visuals; do not block call review on waveform rendering.
+
+## 8. Marker density rules
+
+- Default timeline view shows a limited set of hero markers first.
+- Dense marker sets must cluster.
+- Filtering by marker type is required when density is high.
+- Manager annotations stay visible even when AI markers are clustered.

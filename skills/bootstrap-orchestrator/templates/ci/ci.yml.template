@@ -1,0 +1,74 @@
+# TEMPLATE: GitHub Actions CI — mirrors the local `verify` so the gates actually gate. Derived from the Auxara Dialer ci.yml.
+# FILL {{PLACEHOLDER}}s; keep the jobs that apply (docker-build only if containerized; notify-failure only if an alert channel is wired —
+# CoachAI deliberately has NONE). Save to .github/workflows/ci.yml. Adapt to another CI provider (GitLab/etc.) by keeping the SEQUENCE.
+name: CI
+
+# Runs the full gate battery on every PR + on push to main so the gates actually gate (they can be defined but nothing runs them).
+# Mirrors the locally-verified `verify` sequence EXACTLY. The `verify` job self-skips any DB-integration suite (it engages only on a
+# loopback DATABASE_URL); a separate `integration` job runs it against a throwaway DB so the RLS/idempotency proofs gate server-side.
+on:
+  push:
+    branches: [main]     # post-merge verification; PRs are CI'd via pull_request below — don't also run push:['**'] (double-runs)
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '{{NODE_VERSION}}'   # FILL: e.g. '22'
+          cache: 'npm'
+      - run: npm ci
+      # - run: npm run gate:audit          # OPTIONAL supply-chain gate: fail on a HIGH/CRITICAL advisory in the PROD dep tree.
+      # {{PRISMA_GENERATE_STEP}}           # FILL if using Prisma: `npm run prisma:generate -w <backend-workspace>`
+      - run: npm run build
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run gates:all
+
+  # OPTIONAL — keep ONLY if the deploy artifact is containerized. Builds the real production image the way the host does
+  # (manifests copied before install), so a Dockerfile/postinstall/COPY-ordering break fails CI instead of prod (origin incident
+  # 2026-06-11: a postinstall hook broke every prod deploy while `verify` — which has the full tree — stayed green).
+  # docker-build:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - run: docker build -t {{IMAGE_NAME}}:ci .
+
+  # OPTIONAL — keep ONLY if there's a heavy DB-backed suite (implementer Pattern A). Spins a throwaway Postgres and runs the
+  # security-critical proofs (RLS/isolation, append-only immutability, provider-event idempotency) that self-skip in `verify`.
+  # integration:
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 20                  # fail fast if the throwaway DB / migrate ever hangs
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with: { node-version: '{{NODE_VERSION}}', cache: 'npm' }
+  #     - run: npm ci
+  #     # {{PRISMA_GENERATE_STEP}}
+  #     - run: npm run test:integration
+
+  # OPTIONAL — keep ONLY if an alert channel is wired (a bot token in repo secrets). Alerts on a RED CI (a failed BUILD can't be
+  # caught by an error tracker — no app is running to report). Plain curl, no third-party action (supply-chain discipline; this job
+  # has secrets in scope). No-ops if the secrets aren't set. CoachAI deliberately has NO such channel — omit this job there.
+  # notify-failure:
+  #   needs: [verify]                      # add docker-build / integration to `needs` if kept
+  #   if: failure()
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Notify {{ALERT_CHANNEL}} of CI failure
+  #       env:
+  #         ALERT_TOKEN: ${{ secrets.{{ALERT_TOKEN_SECRET}} }}
+  #         ALERT_TARGET: ${{ secrets.{{ALERT_TARGET_SECRET}} }}
+  #         RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+  #       run: |
+  #         if [ -z "$ALERT_TOKEN" ] || [ -z "$ALERT_TARGET" ]; then echo "Alert secrets not set; skipping."; exit 0; fi
+  #         # {{ALERT_CURL}}  # FILL: the curl to the alert API; --data-urlencode the text; never echo the token.

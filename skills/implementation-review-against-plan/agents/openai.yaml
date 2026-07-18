@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implementation Review Against Plan"
+  short_description: "Review a finished diff against the original plan, intent, blast radius, and final output."
+  default_prompt: "Review this implementation against the plan. Check every phase, trace source-to-output wiring, find missed consumers, and verify whether the product intent is fully satisfied."

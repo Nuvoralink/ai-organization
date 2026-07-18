@@ -1,0 +1,4 @@
+interface:
+  display_name: "Product UI Design Taste"
+  short_description: "Design distinctive, high-trust product interfaces"
+  default_prompt: "Use $product-ui-design-taste to design a distinctive product dashboard or workflow from real product context, states, and visual meaning."

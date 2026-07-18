@@ -1,0 +1,150 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run typecheck)",
+      "Bash(npm run lint)",
+      "Bash(npm run format:check)",
+      "Bash(npm run test)",
+      "Bash(npm run gates:all)",
+      "Bash(npm run check:ui)",
+      "Bash(npm run check:ui-guardrails)",
+      "Bash(npm run check:ui-continuity)",
+      "Bash(npm run check:ui-source-of-truth)",
+      "Bash(npm run check:ui-testid)",
+      "Bash(npm run check:layout)",
+      "Bash(npm run gate:test-intent)",
+      "Bash(npm run gate:doc-code-drift)",
+      "Bash(npm run gate:preflight-security)",
+      "Bash(npm run gate:copy-terms)",
+      "PowerShell(npm run typecheck)",
+      "PowerShell(npm run lint)",
+      "PowerShell(npm run format:check)",
+      "PowerShell(npm run test)",
+      "PowerShell(npm run gates:all)",
+      "PowerShell(npm run check:ui)",
+      "PowerShell(npm run check:ui-guardrails)",
+      "PowerShell(npm run check:ui-continuity)",
+      "PowerShell(npm run check:ui-source-of-truth)",
+      "PowerShell(npm run check:ui-testid)",
+      "PowerShell(npm run check:layout)",
+      "PowerShell(npm run gate:test-intent)",
+      "PowerShell(npm run gate:doc-code-drift)",
+      "PowerShell(npm run gate:preflight-security)",
+      "PowerShell(npm run gate:copy-terms)",
+      "mcp__Claude_Preview__preview_eval",
+      "mcp__Claude_Preview__preview_screenshot",
+      "mcp__Claude_Preview__preview_snapshot",
+      "mcp__Claude_Preview__preview_console_logs",
+      "mcp__Claude_Preview__preview_logs",
+      "mcp__Claude_Preview__preview_network",
+      "mcp__Claude_Preview__preview_inspect",
+      "mcp__Claude_Preview__preview_list",
+      "mcp__Claude_Preview__preview_start",
+      "mcp__Claude_Preview__preview_stop",
+      "mcp__Claude_Preview__preview_resize",
+      "mcp__railway__get-status",
+      "mcp__railway__get-logs",
+      "mcp__railway__list-deployments",
+      "mcp__railway__list-projects",
+      "mcp__railway__list-services",
+      "mcp__railway__whoami",
+      "mcp__Neon__list_projects",
+      "mcp__Neon__describe_project",
+      "mcp__Neon__describe_branch",
+      "mcp__Neon__get_database_tables",
+      "mcp__Neon__describe_table_schema",
+      "mcp__2efaef17-cbf8-4add-9e3b-c5e713e8665e__get_project"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/claude-lifecycle-hook.mjs",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/claude-lifecycle-hook.mjs",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "TaskCreated": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/claude-lifecycle-hook.mjs",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/claude-lifecycle-hook.mjs",
+            "timeout": 1800
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/claude-lifecycle-hook.mjs",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/claude-lifecycle-hook.mjs",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/claude-lifecycle-hook.mjs",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/claude-posttooluse-gate.mjs",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}

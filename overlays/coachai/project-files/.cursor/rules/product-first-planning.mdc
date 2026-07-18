@@ -1,0 +1,176 @@
+---
+description: Plan with a product-first lens and never defer work that is needed now for a correct, complete solution
+alwaysApply: false
+---
+
+# Product-First Planning & No-Deferral Rules
+
+These two rules apply to every planning turn and every implementation turn. They are NOT optional shortcuts to be skipped under time pressure; skipping them always costs more later.
+
+## 1. Product-first lens (never fit the solution to the current architecture)
+
+When given a task, plan, or redesign:
+
+1. **Define the ideal solution FIRST.** Describe the end-to-end user experience, UI, UX, data flow, filtering, sorting, interaction model, and business value the feature needs to deliver to be great. Ignore, for the moment, what the current backend / DTO / schema / contract actually looks like.
+2. **Then inspect the existing architecture** (DB schema, DTOs, API contracts, component tree, prompts, pipeline stages) and compare it to what the ideal solution requires.
+3. **Then extend the architecture to support the ideal solution.** If the backend needs a new column, a new DTO field, a prompt version bump, a new endpoint, a new shared contract, or a new entity — plan those additions explicitly as part of the work. Do not warp the ideal UX to fit the shape of what already exists.
+4. When two approaches exist — one cleaner product outcome requiring backend work, one worse product outcome that "fits what we have" — pick the cleaner outcome and plan the backend work. Flag the extra scope in the plan honestly so the user can weigh it; do not hide the tradeoff by silently degrading the UX.
+
+Do NOT:
+- Start from `"what DTO fields do we have today?"` and design the UI around those fields. Start from `"what does the user need to see and do?"` and design backward to the DTO.
+- Parse / regex narrative text to recover structure that should have been emitted as a first-class field. If the data should be structured, make it structured upstream (DB column, JSON footer field, schema update) rather than re-deriving it forever.
+- Preserve a worse design just because rewriting a component, migration, or prompt feels expensive. Name the cost and still pick the right design unless the user explicitly rejects the larger scope.
+
+Concrete examples of applying this rule correctly:
+
+- Call Review `nextCallAdvice`: rather than extracting the closing paragraph from free-form coaching text at render time (symptom-level fit), promote it to a first-class JSON footer field (`next_call_advice`), a `Feedback.nextCallAdvice` column, a shared `CallSummaryDTO.nextCallAdvice` field, and a prompt version bump (V16 → V17). Legacy sessions keep a read-time extractor as a fallback only.
+- Information hierarchy in `CoachingNarrative`: when "show everything" creates friction and "hide everything" loses trust, design a tiered model (Tier 1 always visible, Tier 2 demoted with TL;DR, Tier 3 behind tabs) and apply it globally across the surface instead of bolting a toggle onto one card.
+
+## 2. No-deferral rule (if it is needed now for a correct solution, do it now)
+
+When the task is "implement this plan", "build this feature", or "fix this class of bugs":
+
+1. Complete every step that is required for the solution to be correct, complete, and durable in this turn. Do not leave TODOs, stubs, follow-ups, or "we'll do X in a later phase" unless the user explicitly agrees to defer it.
+2. If the work reveals new work that is part of the same solution — a schema change, a contract propagation, a dead-code removal, a prompt update, a regression test — do that work now, not later. "Later" for this kind of work is almost always "never".
+3. If the work uncovers a pre-existing failure (a broken test, a stale snapshot, a missing migration, an unapplied prompt change), fix it in the same turn. Do not skip around it. Do not add conditional code that hides it. Do not leave it as a dangling concern.
+4. When multiple sub-problems are in scope, implement them in the correct order (contracts first, then backend, then frontend, then tests), but implement ALL of them before declaring the task done.
+5. It is acceptable — required, even — to surface genuinely optional follow-ups ("here are three stretch improvements for later") AFTER the required work is complete. Do not use that section to hide required work.
+
+Concrete examples of applying this rule correctly:
+
+- If a plan introduces `CallSummaryDTO.nextCallAdvice`, the SAME turn should ship: the shared DTO field, the Prisma column and migration, the machine-footer schema update, the mapper changes, the prompt version bump, the regression suite updates, and every caller that needs to render it. Not one turn per layer with the others "for next time".
+- If Phase 6 refactors `CallReviewView.tsx` and leaves dead `CoachingStrengthsCard` / unused imports behind, Phase 6 is not done. Dead code removal and import pruning are part of Phase 6, not "cleanup later".
+- If a remediation pass finds 12 deviations from the plan, fix all 12. Do not fix 9 and defer 3 as "low risk".
+
+## 3. When to pause instead of pushing through
+
+Do NOT plow through if:
+
+- A required step would need secrets, credentials, environment variables, or access the agent does not have.
+- A step would modify production data irreversibly without explicit user approval.
+- The user has explicitly said "stop at phase N" or "review before continuing".
+
+In those cases, complete everything that can be completed, then surface exactly what is blocked and the one question or action needed to unblock. Do not silently defer and pretend the work is complete.
+
+## 4. Target, blast radius, and done-definition calibration
+
+Before planning or implementing any non-trivial fix, edit, feature, redesign, or architecture addition, calibrate the work deliberately instead of guessing narrow or broad.
+
+Required planning pass:
+
+1. **Clear target:** state the exact product/user outcome the change is meant to create. The target must be specific enough that a screenshot, API response, persisted artifact, or user journey can be judged against it.
+2. **Proper blast radius:** identify the surfaces that create, transform, persist, validate, consume, or display the behavior. Decide whether the first visible surface is enough or whether the radius must expand upstream/downstream. Expand the radius when a narrower change would leave stale wiring, duplicated logic, inconsistent UX, broken trust, or future drift.
+3. **Overshoot / undershoot check:** name what would be too little and what would be too much. Avoid both symptom patches and broad rewrites that do not improve the user outcome.
+4. **Definition of good work done:** define what must be true when the work is complete, including product logic, user-facing behavior, architecture/source-of-truth alignment, edge states, accessibility or security where relevant, and maintainability.
+5. **Intent-proving tests:** add or update tests/smokes/guardrails that prove the implementation behaves as intended. Tests must verify user/product logic, not only that TypeScript compiles or components render.
+
+Done means:
+
+- The intended source of truth drives the final user-visible behavior.
+- The change makes logical sense for the user, not only code sense for the implementation.
+- Tests would catch a sloppy version of the same change, stale downstream consumers, underscoped fixes, and obvious overshoots.
+- Any intentionally excluded adjacent surface is named with the reason it is genuinely out of scope, not silently ignored.
+- If the work reveals a missing relation in an existing blast-radius or source-of-truth doc, that doc is updated in the same turn so the same miss is less likely next time. Name the exact connected surface; do not hide a proven relation behind vague categories.
+
+Do NOT:
+
+- Start coding before the target and blast radius are clear.
+- Fix only the current symptom when the same cause drives adjacent pages, DTOs, prompts, jobs, or UI states.
+- Expand into unrelated refactors just because the file is open.
+- Treat passing lint/build as proof that the work is product-correct.
+
+Concrete examples:
+
+- UI theme/navigation work must define the visual target, the surfaces that can drift (tokens, primitives, layout shell, page-local classes, smoke screenshots), and visual acceptance gates that prove it is neither washed out nor over-colored.
+- Source-of-truth work must identify every producer, registry/contract, consumer, fallback, and smoke selector so stale strings or duplicated local logic cannot keep working unnoticed.
+- AI coaching fixes must define the semantic target, upstream AI decision contract, deterministic validation boundary, persistence/API mapping, and final UI output that proves the accepted judgment actually reached the user.
+- Coaching-quality fixes must also define the business-value target: the final output should help the rep or manager change behavior. A graceful limited state is acceptable only when safe evidence cannot support useful coaching; it is not a substitute for repairing a generation, validation, persistence, mapper, or UI path that could have produced a properly coached call.
+
+## 5. Persisted derived state lifecycle matrix
+
+When a slice creates or changes persisted derived state, queue/outbox rows, dispatch rows, retry rows, provider evidence rows, cached projections, read models, aggregates, or any persisted row that can later cause a side effect or user-visible claim, the plan and implementation review must include a lifecycle matrix. This matrix is mandatory when derived rows can stale, retry, dispatch, display, aggregate, or outlive the source mutation.
+
+Before writing implementation steps, include the producer/reconciliation matrix too: every mutation, import, webhook, settings change, membership change, archive/delete, retry, backfill, repair script, or provider callback that must update or intentionally not update derived rows.
+
+For every source-of-truth mutation, define what happens to existing derived rows in each applicable state:
+
+- new or pending
+- scheduled or queued
+- processing or claimed
+- retryable failed
+- terminal failed
+- sent or completed
+- indeterminate or ambiguous provider result
+- canceled or skipped
+- test-only or dry-run
+
+For each state row, answer all of these:
+
+- Which source authority created it.
+- Whether it can still cause a future side effect or user-visible claim.
+- What happens when the source input changes.
+- What happens when eligibility is revoked.
+- What happens when the parent record is archived or deleted.
+- What happens after provider failure if retry remains possible.
+- What happens after terminal evidence exists.
+- Whether the row is updated, canceled, skipped, superseded, preserved, or intentionally ignored.
+- What historical evidence must never be overwritten.
+- What final UI/API/report/notification should show.
+- Which test proves the behavior.
+
+The durable rule is: stale or ineligible rows must not create future side effects, while terminal evidence must remain traceable. Tests must map to every relevant matrix row: source authority, producer/reconciliation path, state transition, unavailable or disabled provider state, provider evidence, idempotency, final UI/output, and docs. A test that only proves fresh scheduled/current rows is not enough when stale, queued, processing, retryable, or test-only rows can still act.
+
+Pre-implementation gate:
+
+- Would the first implementation still be correct if a downstream producer runs later, a provider is unavailable, a job fires twice, a job never fires, or a user changes settings after data already exists?
+- Would retryable failed, stale, queued, processing, or test-only rows remain safe when the source of truth changes?
+- Would terminal provider/user evidence remain preserved through repair and reconciliation?
+- Would the final UI/notification/export/status still be honest if the accepted source is missing, indeterminate, disabled, stale, archived, forbidden, or outside the authorized boundary?
+
+## 6. Phase regression gates for implementation plans
+
+Every non-trivial implementation plan must include phase-level regression gates that prove the work touched the right surfaces and did not only fix the visible symptom.
+
+For each phase, define:
+
+1. **Source-of-truth test:** verifies the upstream data, contract, prompt, schema, or persisted artifact emits the right structured output.
+2. **Consumer test:** verifies every downstream consumer uses the new artifact instead of stale parsing, old fallbacks, or copied logic.
+3. **Scenario regression:** uses realistic product fixtures that would have caught the original bug and adjacent failure modes.
+4. **UI/API visibility test:** verifies the user-facing surface shows the right state, count, warning, or hidden/visible behavior.
+5. **Negative-path test:** verifies bad, missing, stale, or low-confidence data fails closed with explicit warnings.
+
+Do NOT:
+- Add only one narrow unit test around the line you changed.
+- Leave route, mapper, persistence, prompt, frontend, or saved-session compatibility untested when the feature crosses those boundaries.
+- Treat a build pass as proof of behavioral correctness.
+
+Concrete example:
+- For material normalization, tests must cover raw upload/PDF extraction, normalized JSON schema, persisted warnings, script coverage audit, analysis-time consumers, Materials UI preview, and the script-gap digest. A test that only checks the current displayed gap count is not enough.
+
+## 7. Architecture-intent audit for AI decision work
+
+When the request is about AI judgment, objections, coaching moments, scoring, ranking, labels, or generated lines, the plan must explicitly answer:
+
+1. What should AI decide semantically?
+2. What should deterministic code validate or constrain?
+3. Which downstream surfaces must consume the validated decision?
+4. What would prove this is not just a phrase-list workaround?
+
+Required trace:
+
+- upstream context seen by AI
+- strict JSON output schema
+- normalization / grounding / decision audit
+- call type, checklist, scoring, primary-fix ranking, coaching generation
+- persistence / API DTO / UI or debug visibility
+- realistic positive and negative regressions
+
+If the accepted AI judgment does not reach final feedback, drills, labels, score/ranking, or the intended user-visible surface, the implementation is incomplete.
+
+## Source-Of-Truth Done Definition
+
+For source-of-truth work, done means the intended authority drives the final consumer.
+
+A plan should name authority, validation, repair, persistence, consumers, stale fallback behavior, user-visible proof, and compatibility expiry where relevant.
+
+A fix that stops the visible symptom but leaves an older authority path active is incomplete unless that older path is explicitly limited to historical compatibility, diagnostics, migration, or a named degraded state.

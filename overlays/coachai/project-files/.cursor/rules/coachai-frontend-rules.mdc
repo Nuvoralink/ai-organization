@@ -1,0 +1,110 @@
+---
+alwaysApply: false
+---
+# CoachAI Frontend Rules
+
+## Claude Design approval gate
+
+Anything visible is Claude-Design-first and user-approval-gated: Claude Design reference → show the user → explicit approval → implementation → rendered verification. Figma is not part of the active workflow. Infrastructure and data plumbing are exempt only until they change a rendered surface. If a task would change a pixel, state, or copy-in-context without an approved reference, stop before implementation.
+
+Purpose: keep the frontend consistent, reusable, testable, and predictable for both humans and Cursor.
+
+Before any non-trivial frontend change, read `frontend/docs/FRONTEND_BLAST_RADIUS.md` and use it to identify connected pages, shared primitives, registry entries, hooks, API helpers, visual smokes, and guardrails that must be inspected with the visible surface. If debugging or implementation reveals a missing relationship that caused a miss, update `frontend/docs/FRONTEND_BLAST_RADIUS.md` in the same turn so the map learns from the failure. Make newly discovered relationships explicit by naming the exact page, shell, primitive, hook, selector, registry entry, modal, smoke screenshot, or guardrail that must travel with future changes.
+
+## Responsive is layout-mode redesign — never dimension-fiddling (blocking)
+
+CoachAI inherits Tailwind's standard breakpoints (`sm`/`md`/`lg`/`xl`/`2xl`, extended upward with `wide: 1920` + `ultra: 2400` for the Call Review reading column — `frontend/docs/DESIGN_SYSTEM.md`). Rendered verification runs at **390 / 768 / 1024 / 1440** (+ `wide`/`ultra` for reading-column surfaces). The doctrine (proven on the Auxara Dialer, 2026-07-02):
+
+- **Every visible surface declares a responsive CONTRACT** — a per-band layout **MODE** (phone · tablet · laptop · desktop) and what STRUCTURALLY changes between bands. A surface is **not "the desktop layout, smaller"** — crossing a breakpoint switches **composition** (multi-pane → tabs/drawer/sheet; table → cards; nav rail → bottom tab bar; modal → bottom-sheet), it never merely shrinks. When a surface declares a contract, its root carries a `data-layout-mode="…"` attribute so `ui-verifier` can assert the mode actually switched. A visible responsive change is **mockup-first** and the mock ships **all breakpoint states + the contract** (a mock without its 390 state is incomplete); the dispatch brief carries the contract **verbatim**, never paraphrased.
+- **The dimension-fiddling BAN.** When a surface breaks at a breakpoint (misalignment, overlap, overflow, clipped content), these are FORBIDDEN as a first response: nudging px heights/widths/margins until it "fits"; `overflow:hidden` to clip the symptom; `transform: scale()`; negative margins; `z-index`/`!important` stacking; a hardcoded per-breakpoint px dimension. The REQUIRED response is the **repair ladder**, in order, and every fix **names the rung**: **(1) MODE** — is this band in the right layout mode per the contract? (most "alignment bugs" are a desktop composition squeezed into a phone — the fix is a mode switch = a mockup-first redesign for that band); **(2) INTRINSIC** — replace fixed sizing with `fr`/`minmax(0,…)`/`auto`/`clamp()`/`aspect-ratio`/`gap`/content-height; **(3) CONTENT CONTRACT** — `min-width:0` + truncate/line-clamp with a stated contract, priority-based hiding with an affordance to reach the hidden content; **(4) token micro-adjust** — last, and only via tokens.
+- **Intrinsic-first hard rules:** no fixed heights on layout containers in page code (heights emerge from content; exceptions live in primitives); flex/grid children carrying text get `min-width:0` (grid tracks `minmax(0,…)`) + a truncation contract; **`dvh` never `vh`**; `env(safe-area-inset-*)` on fixed/sticky edges; touch targets **≥44×44** px on phone/tablet; `16px` inputs on phone (iOS zoom); media = `aspect-ratio`+`object-fit`+fluid width, never a fixed w+h pair; **mobile-first** build order (author 390 first, layer `md:`/`lg:`/`xl:` up) — a desktop-only surface (e.g. a manager analytics board) must be **declared** in the contract, not assumed.
+- **Process:** `ui-verifier` runs before merge on any visible change — page-level overflow, sibling overlap, tap targets, clipped text, and the `data-layout-mode` assertion at every breakpoint (the lens the static gates + jsdom structurally can't provide). *(No mechanical `check:responsive` gate is wired in this repo yet — the rendered lens is the enforcement; wire the gate if the class starts slipping past it.)*
+
+*Fail-state:* a surface was made responsive by shrinking the desktop layout and nudging dimensions until it fit, instead of composing a distinct layout mode per band; or a visible responsive change was coded without an all-breakpoint mock + approval; or a breakpoint bug was patched with a px nudge and no named ladder rung.
+
+## 1. Page, component, hook boundaries
+
+- Pages orchestrate data, layout, routing, and top-level state.
+- Components should stay presentational when possible.
+- Reusable stateful logic belongs in hooks.
+- Pure formatting and transformation logic belongs in helpers, not components.
+- Avoid putting API details directly into pages or presentational components.
+
+## 2. API usage
+
+- Do not call `axios` directly from components.
+- Do not add raw endpoint strings inside components.
+- New API access should go through frontend API modules.
+- Keep request and response typing explicit.
+- Avoid one giant catch-all API file when feature-specific modules are clearer.
+
+## 3. UI primitives and design consistency
+
+Reuse existing UI primitives before creating new ones.
+
+Prefer shared primitives for:
+- buttons
+- badges
+- cards
+- page headers
+- loading states
+- empty states
+- error states
+- form controls
+
+Do not repeatedly handcraft the same Tailwind patterns across multiple pages.
+
+## 4. Stable selectors and testability
+
+- Every primary user action should have a stable `data-testid`.
+- Important forms, panels, and state containers should also have stable selectors.
+- Prefer semantic, stable selector names such as:
+  - `data-testid="dashboard-upgrade-button"`
+  - `data-testid="recording-upload-button"`
+  - `data-testid="feedback-retry-button"`
+- Do not rely on brittle text-only selectors for critical flows.
+- Use HTML `id` only when there is a real semantic or accessibility reason. Do not use random ids for styling.
+
+## 5. State handling
+
+For user-visible async flows, always consider:
+- loading state
+- success state
+- empty state
+- error state
+- retry path if failure is recoverable
+
+Do not leave users in ambiguous states.
+
+## 6. Auth and permissions on the frontend
+
+- Frontend gating is for UX, not security.
+- Do not assume hidden UI equals authorization.
+- Any privileged or scoped behavior must still be enforced on the backend.
+- When showing role- or plan-based UI, derive from typed user state rather than scattered string comparisons where possible.
+
+## 7. Accessibility and UX basics
+
+- Use semantic elements where practical.
+- Buttons should be buttons, links should be links.
+- Ensure labels, disabled states, and error messages are clear.
+- Avoid interaction patterns that only work with a mouse.
+- Preserve clear focus and loading behavior for important workflows.
+
+## 8. Dead code and compatibility
+
+- Do not leave misleading UI for disabled or desktop-only features.
+- If a compatibility bridge exists, make it explicit and temporary.
+- Remove stale no-op props, fake controls, and abandoned states once they are no longer needed.
+
+## 9. Frontend definition of done
+
+Before finishing a frontend change, confirm:
+- checked `frontend/docs/FRONTEND_BLAST_RADIUS.md` for connected surfaces and did not only patch the noticed page
+- updated `frontend/docs/FRONTEND_BLAST_RADIUS.md` if the work exposed a missing relation that should be remembered
+- reused existing primitives where possible
+- no direct API logic leaked into presentation
+- selectors exist for key actions
+- loading, empty, and error states were considered
+- types are explicit for the changed flow
+- UI reflects backend truth rather than inventing client-only assumptions

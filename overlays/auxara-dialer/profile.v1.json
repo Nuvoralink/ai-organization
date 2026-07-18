@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "project": "auxara-dialer",
+  "rootToken": "PROJECT:auxara-dialer",
+  "integrationBranch": "main",
+  "rulesAuthority": ".claude/rules",
+  "agentAuthority": ".claude/agents",
+  "designAuthority": "Claude Design",
+  "humanGates": "policies/action-authority.v1.json",
+  "productAuthorityMode": "project-owned-reference"
+}

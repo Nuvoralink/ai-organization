@@ -1,0 +1,4 @@
+interface:
+  display_name: "Golden Mutation Trust Harness"
+  short_description: "Build end-to-end mutating trust tests"
+  default_prompt: "Use $golden-mutation-trust-harness to design and implement an end-to-end golden baseline with persisted mutations for this surface."

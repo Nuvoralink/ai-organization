@@ -1,0 +1,101 @@
+---
+description: What DONE means for a coaching slice — 3-fold DoD, blast-radius declaration, and the closure gate
+alwaysApply: false
+---
+# Slice Rigor — Prove Work Against Product Intent, Not "Green Pass"
+
+Purpose: every slice must produce work proven against product intent, not work that merely compiles. A
+green CI pass that asserts no meaningful coaching behavior is theater. Calibration (target / blast-radius /
+overshoot-undershoot) is owned by `product-first-planning.mdc` §4–6; this rule owns what DONE means and
+the closure gate. Applies retroactively — a closed slice with DoD / blast-radius / source-of-truth / test
+gaps has bugs to fix.
+
+## §1 Read before opening a slice (in order; stale → stop and fix first)
+
+The slice/plan doc → `docs/ARCHITECTURE_BLAST_RADIUS.md` + `frontend/docs/FRONTEND_BLAST_RADIUS.md` →
+`docs/app-plan/source-of-truth-map.md` + `docs/COACHING_SURFACE_AUTHORITY_MAP.md` → the touched-stage
+sections of `MVP_CONTRACTS.md` + `COACHING_ARCHITECTURE.md` (repo root) → the relevant `.cursor/rules` →
+the `docs/app-plan/decision-log.md` rows the slice depends on. A "pending"/"locked"/"next" label may be
+overtaken by history — reconcile against git + the decision log before acting.
+
+## §2 Definition of Done — 3-fold, all three must hold simultaneously
+
+**a) Product DoD.** Every CQ-### / G-### / #issue acceptance behavior in scope passes against the REAL
+surface (not just compile). Coaching is useful where evidence exists — an honest limited/blank state is a
+safety floor for missing/unsafe/stale evidence, never a substitute for a usable coaching move when the
+transcript supports one (`agent-product-intent.mdc` §2.1). Honest fail-closed states are exercised.
+
+**b) System DoD.** The persisted-derived-state lifecycle matrix is satisfied for every applicable row
+state; the authority named in `source-of-truth-map.md` / `COACHING_SURFACE_AUTHORITY_MAP.md` drives the
+FINAL surface (no surface invents truth an authority owns); tenant scoping via `requireOrgMembership()` is
+proven for every new read; re-analysis is idempotent (upsert, no duplicate rows); paid-AI metering is
+intact; every persisted observation carries transcript/material evidence.
+
+**c) Drift-prevention DoD.** The same change updates: the blast-radius maps; `v2-authority-source-inventory.json`
++ `v2-authority-migration-inventory.md`; `MVP_CONTRACTS.md` / `COACHING_ARCHITECTURE.md`;
+`docs/DOCUMENTATION_INDEX.md`; `docs/Journey/AI_BUILD_JOURNEY_LESSONS.md` (if a reusable lesson surfaced);
+and `REPO_FILEMAP.md` (`npm run filemap`). A skipped update means the slice is NOT done.
+
+## §3 Blast-radius declaration (BEFORE editing)
+
+```
+Blast radius for this slice:
+- Backend: <routes, services, pipeline stages, workers, lib helpers>
+- Shared: <contracts, taxonomy enums, config thresholds>
+- Prisma: <models, migrations>
+- Frontend: <pages, primitives, design-system roles, registry entries>
+- Prompts: <prompt templates + versions>
+- Persisted derived rows: <the rows + their lifecycle states>
+- Telemetry / metering: <analytics events, AiUsageEvent, AuditEvent rows>
+- Docs: <which docs update in THIS change>
+```
+A surface not on the list revealed mid-flight → STOP, expand the declaration, and update the blast-radius doc.
+
+## §4 Test ladder with `Proves:` headers
+
+Follow `testing-guardrails.mdc` §0 (intent header) + the Trust Testing Ladder. BEFORE implementing, declare
+"Tests planned" — each test names the concrete killer mutation that should break it (a test that would
+still pass against a regressed version of your change is theater).
+
+## §5 Closure checklist (real commands + lenses)
+
+- [ ] `npm run verify` green — quote its real summary line, never a `| tail` exit. (Local prereq: `DATABASE_URL` set — a placeholder value works; `prisma generate` reads it but never connects.)
+- [ ] `npm run gates:all` green.
+- [ ] Area-triggered batteries: the security battery (CLAUDE.md §"Security/Auth/RBAC Verification Gates")
+      for auth/RBAC; `test:regression:manual-verification-smoke` (expected `passed=81`) for the manual-verification
+      surfaces; `check:ui` + `check:ui-continuity` for UI.
+- [ ] Auditor cadence — **per slice**, run the lens that matches what the slice touched:
+  `ai-decision-boundary-auditor` (analysis / prompt / scoring / paid-model diffs), `source-to-screen-auditor`
+  (DTO / mapper / entity / manager-surface / persisted-row diffs), `doctrine-drift-auditor` (anything
+  governed by a decision-log row / source-of-truth map / covered contract / authority tier),
+  `ui-verifier` (ANY visible frontend change — rendered computed-style + geometry across breakpoints, focus,
+  reduced-motion, state rendering, mock fidelity; the static gates + jsdom can't see opacity/layout),
+  `performance-auditor` (any diff touching a hot path — the analysis pipeline / coaching-entity population /
+  upload-intent / queue workers / manager dashboards / session-list reads / schema indexes),
+  `functionality-parity-auditor` (any slice that ships a backend route / shared contract / DTO WITHOUT its
+  same-slice frontend consumer — walk the delivery chain decided→built→wired→called→reachable before merge;
+  the built-never-wired class lives BETWEEN slices and no per-diff lens sees it), and
+  `adversarial-reviewer` (EVERY slice before merge). **Before opening a new product/design slice:**
+  `user-journey-auditor` — the ICP's-seat walk feeds the mockups and surfaces candidate decisions before
+  scope is locked. **After every production-affecting merge:**
+  `release-verifier` — verify the DEPLOYED product (Railway deploy + `/api/ready` + frontend reachability +
+  Sentry new-error sweep), not just the CI run; the merge loop is not closed until its verdict lands.
+  **At sprint/phase close:** a whole-surface sweep by `adversarial-reviewer` + `ai-decision-boundary-auditor` +
+  `source-to-screen-auditor` + `doctrine-drift-auditor` + `performance-auditor` +
+  `functionality-parity-auditor` (whole-app chain walk incl. the backend-mounts ↔ `lib/api.ts` sweep) +
+  `user-journey-auditor` (walk BOTH day-zeros first, then the persona × moment inventory) over the merged
+  result (not just per-slice diffs), plus a re-triage of the OPEN `docs/COACHING_BUG_BACKLOG.md` rows
+  (deferred findings that may now be exploitable, newly in-scope, or whose deferral reason has lapsed).
+- [ ] Findings → fixed this turn, or a `docs/COACHING_BUG_BACKLOG.md` row with a tier (exploitable-now →
+      fix now; deferred → row + reason).
+
+## §6 STOP conditions
+
+A false-passing test found (P0 — fix this turn, never `.skip` to green); a green run hiding a stale
+consumer; AI made the authority for RBAC / billing / seat / role (authority-boundary Tier 3); a de-scoped
+decision reintroduced — canonical: **CQ-000B** (the score-distribution baseline harness, de-scoped
+2026-06-05, CLAUDE.md:197 — NOT a standing pre-production gate; do not resurrect it); the same bug class
+caught in two slices (codify before continuing).
+
+*Fail-state:* a slice was called done on a green pass that asserted no coaching behavior, left a stale
+consumer, skipped a drift-prevention doc update, or resurrected a de-scoped decision.

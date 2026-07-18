@@ -1,0 +1,225 @@
+/**
+ * Proves: {{ORCHESTRATION_REQUIREMENT_ID}}
+ * Test type: regression
+ * Surface: scripts/claude-lifecycle-hook.mjs
+ * Authority: six-part dispatch brief + content-free lifecycle telemetry contract
+ *
+ * Product proof: rendered GitHub issue briefs are accepted, placeholder/comment-only or sibling-section
+ * bodies are rejected, and supplied prompt content never becomes retained telemetry.
+ * Killer mutations: count headings without substantive bodies; scan beyond the current heading;
+ * persist the raw hook payload.
+ */
+import {
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { afterAll, describe, expect, it } from 'vitest';
+
+const scratch: string[] = [];
+
+afterAll(() => {
+  for (const root of scratch) rmSync(root, { recursive: true, force: true });
+}, 60_000);
+
+function findLifecycleScript() {
+  let current = process.cwd();
+  while (true) {
+    const candidate = path.join(current, 'scripts', 'claude-lifecycle-hook.mjs');
+    try {
+      readFileSync(candidate, 'utf8');
+      return candidate;
+    } catch {
+      const parent = path.dirname(current);
+      if (parent === current) throw new Error('scripts/claude-lifecycle-hook.mjs not found');
+      current = parent;
+    }
+  }
+}
+
+const lifecycleScript = findLifecycleScript();
+
+function git(root: string, args: string[]) {
+  const result = spawnSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true });
+  if (result.status !== 0) throw new Error(`${result.stderr}\n${result.stdout}`);
+}
+
+function fixture() {
+  const root = mkdtempSync(path.join(tmpdir(), 'lifecycle-template-'));
+  scratch.push(root);
+  git(root, ['init', '-b', 'main']);
+  git(root, ['config', 'user.email', 'lifecycle@example.invalid']);
+  git(root, ['config', 'user.name', 'Lifecycle Test']);
+  mkdirSync(path.join(root, '.ai-organization'), { recursive: true });
+  writeFileSync(path.join(root, 'README.md'), 'base\n');
+  writeFileSync(path.join(root, 'package.json'), JSON.stringify({ private: true, scripts: { 'proof:documentation': "node -e \"console.log('DOC_PROOF_PASS')\"", '{{TASK_COMPLETION_GATE}}': "node -e \"console.log('COMPLETION_GATE_PASS')\"" } }));
+  writeFileSync(path.join(root, '.ai-organization', 'proof-profiles.json'), JSON.stringify({
+    version: 2,
+    integration_branch: '{{INTEGRATION_BRANCH}}',
+    lifecycle_hook_timeout_ms: 1800000,
+    lifecycle_timeout_safety_margin_ms: 60000,
+    lifecycle_roles_by_completion_mode: {
+      'read-only': ['implementer', 'adversarial-reviewer'],
+      implementation: ['implementer'],
+    },
+    lifecycle_supported_risk_classes: ['documentation'],
+    profiles: [{
+      id: 'documentation',
+      assurance: {
+        version: 1,
+        classification: 'local_non_mutating',
+        safe_local_only: true,
+        capabilities: ['documentation_contract'],
+        env_allowlist: [],
+        commands: [{ id: 'documentation-proof', argv: ['npm', 'run', 'proof:documentation'], timeout_ms: 30000, parser: { kind: 'patterns', minimum_output_bytes: 1, minimum_executed: 1, required_patterns: ['DOC_PROOF_PASS'] } }]
+      }
+    }]
+  }));
+  git(root, ['add', '.']);
+  git(root, ['commit', '-m', 'base']);
+  git(root, ['update-ref', 'refs/remotes/origin/{{INTEGRATION_BRANCH}}', 'HEAD']);
+  return root;
+}
+
+function run(root: string, payload: unknown) {
+  return spawnSync(process.execPath, [lifecycleScript], {
+    cwd: root,
+    input: JSON.stringify({ cwd: root, ...(payload as object) }),
+    encoding: 'utf8',
+    windowsHide: true,
+  });
+}
+
+function renderedBrief(taskId: string) {
+  const contract = {
+    schema_version: 2,
+    id: taskId,
+    product_intent: 'Verify that a generated project enforces source-bound task completion.',
+    settled_decisions: ['The shared lifecycle controller owns completion evidence.'],
+    scope: { in: ['generated lifecycle hook'], out: ['product code'], too_little: 'Checking headings only.', too_much: 'Running production actions.' },
+    execution: { implementer_role: 'implementer' },
+    paths: { read: ['README.md'], edit: ['README.md'], read_only: [], output: ['tmp/agent-assurance/**'] },
+    risk: { level: 'low', classes: ['documentation'], reasons: ['generated lifecycle fixture'] },
+    authorities: ['core/lifecycle'],
+    blast_radius: { feeders: ['TaskCreated'], producers: ['proof runner'], transformers: ['Claude adapter'], persistence: ['attempt state'], validators: ['task governor'], consumers: ['TaskCompleted'], surfaces: ['lifecycle'], retirements: ['status booleans'] },
+    procedure: ['Validate the accepted contract.'],
+    acceptance: ['The accepted attempt is persisted.'],
+    proofs: [{ id: 'documentation-proof', profile_id: 'documentation', capability: 'documentation_contract', proves: 'The generated lifecycle is wired.', surface: 'task lifecycle', authority: 'shared controller', risk_classes: ['documentation'], mutation: { required: false, case_id: null, rationale: 'This bootstrap fixture validates wiring; the universal mutation suite validates evidence integrity.' }, required: true }],
+    action_authority: { allowed: ['read', 'test'], conditional: [], human_required: [] },
+    completion: { tier: 'implemented', honesty_clause: 'Name unreached surfaces.', unreached_surfaces: [], doctrine_loop: 'none' }
+  };
+  return [
+    '### Context',
+    'Settled authority.',
+    '### Exact paths',
+    'scripts/claude-lifecycle-hook.mjs',
+    '### Numbered procedure',
+    '1. Inspect the real output.',
+    '### Output contract',
+    'Return command-owned proof.',
+    '### Boundaries',
+    'Do not publish.',
+    '### Self-verifiable acceptance',
+    'The hostile fixture is blocked.',
+    '### Completion tier',
+    'implementation',
+    `TASK_CONTRACT_JSON:${JSON.stringify(contract)}`,
+  ].join('\n');
+}
+
+describe('Claude lifecycle bootstrap contract', () => {
+  it('accepts a rendered issue brief and rejects empty or sibling-owned section content', () => {
+    const root = fixture();
+    const accepted = run(root, {
+      hook_event_name: 'TaskCreated',
+      session_id: 'session-valid',
+      task_id: 'TASK-VALID',
+      task_description: renderedBrief('TASK-VALID'),
+    });
+    expect(accepted.status).toBe(0);
+
+    const commentOnly = run(root, {
+      hook_event_name: 'TaskCreated',
+      session_id: 'session-comment',
+      task_id: 'TASK-COMMENT',
+      task_description: renderedBrief('TASK-COMMENT').replace('Settled authority.', '<!-- fill later -->'),
+    });
+    expect(commentOnly.status).toBe(2);
+    expect(commentOnly.stderr).toContain('Context');
+
+    const siblingOnly = run(root, {
+      hook_event_name: 'TaskCreated',
+      session_id: 'session-sibling',
+      task_id: 'TASK-SIBLING',
+      task_description: renderedBrief('TASK-SIBLING').replace(
+        '### Context\nSettled authority.',
+        '### Context\n### Overview\nThis belongs to Overview.',
+      ),
+    });
+    expect(siblingOnly.status).toBe(2);
+    expect(siblingOnly.stderr).toContain('Context');
+  });
+
+  it('uses official SubagentStop report evidence and rejects an invented TaskCompleted report field', () => {
+    const root = fixture();
+    const taskId = 'TASK-REPORT-FLOW';
+    expect(run(root, {
+      hook_event_name: 'TaskCreated',
+      session_id: 'session-report-flow',
+      task_id: taskId,
+      task_subject: 'Verify report flow',
+      teammate_name: 'orchestrator',
+      task_description: renderedBrief(taskId),
+    }).status).toBe(0);
+    writeFileSync(path.join(root, 'README.md'), 'implemented\n');
+    const invented = run(root, {
+      hook_event_name: 'TaskCompleted',
+      session_id: 'session-report-flow',
+      task_id: taskId,
+      task_subject: 'Verify report flow',
+      completion_report: { task_id: taskId, unreached_surfaces: [], doctrine_loop: 'invented' },
+    });
+    expect(invented.status).toBe(2);
+    expect(invented.stderr).toContain('official event has no completion-report field');
+    const report = run(root, {
+      hook_event_name: 'SubagentStop',
+      session_id: 'session-report-flow',
+      agent_id: 'implementer-run-report-flow',
+      agent_type: 'implementer',
+      last_assistant_message: [
+        'Doctrine-loop findings: none.',
+        'Honesty clause: live Claude runtime was not reached.',
+        `COMPLETION_REPORT_JSON:${JSON.stringify({ task_id: taskId, unreached_surfaces: ['live Claude runtime'], doctrine_loop: 'none' })}`,
+      ].join('\n'),
+    });
+    expect(report.status, report.stderr).toBe(0);
+    const completed = run(root, {
+      hook_event_name: 'TaskCompleted',
+      session_id: 'session-report-flow',
+      task_id: taskId,
+      task_subject: 'Verify report flow',
+    });
+    expect(completed.status, completed.stderr).toBe(0);
+  });
+
+  it('retains hashes and counts, never the supplied prompt body', () => {
+    const root = fixture();
+    const secret = 'HOSTILE_PROMPT_CONTENT_91D2';
+    const result = run(root, {
+      hook_event_name: 'TaskCreated',
+      session_id: `session-${secret}`,
+      task_id: `TASK-${secret}`,
+      task_description: renderedBrief(`TASK-${secret}`).replace('Settled authority.', `Settled authority ${secret}.`),
+    });
+    expect(result.status).toBe(0);
+    const telemetry = readFileSync(path.join(root, 'tmp', 'agent-telemetry', 'events.jsonl'), 'utf8');
+    expect(telemetry).not.toContain(secret);
+    expect(telemetry).not.toContain('task_description');
+    expect(telemetry).toContain('taskHash');
+  });
+});

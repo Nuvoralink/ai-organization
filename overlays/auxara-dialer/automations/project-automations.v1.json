@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "project": "auxara-dialer",
+  "updateExistingExactName": true,
+  "verifyAfterWrite": true,
+  "createAtBootstrap": [
+    {
+      "id": "auxara-daily-orchestration-drift",
+      "name": "Auxara daily orchestration drift",
+      "rrule": "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=10",
+      "reasoningTier": "medium",
+      "mode": "read-only",
+      "targetRoot": "${PROJECT:auxara-dialer}",
+      "prompt": "Read-only Auxara Dialer orchestration drift report. Inspect live git branch/worktree status, origin divergence when safely fetchable, open GitHub PRs/issues and review/check state, current sprint and decision docs, AGENTS/CLAUDE rule wiring, hook/workflow/template presence, and BUG_BACKLOG items tied to orchestration or verification. If npm run agent:state -- --github exists, run it and open its raw output; otherwise derive the same facts directly. Report only evidence-backed discrepancies, blockers, stale handoffs, orphaned branches/worktrees, and exact next actions. Never inspect credentials, tokens, session logs, .env files, secret stores, customer or provider data, recordings, transcripts, histories, caches, build output, or raw telemetry payloads. Do not edit files, create or switch branches, commit, push, open or modify issues/PRs, merge, deploy, publish, delete, purchase, mutate production, or send external messages."
+    },
+    {
+      "id": "auxara-weekly-fleet-doctrine-review",
+      "name": "Auxara weekly fleet doctrine review",
+      "rrule": "FREQ=WEEKLY;BYDAY=MO;BYHOUR=9;BYMINUTE=25",
+      "reasoningTier": "high",
+      "mode": "read-only",
+      "targetRoot": "${PROJECT:auxara-dialer}",
+      "prompt": "Read-only weekly Auxara Dialer fleet/doctrine review. Inspect merged PRs and review findings from the prior seven days, project agent rules and learned-classes logs, hook/gate failures, content-free agent telemetry summaries if present, journey lessons, architecture blast-radius updates, and open BUG_BACKLOG rows. Inspect only the safe installed global doctrine, rule, agent, skill, and bootstrap-template surfaces declared by the canonical control-plane manifest; never search an entire home directory. Identify recurring failure classes, why they were introduced, why controls missed them, and the smallest reusable gate/rule/brief/test improvement. Deduplicate against existing doctrine and recommend at most three high-leverage changes; do not implement them. Never inspect credentials, tokens, session logs, raw telemetry payloads, .env files, secret stores, customer/provider data, transcripts, or recordings. Do not edit files, create or switch branches, commit, push, open or modify issues/PRs, merge, deploy, publish, delete, purchase, mutate production, or send external messages."
+    }
+  ]
+}

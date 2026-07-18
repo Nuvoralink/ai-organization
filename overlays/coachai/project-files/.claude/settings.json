@@ -1,0 +1,119 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build)",
+      "Bash(npm run build:shared)",
+      "Bash(npm run build:backend)",
+      "Bash(npm run build:frontend)",
+      "Bash(npm run check:ui)",
+      "Bash(npm run check:ui-continuity)",
+      "Bash(npm run test:doc-code-drift)",
+      "Bash(npm run gate:test-intent)",
+      "Bash(npm run gate:test-intent:audit)",
+      "Bash(node scripts/check-test-intent.mjs:*)",
+      "Bash(npm run verify)",
+      "Bash(npm run gates:all)",
+      "Bash(npm run gate:tx-seam)",
+      "Bash(npm run gate:ephemeral-listen)",
+      "Bash(npm run gate:preflight-rules)",
+      "Bash(npm run gate:preflight-security)",
+      "Bash(node scripts/check-tx-seam.mjs)",
+      "Bash(node scripts/check-ephemeral-listen.mjs)",
+      "Bash(npm run filemap)",
+      "Bash(node scripts/preflight-security-check.mjs)",
+      "Bash(node scripts/preflight-rules-check.mjs)",
+      "Bash(npm run gate:organization)",
+      "Bash(npm run gate:agent-context)",
+      "Bash(npm run gate:rules-wiring)",
+      "Bash(npm run gate:agent-control-plane)",
+      "Bash(npm run gate:overlay-parity)",
+      "Bash(npm run proof:changed)",
+      "Bash(npm run test:organization-control-plane)",
+      "PowerShell(npm run build)",
+      "PowerShell(npm run build:shared)",
+      "PowerShell(npm run build:backend)",
+      "PowerShell(npm run build:frontend)",
+      "PowerShell(npm run check:ui)",
+      "PowerShell(npm run check:ui-continuity)",
+      "PowerShell(npm run test:doc-code-drift)",
+      "PowerShell(npm run gate:test-intent)",
+      "PowerShell(npm run gate:test-intent:audit)",
+      "PowerShell(node scripts/check-test-intent.mjs:*)",
+      "PowerShell(npm run verify)",
+      "PowerShell(npm run gates:all)",
+      "PowerShell(npm run gate:tx-seam)",
+      "PowerShell(npm run gate:ephemeral-listen)",
+      "PowerShell(npm run gate:preflight-rules)",
+      "PowerShell(npm run gate:preflight-security)",
+      "PowerShell(node scripts/check-tx-seam.mjs)",
+      "PowerShell(node scripts/check-ephemeral-listen.mjs)",
+      "PowerShell(npm run filemap)",
+      "PowerShell(node scripts/preflight-security-check.mjs)",
+      "PowerShell(node scripts/preflight-rules-check.mjs)",
+      "PowerShell(npm run gate:organization)",
+      "PowerShell(npm run gate:agent-context)",
+      "PowerShell(npm run gate:rules-wiring)",
+      "PowerShell(npm run gate:agent-control-plane)",
+      "PowerShell(npm run gate:overlay-parity)",
+      "PowerShell(npm run proof:changed)",
+      "PowerShell(npm run test:organization-control-plane)",
+      "mcp__Claude_Preview__preview_eval",
+      "mcp__Claude_Preview__preview_screenshot",
+      "mcp__Claude_Preview__preview_snapshot",
+      "mcp__Claude_Preview__preview_console_logs",
+      "mcp__Claude_Preview__preview_logs",
+      "mcp__Claude_Preview__preview_network",
+      "mcp__Claude_Preview__preview_inspect",
+      "mcp__Claude_Preview__preview_list",
+      "mcp__Claude_Preview__preview_start",
+      "mcp__Claude_Preview__preview_stop",
+      "mcp__Claude_Preview__preview_resize",
+      "mcp__railway__get-status",
+      "mcp__railway__get-logs",
+      "mcp__railway__list-deployments",
+      "mcp__railway__list-projects",
+      "mcp__railway__list-services",
+      "mcp__railway__whoami",
+      "mcp__Neon__list_projects",
+      "mcp__Neon__describe_project",
+      "mcp__Neon__describe_branch",
+      "mcp__Neon__get_database_tables",
+      "mcp__Neon__describe_table_schema"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/claude-posttooluse-gate.mjs",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": "node scripts/claude-lifecycle-hook.mjs", "timeout": 30 }] }
+    ],
+    "SubagentStart": [
+      { "hooks": [{ "type": "command", "command": "node scripts/claude-lifecycle-hook.mjs", "timeout": 30 }] }
+    ],
+    "TaskCreated": [
+      { "hooks": [{ "type": "command", "command": "node scripts/claude-lifecycle-hook.mjs", "timeout": 30 }] }
+    ],
+    "TaskCompleted": [
+      { "hooks": [{ "type": "command", "command": "node scripts/claude-lifecycle-hook.mjs", "timeout": 1800 }] }
+    ],
+    "SubagentStop": [
+      { "hooks": [{ "type": "command", "command": "node scripts/claude-lifecycle-hook.mjs", "timeout": 30 }] }
+    ],
+    "PostCompact": [
+      { "hooks": [{ "type": "command", "command": "node scripts/claude-lifecycle-hook.mjs", "timeout": 30 }] }
+    ],
+    "SessionEnd": [
+      { "hooks": [{ "type": "command", "command": "node scripts/claude-lifecycle-hook.mjs", "timeout": 30 }] }
+    ]
+  }
+}

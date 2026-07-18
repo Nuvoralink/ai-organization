@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spider Debugging Methodology"
+  short_description: "Root-cause debugging method that spiders outward to sibling failures and verifies final output."
+  default_prompt: "Use the spider debugging methodology to find the root cause, expand blast radius, fix upstream, update docs/rules, and verify user-visible or system-visible truth."

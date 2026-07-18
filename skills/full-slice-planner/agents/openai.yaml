@@ -1,0 +1,3 @@
+display_name: Full Slice Planner
+short_description: Plans implementation slices with full blast radius.
+default_prompt: Use this skill to plan or pressure-test the next implementation slice with product intent, blast radius, source-of-truth tracing, tests, docs, rollback, and definition of done.

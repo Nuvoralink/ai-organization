@@ -1,0 +1,102 @@
+---
+description: One source of truth per domain — no file-local restatement of taxonomy, thresholds, contracts, labels, tokens, routes, or policy
+alwaysApply: false
+---
+# Centralization Doctrine — One Source of Truth Per Domain
+
+Purpose: the most expensive drift in a multi-tenant, multi-surface coaching app is the same concept
+restated in N files, each slightly different, until a rep and a manager see mismatched truth. The rule:
+**no leaf file holds domain truth.** Every domain has ONE registry; every consumer reads from it;
+changing the truth means changing one row, not thirty leaves. This is the umbrella index; **replace,
+don't layer** (CLAUDE.md/AGENTS.md) is its enforcement sibling — a new central authority must DELETE the
+path it supersedes.
+
+CoachAI's own precedent for why this matters (CLAUDE.md:33): the call-type "central classifier" was left
+running *on top of* the semantic-judgment candidate + the legacy Gemini outcome — three producers racing,
+the less-informed one won on some input → wrong call type, wrong score, wrong coaching. And the section-1
+soft-guard work was added while the old `rejected_outside_evidence_window` blocking gate kept firing →
+`checklist_adjudication_limited` on good calls. Both were only fixed by REMOVING the superseded path.
+
+## §1 Central registries by domain (every row is a real CoachAI file)
+
+| Domain | Registry | Consumers must source from it |
+|---|---|---|
+| Coaching taxonomy (categories, polarities, highlight types, analyzability, provenance, annotation visibility, priority reasons, analytics event names, `MANAGER_NOTIFICATION_TYPES`) | `shared/src/coaching/taxonomy.ts` | backend entities/mappers, frontend, prompt templates |
+| Coaching thresholds | `shared/src/coaching/config.ts` (+ backend-only in `backend/src/lib/analysisConfig.ts`) | scorers, mappers, queue weights, debounce/TTL consumers |
+| Coaching contracts (`CallReviewDTO` et al.) | `shared/src/coaching/contracts.ts` | `CallReviewMapper`, frontend Call Review, regressions |
+| Lane predicates + rep-facing labels | `shared/src/coaching/checklistLabels.ts`, `labels.ts`, `presentation.ts` | rankers, prompt pools, UI labels — never raw `verdict` predicates at a leaf |
+| Sensitivity resolution | `resolveRepSensitivity` / shared `resolveEffectiveSensitivity` | every sensitivity call site — never `Organization.coachingLineSensitivity` read directly |
+| Next-action dispatch | `shared/src/coaching/nextActionDispatch.ts` + `nextAction.ts` | manager/rep intent copy; exhaustive over `NextActionKind` |
+| Stack / tenant kinds | `shared/src/platform/stack.ts` + `OrgMembership.orgRole` / `Organization.tenantKind` | auth middleware, `requireOrgMembership()` |
+| AI model / tier routing | `backend/src/lib/aiModelPolicy.ts` + `aiTierPolicy.ts` | every paid provider call; no direct SDK clients in routes |
+| Telemetry redaction | `backend/src/lib/telemetry.ts` + `scripts/lib/diagnosticRedaction.mjs` | every log / Sentry / audit / smoke writer |
+| Recording authority | `backend/src/lib/recordingStorageAuthority.ts` | playback / rerun / retention / finalize — never `STORAGE_DRIVER` |
+| Tenant-security probes | `backend/src/lib/security/tenantSecurityProbeManifest.ts` | the blackbox runner; new route families add manifest rows |
+| Analytics event metadata | shared `EventMetadataMap` | emitters; unknown event types rejected |
+| Design tokens / roles | `frontend/src/design-system/{foundations,roles,appDesign,recipes}.ts` — detailed discipline owned by `ui-design-tokens.mdc` | all frontend; enforced by `check:ui` |
+| Page registry | `frontend/src/app/pageRegistry.tsx` + `appDesign.ts` | router, nav, smoke targets (`check:ui-continuity`) |
+| UI primitives | `frontend/src/components/ui/*` | pages; no handcrafted repeats |
+| Test-file definition | `scripts/lib/test-file-match.mjs` | the test-intent gate + the PostToolUse hook — never a second regex |
+| Surface-migration list | `migratedSurfaceFiles` in `scripts/check-ui-guardrails.mjs` | design-system migration state |
+| Authority inventory | `docs/app-plan/v2-authority-source-inventory.json` (+ `v2-authority-migration-inventory.md`) | `test:doc-code-drift` |
+
+(This table grows as new domains emerge; adding a registry requires a row here + a row in the authority
+inventory JSON — see §3.)
+
+## §2 Forbidden patterns (bugs even if they compile and tests pass)
+
+Each is `❌ <leaf smell>` → `use <registry> instead`:
+
+- ❌ inline coaching taxonomy string (`'off_script'`, a highlight type, a notification type) → the
+  `shared/src/coaching/taxonomy.ts` enum.
+- ❌ inline coaching threshold (`0.75`, `8`, `3`) at a leaf → `shared/src/coaching/config.ts` /
+  `analysisConfig.ts`.
+- ❌ a raw lane predicate at a leaf (`verdict === 'no' && !scriptGap`) → the `checklistLabels.ts` lane
+  helpers.
+- ❌ a page-local status / badge / gradient recipe → a shared primitive + a semantic role (`ui-design-tokens.mdc`).
+- ❌ raw `axios` / an inline endpoint string in a component → the frontend API module.
+- ❌ a direct provider SDK client for a paid call → `aiTierPolicy.ts` / `aiModelPolicy.ts`.
+- ❌ a direct `Organization.coachingLineSensitivity` read → `resolveEffectiveSensitivity` / `resolveRepSensitivity`.
+- ❌ `STORAGE_DRIVER` (or `UploadIntent.status`, local chunk listing) as recording-existence truth →
+  `recordingStorageAuthority.ts`.
+- ❌ a route-local telemetry-redaction wrapper → `telemetry.ts` / `diagnosticRedaction.mjs`.
+- ❌ an analytics event name not in the taxonomy → the shared `EventMetadataMap` (unknown types rejected).
+- ❌ scattered plan / tier conditionals in a prompt/route/UI → `aiTierPolicy.ts`.
+- ❌ a second "what is a test" regex anywhere → `scripts/lib/test-file-match.mjs`.
+
+## §3 How to add a registry
+
+Pick the home (`shared/src/coaching`, `shared/src/platform`, `frontend/src/design-system`, a backend
+`lib` authority) → create the file → add a row to §1 → classify it in
+`docs/app-plan/v2-authority-source-inventory.json` (+ mirror the human `v2-authority-migration-inventory.md`)
+so `test:doc-code-drift` stays green → add a covered-contract row in `MVP_CONTRACTS.md` if it is
+machine-consumed → **migrate every consumer in the same change** (replace-don't-layer: grep the old
+symbol and confirm zero orphaned producers) → add a regression that catches a future inline literal of
+that kind.
+
+## §4 How to change a registry value
+
+High blast radius. Read `docs/ARCHITECTURE_BLAST_RADIUS.md` for consumers → update the row → update every
+consumer that derives UX/behavior from it (seed, tests, mappers) → run `npm run gates:all` (read its real
+exit, never a piped tail) → add a `docs/Journey/AI_BUILD_JOURNEY_LESSONS.md` entry if it taught a lesson.
+
+## §5 CI gates that enforce this (CoachAI's real gates)
+
+`check:ui` + `check:ui-continuity` (design-token + route/nav single-source), `test:doc-code-drift`
+(every discovered authority surface classified), `check:script-imports`, `gate:test-intent` (intent
+headers + cataloged-ID resolution), `gate:tx-seam` (no unknown-typed Prisma write seam), `gate:ephemeral-listen`
+(no raw `.listen(0)`), `lint:typography`, and the `PostToolUse` hook that routes edits to the matching
+gate at edit time. The 2026-07-12/13 sales-signals wave added six: `gate:ai-output-authority` (no canned-prose
+substitution into rep-facing fields, no post-validation verdict overrides — the deterministic-overrides-AI
+class fails the build), `gate:dto-parity` (every `CallReviewDTO` field has a non-fixture frontend reference
+or a dated deferral row), `gate:exports-map` (every `shared/package.json` exports subpath resolves in `dist`
+post-build), `gate:taxonomy-audit` (every taxonomy enum value has a producer or `@deprecated`),
+`gate:dead-exports` (ts-prune ratchet against a checked-in baseline; in `verify`, not `gates:all`), and
+`gate:wiring-claims` (a gate header's own "in `gates:all`/`verify`" claim must match package.json reality). **There is deliberately NO inline user-facing-copy gate** — CoachAI has no app-wide
+copy registry for one to enforce against (only domain labels are centralized in `labels.ts` /
+`checklistLabels.ts` / `presentation.ts`). A real copy gate is gated on first creating that registry
+(tracked in `docs/FUTURE_PRODUCT_BACKLOG.md`); until then, inline copy is reviewer-caught, not machine-caught.
+
+*Fail-state:* a value that encodes a relationship (a taxonomy string, a threshold, a lane predicate, an
+endpoint, a token, an event name) was inlined at a leaf instead of referenced from its registry — and it
+drifts, or a second producer of an authoritative output races the first, the moment the source changes.
