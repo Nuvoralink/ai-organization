@@ -41,7 +41,7 @@ function rejectCrossPlatformAbsolute(value, label) {
   }
 }
 
-function normalizeDeclaredPath(value, label, { allowRoot = false } = {}) {
+function normalizeDeclaredPath(value, label, { allowRoot = false, forbidGitMetadata = false } = {}) {
   if (typeof value !== "string" || value.trim() !== value || value.length === 0 || value.includes("\0")) {
     throw new Error(`${label} must be a non-empty exact repository-relative path`);
   }
@@ -55,6 +55,9 @@ function normalizeDeclaredPath(value, label, { allowRoot = false } = {}) {
   }
   if (portable === ".." || portable.startsWith("../") || normalized.startsWith("/")) {
     throw new Error(`${label} escapes the repository root`);
+  }
+  if (forbidGitMetadata && portable.split("/")[0].toLowerCase() === ".git") {
+    throw new Error(`${label} must not target repository Git metadata`);
   }
   return portable;
 }
@@ -145,7 +148,7 @@ function uniqueNormalizedPaths(values, label, options) {
 function buildBoundaryManifest({ projectRoot, readPaths, editPaths, skillNames }, { scanReadDirectories, maxSearchTreeEntries = MAX_SEARCH_TREE_ENTRIES } = {}) {
   const root = canonicalRoot(projectRoot);
   const normalizedReads = uniqueNormalizedPaths(readPaths, "read_paths", { allowRoot: true });
-  const normalizedEdits = uniqueNormalizedPaths(editPaths, "edit_paths", { allowRoot: false });
+  const normalizedEdits = uniqueNormalizedPaths(editPaths, "edit_paths", { allowRoot: false, forbidGitMetadata: true });
   if (!Array.isArray(skillNames) || skillNames.some((value) => typeof value !== "string")) {
     throw new Error("skill_names must be an array of strings");
   }

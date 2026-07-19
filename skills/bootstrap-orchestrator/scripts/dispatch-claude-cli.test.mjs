@@ -129,7 +129,7 @@ function pullDiffArtifact({
   changedFiles = ["src/dispatcher.mjs"],
   fullChangedFiles = changedFiles,
   purpose = "full_pr_review",
-  requestedPaths = purpose === "full_pr_review" ? fullChangedFiles : changedFiles,
+  requestedPaths = purpose === "full_pr_review" ? [] : changedFiles,
   baseOid = MERGE_BASE_OID,
 } = {}) {
   const inventory = (paths, { includeRaw = false } = {}) => ({
@@ -552,12 +552,23 @@ test("Materializes PR URLs, issue URLs, and shorthand through exact shell-free g
   for (const call of calls) {
     assert.equal(call.executable, "gh");
     assert.equal(call.options.shell, false);
+    assert.equal(Object.hasOwn(call.options, "encoding"), false);
     assert.equal(call.options.timeout, 20000);
     assert.deepEqual(
       call.argv.map((value) => value.startsWith("query=") ? "query=<graphql>" : value),
       ["api", "graphql", "--method", "POST", "-f", "query=<graphql>", "-f", "owner=acme", "-f", "name=dialer", "-F", "number=249"],
     );
   }
+});
+
+test("GitHub materialization rejects invalid UTF-8 bytes before JSON parsing or hashing", () => {
+  assert.throws(
+    () => materializeGitHubHandoff("acme/dialer#249", {
+      platform: "linux",
+      spawnSyncProcess: () => ({ status: 0, stdout: Buffer.from([0x7b, 0xff, 0x7d]), stderr: Buffer.alloc(0) }),
+    }),
+    /GitHub handoff materialization emitted bytes that are not exact UTF-8.*not hashed or dispatched/u,
+  );
 });
 
 test("GitHub materialization fails closed with distinct bounded-timeout evidence", () => {
@@ -735,6 +746,36 @@ test("An 11 MB PR keeps full immutable inventory proof but implementation materi
   assert.equal(artifact.patch_scope.outside_patch_scope_full_pr_file_count, 752);
   assert.equal(artifact.patch_scope.unreviewed_full_pr_file_count, null);
   assert.equal(calls.some((argv) => argv[0] === "diff" && !argv.includes("--name-only") && !argv.includes("--raw") && argv.slice(argv.indexOf("--") + 1).length === 0), false);
+});
+
+test("Full PR review reuses its bounded inventory without expanding thousands of changed paths onto Git argv", () => {
+  const root = path.resolve("C:/worktrees/wide-pr-review");
+  const fullPaths = Array.from({ length: 3000 }, (_, index) => `generated/file-${String(index).padStart(4, "0")}.txt`);
+  const calls = [];
+  const spawnSyncProcess = (_executable, argv) => {
+    calls.push(argv);
+    const command = argv.join(" ");
+    if (command === "rev-parse --show-toplevel") return { status: 0, stdout: `${root}\n` };
+    if (command === "status --porcelain=v1 -z --untracked-files=all") return { status: 0, stdout: "" };
+    if (command === "config --get remote.origin.url") return { status: 0, stdout: "https://github.com/acme/dialer.git\n" };
+    if (command === `rev-parse --verify ${BASE_OID}^{commit}`) return { status: 0, stdout: `${BASE_OID}\n` };
+    if (command === `rev-parse --verify ${HEAD_OID}^{commit}`) return { status: 0, stdout: `${HEAD_OID}\n` };
+    if (command === "rev-parse HEAD") return { status: 0, stdout: `${HEAD_OID}\n` };
+    if (command === `merge-base ${BASE_OID} ${HEAD_OID}`) return { status: 0, stdout: `${MERGE_BASE_OID}\n` };
+    if (command === `rev-parse --verify ${MERGE_BASE_OID}^{commit}`) return { status: 0, stdout: `${MERGE_BASE_OID}\n` };
+    if (argv[0] === "merge-base" && argv[1] === "--is-ancestor") return { status: 0, stdout: "" };
+    if (argv.includes("--name-only")) return { status: 0, stdout: `${fullPaths.join("\0")}\0` };
+    if (argv.includes("--raw")) return { status: 0, stdout: `:100644 100644 ${BASE_OID} ${HEAD_OID} M\0${fullPaths[0]}\0` };
+    if (argv[0] === "diff") return { status: 0, stdout: `diff --git a/${fullPaths[0]} b/${fullPaths[0]}\n` };
+    throw new Error(`unexpected git argv: ${command}`);
+  };
+  const artifact = materializePullRequestDiff(pullSnapshot(), root, { purpose: "review", scope: null }, { platform: "linux", realpathSync: IDENTITY_REALPATH, spawnSyncProcess });
+  assert.equal(artifact.full_pr_inventory.changed_file_count, 3000);
+  assert.equal(artifact.patch_scope.changed_file_count, 3000);
+  assert.deepEqual(artifact.patch_scope.requested_paths, []);
+  assert.equal(calls.filter((argv) => argv.includes("--name-only")).length, 1);
+  assert.equal(calls.some((argv) => fullPaths.some((entry) => argv.includes(entry))), false);
+  assert.equal(Math.max(...calls.map((argv) => Buffer.byteLength(JSON.stringify(argv), "utf8"))) < 4096, true);
 });
 
 test("Binary patches remain content-bound while invalid Git bytes fail before hashing or prompting", () => {
@@ -947,6 +988,9 @@ test("bypassPermissions requires live handoff, exact edit boundaries, and non-da
   assert.equal(accepted.plan.argv[accepted.plan.argv.indexOf("--permission-mode") + 1], "bypassPermissions");
   assert.equal(accepted.plan.argv[accepted.plan.argv.indexOf("--tools") + 1], "Read,Edit,Write");
   assert.equal(accepted.plan.argv.includes("--settings"), true);
+  const settingSourcesIndex = accepted.plan.argv.indexOf("--setting-sources");
+  assert.deepEqual(accepted.plan.argv.slice(settingSourcesIndex, settingSourcesIndex + 3), ["--setting-sources", "", "--settings"]);
+  assert.equal(path.isAbsolute(accepted.plan.argv[settingSourcesIndex + 3]), true);
   assert.equal(accepted.plan.argv.includes("--include-hook-events"), true);
   assert.equal(accepted.plan.argv.includes("--bare"), false);
   assert.equal(accepted.plan.argv.includes("--safe-mode"), false);
@@ -964,6 +1008,13 @@ test("bypassPermissions requires live handoff, exact edit boundaries, and non-da
   await assert.rejects(dispatchClaude(common, dependencies), /cannot authorize irreversible, billed, or external-contact/u);
   await writeFile(promptFile, implementationPrompt({ edit_paths: ["src/*.mjs"] }), "utf8");
   await assert.rejects(dispatchClaude(common, dependencies), /must be an exact repo-relative path/u);
+  for (const gitPath of [".git/hooks/pre-commit", ".GIT/config", "src/../.GiT/hooks/pre-commit"]) {
+    await writeFile(promptFile, implementationPrompt({ edit_paths: [gitPath], capability_probe: { tool: "Write", path: gitPath } }), "utf8");
+    await assert.rejects(dispatchClaude(common, dependencies), /must not target repository Git metadata/u);
+  }
+  for (const allowedPath of [".husky/pre-commit", ".claude/rules/local.md", "package.json"]) {
+    assert.doesNotThrow(() => validateBypassPermissionsBrief(implementationPrompt({ edit_paths: [allowedPath], capability_probe: { tool: "Write", path: allowedPath } }), root, ["Read", "Write"]));
+  }
   await writeFile(promptFile, implementationPrompt({ read_paths: undefined }), "utf8");
   await assert.rejects(dispatchClaude(common, dependencies), /unexpected or missing fields/u);
   await writeFile(promptFile, implementationPrompt({ read_paths: ["../sibling-repository"] }), "utf8");
@@ -1003,6 +1054,7 @@ test("PreToolUse containment allows declared directory reads and exact edits whi
   await mkdir(sibling, { recursive: true });
   await writeFile(path.join(root, "docs", "guide.md"), "guide", "utf8");
   await writeFile(path.join(root, "src", "exact-edit.mjs"), "export {};", "utf8");
+  await writeFile(path.join(root, "src", "undeclared.mjs"), "export {};", "utf8");
   await writeFile(path.join(sibling, "secret.txt"), "never read", "utf8");
   const manifest = createBoundaryManifest({
     projectRoot: root,
@@ -1020,29 +1072,32 @@ test("PreToolUse containment allows declared directory reads and exact edits whi
   assert.equal(evaluateBoundaryToolUse(preToolEvent(root, "Skill", { skill: "testing-strategy-and-tdd" }), manifest).target, "testing-strategy-and-tdd");
 
   const denied = [
-    preToolEvent(root, "Read", { file_path: "../sibling-repository/secret.txt" }),
-    preToolEvent(root, "Read", { file_path: path.join(sibling, "secret.txt") }),
-    preToolEvent(root, "Glob", { pattern: "**/*" }),
-    preToolEvent(root, "Grep", { pattern: "secret" }),
-    preToolEvent(root, "Glob", { path: "docs", pattern: "../**/*" }),
-    preToolEvent(root, "Grep", { path: sibling, pattern: "secret" }),
-    preToolEvent(root, "Edit", { file_path: "src/other.mjs", old_string: "x", new_string: "y" }),
-    preToolEvent(root, "Skill", { skill: "undeclared-skill" }),
-    preToolEvent(root, "Bash", { command: "type secret.txt" }),
-    { ...preToolEvent(root, "Read", { file_path: "docs/guide.md" }), tool_input: null },
+    [preToolEvent(root, "Read", { file_path: "../sibling-repository/secret.txt" }), "Read tool_input.file_path escapes the repository root"],
+    [preToolEvent(root, "Read", { file_path: path.join(sibling, "secret.txt") }), "Read tool_input.file_path escapes the repository root"],
+    [preToolEvent(root, "Read", { file_path: "src/undeclared.mjs" }), "Read path src/undeclared.mjs is outside declared read_paths/edit_paths"],
+    [preToolEvent(root, "Glob", { pattern: "**/*" }), "Glob omitted tool_input.path without an explicit repository-root read boundary"],
+    [preToolEvent(root, "Grep", { pattern: "secret" }), "Grep omitted tool_input.path without an explicit repository-root read boundary"],
+    [preToolEvent(root, "Glob", { path: "docs", pattern: "../**/*" }), "Glob tool_input.pattern must not traverse above its declared search root"],
+    [preToolEvent(root, "Grep", { path: sibling, pattern: "secret" }), "Grep tool_input.path escapes the repository root"],
+    [preToolEvent(root, "Edit", { file_path: "src/other.mjs", old_string: "x", new_string: "y" }), "Edit tool_input.file_path must name an existing path"],
+    [preToolEvent(root, "Skill", { skill: "undeclared-skill" }), "Skill undeclared-skill is not exactly declared"],
+    [preToolEvent(root, "Bash", { command: "type secret.txt" }), "tool Bash is outside the exact bounded implementation allowlist"],
+    [{ ...preToolEvent(root, "Read", { file_path: "docs/guide.md" }), tool_input: null }, "Read tool_input must be an object"],
   ];
   let simulatedFileAccesses = 0;
-  for (const event of denied) {
+  for (const [event, expectedReason] of denied) {
     assert.throws(() => {
       evaluateBoundaryToolUse(event, manifest);
       simulatedFileAccesses += 1;
-    }, /outside|escapes|omitted|traverse|declared|allowlist|object|existing/u);
+    }, (error) => error.message === expectedReason);
   }
   assert.equal(simulatedFileAccesses, 0, "forbidden calls must be denied before simulated tool access");
 
   const rootManifest = createBoundaryManifest({ projectRoot: root, readPaths: ["."], editPaths: ["src/exact-edit.mjs"], skillNames: [] });
   assert.equal(evaluateBoundaryToolUse(preToolEvent(root, "Glob", { pattern: "**/*.md" }), rootManifest).target, ".");
   assert.equal(evaluateBoundaryToolUse(preToolEvent(root, "Grep", { pattern: "guide" }), rootManifest).target, ".");
+  assert.throws(() => createBoundaryManifest({ projectRoot: root, readPaths: ["."], editPaths: [".git/hooks/pre-commit"], skillNames: [] }), /must not target repository Git metadata/u);
+  assert.throws(() => createBoundaryManifest({ projectRoot: root, readPaths: ["."], editPaths: [".GIT/config"], skillNames: [] }), /must not target repository Git metadata/u);
 });
 
 test("Manifest preflight rejects descendant symlinks once while PreToolUse keeps only per-path checks", async (t) => {
@@ -1204,6 +1259,10 @@ test("Post-run implementation attribution rejects undeclared tracked/untracked c
     () => verifyImplementationChanges(`${boundedToolEvent("Write", { file_path: "../outside.txt" })}\n`, boundary, clean, clean),
     /Write: Write tool input\.file_path escapes/u,
   );
+  assert.throws(
+    () => verifyImplementationChanges(`${boundedToolEvent("Write", { file_path: "tmp/ignored-looking.log" })}\n`, boundary, clean, clean, { requireLiveness: false }),
+    /implementation escaped.*tmp\/ignored-looking\.log/u,
+  );
   const accepted = verifyImplementationChanges(`${boundedToolEvent("Edit", { file_path: path.join(root, "src", "dispatcher.mjs") })}\n`, boundary, clean, { root, changedPaths: ["src/dispatcher.mjs"] });
   assert.deepEqual(accepted.actualChangedPaths, ["src/dispatcher.mjs"]);
   assert.deepEqual(accepted.observedWritePaths, ["src/dispatcher.mjs"]);
@@ -1323,12 +1382,120 @@ test("bypassPermissions wires clean-baseline capture to post-run rejection and p
       probeDispatchBoundaryCapability: ACCEPTED_BOUNDARY_PROBE,
       spawnProcess: () => child,
       materializeHandoff: () => normalizeGitHubHandoffResponse(graphResponse({ type: "Issue" }), "https://github.com/acme/dialer/issues/249"),
-      captureWorktreeState: () => ({ root: path.resolve(root), changedPaths: captureCount++ === 0 ? [] : ["src/dispatcher.mjs", "src/rogue-untracked.mjs"] }),
+      captureWorktreeState: () => ({ root: path.resolve(root), changedPaths: captureCount++ < 2 ? [] : ["src/dispatcher.mjs", "src/rogue-untracked.mjs"] }),
     }),
     /implementation escaped.*rogue-untracked\.mjs/u,
   );
   assert.match(await readFile(stdoutFile, "utf8"), /src\/dispatcher\.mjs/u);
+  assert.equal(captureCount, 3);
+});
+
+test("A boundary probe that dirties the implementation tree is caught before handoff materialization or model spawn", async (t) => {
+  const root = await mkdtemp(path.join(tmpdir(), "dispatch-probe-dirty-root-"));
+  const evidenceRoot = await mkdtemp(path.join(tmpdir(), "dispatch-probe-dirty-evidence-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  t.after(() => rm(evidenceRoot, { recursive: true, force: true }));
+  const promptFile = path.join(root, "prompt.md");
+  await writeFile(promptFile, implementationPrompt(), "utf8");
+  let probeRan = false;
+  let spawnCount = 0;
+  let materializeCount = 0;
+  let captureCount = 0;
+  await assert.rejects(dispatchClaude({
+    cwd: root,
+    promptFile,
+    tools: ["Read", "Edit", "Write"],
+    mode: "bypassPermissions",
+    stdoutFile: path.join(evidenceRoot, "stdout.jsonl"),
+    stderrFile: path.join(evidenceRoot, "stderr.log"),
+    handoffRef: "https://github.com/acme/dialer/issues/249",
+  }, {
+    platform: "linux",
+    probeDispatchBoundaryCapability: () => { probeRan = true; return ACCEPTED_BOUNDARY_PROBE(); },
+    captureWorktreeState: () => ({ root: path.resolve(root), changedPaths: captureCount++ === 0 ? [] : ["src/probe-dirtied.mjs"] }),
+    materializeHandoff: () => { materializeCount += 1; return normalizeGitHubHandoffResponse(graphResponse({ type: "Issue" }), "https://github.com/acme/dialer/issues/249"); },
+    spawnProcess: () => { spawnCount += 1; throw new Error("must not spawn"); },
+  }), /boundary capability probe changed.*probe-dirtied\.mjs/u);
+  assert.equal(probeRan, true);
   assert.equal(captureCount, 2);
+  assert.equal(materializeCount, 0);
+  assert.equal(spawnCount, 0);
+});
+
+test("stdin transport failure terminates Claude then still captures post-run containment and persists evidence", async (t) => {
+  const root = await mkdtemp(path.join(tmpdir(), "dispatch-stdin-failure-root-"));
+  const evidenceRoot = await mkdtemp(path.join(tmpdir(), "dispatch-stdin-failure-evidence-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  t.after(() => rm(evidenceRoot, { recursive: true, force: true }));
+  const promptFile = path.join(root, "prompt.md");
+  const stdoutFile = path.join(evidenceRoot, "stdout.jsonl");
+  const stderrFile = path.join(evidenceRoot, "stderr.log");
+  await writeFile(promptFile, implementationPrompt(), "utf8");
+  const child = new EventEmitter();
+  child.pid = 4242;
+  child.stdin = new EventEmitter();
+  child.stdin.end = () => child.stdin.emit("error", Object.assign(new Error("broken pipe"), { code: "EPIPE" }));
+  child.stdout = new PassThrough();
+  child.stderr = new PassThrough();
+  let captureCount = 0;
+  let terminationCount = 0;
+  await assert.rejects(dispatchClaude({
+    cwd: root,
+    promptFile,
+    tools: ["Read", "Edit", "Write"],
+    mode: "bypassPermissions",
+    stdoutFile,
+    stderrFile,
+    handoffRef: "https://github.com/acme/dialer/issues/249",
+  }, {
+    platform: "linux",
+    probeDispatchBoundaryCapability: ACCEPTED_BOUNDARY_PROBE,
+    captureWorktreeState: () => { captureCount += 1; return { root: path.resolve(root), changedPaths: [] }; },
+    spawnProcess: () => child,
+    terminateProcessTree: () => { terminationCount += 1; setImmediate(() => child.emit("close", null, "SIGTERM")); },
+    materializeHandoff: () => normalizeGitHubHandoffResponse(graphResponse({ type: "Issue" }), "https://github.com/acme/dialer/issues/249"),
+    signalEmitter: new EventEmitter(),
+  }), /stdin transport failed: broken pipe.*actualChangedPaths":\[\]/u);
+  assert.equal(terminationCount, 1);
+  assert.equal(captureCount, 3);
+  assert.equal(await readFile(stdoutFile, "utf8"), "");
+  assert.equal(await readFile(stderrFile, "utf8"), "");
+});
+
+test("outside-evidence containment denies a symlink or junction alias back into the repository", async (t) => {
+  const fixture = await mkdtemp(path.join(tmpdir(), "dispatch-evidence-alias-"));
+  t.after(() => rm(fixture, { recursive: true, force: true }));
+  const root = path.join(fixture, "repository");
+  const outside = path.join(fixture, "outside");
+  const alias = path.join(outside, "repo-alias");
+  await mkdir(root, { recursive: true });
+  await mkdir(outside, { recursive: true });
+  try {
+    await symlink(root, alias, process.platform === "win32" ? "junction" : "dir");
+  } catch (error) {
+    if (["EPERM", "EACCES", "UNKNOWN"].includes(error?.code)) {
+      t.skip(`platform cannot create a symlink/reparse fixture: ${error.code}`);
+      return;
+    }
+    throw error;
+  }
+  const promptFile = path.join(root, "prompt.md");
+  await writeFile(promptFile, implementationPrompt(), "utf8");
+  let probeCount = 0;
+  await assert.rejects(dispatchClaude({
+    cwd: root,
+    promptFile,
+    tools: ["Read", "Edit", "Write"],
+    mode: "bypassPermissions",
+    stdoutFile: path.join(alias, "stdout.jsonl"),
+    stderrFile: path.join(outside, "stderr.log"),
+    handoffRef: "https://github.com/acme/dialer/issues/249",
+    preflight: true,
+  }, {
+    platform: process.platform,
+    probeDispatchBoundaryCapability: () => { probeCount += 1; return ACCEPTED_BOUNDARY_PROBE(); },
+  }), /stdout evidence must live outside the target repository/u);
+  assert.equal(probeCount, 0);
 });
 
 test("Failure-path containment reports undeclared writes after timeout and reports clean post-state when no write occurred", async (t) => {
@@ -1365,7 +1532,7 @@ test("Failure-path containment reports undeclared writes after timeout and repor
         probeDispatchBoundaryCapability: ACCEPTED_BOUNDARY_PROBE,
         spawnProcess: () => child,
         materializeHandoff: () => normalizeGitHubHandoffResponse(graphResponse({ type: "Issue" }), "https://github.com/acme/dialer/issues/249"),
-        captureWorktreeState: () => ({ root: path.resolve(root), changedPaths: captureCount++ === 0 ? [] : changedPaths }),
+        captureWorktreeState: () => ({ root: path.resolve(root), changedPaths: captureCount++ < 2 ? [] : changedPaths }),
         terminateProcessTree: () => setImmediate(() => child.emit("close", null, "SIGTERM")),
         setTimeoutFn: (callback, delay) => { const handle = { callback, delay, unref() {} }; timers.push(handle); return handle; },
         clearTimeoutFn: () => {},
