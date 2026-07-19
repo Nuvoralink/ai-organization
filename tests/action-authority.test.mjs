@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -55,4 +57,23 @@ test('Proves: ORG-AUTH-003; Test type: decision matrix; Surface: action evaluato
   assert.equal(assessAction(policy, 'unknown_action').verdict, 'human_required');
   assert.deepEqual(assessAction(policy, 'constructor'), { verdict: 'human_required', action: 'constructor', missing: ['unclassified_action'] });
   assert.deepEqual(assessAction({ default: 'human_required' }, 'push_branch'), { verdict: 'human_required', action: 'push_branch', missing: ['unclassified_action'] });
+  assert.deepEqual(assessAction({ default: 'human_required', conditional: { push_branch: {} } }, 'push_branch'), { verdict: 'human_required', action: 'push_branch', missing: ['invalid_conditional_policy'] });
+  assert.match(validateActionPolicySemantics({ ...policy, conditional: { ...policy.conditional, push_branch: {} } }).join('\n'), /must declare at least one required predicate/u);
+});
+
+test('Proves: ORG-AUTH-005; Test type: executable-consumer mutation; Surface: action evaluator CLI; Authority: semantic policy validator; Killer mutation: evaluate a reclassified human action without validating the policy first; Gated command: npm test', (t) => {
+  const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'action-policy-cli-'));
+  t.after(() => fs.rmSync(fixture, { recursive: true, force: true }));
+  const mutated = structuredClone(policy);
+  mutated.human_required = mutated.human_required.filter((action) => action !== 'deploy_or_publish');
+  mutated.autonomous.push('deploy_or_publish');
+  const policyFile = path.join(fixture, 'mutated-policy.json');
+  fs.writeFileSync(policyFile, JSON.stringify(mutated));
+  const result = spawnSync(process.execPath, [path.join(root, 'core', 'authority', 'assess-action.mjs'), policyFile, 'deploy_or_publish'], {
+    cwd: root,
+    encoding: 'utf8',
+  });
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /Action policy is invalid.*deploy_or_publish/su);
+  assert.doesNotMatch(result.stdout, /"verdict"\s*:\s*"allowed"/u);
 });

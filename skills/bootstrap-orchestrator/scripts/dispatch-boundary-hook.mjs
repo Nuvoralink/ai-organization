@@ -189,7 +189,7 @@ function buildTrustedReadPaths(values, skillNames, { scanReadDirectories, maxSea
 
 function buildBoundaryManifest({ projectRoot, readPaths, editPaths, skillNames, trustedReadPaths = [] }, { scanReadDirectories, maxSearchTreeEntries = MAX_SEARCH_TREE_ENTRIES } = {}) {
   const root = canonicalRoot(projectRoot);
-  const normalizedReads = uniqueNormalizedPaths(readPaths, "read_paths", { allowRoot: true });
+  const normalizedReads = uniqueNormalizedPaths(readPaths, "read_paths", { allowRoot: true, forbidGitMetadata: true });
   const normalizedEdits = uniqueNormalizedPaths(editPaths, "edit_paths", { allowRoot: false, forbidGitMetadata: true });
   if (!Array.isArray(skillNames) || skillNames.some((value) => typeof value !== "string")) {
     throw new Error("skill_names must be an array of strings");
@@ -282,6 +282,8 @@ function validateManifest(value) {
 }
 
 function readAuthorized(manifest, root, candidate) {
+  const relative = path.relative(root.lexical, candidate).replace(/\\/gu, "/");
+  if (relative.split("/")[0].toLowerCase() === ".git") return false;
   const candidateKey = pathKey(candidate);
   for (const editPath of manifest.edit_paths) {
     if (candidateKey === pathKey(path.resolve(root.lexical, editPath))) return true;
@@ -376,6 +378,10 @@ export function evaluateBoundaryToolUse(event, manifestValue) {
     throw new Error(`${input.tool_name} omitted tool_input.path without an explicit repository-root read boundary`);
   }
   const searchRoot = resolveCandidate(root, omittedRoot ? root.lexical : toolInput.path, `${input.tool_name} tool_input.path`, { mustExist: true });
+  const searchRelative = path.relative(root.lexical, searchRoot).replace(/\\/gu, "/");
+  if (searchRelative && searchRelative.split("/")[0].toLowerCase() === ".git") {
+    throw new Error(`${input.tool_name} search root must not target repository Git metadata`);
+  }
   const stat = statSync(searchRoot);
   if (input.tool_name === "Glob") {
     validateGlobPattern(toolInput.pattern);
@@ -394,7 +400,7 @@ export function evaluateBoundaryToolUse(event, manifestValue) {
 
 export function neutralDecision() {
   // Success is deliberately decision-neutral. The hook denies boundary escapes with exit 2,
-  // while Claude's native dontAsk + exact permissions.allow rules remain the positive authority.
+  // without pre-approving it; native dontAsk + exact permissions.allow still evaluate the request.
   return {};
 }
 

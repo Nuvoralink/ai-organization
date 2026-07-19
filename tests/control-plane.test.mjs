@@ -157,6 +157,33 @@ test('Proves: dry-run never writes; Test type: negative; Surface: installer; Aut
   assert.equal(fs.existsSync(target), false);
 });
 
+test('Proves: exact mapping rollout does not inspect or mutate unrelated installed drift; Test type: selection mutation; Surface: install and parity check; Authority: mapping registry; Killer mutation: ignore --mapping for install/check or accept an unknown mapping; Gated command: npm test', () => {
+  const f = fixture();
+  const secondarySource = path.join(f.repoRoot, 'canonical', 'secondary');
+  const secondaryDestination = path.join(f.home, '.claude', 'secondary');
+  fs.mkdirSync(secondarySource, { recursive: true });
+  fs.mkdirSync(secondaryDestination, { recursive: true });
+  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Selected canonical\n');
+  fs.writeFileSync(path.join(secondarySource, 'other.md'), '# Secondary canonical\n');
+  fs.writeFileSync(path.join(secondaryDestination, 'other.md'), '# Unrelated local drift\n');
+  f.manifest.mappings.push({
+    ...structuredClone(f.manifest.mappings[0]),
+    id: 'secondary-rules',
+    source: 'canonical/secondary',
+    captureFrom: '${HOME}/.claude/secondary',
+    destinations: ['${HOME}/.claude/secondary'],
+  });
+
+  const operations = runInstall({ ...f, mappingIds: ['claude-rules'] });
+  assert.equal(operations.every((operation) => operation.mapping === 'claude-rules'), true);
+  assert.equal(fs.readFileSync(path.join(f.home, '.claude', 'rules', 'base.md'), 'utf8'), '# Selected canonical\n');
+  assert.equal(fs.readFileSync(path.join(secondaryDestination, 'other.md'), 'utf8'), '# Unrelated local drift\n');
+  assert.deepEqual(runCheck({ ...f, mappingIds: ['claude-rules'] }), []);
+  assert.ok(runCheck(f).some((problem) => problem.mapping === 'secondary-rules' && problem.type === 'drift'));
+  assert.throws(() => runInstall({ ...f, mappingIds: ['unknown-mapping'] }), /Unknown install mapping\(s\): unknown-mapping/u);
+  assert.throws(() => runCheck({ ...f, mappingIds: ['unknown-mapping'] }), /Unknown check mapping\(s\): unknown-mapping/u);
+});
+
 test('Proves: baseline capture skips canonical generated mappings that are not installed yet; Test type: bootstrap counterexample; Surface: existing-project overlay; Authority: capture planner; Killer mutation: require every future generated destination to pre-exist before baseline import; Gated command: npm test', () => {
   const f = fixture();
   fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Generated later\n');

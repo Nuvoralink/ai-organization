@@ -363,6 +363,10 @@ try {
   process.stderr.write(`[lifecycle] blocked: malformed hook payload: ${error.message}\n`);
   process.exit(2);
 }
+if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
+  process.stderr.write('[lifecycle] blocked: hook payload must be a JSON object\n');
+  process.exit(2);
+}
 let root;
 try {
   root = configuredProjectRoot();

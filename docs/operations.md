@@ -7,6 +7,8 @@
 3. Run `npm test` and `npm run control:validate`.
 4. Run `npm run control:install -- --dry-run` and review every planned target.
 5. Run `npm run control:install`, then `npm run control:check`.
+
+For a bounded rollout, select the same exact mapping for both operations: `npm run control:install -- --mapping <id>` followed by `npm run control:check -- --mapping <id>`. Selection is fail-closed for unknown IDs and must never scan, overwrite, retire, or report drift from an unselected installed mapping.
 6. Install each required project overlay with its explicit `--root`, then run the matching overlay check.
 
 A bootstrap is complete only when tests, canonical validation, installed parity, and the selected project overlay checks all exit zero.

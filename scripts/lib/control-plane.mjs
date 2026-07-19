@@ -486,9 +486,18 @@ export function runRollback({ manifest, roots, installId: requestedId = undefine
   return selected.map((item) => item.snapshot.id);
 }
 
-export function runCheck({ repoRoot, manifest, roots }) {
+function selectedMappings(manifest, mappingIds, operation) {
+  if (mappingIds === undefined) return manifest.mappings;
+  const selectedIds = new Set(mappingIds);
+  const knownIds = new Set(manifest.mappings.map((mapping) => mapping.id));
+  const unknownIds = [...selectedIds].filter((id) => !knownIds.has(id));
+  invariant(unknownIds.length === 0, `Unknown ${operation} mapping(s): ${unknownIds.join(', ')}`);
+  return manifest.mappings.filter((mapping) => selectedIds.has(mapping.id));
+}
+
+export function runCheck({ repoRoot, manifest, roots, mappingIds = undefined }) {
   const problems = [...validateCanonical({ repoRoot, manifest }), ...validateManifest(manifest, repoRoot, roots).map((message) => ({ type: 'manifest', message }))];
-  for (const mapping of manifest.mappings) {
+  for (const mapping of selectedMappings(manifest, mappingIds, 'check')) {
     const sourceRoot = resolveSource(repoRoot, mapping.source);
     const sourceFiles = collectFiles(sourceRoot, manifest, mapping);
     for (const destinationTemplate of mapping.destinations) {
@@ -575,14 +584,14 @@ export function runCapture({ repoRoot, manifest, roots, dryRun = false, updateEx
   return operations;
 }
 
-export function runInstall({ repoRoot, manifest, roots, dryRun = false, adoptExisting = false, failAfter = undefined }) {
+export function runInstall({ repoRoot, manifest, roots, dryRun = false, adoptExisting = false, failAfter = undefined, mappingIds = undefined }) {
   const errors = validateManifest(manifest, repoRoot, roots);
   invariant(errors.length === 0, `Manifest invalid:\n${errors.join('\n')}`);
   const operations = [];
   const conflicts = [];
   const locks = new Map();
 
-  for (const mapping of manifest.mappings) {
+  for (const mapping of selectedMappings(manifest, mappingIds, 'install')) {
     const sourceRoot = resolveSource(repoRoot, mapping.source);
     const sourceFiles = collectFiles(sourceRoot, manifest, mapping);
     invariant(sourceFiles.size > 0, `Canonical source is empty: ${mapping.id}`);

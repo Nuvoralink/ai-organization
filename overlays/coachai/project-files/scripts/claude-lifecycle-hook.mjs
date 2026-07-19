@@ -10,6 +10,7 @@ import { extractStructured, validateAgentReport, validateTaskContract } from './
 
 const configuredProjectDir = String(process.env.CLAUDE_PROJECT_DIR ?? '').trim();
 const scriptRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const BLOCKING_EVENTS = new Set(['TaskCreated', 'SubagentStart', 'TaskCompleted', 'SubagentStop']);
 let root;
 try {
   const scriptReal = path.resolve(fs.realpathSync.native(scriptRoot));
@@ -28,6 +29,10 @@ try {
   payload = JSON.parse(fs.readFileSync(0, 'utf8'));
 } catch (error) {
   console.error(`lifecycle payload: BLOCKED\n- malformed hook payload: ${error.message}`);
+  process.exit(2);
+}
+if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
+  console.error('lifecycle payload: BLOCKED\n- hook payload must be a JSON object');
   process.exit(2);
 }
 const event = payload.hook_event_name ?? payload.event ?? process.env.CLAUDE_HOOK_EVENT ?? 'Unknown';
@@ -57,6 +62,7 @@ function profileRegistry() {
   return readJson(path.join('.ai-organization', 'proof-profiles.json'));
 }
 
+try {
 if (event === 'TaskCreated') {
   const task = extractStructured(payload, 'task_contract');
   errors.push(...validateTaskContract(task));
@@ -121,6 +127,10 @@ if (event === 'SubagentStop') {
       cwd: root
     });
   } catch (error) { errors.push(error.message); }
+}
+} catch (error) {
+  if (BLOCKING_EVENTS.has(event)) errors.push(`lifecycle contract could not be evaluated safely: ${error.message}`);
+  else console.error(`lifecycle ${event}: observation failed: ${error.message}`);
 }
 
 const telemetryDir = path.join(root, 'tmp', 'agent-telemetry');

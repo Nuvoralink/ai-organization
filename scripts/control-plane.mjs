@@ -35,7 +35,12 @@ try {
       process.exitCode = 1;
     } else console.log('control-plane validation passed');
   } else if (command === 'check') {
-    const problems = [...validateRegistries(repoRoot), ...runCheck({ repoRoot, manifest, roots })];
+    const problems = [...validateRegistries(repoRoot), ...runCheck({
+      repoRoot,
+      manifest,
+      roots,
+      mappingIds: mappingIds.length > 0 ? mappingIds : undefined
+    })];
     if (problems.length > 0) {
       for (const problem of problems) console.error(typeof problem === 'string' ? problem : JSON.stringify(problem));
       console.error(`control-plane check failed: ${problems.length} problem(s)`);
@@ -52,7 +57,14 @@ try {
       fileSelectors: fileSelectors.length > 0 ? fileSelectors : undefined
     }));
   } else if (command === 'install') {
-    printOperations(runInstall({ repoRoot, manifest, roots, dryRun, adoptExisting }));
+    printOperations(runInstall({
+      repoRoot,
+      manifest,
+      roots,
+      dryRun,
+      adoptExisting,
+      mappingIds: mappingIds.length > 0 ? mappingIds : undefined
+    }));
   } else if (command === 'inventory') {
     console.log(JSON.stringify({ mappings: manifest.mappings.map(({ id, source, destinations, ownership }) => ({ id, source, destinations, ownership })) }, null, 2));
   } else if (command === 'rollback') {

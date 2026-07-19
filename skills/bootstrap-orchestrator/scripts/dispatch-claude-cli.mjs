@@ -86,8 +86,16 @@ export function buildDispatchChildEnvironment(environment = process.env) {
   if (!environment || typeof environment !== "object" || Array.isArray(environment)) {
     throw new Error("dispatcher child environment source must be an object");
   }
-  return Object.fromEntries(Object.entries(environment).filter(([name, value]) =>
-    DISPATCH_CHILD_ENV_ALLOWLIST.has(name.toUpperCase()) && typeof value === "string"));
+  const result = {};
+  for (const [name, value] of Object.entries(environment)) {
+    const canonicalName = name.toUpperCase();
+    if (!DISPATCH_CHILD_ENV_ALLOWLIST.has(canonicalName) || typeof value !== "string") continue;
+    if (Object.hasOwn(result, canonicalName)) {
+      throw new Error(`dispatcher child environment contains duplicate case-insensitive key: ${canonicalName}`);
+    }
+    result[canonicalName] = value;
+  }
+  return result;
 }
 
 export function parsePositiveInteger(value, optionName) {
@@ -508,7 +516,7 @@ function decodeUtf8Exact(bytes, label) {
   }
 }
 
-function runGitExactBytes(cwd, argv, dependencies = {}, { label = "Git command", maxBuffer = MAX_GIT_OUTPUT_BYTES } = {}) {
+function runGitExactBytes(cwd, argv, dependencies = {}, { label = "Git command", maxBuffer = MAX_GIT_OUTPUT_BYTES, allowedStatuses = [0], input } = {}) {
   const spawnSyncProcess = dependencies.spawnSyncProcess ?? spawnSync;
   const timeout = parsePositiveInteger(dependencies.gitTimeoutMs ?? DEFAULT_GIT_TIMEOUT_MS, "Git timeout");
   const result = spawnSyncProcess(resolveGitExecutable(dependencies), argv, {
@@ -518,6 +526,7 @@ function runGitExactBytes(cwd, argv, dependencies = {}, { label = "Git command",
     windowsHide: true,
     maxBuffer,
     timeout,
+    ...(input === undefined ? {} : { input }),
   });
   if (result?.error?.code === "ETIMEDOUT") {
     const error = new Error(`CAPABILITY_BLOCKED: ${label} timed out after ${timeout} ms`);
@@ -530,7 +539,7 @@ function runGitExactBytes(cwd, argv, dependencies = {}, { label = "Git command",
     throw error;
   }
   if (result?.error) throw new Error(`CAPABILITY_BLOCKED: ${label} failed: ${result.error.message}`);
-  if (result?.status !== 0) throw new Error(`CAPABILITY_BLOCKED: ${label} exited ${result?.status ?? "unknown"}`);
+  if (!allowedStatuses.includes(result?.status)) throw new Error(`CAPABILITY_BLOCKED: ${label} exited ${result?.status ?? "unknown"}`);
   const stdout = outputBuffer(result.stdout, label);
   if (stdout.length > maxBuffer) {
     const error = new Error(`CAPABILITY_BLOCKED: ${label} exceeded its ${maxBuffer}-byte bound; no truncated artifact was dispatched`);
@@ -624,14 +633,15 @@ export function captureGitWorktreeState(cwd, dependencies = {}) {
   if (pathKey(root) !== pathKey(requestedReal)) throw new Error(`CAPABILITY_BLOCKED: implementation/review cwd must canonically equal the isolated repository root; resolved ${root}`);
   const status = runGitExact(root, ["status", "--porcelain=v1", "-z", "--untracked-files=all"], dependencies, { label: "worktree status probe" });
   if (Array.isArray(dependencies.editPaths) && dependencies.editPaths.length > 0) {
+    const ignoredInput = Buffer.from(`${dependencies.editPaths.join("\0")}\0`, "utf8");
     const ignoredStatus = runGitExact(
       root,
-      ["--literal-pathspecs", "status", "--porcelain=v1", "-z", "--untracked-files=all", "--ignored=matching", "--", ...dependencies.editPaths],
+      ["check-ignore", "--no-index", "-z", "--stdin"],
       dependencies,
-      { label: "declared edit-path ignore probe" },
+      { label: "declared edit-path ignore probe", allowedStatuses: [0, 1], input: ignoredInput },
     );
-    const ignoredPaths = ignoredStatus.split("\0").filter((record) => record.startsWith("!! "))
-      .map((record) => normalizeRepositoryPath(record.slice(3), root, "ignored declared edit path"));
+    const ignoredPaths = ignoredStatus.split("\0").filter(Boolean)
+      .map((record) => normalizeRepositoryPath(record, root, "ignored declared edit path"));
     if (ignoredPaths.length > 0) {
       throw new Error(`CAPABILITY_BLOCKED: declared edit paths are ignored and cannot be attributed by the worktree boundary: ${JSON.stringify([...new Set(ignoredPaths)].sort())}`);
     }
@@ -972,6 +982,7 @@ export function validateImplementationBrief(prompt, cwd, tools) {
     const normalized = entry.replace(/\\/gu, "/");
     const portable = path.posix.normalize(normalized);
     if (portable === ".." || portable.startsWith("../") || normalized.startsWith("/")) throw new Error(`${IMPLEMENTATION_BOUNDARY_MARKER} read_paths[${index}] escapes the project root`);
+    if (portable.split("/")[0].toLowerCase() === ".git") throw new Error(`${IMPLEMENTATION_BOUNDARY_MARKER} read_paths[${index}] must not target repository Git metadata`);
     return portable;
   });
   const readKeys = readPaths.map((entry) => process.platform === "win32" ? entry.toLowerCase() : entry);
@@ -1448,7 +1459,7 @@ export function probeDispatchBoundaryCapability({ claudeExecutable, settingsPath
     sessionStartActivated: true,
     directHookNeutralProbe: true,
     directHookDenyProbe: true,
-    claudeSettingsAccepted: true,
+    claudeSettingsParsed: true,
     skillPluginValidated: Boolean(skillPlugin),
     sourceSkillNames: skillPlugin?.sourceSkillNames ?? [],
     runtimeSkillNames: skillPlugin?.runtimeSkillNames ?? [],
@@ -1459,6 +1470,9 @@ export function probeDispatchBoundaryCapability({ claudeExecutable, settingsPath
 
 function dispatchProfileForTools(tools) {
   if (JSON.stringify(tools) === JSON.stringify(EXACT_READ_ONLY_TOOLS)) return "read_only";
+  if (tools.length === EXACT_READ_ONLY_TOOLS.length && tools.every((tool) => EXACT_READ_ONLY_TOOLS.includes(tool))) {
+    throw new Error(`CAPABILITY_BLOCKED: read-only tools must use the exact registered order ${EXACT_READ_ONLY_TOOLS.join(",")}`);
+  }
   const unexpected = tools.filter((tool) => !IMPLEMENTATION_TOOLS.has(tool));
   if (unexpected.length === 0 && tools.some((tool) => tool === "Edit" || tool === "Write")) return "bounded_implementation";
   throw new Error(`CAPABILITY_BLOCKED: tools do not match either exact dispatcher profile; rejected: ${unexpected.join(", ") || "missing Edit/Write capability"}`);
@@ -2051,6 +2065,7 @@ export async function dispatchClaude(options, dependencies = {}) {
   );
 
   const prompt = await readFile(promptFile, "utf8");
+  validateNoPromptFileExpansion(prompt);
   const tempRoot = await mkdtemp(path.join(tmpdir(), "claude-dispatch-"));
   const mcpConfigPath = path.join(tempRoot, "mcp.json");
   try {
@@ -2071,7 +2086,6 @@ export async function dispatchClaude(options, dependencies = {}) {
       if (!implementationHandoff.handoffRequired || !implementationHandoff.handoffRef) {
         throw new Error("bounded implementation requires a live durable GitHub handoff");
       }
-      validateNoPromptFileExpansion(prompt);
       if (structuredPromptMarker(prompt, PR_DIFF_SCOPE_MARKER) !== null) {
         throw new Error(`CAPABILITY_BLOCKED: ${PR_DIFF_SCOPE_MARKER} is review-only; implementation patch scope is derived automatically from declared edit_paths`);
       }
@@ -2287,15 +2301,8 @@ export async function dispatchClaude(options, dependencies = {}) {
         implementationVerificationError = error;
       }
     }
-    let evidenceWriteError = null;
-    try {
-      await writeFile(stdoutFile, result.stdout, "utf8");
-      await writeFile(stderrFile, result.stderr, "utf8");
-    } catch (error) {
-      evidenceWriteError = new Error(`failed to persist dispatcher stream evidence outside the repository: ${error.message}`);
-    }
-    if (runError || auditError || implementationVerificationError || evidenceWriteError) {
-      const causes = [runError?.message, auditError?.message, implementationVerificationError?.message, evidenceWriteError?.message].filter(Boolean);
+    if (runError || auditError || implementationVerificationError) {
+      const causes = [runError?.message, auditError?.message, implementationVerificationError?.message].filter(Boolean);
       if (implementationChanges) causes.push(`post-run implementation evidence=${JSON.stringify(implementationChanges)}`);
       try {
         await writeFile(dispatchStateFile, `${JSON.stringify(stateRecord("failed", {
@@ -2342,17 +2349,20 @@ export async function dispatchClaude(options, dependencies = {}) {
   }
 }
 
-function parseCliArgs(argv) {
+export function parseCliArgs(argv) {
   const values = {};
   const booleans = new Set(["--dry-run", "--preflight"]);
   const repeatable = new Set(["--skill-source-root"]);
+  const valued = new Set(["--cwd", "--prompt-file", "--tools", "--mode", "--stdout-file", "--stderr-file", "--max-runtime-ms", "--handoff-ref"]);
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
     if (booleans.has(token)) {
-      values[token.slice(2).replace("-", "")] = true;
+      const key = token.slice(2).replace("-", "");
+      if (Object.hasOwn(values, key)) throw new Error(`duplicate argument: ${token}`);
+      values[key] = true;
       continue;
     }
-    if (!token.startsWith("--") || index + 1 >= argv.length) {
+    if ((!valued.has(token) && !repeatable.has(token)) || index + 1 >= argv.length) {
       throw new Error(`invalid argument: ${token}`);
     }
     if (repeatable.has(token)) {
@@ -2361,9 +2371,9 @@ function parseCliArgs(argv) {
       index += 1;
       continue;
     }
-    values[
-      token.slice(2).replace(/-([a-z])/gu, (_, letter) => letter.toUpperCase())
-    ] = argv[index + 1];
+    const key = token.slice(2).replace(/-([a-z])/gu, (_, letter) => letter.toUpperCase());
+    if (Object.hasOwn(values, key)) throw new Error(`duplicate argument: ${token}`);
+    values[key] = argv[index + 1];
     index += 1;
   }
   return values;

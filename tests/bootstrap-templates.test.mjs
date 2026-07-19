@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { validateActionPolicySemantics } from '../core/authority/assess-action.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const bootstrap = path.join(root, 'skills', 'bootstrap-orchestrator');
@@ -109,37 +110,23 @@ function runPostToolHook(fixtureRoot, launchCwd, filePath, inputOverride) {
   });
 }
 
-function actionAuthorityErrors(policy) {
-  const errors = [];
-  for (const action of ['create_branch_or_worktree', 'commit_in_scope_changes', 'open_or_update_pull_request']) {
-    if (!policy.autonomous.includes(action)) errors.push(`missing autonomous ${action}`);
-  }
-  if (policy.autonomous.includes('push_branch')) errors.push('push_branch must not be unconditionally autonomous');
-  for (const predicate of ['no_preview_or_production_deploy', 'no_publish_or_billed_build', 'no_production_write_or_external_contact']) {
-    if (!policy.conditional.push_branch?.all?.includes(predicate)) errors.push(`conditional push missing ${predicate}`);
-  }
-  if (policy.conditional.push_branch?.on_uncertainty !== 'human_required') errors.push('push does not fail closed');
-  if (!policy.conditional.merge_pull_request.all.includes('no_deploy_or_production_effect')) errors.push('merge lacks production boundary');
-  if (policy.conditional.merge_pull_request.on_uncertainty !== 'human_required') errors.push('merge does not fail closed');
-  if (!policy.human_required.includes('merge_that_deploys_or_mutates_production')) errors.push('production merge not human gated');
-  return errors;
-}
-
 test('Proves: ORG-AUTH-001; Test type: mutation; Surface: action-authority template; Authority: policies/action-authority.v1.json; Killer mutation: restore unconditional push or remove push and merge side-effect predicates; Gated command: npm test', () => {
   const policy = JSON.parse(fs.readFileSync(path.join(root, 'policies', 'action-authority.v1.json'), 'utf8'));
-  assert.deepEqual(actionAuthorityErrors(policy), []);
-  const mutated = structuredClone(policy);
-  mutated.autonomous.push('push_branch');
-  delete mutated.conditional.push_branch;
-  mutated.conditional.merge_pull_request.all = mutated.conditional.merge_pull_request.all.filter((value) => value !== 'no_deploy_or_production_effect');
-  assert.deepEqual(actionAuthorityErrors(mutated), [
-    'push_branch must not be unconditionally autonomous',
-    'conditional push missing no_preview_or_production_deploy',
-    'conditional push missing no_publish_or_billed_build',
-    'conditional push missing no_production_write_or_external_contact',
-    'push does not fail closed',
-    'merge lacks production boundary',
-  ]);
+  assert.deepEqual(validateActionPolicySemantics(policy), []);
+  const unconditionalPush = structuredClone(policy);
+  unconditionalPush.autonomous.push('push_branch');
+  delete unconditionalPush.conditional.push_branch;
+  assert.match(validateActionPolicySemantics(unconditionalPush).join('\n'), /push_branch must be conditional/u);
+  for (const predicate of policy.conditional.push_branch.all) {
+    const weakenedPush = structuredClone(policy);
+    weakenedPush.conditional.push_branch.all = weakenedPush.conditional.push_branch.all.filter((value) => value !== predicate);
+    assert.match(validateActionPolicySemantics(weakenedPush).join('\n'), new RegExp(`Conditional push_branch missing required predicate: ${predicate}`, 'u'));
+  }
+  for (const predicate of policy.conditional.merge_pull_request.all) {
+    const weakenedMerge = structuredClone(policy);
+    weakenedMerge.conditional.merge_pull_request.all = weakenedMerge.conditional.merge_pull_request.all.filter((value) => value !== predicate);
+    assert.match(validateActionPolicySemantics(weakenedMerge).join('\n'), new RegExp(`Conditional merge_pull_request missing required predicate: ${predicate}`, 'u'));
+  }
 });
 
 test('Proves: ORG-AUTH-004; Test type: authority-retirement mutation; Surface: bootstrap and project gates; Authority: policies/action-authority.v1.json; Killer mutation: restore a legacy authority path or hardcoded runtime action-list constant; Gated command: npm test', () => {
@@ -317,14 +304,16 @@ test('Proves: ORG-HOOK-003; Test type: runtime counterexample; Surface: Auxara a
       assert.match(result.stdout, /root-proof/u, 'Auxara state must come from the verified project root');
       assert.doesNotMatch(result.stdout, /sibling-proof/u, 'payload.cwd must not redirect Auxara state collection');
     }
-    const malformed = spawnSync(process.execPath, [path.join(fixtureRoot, 'scripts', 'claude-lifecycle-hook.mjs')], {
-      cwd: nestedCwd,
-      input: '{not-json',
-      encoding: 'utf8',
-      env: { ...process.env, CLAUDE_PROJECT_DIR: fixtureRoot },
-    });
-    assert.equal(malformed.status, 2, `${project} malformed lifecycle payload must block`);
-    assert.match(malformed.stderr, /malformed hook payload/iu);
+    for (const hostileInput of ['{not-json', 'null', '[]', '"scalar"', '42']) {
+      const malformed = spawnSync(process.execPath, [path.join(fixtureRoot, 'scripts', 'claude-lifecycle-hook.mjs')], {
+        cwd: nestedCwd,
+        input: hostileInput,
+        encoding: 'utf8',
+        env: { ...process.env, CLAUDE_PROJECT_DIR: fixtureRoot },
+      });
+      assert.equal(malformed.status, 2, `${project} hostile lifecycle payload ${hostileInput} must block`);
+      assert.match(malformed.stderr, /malformed hook payload|payload must be a JSON object/iu);
+    }
   }
 });
 
@@ -343,14 +332,16 @@ test('Proves: ORG-HOOK-003C; Test type: canonical-template runtime mutation; Sur
   assert.equal(spawnSync('git', ['init', '-b', 'root-proof'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);
   const executable = path.join(fixtureRoot, 'scripts', 'claude-lifecycle-hook.mjs');
 
-  const malformed = spawnSync(process.execPath, [executable], {
-    cwd: fixtureRoot,
-    input: '{not-json',
-    encoding: 'utf8',
-    env: { ...process.env, CLAUDE_PROJECT_DIR: fixtureRoot },
-  });
-  assert.equal(malformed.status, 2);
-  assert.match(malformed.stderr, /malformed hook payload/iu);
+  for (const hostileInput of ['{not-json', 'null', '[]', '"scalar"', '42']) {
+    const malformed = spawnSync(process.execPath, [executable], {
+      cwd: fixtureRoot,
+      input: hostileInput,
+      encoding: 'utf8',
+      env: { ...process.env, CLAUDE_PROJECT_DIR: fixtureRoot },
+    });
+    assert.equal(malformed.status, 2);
+    assert.match(malformed.stderr, /malformed hook payload|payload must be a JSON object/iu);
+  }
 
   const spoofed = spawnSync(process.execPath, [executable], {
     cwd: fixtureRoot,
