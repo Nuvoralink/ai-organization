@@ -2,7 +2,7 @@
 
 import { spawn, spawnSync } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -13,20 +13,9 @@ import {
   createBoundaryManifest,
 } from "./dispatch-boundary-hook.mjs";
 
-const SAFE_PERMISSION_MODES = new Set([
-  "acceptEdits",
-  "bypassPermissions",
-  "default",
-  "delegate",
-  "dontAsk",
-  "plan",
-]);
+const SAFE_PERMISSION_MODES = new Set(["bypassPermissions", "dontAsk"]);
 
 const EXACT_TOOL_NAME = /^[A-Za-z][A-Za-z0-9_.:-]*$/;
-const CANONICAL_TOOL_NAME = new Map([
-  ["Task", "Agent"],
-  ["Agent", "Agent"],
-]);
 const HANDOFF_EXEMPT_READ_ONLY_TOOLS = new Set([
   "Glob",
   "Grep",
@@ -34,6 +23,7 @@ const HANDOFF_EXEMPT_READ_ONLY_TOOLS = new Set([
   "WebFetch",
   "WebSearch",
 ]);
+const EXACT_READ_ONLY_TOOLS = ["Read", "Glob", "Grep", "WebFetch", "WebSearch"];
 const GITHUB_OWNER = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/u;
 const GITHUB_REPOSITORY = /^[A-Za-z0-9_.-]{1,100}$/u;
 const BYPASS_PERMISSION_TOOLS = new Set(["Read", "Glob", "Grep", "Skill", "Edit", "Write"]);
@@ -474,14 +464,29 @@ export function resolveGitExecutable({ platform = process.platform, env = proces
   throw new Error("Git is on Windows but no native git.exe was found on PATH");
 }
 
-function runGitExact(cwd, argv, dependencies = {}, { label = "Git command", maxBuffer = MAX_GIT_OUTPUT_BYTES } = {}) {
+function gitOutputBuffer(value, label) {
+  if (Buffer.isBuffer(value)) return value;
+  if (value instanceof Uint8Array) return Buffer.from(value);
+  if (typeof value === "string") return Buffer.from(value, "utf8");
+  if (value === undefined || value === null) return Buffer.alloc(0);
+  throw new Error(`CAPABILITY_BLOCKED: ${label} returned an unsupported stdout representation`);
+}
+
+function decodeGitUtf8Exact(bytes, label) {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    throw new Error(`CAPABILITY_BLOCKED: ${label} emitted bytes that are not exact UTF-8; lossy Git evidence was not hashed or dispatched`);
+  }
+}
+
+function runGitExactBytes(cwd, argv, dependencies = {}, { label = "Git command", maxBuffer = MAX_GIT_OUTPUT_BYTES } = {}) {
   const spawnSyncProcess = dependencies.spawnSyncProcess ?? spawnSync;
   const timeout = parsePositiveInteger(dependencies.gitTimeoutMs ?? DEFAULT_GIT_TIMEOUT_MS, "Git timeout");
   const result = spawnSyncProcess(resolveGitExecutable(dependencies), argv, {
     cwd,
     shell: false,
     windowsHide: true,
-    encoding: "utf8",
     maxBuffer,
     timeout,
   });
@@ -497,13 +502,18 @@ function runGitExact(cwd, argv, dependencies = {}, { label = "Git command", maxB
   }
   if (result?.error) throw new Error(`CAPABILITY_BLOCKED: ${label} failed: ${result.error.message}`);
   if (result?.status !== 0) throw new Error(`CAPABILITY_BLOCKED: ${label} exited ${result?.status ?? "unknown"}`);
-  const stdout = typeof result.stdout === "string" ? result.stdout : "";
-  if (Buffer.byteLength(stdout, "utf8") > maxBuffer) {
+  const stdout = gitOutputBuffer(result.stdout, label);
+  if (stdout.length > maxBuffer) {
     const error = new Error(`CAPABILITY_BLOCKED: ${label} exceeded its ${maxBuffer}-byte bound; no truncated artifact was dispatched`);
     error.code = "GIT_OUTPUT_BOUND";
     throw error;
   }
   return stdout;
+}
+
+function runGitExact(cwd, argv, dependencies = {}, options = {}) {
+  const label = options.label ?? "Git command";
+  return decodeGitUtf8Exact(runGitExactBytes(cwd, argv, dependencies, options), label);
 }
 
 function normalizeRepositoryPath(candidate, root, label) {
@@ -512,6 +522,20 @@ function normalizeRepositoryPath(candidate, root, label) {
   const relative = path.relative(root, resolved);
   if (relative === "" || relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) throw new Error(`${label} escapes or names the repository root`);
   return relative.replace(/\\/gu, "/");
+}
+
+function repositoryPathKey(value, platform = process.platform) {
+  const normalized = String(value).replace(/\\/gu, "/");
+  return platform === "win32" ? normalized.toLowerCase() : normalized;
+}
+
+function uniqueRepositoryPaths(values, platform) {
+  const byKey = new Map();
+  for (const value of values) {
+    const key = repositoryPathKey(value, platform);
+    if (!byKey.has(key)) byKey.set(key, value);
+  }
+  return [...byKey.values()].sort((left, right) => repositoryPathKey(left, platform).localeCompare(repositoryPathKey(right, platform)));
 }
 
 function parsePorcelainPaths(stdout, root) {
@@ -537,8 +561,12 @@ export function captureGitWorktreeState(cwd, dependencies = {}) {
   const requestedRoot = path.resolve(cwd);
   const rootOutput = runGitExact(requestedRoot, ["rev-parse", "--show-toplevel"], dependencies, { label: "repository-root probe" }).trim();
   if (!rootOutput) throw new Error("CAPABILITY_BLOCKED: repository-root probe returned no root");
-  const root = path.resolve(rootOutput);
-  if (root !== requestedRoot) throw new Error(`CAPABILITY_BLOCKED: implementation/review cwd must be the isolated repository root; resolved ${root}`);
+  const resolveRealpath = dependencies.realpathSync ?? realpathSync.native;
+  const requestedReal = path.resolve(resolveRealpath(requestedRoot));
+  const root = path.resolve(resolveRealpath(path.resolve(rootOutput)));
+  const platform = dependencies.platform ?? process.platform;
+  const pathKey = (value) => platform === "win32" ? value.toLowerCase() : value;
+  if (pathKey(root) !== pathKey(requestedReal)) throw new Error(`CAPABILITY_BLOCKED: implementation/review cwd must canonically equal the isolated repository root; resolved ${root}`);
   const status = runGitExact(root, ["status", "--porcelain=v1", "-z", "--untracked-files=all"], dependencies, { label: "worktree status probe" });
   return { root, changedPaths: parsePorcelainPaths(status, root) };
 }
@@ -566,9 +594,10 @@ function inventoryEvidence(paths, rawIdentity = null) {
     changed_files_sha256: inventoryDigest(changedFiles),
   };
   if (rawIdentity !== null) {
-    evidence.raw_diff = rawIdentity;
-    evidence.raw_diff_bytes = Buffer.byteLength(rawIdentity, "utf8");
-    evidence.raw_diff_sha256 = createHash("sha256").update(rawIdentity, "utf8").digest("hex");
+    const rawBytes = gitOutputBuffer(rawIdentity, "PR raw blob-identity inventory");
+    evidence.raw_diff = decodeGitUtf8Exact(rawBytes, "PR raw blob-identity inventory");
+    evidence.raw_diff_bytes = rawBytes.length;
+    evidence.raw_diff_sha256 = createHash("sha256").update(rawBytes).digest("hex");
   }
   return evidence;
 }
@@ -632,7 +661,7 @@ export function materializePullRequestDiff(snapshot, cwd, request = {}, dependen
   const rangeArgs = [mergeBaseOid, snapshot.head.oid, "--"];
   const inventoryText = runGitExact(worktree.root, ["diff", "--name-only", "-z", "--no-renames", ...rangeArgs], dependencies, { label: "PR changed-file inventory" });
   const changedFiles = inventoryText.split("\0").filter(Boolean).map((entry) => normalizeRepositoryPath(entry, worktree.root, "PR changed-file path"));
-  const rawIdentity = runGitExact(worktree.root, ["diff", "--raw", "-z", "--full-index", "--no-renames", ...rangeArgs], dependencies, { label: "PR raw blob-identity inventory" });
+  const rawIdentity = runGitExactBytes(worktree.root, ["diff", "--raw", "-z", "--full-index", "--no-renames", ...rangeArgs], dependencies, { label: "PR raw blob-identity inventory" });
   const fullPrInventory = inventoryEvidence(changedFiles, rawIdentity);
   let patchPurpose = purpose === "implementation" ? "bounded_implementation" : "full_pr_review";
   let patchBaseOid = mergeBaseOid;
@@ -640,11 +669,14 @@ export function materializePullRequestDiff(snapshot, cwd, request = {}, dependen
   let wholePrReview = false;
   let partialReviewScope = false;
   let patch;
+  let patchBuffer;
   if (purpose === "implementation") {
-    patch = runGitExact(worktree.root, exactDiffArgs(patchBaseOid, snapshot.head.oid, patchPaths), dependencies, { label: "task-scoped implementation diff", maxBuffer: MAX_PR_DIFF_BYTES });
+    patchBuffer = runGitExactBytes(worktree.root, exactDiffArgs(patchBaseOid, snapshot.head.oid, patchPaths), dependencies, { label: "task-scoped implementation diff", maxBuffer: MAX_PR_DIFF_BYTES });
+    patch = decodeGitUtf8Exact(patchBuffer, "task-scoped implementation diff");
   } else {
     try {
-      patch = runGitExact(worktree.root, exactDiffArgs(patchBaseOid, snapshot.head.oid), dependencies, { label: "exact full PR diff", maxBuffer: MAX_PR_DIFF_BYTES });
+      patchBuffer = runGitExactBytes(worktree.root, exactDiffArgs(patchBaseOid, snapshot.head.oid), dependencies, { label: "exact full PR diff", maxBuffer: MAX_PR_DIFF_BYTES });
+      patch = decodeGitUtf8Exact(patchBuffer, "exact full PR diff");
       wholePrReview = true;
       patchPaths = fullPrInventory.changed_files;
     } catch (error) {
@@ -666,7 +698,8 @@ export function materializePullRequestDiff(snapshot, cwd, request = {}, dependen
       patchPurpose = "partial_pr_review";
       patchPaths = scope.paths;
       partialReviewScope = true;
-      patch = runGitExact(worktree.root, exactDiffArgs(patchBaseOid, snapshot.head.oid, patchPaths), dependencies, { label: "exact scoped PR diff", maxBuffer: MAX_PR_DIFF_BYTES });
+      patchBuffer = runGitExactBytes(worktree.root, exactDiffArgs(patchBaseOid, snapshot.head.oid, patchPaths), dependencies, { label: "exact scoped PR diff", maxBuffer: MAX_PR_DIFF_BYTES });
+      patch = decodeGitUtf8Exact(patchBuffer, "exact scoped PR diff");
     }
   }
   const scopedInventoryText = runGitExact(worktree.root, ["diff", "--name-only", "-z", "--no-renames", patchBaseOid, snapshot.head.oid, "--", ...patchPaths], dependencies, { label: "patch-scope changed-file inventory" });
@@ -674,7 +707,7 @@ export function materializePullRequestDiff(snapshot, cwd, request = {}, dependen
   if (purpose === "review" && (scopedInventory.changed_file_count === 0 || patch.trim().length === 0)) {
     throw new Error("CAPABILITY_BLOCKED: PR review scope produced no substantive changed-file patch; it cannot support a clean or reviewed claim");
   }
-  const patchBytes = Buffer.byteLength(patch, "utf8");
+  const patchBytes = patchBuffer.length;
   const outsidePatchScopeCount = fullPrInventory.changed_file_count - scopedInventory.changed_file_count;
   return {
     schema_version: 2,
@@ -691,7 +724,7 @@ export function materializePullRequestDiff(snapshot, cwd, request = {}, dependen
       ...scopedInventory,
       patch,
       patch_bytes: patchBytes,
-      patch_sha256: createHash("sha256").update(patch, "utf8").digest("hex"),
+      patch_sha256: createHash("sha256").update(patchBuffer).digest("hex"),
       whole_pr_review: wholePrReview,
       partial_review_scope: partialReviewScope,
       outside_patch_scope_full_pr_file_count: outsidePatchScopeCount,
@@ -880,7 +913,6 @@ export function validateBypassPermissionsBrief(prompt, cwd, tools) {
   const authority = exactObject(value.authority, `${IMPLEMENTATION_BOUNDARY_MARKER} authority`);
   const authorityKeys = Object.keys(authority).sort();
   if (JSON.stringify(authorityKeys) !== JSON.stringify(["billed", "external_contact", "irreversible"]) || authority.billed !== false || authority.external_contact !== false || authority.irreversible !== false) throw new Error("bypassPermissions cannot authorize irreversible, billed, or external-contact actions");
-  createBoundaryManifest({ projectRoot, readPaths, editPaths, skillNames: value.skill_names });
   return { readPaths, editPaths, skillNames: value.skill_names, boundaryCount: value.boundaries.length, capabilityProbe, authority };
 }
 
@@ -1068,16 +1100,19 @@ export function buildClaudeArgv({ tools, mode, mcpConfigPath, settingsPath = nul
   }
   parseTools(tools.join(","));
   if (!SAFE_PERMISSION_MODES.has(mode)) {
-    throw new Error(`unsafe or unsupported permission mode: ${mode}`);
+    throw new Error(`CAPABILITY_BLOCKED: unsupported noninteractive permission mode ${mode}; use exact dontAsk read-only audit or bounded bypassPermissions implementation`);
   }
-  if (
-    mode === "dontAsk" &&
-    tools.some((tool) => ["Bash", "PowerShell", "Edit", "Write"].includes(tool))
-  ) {
-    throw new Error(
-      "dontAsk denies shell and mutation tools at runtime; remove Bash/PowerShell/Edit/Write and provide pre-generated evidence, or use a validated bypassPermissions implementation brief",
-    );
+  if (mode === "dontAsk" && JSON.stringify(tools) !== JSON.stringify(EXACT_READ_ONLY_TOOLS)) {
+    throw new Error(`CAPABILITY_BLOCKED: dontAsk requires the exact read-only tool profile ${EXACT_READ_ONLY_TOOLS.join(",")}`);
   }
+  if (mode === "bypassPermissions") {
+    const unexpected = tools.filter((tool) => !BYPASS_PERMISSION_TOOLS.has(tool));
+    if (unexpected.length > 0 || !tools.some((tool) => tool === "Edit" || tool === "Write")) {
+      throw new Error(`CAPABILITY_BLOCKED: bypassPermissions requires the bounded implementation tool profile; rejected: ${unexpected.join(", ") || "no Edit/Write capability"}`);
+    }
+  }
+  if (mode === "dontAsk" && settingsPath !== null) throw new Error("CAPABILITY_BLOCKED: read-only dontAsk profile must not load implementation boundary settings");
+  if (mode === "bypassPermissions" && settingsPath === null) throw new Error("CAPABILITY_BLOCKED: bypassPermissions requires generated implementation boundary settings");
   if (!path.isAbsolute(mcpConfigPath)) {
     throw new Error("MCP config path must be absolute");
   }
@@ -1207,11 +1242,10 @@ export function observedToolUses(streamJson) {
 }
 
 export function auditObservedTools(streamJson, allowedTools) {
-  const canonicalize = (name) => CANONICAL_TOOL_NAME.get(name) ?? name;
-  const allowed = new Set(allowedTools.map(canonicalize));
+  const allowed = new Set(allowedTools);
   const observed = observedToolUses(streamJson);
   const unexpected = [
-    ...new Set(observed.filter((name) => !allowed.has(canonicalize(name)))),
+    ...new Set(observed.filter((name) => !allowed.has(name))),
   ];
   if (unexpected.length > 0) {
     throw new Error(
@@ -1221,13 +1255,15 @@ export function auditObservedTools(streamJson, allowedTools) {
   return observed;
 }
 
-export function verifyImplementationChanges(streamJson, boundary, beforeState, afterState, { requireLiveness = true, allowIncompleteStream = false } = {}) {
-  if (!boundary || beforeState?.changedPaths?.length !== 0 || beforeState?.root !== afterState?.root) {
+export function verifyImplementationChanges(streamJson, boundary, beforeState, afterState, { requireLiveness = true, allowIncompleteStream = false, platform = process.platform } = {}) {
+  const rootKey = (value) => repositoryPathKey(path.resolve(String(value ?? "")), platform);
+  if (!boundary || beforeState?.changedPaths?.length !== 0 || rootKey(beforeState?.root) !== rootKey(afterState?.root)) {
     throw new Error("CAPABILITY_BLOCKED: implementation change attribution requires one unchanged clean repository root baseline");
   }
-  const declared = new Set(boundary.editPaths);
-  const actualChangedPaths = [...new Set(afterState.changedPaths)].sort();
-  const undeclaredChangedPaths = actualChangedPaths.filter((entry) => !declared.has(entry));
+  const declaredPaths = uniqueRepositoryPaths(boundary.editPaths, platform);
+  const declaredKeys = new Set(declaredPaths.map((entry) => repositoryPathKey(entry, platform)));
+  const actualChangedPaths = uniqueRepositoryPaths(afterState.changedPaths, platform);
+  const undeclaredChangedPaths = actualChangedPaths.filter((entry) => !declaredKeys.has(repositoryPathKey(entry, platform)));
   const observedWritePaths = [];
   const observedSkillNames = [];
   const invalidToolPaths = [];
@@ -1253,15 +1289,15 @@ export function verifyImplementationChanges(streamJson, boundary, beforeState, a
     try {
       const normalized = normalizeRepositoryPath(candidate, beforeState.root, `${event.name} tool input.file_path`);
       observedWritePaths.push(normalized);
-      if (!declared.has(normalized)) invalidToolPaths.push(normalized);
+      if (!declaredKeys.has(repositoryPathKey(normalized, platform))) invalidToolPaths.push(normalized);
     } catch (error) {
       invalidToolPaths.push(`${event.name}: ${error.message}`);
     }
   }
   const evidence = {
-    declaredEditPaths: [...declared].sort(),
+    declaredEditPaths: declaredPaths,
     actualChangedPaths,
-    observedWritePaths: [...new Set(observedWritePaths)].sort(),
+    observedWritePaths: uniqueRepositoryPaths(observedWritePaths, platform),
     observedSkillNames: [...new Set(observedSkillNames)].sort(),
     undeclaredChangedPaths,
     invalidToolPaths: [...new Set(invalidToolPaths)].sort(),
@@ -1645,6 +1681,7 @@ export async function dispatchClaude(options, dependencies = {}) {
         implementationChanges = verifyImplementationChanges(result.stdout, implementationBoundary, implementationBaseline, afterState, {
           requireLiveness: !runError && result.code === 0,
           allowIncompleteStream: Boolean(runError),
+          platform: dependencies.platform ?? process.platform,
         });
       } catch (error) {
         implementationVerificationError = error;
