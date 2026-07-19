@@ -1031,6 +1031,18 @@
       "class": "reusable-skill"
     },
     {
+      "path": "skills/bootstrap-orchestrator/scripts/dispatch-boundary-hook.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/scripts/dispatch-claude-cli.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/scripts/dispatch-claude-cli.test.mjs",
+      "class": "reusable-skill"
+    },
+    {
       "path": "skills/bootstrap-orchestrator/templates/AGENTS.md.template",
       "class": "reusable-skill"
     },

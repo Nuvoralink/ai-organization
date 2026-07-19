@@ -268,7 +268,7 @@
     },
     {
       "path": "scripts/check-agent-control-plane.mjs",
-      "sha256": "d0f11554819d12273fa473f0e0848a233e6eee3a8fa99d8543e3324c826a3039"
+      "sha256": "551c449f8027620ecdd4305271b991463c4220f8c2f0636b9b4469eeeb2f16ae"
     },
     {
       "path": "scripts/check-doc-code-drift.mjs",
@@ -292,7 +292,7 @@
     },
     {
       "path": "scripts/claude-lifecycle-hook.mjs",
-      "sha256": "c083205336bc18962be8c3d2a626718dca55fe2c142dcb1210342fdec83f483b"
+      "sha256": "d7099eaa56fbb65f1337f37dca17797f4a2cb7a4fd166e9be8839fc50fdeda56"
     },
     {
       "path": "scripts/claude-posttooluse-gate.mjs",
@@ -312,7 +312,7 @@
     },
     {
       "path": "scripts/tests/controlPlaneRegression.mjs",
-      "sha256": "211f8e39f2714032eb572c1d9c8e731b68b5115e2010321444f41daa6f4136e5"
+      "sha256": "9915bfa35239cd5657c985b868e87d850d7c8acd360cc6161a165bd59716c784"
     },
     {
       "path": "scripts/tests/fixture-helpers.mjs",
@@ -328,12 +328,12 @@
     },
     {
       "path": "scripts/tests/taskLifecycleRegression.mjs",
-      "sha256": "59c1b52a65b1ca9daa4dfa9b47859110223e5cde789fbe549c19b9eea1f55f30"
+      "sha256": "8aa9f5863532968e0cb2a8e7bdcb8e0c1af184ca4691884e65b3f31f891340d8"
     }
   ],
   "json_sections": {
     ".claude/settings.json": {
-      "hooks": "6337f0cabe38ac701ed0bfe704e826c8a14b2f4c31a44201256feac0cd9a11b9"
+      "hooks": "ab8fb96e8a68a636eaf44d9fe274f1096dc8f641bdee7b87cff6a9e2ba7ff29f"
     },
     "package.json": {
       "scripts.gate:agent-context": "83eb407ace5d068cf5b56062e8ad67563294fee055375a78d5be8601f4627ed8",

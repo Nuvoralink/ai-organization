@@ -35,7 +35,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/claude-lifecycle-hook.mjs",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"],
             "timeout": 10
           }
         ]
@@ -46,7 +47,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/claude-lifecycle-hook.mjs",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"],
             "timeout": 10
           }
         ]
@@ -57,7 +59,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/claude-lifecycle-hook.mjs",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"],
             "timeout": 10
           }
         ]
@@ -68,7 +71,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/claude-lifecycle-hook.mjs",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"],
             "timeout": 1800
           }
         ]
@@ -79,7 +83,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/claude-lifecycle-hook.mjs",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"],
             "timeout": 10
           }
         ]
@@ -90,7 +95,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/claude-lifecycle-hook.mjs",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"],
             "timeout": 5
           }
         ]
@@ -101,7 +107,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/claude-lifecycle-hook.mjs",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"],
             "timeout": 5
           }
         ]
@@ -113,7 +120,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/claude-posttooluse-gate.mjs",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-posttooluse-gate.mjs"],
             "timeout": 120
           }
         ]

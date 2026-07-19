@@ -47,8 +47,13 @@ function task(id) {
   };
 }
 
-function run(payload) {
-  return spawnSync(process.execPath, [hook], { cwd: root, input: JSON.stringify(payload), encoding: 'utf8', env: process.env });
+function run(payload, launchCwd = root) {
+  return spawnSync(process.execPath, [hook], {
+    cwd: launchCwd,
+    input: JSON.stringify(payload),
+    encoding: 'utf8',
+    env: { ...process.env, CLAUDE_PROJECT_DIR: root },
+  });
 }
 
 function create(id, session = `session-${id}`) {
@@ -149,4 +154,20 @@ test('TaskCompleted ignores a replacement contract and blocks missing completion
   assert.match(overwrite.stderr, /same accepted implementer platform run/u);
   const accepted = complete(id, `session-${id}`, { task_contract: task(`${id}-REPLACEMENT`) });
   assert.equal(accepted.status, 0, accepted.stderr);
+});
+
+test('SessionEnd telemetry remains under the project root from a nested cwd with spaces', () => {
+  const nestedCwd = path.join(root, 'tmp', 'mock package with spaces');
+  fs.mkdirSync(nestedCwd, { recursive: true });
+  try {
+    const result = run({
+      hook_event_name: 'SessionEnd',
+      session_id: `nested-cwd-${Date.now()}`,
+    }, nestedCwd);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(fs.existsSync(path.join(root, 'tmp', 'agent-telemetry', 'lifecycle.jsonl')), true);
+    assert.equal(fs.existsSync(path.join(nestedCwd, 'tmp', 'agent-telemetry', 'lifecycle.jsonl')), false);
+  } finally {
+    fs.rmSync(nestedCwd, { recursive: true, force: true });
+  }
 });

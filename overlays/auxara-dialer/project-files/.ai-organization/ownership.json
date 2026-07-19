@@ -60,7 +60,7 @@
     },
     {
       "path": "scripts/check-agent-control-plane.mjs",
-      "sha256": "d3a1a75220b49b52ba571530fe7f9a748a87ba3ecf171534b51b8d22afec851a"
+      "sha256": "4c09ed7d6d2b89adf46bf106e2e68842beb0e9b953c218c9b8fda728650c0818"
     },
     {
       "path": "scripts/check-organization-overlay.mjs",
@@ -68,7 +68,7 @@
     },
     {
       "path": "scripts/claude-lifecycle-hook.mjs",
-      "sha256": "72cf00f6422cea01bf61674f50e887f72ede30fff538c85d67a8414b8cc5235c"
+      "sha256": "ca6d0ba16254284d236c3de7f493375cbce424278fb0b82a556130fb7e12f31e"
     },
     {
       "path": "scripts/lib/agentTelemetry.mjs",

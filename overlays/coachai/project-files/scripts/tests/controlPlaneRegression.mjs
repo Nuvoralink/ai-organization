@@ -51,6 +51,17 @@ test('killer mutations: overlapping authority and lifecycle hook weakening fail'
   delete settings.hooks.TaskCompleted;
   writeJson(settingsPath, settings);
   assert.match(checkAgentControlPlane(hook).errors.join('\n'), /TaskCompleted/i);
+
+  const relativeHook = organizationFixture(source);
+  const relativeSettingsPath = path.join(relativeHook, '.claude/settings.json');
+  const relativeSettings = JSON.parse(fs.readFileSync(relativeSettingsPath, 'utf8'));
+  relativeSettings.hooks.SessionEnd[0].hooks[0] = {
+    type: 'command',
+    command: 'node scripts/claude-lifecycle-hook.mjs',
+    timeout: relativeSettings.hooks.SessionEnd[0].hooks[0].timeout,
+  };
+  writeJson(relativeSettingsPath, relativeSettings);
+  assert.match(checkAgentControlPlane(relativeHook).errors.join('\n'), /rooted exec-form lifecycle hook/iu);
 });
 
 test('killer mutation: active legacy design authority fails', () => {

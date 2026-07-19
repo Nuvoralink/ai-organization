@@ -7,6 +7,7 @@ import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { acceptLifecycleTask, completeLifecycleTask, recordLifecycleCompletionReport, recordLifecycleReview } from '../.ai-organization/runtime/core/lifecycle/lifecycle-controller.mjs';
 import { defaultAssuranceStateDirectory, loadTaskAttempt } from '../.ai-organization/runtime/core/lifecycle/evidence-runtime.mjs';
 
@@ -39,6 +40,14 @@ function gitText(args, cwd) {
 function repoRoot(cwd) {
   const result = git(['rev-parse', '--show-toplevel'], cwd, 3_000);
   return result.status === 0 && !result.error ? path.resolve(result.stdout.trim()) : undefined;
+}
+
+function configuredProjectRoot() {
+  const configured = String(process.env.CLAUDE_PROJECT_DIR ?? '').trim();
+  const candidate = configured
+    ? path.resolve(configured)
+    : path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  return repoRoot(candidate);
 }
 
 function hash(value) {
@@ -341,7 +350,7 @@ function handle(payload, root) {
 
 let payload;
 try { payload = JSON.parse(readFileSync(0, 'utf8')); } catch { process.exit(0); }
-const root = repoRoot(payload?.cwd ?? process.cwd());
+const root = configuredProjectRoot();
 if (!root) {
   if (BLOCKING_EVENTS.has(payload?.hook_event_name)) block(`[lifecycle] ${payload.hook_event_name} blocked: git worktree unavailable.`);
   process.exit();

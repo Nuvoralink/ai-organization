@@ -4,10 +4,14 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 import { acceptLifecycleTask, completeLifecycleTask, recordLifecycleCompletionReport, recordLifecycleReview } from '../.ai-organization/runtime/core/lifecycle/lifecycle-controller.mjs';
 import { extractStructured, validateAgentReport, validateTaskContract } from './task-governor.mjs';
 
-const root = process.cwd();
+const configuredProjectDir = String(process.env.CLAUDE_PROJECT_DIR ?? '').trim();
+const root = path.resolve(
+  configuredProjectDir || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'),
+);
 let payload = {};
 try { payload = JSON.parse(fs.readFileSync(0, 'utf8') || '{}'); } catch { payload = {}; }
 const event = payload.hook_event_name ?? payload.event ?? process.env.CLAUDE_HOOK_EVENT ?? 'Unknown';

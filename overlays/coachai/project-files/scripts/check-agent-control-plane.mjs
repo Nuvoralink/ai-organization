@@ -12,6 +12,20 @@ const readJson = (root, rel) => JSON.parse(fs.readFileSync(path.join(root, rel),
 const exists = (root, rel) => fs.existsSync(path.join(root, rel));
 const read = (root, rel) => fs.readFileSync(path.join(root, rel), 'utf8');
 
+function commandHooks(registrations) {
+  return Array.isArray(registrations)
+    ? registrations.flatMap((entry) => (Array.isArray(entry?.hooks) ? entry.hooks : []))
+    : [];
+}
+
+function isRootedExecHook(hook, script) {
+  return hook?.type === 'command'
+    && hook.command === 'node'
+    && Array.isArray(hook.args)
+    && hook.args.length === 1
+    && hook.args[0] === `\${CLAUDE_PROJECT_DIR}/scripts/${script}`;
+}
+
 export function checkAgentControlPlane(root = process.cwd()) {
   const errors = [];
   const requiredFiles = [
@@ -102,12 +116,15 @@ export function checkAgentControlPlane(root = process.cwd()) {
   const settings = readJson(root, '.claude/settings.json');
   const requiredEvents = ['SessionStart', 'SubagentStart', 'TaskCreated', 'TaskCompleted', 'SubagentStop', 'PostCompact', 'SessionEnd'];
   for (const event of requiredEvents) {
-    const hooks = settings.hooks?.[event];
-    if (!Array.isArray(hooks) || !hooks.some((entry) => entry.hooks?.some((h) => h.command === 'node scripts/claude-lifecycle-hook.mjs'))) errors.push(`lifecycle hook missing for ${event}`);
+    const registrations = settings.hooks?.[event];
+    const hooks = commandHooks(registrations);
+    if (registrations?.length !== 1 || hooks.length !== 1 || !isRootedExecHook(hooks[0], 'claude-lifecycle-hook.mjs')) errors.push(`rooted exec-form lifecycle hook missing for ${event}`);
   }
-  const taskCompletedTimeouts = settings.hooks?.TaskCompleted?.flatMap((entry) => entry.hooks ?? []).filter((hook) => hook.command === 'node scripts/claude-lifecycle-hook.mjs').map((hook) => hook.timeout) ?? [];
+  const taskCompletedTimeouts = commandHooks(settings.hooks?.TaskCompleted).filter((hook) => isRootedExecHook(hook, 'claude-lifecycle-hook.mjs')).map((hook) => hook.timeout);
   if (taskCompletedTimeouts.length !== 1 || taskCompletedTimeouts[0] * 1_000 !== proof.lifecycle_hook_timeout_ms) errors.push('TaskCompleted lifecycle hook timeout must exactly match the proof registry authority');
-  if (!settings.hooks?.PostToolUse?.some((entry) => entry.hooks?.some((h) => h.command === 'node scripts/claude-posttooluse-gate.mjs'))) errors.push('separate fast PostToolUse gate is missing');
+  const post = settings.hooks?.PostToolUse;
+  const postHooks = commandHooks(post);
+  if (post?.length !== 1 || post[0]?.matcher !== 'Edit|Write' || postHooks.length !== 1 || !isRootedExecHook(postHooks[0], 'claude-posttooluse-gate.mjs')) errors.push('separate rooted exec-form PostToolUse gate is missing');
 
   const pkg = readJson(root, 'package.json');
   for (const script of ['gate:agent-context', 'gate:rules-wiring', 'gate:agent-control-plane', 'gate:overlay-parity', 'gate:organization', 'proof:changed', 'test:organization-control-plane']) if (!pkg.scripts?.[script]) errors.push(`package script missing: ${script}`);
