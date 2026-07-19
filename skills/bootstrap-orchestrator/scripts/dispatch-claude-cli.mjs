@@ -440,15 +440,15 @@ export function materializeGitHubHandoff(handoffRef, dependencies = {}) {
   const result = spawnSyncProcess(executable, argv, {
     shell: false,
     windowsHide: true,
-    encoding: "utf8",
     maxBuffer: MAX_GITHUB_RESPONSE_BYTES,
     timeout: parsePositiveInteger(dependencies.ghTimeoutMs ?? DEFAULT_GH_TIMEOUT_MS, "GitHub CLI timeout"),
   });
   if (result?.error?.code === "ETIMEDOUT") throw new Error(`GitHub handoff materialization timed out after ${dependencies.ghTimeoutMs ?? DEFAULT_GH_TIMEOUT_MS} ms`);
   if (result?.error) throw new Error(`GitHub handoff materialization failed: ${result.error.message}`);
   if (result?.status !== 0) throw new Error(`GitHub handoff materialization failed with exit ${result?.status ?? "unknown"}`);
-  const stdout = typeof result.stdout === "string" ? result.stdout : "";
-  if (Buffer.byteLength(stdout, "utf8") > MAX_GITHUB_RESPONSE_BYTES) throw new Error("GitHub handoff response exceeds byte limit");
+  const stdoutBytes = outputBuffer(result.stdout, "GitHub handoff materialization");
+  if (stdoutBytes.length > MAX_GITHUB_RESPONSE_BYTES) throw new Error("GitHub handoff response exceeds byte limit");
+  const stdout = decodeUtf8Exact(stdoutBytes, "GitHub handoff materialization");
   let response;
   try { response = JSON.parse(stdout); } catch (error) { throw new Error(`GitHub handoff response is invalid JSON: ${error.message}`); }
   return normalizeGitHubHandoffResponse(response, descriptor.normalized);
@@ -464,7 +464,7 @@ export function resolveGitExecutable({ platform = process.platform, env = proces
   throw new Error("Git is on Windows but no native git.exe was found on PATH");
 }
 
-function gitOutputBuffer(value, label) {
+function outputBuffer(value, label) {
   if (Buffer.isBuffer(value)) return value;
   if (value instanceof Uint8Array) return Buffer.from(value);
   if (typeof value === "string") return Buffer.from(value, "utf8");
@@ -472,11 +472,11 @@ function gitOutputBuffer(value, label) {
   throw new Error(`CAPABILITY_BLOCKED: ${label} returned an unsupported stdout representation`);
 }
 
-function decodeGitUtf8Exact(bytes, label) {
+function decodeUtf8Exact(bytes, label) {
   try {
     return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
   } catch {
-    throw new Error(`CAPABILITY_BLOCKED: ${label} emitted bytes that are not exact UTF-8; lossy Git evidence was not hashed or dispatched`);
+    throw new Error(`CAPABILITY_BLOCKED: ${label} emitted bytes that are not exact UTF-8; lossy evidence was not hashed or dispatched`);
   }
 }
 
@@ -502,7 +502,7 @@ function runGitExactBytes(cwd, argv, dependencies = {}, { label = "Git command",
   }
   if (result?.error) throw new Error(`CAPABILITY_BLOCKED: ${label} failed: ${result.error.message}`);
   if (result?.status !== 0) throw new Error(`CAPABILITY_BLOCKED: ${label} exited ${result?.status ?? "unknown"}`);
-  const stdout = gitOutputBuffer(result.stdout, label);
+  const stdout = outputBuffer(result.stdout, label);
   if (stdout.length > maxBuffer) {
     const error = new Error(`CAPABILITY_BLOCKED: ${label} exceeded its ${maxBuffer}-byte bound; no truncated artifact was dispatched`);
     error.code = "GIT_OUTPUT_BOUND";
@@ -513,7 +513,7 @@ function runGitExactBytes(cwd, argv, dependencies = {}, { label = "Git command",
 
 function runGitExact(cwd, argv, dependencies = {}, options = {}) {
   const label = options.label ?? "Git command";
-  return decodeGitUtf8Exact(runGitExactBytes(cwd, argv, dependencies, options), label);
+  return decodeUtf8Exact(runGitExactBytes(cwd, argv, dependencies, options), label);
 }
 
 function normalizeRepositoryPath(candidate, root, label) {
@@ -527,6 +527,33 @@ function normalizeRepositoryPath(candidate, root, label) {
 function repositoryPathKey(value, platform = process.platform) {
   const normalized = String(value).replace(/\\/gu, "/");
   return platform === "win32" ? normalized.toLowerCase() : normalized;
+}
+
+function canonicalizePossiblyMissingPath(candidate, dependencies = {}) {
+  const fileExists = dependencies.fileExists ?? existsSync;
+  const resolveRealpath = dependencies.realpathSync ?? realpathSync.native;
+  const lexical = path.resolve(candidate);
+  const missingSegments = [];
+  let existing = lexical;
+  while (!fileExists(existing)) {
+    const parent = path.dirname(existing);
+    if (parent === existing) throw new Error(`CAPABILITY_BLOCKED: no existing ancestor for ${lexical}`);
+    missingSegments.unshift(path.basename(existing));
+    existing = parent;
+  }
+  return path.resolve(resolveRealpath(existing), ...missingSegments);
+}
+
+function assertOutsideRepository(repositoryRoot, candidate, label, dependencies = {}) {
+  const platform = dependencies.platform ?? process.platform;
+  const canonicalRoot = canonicalizePossiblyMissingPath(repositoryRoot, dependencies);
+  const canonicalCandidate = canonicalizePossiblyMissingPath(candidate, dependencies);
+  const rootKey = repositoryPathKey(canonicalRoot, platform).replace(/\/$/u, "");
+  const candidateKey = repositoryPathKey(canonicalCandidate, platform).replace(/\/$/u, "");
+  if (candidateKey === rootKey || candidateKey.startsWith(`${rootKey}/`)) {
+    throw new Error(`CAPABILITY_BLOCKED: ${label} must live outside the target repository`);
+  }
+  return canonicalCandidate;
 }
 
 function uniqueRepositoryPaths(values, platform) {
@@ -546,7 +573,6 @@ function parsePorcelainPaths(stdout, root) {
     if (!record) continue;
     const status = record.slice(0, 2);
     if (record.length < 4 || record[2] !== " ") throw new Error("CAPABILITY_BLOCKED: git status emitted an unexpected porcelain record");
-    if (status === "!!") continue;
     paths.push(normalizeRepositoryPath(record.slice(3), root, "git status path"));
     if (/[RC]/u.test(status)) {
       index += 1;
@@ -594,8 +620,8 @@ function inventoryEvidence(paths, rawIdentity = null) {
     changed_files_sha256: inventoryDigest(changedFiles),
   };
   if (rawIdentity !== null) {
-    const rawBytes = gitOutputBuffer(rawIdentity, "PR raw blob-identity inventory");
-    evidence.raw_diff = decodeGitUtf8Exact(rawBytes, "PR raw blob-identity inventory");
+    const rawBytes = outputBuffer(rawIdentity, "PR raw blob-identity inventory");
+    evidence.raw_diff = decodeUtf8Exact(rawBytes, "PR raw blob-identity inventory");
     evidence.raw_diff_bytes = rawBytes.length;
     evidence.raw_diff_sha256 = createHash("sha256").update(rawBytes).digest("hex");
   }
@@ -672,13 +698,12 @@ export function materializePullRequestDiff(snapshot, cwd, request = {}, dependen
   let patchBuffer;
   if (purpose === "implementation") {
     patchBuffer = runGitExactBytes(worktree.root, exactDiffArgs(patchBaseOid, snapshot.head.oid, patchPaths), dependencies, { label: "task-scoped implementation diff", maxBuffer: MAX_PR_DIFF_BYTES });
-    patch = decodeGitUtf8Exact(patchBuffer, "task-scoped implementation diff");
+    patch = decodeUtf8Exact(patchBuffer, "task-scoped implementation diff");
   } else {
     try {
       patchBuffer = runGitExactBytes(worktree.root, exactDiffArgs(patchBaseOid, snapshot.head.oid), dependencies, { label: "exact full PR diff", maxBuffer: MAX_PR_DIFF_BYTES });
-      patch = decodeGitUtf8Exact(patchBuffer, "exact full PR diff");
+      patch = decodeUtf8Exact(patchBuffer, "exact full PR diff");
       wholePrReview = true;
-      patchPaths = fullPrInventory.changed_files;
     } catch (error) {
       if (error?.code !== "GIT_OUTPUT_BOUND") throw error;
       const scope = request.scope;
@@ -699,11 +724,15 @@ export function materializePullRequestDiff(snapshot, cwd, request = {}, dependen
       patchPaths = scope.paths;
       partialReviewScope = true;
       patchBuffer = runGitExactBytes(worktree.root, exactDiffArgs(patchBaseOid, snapshot.head.oid, patchPaths), dependencies, { label: "exact scoped PR diff", maxBuffer: MAX_PR_DIFF_BYTES });
-      patch = decodeGitUtf8Exact(patchBuffer, "exact scoped PR diff");
+      patch = decodeUtf8Exact(patchBuffer, "exact scoped PR diff");
     }
   }
-  const scopedInventoryText = runGitExact(worktree.root, ["diff", "--name-only", "-z", "--no-renames", patchBaseOid, snapshot.head.oid, "--", ...patchPaths], dependencies, { label: "patch-scope changed-file inventory" });
-  const scopedInventory = inventoryEvidence(scopedInventoryText.split("\0").filter(Boolean).map((entry) => normalizeRepositoryPath(entry, worktree.root, "patch-scope changed-file path")));
+  const scopedInventory = wholePrReview
+    ? inventoryEvidence(fullPrInventory.changed_files)
+    : (() => {
+        const scopedInventoryText = runGitExact(worktree.root, ["diff", "--name-only", "-z", "--no-renames", patchBaseOid, snapshot.head.oid, "--", ...patchPaths], dependencies, { label: "patch-scope changed-file inventory" });
+        return inventoryEvidence(scopedInventoryText.split("\0").filter(Boolean).map((entry) => normalizeRepositoryPath(entry, worktree.root, "patch-scope changed-file path")));
+      })();
   if (purpose === "review" && (scopedInventory.changed_file_count === 0 || patch.trim().length === 0)) {
     throw new Error("CAPABILITY_BLOCKED: PR review scope produced no substantive changed-file patch; it cannot support a clean or reviewed claim");
   }
@@ -890,7 +919,9 @@ export function validateBypassPermissionsBrief(prompt, cwd, tools) {
     const resolved = path.resolve(projectRoot, entry);
     const relative = path.relative(projectRoot, resolved);
     if (relative === "" || relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) throw new Error(`${IMPLEMENTATION_BOUNDARY_MARKER} edit_paths[${index}] escapes or names the project root`);
-    return entry.replace(/\\/gu, "/");
+    const normalized = path.posix.normalize(entry.replace(/\\/gu, "/"));
+    if (normalized.split("/")[0].toLowerCase() === ".git") throw new Error(`${IMPLEMENTATION_BOUNDARY_MARKER} edit_paths[${index}] must not target repository Git metadata`);
+    return normalized;
   });
   if (new Set(editPaths).size !== editPaths.length) throw new Error(`${IMPLEMENTATION_BOUNDARY_MARKER} edit_paths contains a duplicate`);
   if (!Array.isArray(value.read_paths) || value.read_paths.length === 0 || value.read_paths.length > 100) throw new Error(`${IMPLEMENTATION_BOUNDARY_MARKER} read_paths must contain 1-100 exact file/directory paths`);
@@ -1132,7 +1163,7 @@ export function buildClaudeArgv({ tools, mode, mcpConfigPath, settingsPath = nul
   ];
   if (settingsPath !== null) {
     if (!path.isAbsolute(settingsPath)) throw new Error("boundary settings path must be absolute");
-    argv.push("--settings", settingsPath, "--include-hook-events");
+    argv.push("--setting-sources", "", "--settings", settingsPath, "--include-hook-events");
   }
   return argv;
 }
@@ -1467,6 +1498,10 @@ function runChild(executable, argv, options, prompt, dependencies = {}) {
       });
     });
 
+    child.stdin.once("error", (error) => {
+      terminate(`Claude CLI stdin transport failed: ${error.message}`);
+    });
+
     if (!Number.isSafeInteger(child.pid) || child.pid <= 0) {
       finish(new Error("Claude CLI spawn did not expose a valid child PID"));
       return;
@@ -1503,7 +1538,11 @@ function runChild(executable, argv, options, prompt, dependencies = {}) {
       signalHandlers.set(signal, handler);
       signalEmitter.on(signal, handler);
     }
-    child.stdin.end(prompt, "utf8");
+    try {
+      child.stdin.end(prompt, "utf8");
+    } catch (error) {
+      terminate(`Claude CLI stdin transport failed: ${error.message}`);
+    }
   });
 }
 
@@ -1529,10 +1568,7 @@ export async function dispatchClaude(options, dependencies = {}) {
   const tempRoot = await mkdtemp(path.join(tmpdir(), "claude-dispatch-"));
   const mcpConfigPath = path.join(tempRoot, "mcp.json");
   try {
-    const tempRelative = path.relative(cwd, tempRoot);
-    if (tempRelative === "" || (tempRelative !== ".." && !tempRelative.startsWith(`..${path.sep}`) && !path.isAbsolute(tempRelative))) {
-      throw new Error("CAPABILITY_BLOCKED: dispatcher temporary settings, hooks, and manifests must live outside the target repository");
-    }
+    assertOutsideRepository(cwd, tempRoot, "dispatcher temporary settings, hooks, and manifests", dependencies);
     await writeFile(mcpConfigPath, '{"mcpServers":{}}\n', "utf8");
     validateMcpConfigText(await readFile(mcpConfigPath, "utf8"));
     let implementationBoundary = null;
@@ -1549,6 +1585,14 @@ export async function dispatchClaude(options, dependencies = {}) {
         throw new Error(`CAPABILITY_BLOCKED: ${PR_DIFF_SCOPE_MARKER} is review-only; implementation patch scope is derived automatically from declared edit_paths`);
       }
       implementationBoundary = validateBypassPermissionsBrief(prompt, cwd, tools);
+      for (const [label, outputPath] of [["stdout evidence", stdoutFile], ["stderr evidence", stderrFile]]) {
+        assertOutsideRepository(cwd, outputPath, `bypassPermissions ${label}`, dependencies);
+      }
+      const captureWorktree = dependencies.captureWorktreeState ?? captureGitWorktreeState;
+      implementationBaseline = await captureWorktree(cwd, dependencies);
+      if (implementationBaseline.changedPaths.length > 0) {
+        throw new Error(`CAPABILITY_BLOCKED: bypassPermissions requires an isolated clean worktree before boundary probing; pre-existing paths: ${JSON.stringify(implementationBaseline.changedPaths)}`);
+      }
       const hookPath = path.join(tempRoot, "dispatch-boundary-hook.mjs");
       const manifestPath = path.join(tempRoot, "dispatch-boundary.json");
       const activationPath = path.join(tempRoot, "dispatch-boundary-active.json");
@@ -1576,6 +1620,12 @@ export async function dispatchClaude(options, dependencies = {}) {
         manifest,
         capabilityProbe: implementationBoundary.capabilityProbe,
       }, dependencies);
+      const postProbeState = await captureWorktree(cwd, dependencies);
+      const platform = dependencies.platform ?? process.platform;
+      if (repositoryPathKey(path.resolve(postProbeState.root), platform) !== repositoryPathKey(path.resolve(implementationBaseline.root), platform)
+        || postProbeState.changedPaths.length > 0) {
+        throw new Error(`CAPABILITY_BLOCKED: boundary capability probe changed or escaped the clean implementation worktree; paths: ${JSON.stringify(postProbeState.changedPaths)}`);
+      }
     }
     const basePlan = createDispatchPlan(
       {
@@ -1596,17 +1646,6 @@ export async function dispatchClaude(options, dependencies = {}) {
     if (mode === "bypassPermissions") {
       if (!basePlan.handoffRequired || !basePlan.handoffRef) {
         throw new Error("bypassPermissions requires a live durable GitHub handoff");
-      }
-      for (const [label, outputPath] of [["stdout", stdoutFile], ["stderr", stderrFile]]) {
-        const relative = path.relative(cwd, outputPath);
-        if (relative === "" || (!relative.startsWith(`..${path.sep}`) && relative !== ".." && !path.isAbsolute(relative))) {
-          throw new Error(`CAPABILITY_BLOCKED: bypassPermissions ${label} evidence must be written outside the implementation repository`);
-        }
-      }
-      const captureWorktree = dependencies.captureWorktreeState ?? captureGitWorktreeState;
-      implementationBaseline = await captureWorktree(cwd, dependencies);
-      if (implementationBaseline.changedPaths.length > 0) {
-        throw new Error(`CAPABILITY_BLOCKED: bypassPermissions requires an isolated clean worktree; pre-existing paths: ${JSON.stringify(implementationBaseline.changedPaths)}`);
       }
     }
     const materializer = dependencies.materializeHandoff ?? materializeGitHubHandoff;
