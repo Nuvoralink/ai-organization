@@ -498,12 +498,13 @@ let payload;
 try {
   const stdin = readFileSync(0, 'utf8');
   payload = JSON.parse(stdin);
-} catch {
+} catch (error) {
   safelyAppendTelemetry(
-    { eventName: 'Malformed', outcome: 'observe', malformedCount: 1 },
+    { eventName: 'Malformed', outcome: 'block', malformedCount: 1 },
     telemetryDir,
   );
-  process.exit(0);
+  process.stderr.write(`[lifecycle-hook] blocked: malformed hook payload: ${error.message}\n`);
+  process.exit(2);
 }
 
 try {

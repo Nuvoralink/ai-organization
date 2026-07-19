@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 export function assessAction(policy, action, evidence = {}) {
   if (policy.human_required?.includes(action)) return { verdict: 'human_required', action, missing: [] };
   if (policy.autonomous?.includes(action)) return { verdict: 'allowed', action, missing: [] };
-  const conditional = policy.conditional[action];
+  const conditional = Object.hasOwn(policy.conditional ?? {}, action) ? policy.conditional[action] : null;
   if (conditional) {
     const missing = conditional.all.filter((predicate) => evidence[predicate] !== true);
     return missing.length === 0
@@ -46,6 +46,22 @@ export function validateActionPolicySemantics(policy) {
     'no_publish_or_billed_build',
     'no_production_write_or_external_contact',
   ];
+  const requiredHumanActions = [
+    'merge_that_deploys_or_mutates_production',
+    'deploy_or_publish',
+    'production_write_or_configuration_change',
+    'database_or_data_migration',
+    'destructive_or_irreversible_action',
+    'billed_action_or_purchase',
+    'external_message_or_contact',
+    'secret_or_credential_change',
+    'close_product_scope_decision',
+    'approve_visible_design_or_copy_in_context',
+    'close_material_architecture_decision',
+  ];
+  for (const action of requiredHumanActions) {
+    if (!humanRequired.includes(action)) failures.push(`Required human action is not human_required: ${action}`);
+  }
   const pushRule = conditional.push_branch;
   if (!pushRule || autonomous.includes('push_branch') || humanRequired.includes('push_branch')) {
     failures.push('push_branch must be conditional');

@@ -265,7 +265,9 @@ test('Proves: ORG-HOOK-002; Test type: telemetry-root mutation; Surface: lifecyc
     coachai: fs.readFileSync(path.join(root, 'overlays', 'coachai', 'project-files', 'scripts', 'claude-lifecycle-hook.mjs'), 'utf8'),
   };
   const validates = (name, source) => {
-    if (name === 'bootstrap') return source.includes('const root = configuredProjectRoot();') && !source.includes('repoRoot(payload?.cwd ?? process.cwd())');
+    if (name === 'bootstrap') return source.includes('root = configuredProjectRoot();')
+      && source.includes('CLAUDE_PROJECT_DIR does not match the script-derived repository root')
+      && !source.includes('repoRoot(payload?.cwd ?? process.cwd())');
     if (name === 'auxara') return source.includes('const telemetryDir = telemetryDirectory(projectRoot);') && !source.includes('telemetryDirectory(process.cwd())');
     return source.includes("const scriptRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');")
       && source.includes('fs.realpathSync.native(path.resolve(configuredProjectDir))')
@@ -275,7 +277,7 @@ test('Proves: ORG-HOOK-002; Test type: telemetry-root mutation; Surface: lifecyc
   for (const [name, source] of Object.entries(sources)) {
     assert.equal(validates(name, source), true, `${name} roots lifecycle telemetry outside cwd`);
   }
-  assert.equal(validates('bootstrap', sources.bootstrap.replace('const root = configuredProjectRoot();', 'const root = repoRoot(payload?.cwd ?? process.cwd());')), false);
+  assert.equal(validates('bootstrap', sources.bootstrap.replace('root = configuredProjectRoot();', 'root = repoRoot(payload?.cwd ?? process.cwd());')), false);
   assert.equal(validates('auxara', sources.auxara.replace('const telemetryDir = telemetryDirectory(projectRoot);', 'const telemetryDir = telemetryDirectory(process.cwd());')), false);
   assert.equal(validates('coachai', sources.coachai.replace(
     "const scriptRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');",
@@ -315,7 +317,50 @@ test('Proves: ORG-HOOK-003; Test type: runtime counterexample; Surface: Auxara a
       assert.match(result.stdout, /root-proof/u, 'Auxara state must come from the verified project root');
       assert.doesNotMatch(result.stdout, /sibling-proof/u, 'payload.cwd must not redirect Auxara state collection');
     }
+    const malformed = spawnSync(process.execPath, [path.join(fixtureRoot, 'scripts', 'claude-lifecycle-hook.mjs')], {
+      cwd: nestedCwd,
+      input: '{not-json',
+      encoding: 'utf8',
+      env: { ...process.env, CLAUDE_PROJECT_DIR: fixtureRoot },
+    });
+    assert.equal(malformed.status, 2, `${project} malformed lifecycle payload must block`);
+    assert.match(malformed.stderr, /malformed hook payload/iu);
   }
+});
+
+test('Proves: ORG-HOOK-003C; Test type: canonical-template runtime mutation; Surface: generated lifecycle adapter; Authority: script-derived project root and parse integrity; Killer mutation: trust CLAUDE_PROJECT_DIR or catch malformed JSON and exit zero; Gated command: npm test', (t) => {
+  const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'bootstrap lifecycle verified root-'));
+  const siblingRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'bootstrap lifecycle spoofed root-'));
+  t.after(() => fs.rmSync(fixtureRoot, { recursive: true, force: true }));
+  t.after(() => fs.rmSync(siblingRoot, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(fixtureRoot, 'scripts'), { recursive: true });
+  fs.mkdirSync(path.join(fixtureRoot, '.ai-organization', 'runtime'), { recursive: true });
+  fs.cpSync(path.join(root, 'core'), path.join(fixtureRoot, '.ai-organization', 'runtime', 'core'), { recursive: true });
+  const adapter = read('templates/lifecycle/claude-lifecycle-hook.mjs.template')
+    .replaceAll('{{INTEGRATION_BRANCH}}', 'main')
+    .replaceAll('{{TASK_COMPLETION_GATE}}', 'verify');
+  fs.writeFileSync(path.join(fixtureRoot, 'scripts', 'claude-lifecycle-hook.mjs'), adapter);
+  assert.equal(spawnSync('git', ['init', '-b', 'root-proof'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);
+  const executable = path.join(fixtureRoot, 'scripts', 'claude-lifecycle-hook.mjs');
+
+  const malformed = spawnSync(process.execPath, [executable], {
+    cwd: fixtureRoot,
+    input: '{not-json',
+    encoding: 'utf8',
+    env: { ...process.env, CLAUDE_PROJECT_DIR: fixtureRoot },
+  });
+  assert.equal(malformed.status, 2);
+  assert.match(malformed.stderr, /malformed hook payload/iu);
+
+  const spoofed = spawnSync(process.execPath, [executable], {
+    cwd: fixtureRoot,
+    input: JSON.stringify({ hook_event_name: 'SessionEnd', session_id: 'spoofed-root' }),
+    encoding: 'utf8',
+    env: { ...process.env, CLAUDE_PROJECT_DIR: siblingRoot },
+  });
+  assert.equal(spoofed.status, 2);
+  assert.match(spoofed.stderr, /CLAUDE_PROJECT_DIR does not match/iu);
+  assert.equal(fs.existsSync(path.join(siblingRoot, 'tmp', 'agent-telemetry')), false);
 });
 
 test('Proves: ORG-HOOK-003B; Test type: spoofed-root runtime mutation; Surface: CoachAI lifecycle root; Authority: script-derived canonical repository root; Killer mutation: trust mismatched CLAUDE_PROJECT_DIR; Gated command: npm test', (t) => {

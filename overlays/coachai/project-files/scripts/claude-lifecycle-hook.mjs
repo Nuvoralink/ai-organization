@@ -23,8 +23,13 @@ try {
   console.error(`lifecycle root: BLOCKED\n- ${error.message}`);
   process.exit(2);
 }
-let payload = {};
-try { payload = JSON.parse(fs.readFileSync(0, 'utf8') || '{}'); } catch { payload = {}; }
+let payload;
+try {
+  payload = JSON.parse(fs.readFileSync(0, 'utf8'));
+} catch (error) {
+  console.error(`lifecycle payload: BLOCKED\n- malformed hook payload: ${error.message}`);
+  process.exit(2);
+}
 const event = payload.hook_event_name ?? payload.event ?? process.env.CLAUDE_HOOK_EVENT ?? 'Unknown';
 const raw = JSON.stringify(payload);
 const errors = [];

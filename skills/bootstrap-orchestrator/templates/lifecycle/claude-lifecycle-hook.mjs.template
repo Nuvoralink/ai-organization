@@ -3,7 +3,7 @@
 // {{TASK_COMPLETION_GATE}}, save as scripts/claude-lifecycle-hook.mjs, and keep
 // tmp/agent-telemetry and tmp/agent-assurance ignored. Do not add WorktreeCreate/WorktreeRemove until
 // replacement semantics and Windows paths are verified on the installed Claude version.
-import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
@@ -44,10 +44,18 @@ function repoRoot(cwd) {
 
 function configuredProjectRoot() {
   const configured = String(process.env.CLAUDE_PROJECT_DIR ?? '').trim();
-  const candidate = configured
-    ? path.resolve(configured)
-    : path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-  return repoRoot(candidate);
+  const scriptCandidate = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const scriptRoot = repoRoot(scriptCandidate) ?? scriptCandidate;
+  const scriptReal = path.resolve(realpathSync.native(scriptRoot));
+  if (!configured) return scriptReal;
+  const configuredCandidate = path.resolve(configured);
+  const configuredRoot = repoRoot(configuredCandidate) ?? configuredCandidate;
+  const configuredReal = path.resolve(realpathSync.native(configuredRoot));
+  const key = (value) => process.platform === 'win32' ? value.toLowerCase() : value;
+  if (key(configuredReal) !== key(scriptReal)) {
+    throw new Error('CLAUDE_PROJECT_DIR does not match the script-derived repository root');
+  }
+  return scriptReal;
 }
 
 function hash(value) {
@@ -349,8 +357,19 @@ function handle(payload, root) {
 }
 
 let payload;
-try { payload = JSON.parse(readFileSync(0, 'utf8')); } catch { process.exit(0); }
-const root = configuredProjectRoot();
+try {
+  payload = JSON.parse(readFileSync(0, 'utf8'));
+} catch (error) {
+  process.stderr.write(`[lifecycle] blocked: malformed hook payload: ${error.message}\n`);
+  process.exit(2);
+}
+let root;
+try {
+  root = configuredProjectRoot();
+} catch (error) {
+  block(`[lifecycle] blocked: ${error.message}`);
+  process.exit();
+}
 if (!root) {
   if (BLOCKING_EVENTS.has(payload?.hook_event_name)) block(`[lifecycle] ${payload.hook_event_name} blocked: git worktree unavailable.`);
   process.exit();

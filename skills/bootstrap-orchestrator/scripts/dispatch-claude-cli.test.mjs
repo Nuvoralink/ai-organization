@@ -15,6 +15,7 @@ import {
   appendHandoffSnapshot,
   buildBoundarySettings,
   buildClaudeArgv,
+  buildDispatchChildEnvironment,
   captureGitWorktreeState,
   createDispatchPlan,
   DEFAULT_MAX_RUNTIME_MS,
@@ -32,6 +33,7 @@ import {
   summarizeHandoffSnapshot,
   summarizePullRequestDiff,
   terminateProcessTree,
+  trustedSkillSourceRoots,
   validateImplementationBrief,
   validateBoundarySettingsText,
   validateHandoffRef,
@@ -45,6 +47,7 @@ import {
   BOUNDARY_SCHEMA_VERSION,
   createBoundaryManifest,
   evaluateBoundaryToolUse,
+  neutralDecision,
 } from "./dispatch-boundary-hook.mjs";
 
 const TEST_DIRECTORY = path.dirname(fileURLToPath(import.meta.url));
@@ -198,9 +201,9 @@ function implementationPrompt(overrides = {}) {
 }
 
 const ACCEPTED_BOUNDARY_PROBE = () => ({
-  claudeHookActivated: true,
-  hookAllowProbe: true,
-  hookDenyProbe: true,
+  sessionStartActivated: true,
+  directHookNeutralProbe: true,
+  directHookDenyProbe: true,
   claudeSettingsAccepted: true,
   skillPluginValidated: false,
   sourceSkillNames: [],
@@ -367,6 +370,8 @@ async function controlledDispatch(t, { parentAlive = true } = {}) {
     clearedIntervals,
     terminationCalls,
     signalEmitter,
+    stdoutFile,
+    stderrFile,
   };
 }
 
@@ -392,13 +397,32 @@ test("Proves bounded implementation rejects bypassPermissions before spawn and u
     manifestPath: path.resolve("C:/Temp/claude-dispatch/manifest.json"),
     activationPath: path.resolve("C:/Temp/claude-dispatch/activation.json"),
     activationNonce: "a".repeat(32),
+    projectRoot: path.resolve("C:/Work/Repo"),
     editPaths: ["src/allowed.ts", "docs/exact file.md"],
   });
   assert.deepEqual(settings.permissions, {
     defaultMode: "dontAsk",
-    allow: ["Edit(/src/allowed.ts)", "Edit(/docs/exact file.md)"],
+    allow: ["Edit(//c/Work/Repo/src/allowed.ts)", "Edit(//c/Work/Repo/docs/exact file.md)"],
   });
-  assert.equal(settings.permissions.allow.includes("Edit(/src/sibling.ts)"), false);
+  assert.equal(settings.permissions.allow.includes("Edit(//c/Work/Repo/src/sibling.ts)"), false);
+  assert.deepEqual(neutralDecision(), {});
+  assert.doesNotMatch(JSON.stringify(neutralDecision()), /permissionDecision|allow/iu);
+});
+
+test("The canonical dispatch brief carries a boundary marker accepted by the executable validator; mutation: let template and runtime schemas drift", async (t) => {
+  const fixture = await mkdtemp(path.join(tmpdir(), "dispatch-brief-contract-"));
+  t.after(() => rm(fixture, { recursive: true, force: true }));
+  await mkdir(path.join(fixture, "docs"), { recursive: true });
+  await mkdir(path.join(fixture, "src"), { recursive: true });
+  await writeFile(path.join(fixture, "src", "dispatcher.mjs"), "export {};\n", "utf8");
+  const template = await readFile(path.resolve(TEST_DIRECTORY, "../templates/briefs/dispatch-brief.template.md"), "utf8");
+  const materialized = template
+    .replaceAll("path/to/read-directory", "docs")
+    .replaceAll("path/to/exact-file", "src/dispatcher.mjs");
+  const boundary = validateImplementationBrief(materialized, fixture, ["Read", "Glob", "Grep", "Edit"]);
+  assert.deepEqual(boundary.readPaths, ["docs", "src/dispatcher.mjs"]);
+  assert.deepEqual(boundary.editPaths, ["src/dispatcher.mjs"]);
+  assert.deepEqual(boundary.capabilityProbe, { tool: "Edit", path: "src/dispatcher.mjs" });
 });
 
 test("Proves exact trusted skills are copied into one isolated plugin with supporting files; mutations: add a component, load an undeclared sibling, or drift a digest", async (t) => {
@@ -474,6 +498,21 @@ test("Proves trusted skill materialization rejects unsafe source shape; mutation
     materializeSkillPlugin({ skillNames: ["oversize"], sourceRoots: [sourceRoot], destinationRoot: path.join(fixture, "oversize-output") }),
     /exceeds 10485760 bytes/u,
   );
+});
+
+test("Proves explicit trusted skill roots outrank an ambient user-home name collision; mutation: prefer USERPROFILE before --skill-source-root", async (t) => {
+  const fixture = await mkdtemp(path.join(tmpdir(), "dispatch-skill-precedence-"));
+  t.after(() => rm(fixture, { recursive: true, force: true }));
+  const explicitRoot = path.join(fixture, "explicit");
+  const ambientRoot = path.join(fixture, "user", ".claude", "skills");
+  await mkdir(path.join(explicitRoot, "declared"), { recursive: true });
+  await mkdir(path.join(ambientRoot, "declared"), { recursive: true });
+  await writeFile(path.join(explicitRoot, "declared", "SKILL.md"), "explicit canonical skill\n", "utf8");
+  await writeFile(path.join(ambientRoot, "declared", "SKILL.md"), "ambient collision\n", "utf8");
+  const roots = trustedSkillSourceRoots(["declared"], [explicitRoot], { USERPROFILE: path.join(fixture, "user") });
+  assert.deepEqual(roots, [path.resolve(explicitRoot)]);
+  const materialized = await materializeSkillPlugin({ skillNames: ["declared"], sourceRoots: roots, destinationRoot: path.join(fixture, "destination") });
+  assert.equal(await readFile(path.join(materialized.pluginDir, "skills", "declared", "SKILL.md"), "utf8"), "explicit canonical skill\n");
 });
 
 test("Proves a no-shell allowlist rejects both shell tool events; mutation: observe Bash or PowerShell", () => {
@@ -654,6 +693,14 @@ test("dontAsk evidence paths are contained outside the repository before preflig
       stderrFile: path.join(evidenceRoot, "stderr.log"),
     }),
     /stdout evidence must live outside the target repository/u,
+  );
+  await assert.rejects(
+    dispatchClaude({
+      ...base,
+      stdoutFile: path.join(evidenceRoot, "shared.log"),
+      stderrFile: path.join(evidenceRoot, "shared.log"),
+    }),
+    /evidence paths must be pairwise distinct/u,
   );
 
   const accepted = await dispatchClaude({
@@ -1316,7 +1363,10 @@ test("bounded dontAsk implementation requires live handoff, exact edit boundarie
   assert.equal(accepted.plan.argv.includes("--safe-mode"), false);
   assert.deepEqual(accepted.plan.implementationBoundary.readPaths, ["."]);
   assert.deepEqual(accepted.plan.implementationBoundary.editPaths, ["src/dispatcher.mjs", "src/dispatcher.test.mjs"]);
-  assert.deepEqual(accepted.plan.implementationBoundary.nativeEditAllowRules, ["Edit(/src/dispatcher.mjs)", "Edit(/src/dispatcher.test.mjs)"]);
+  assert.equal(accepted.plan.implementationBoundary.nativeEditAllowRules.length, 2);
+  assert.equal(accepted.plan.implementationBoundary.nativeEditAllowRules.every((rule) => /^Edit\(\/\/.+\)$/u.test(rule)), true);
+  assert.equal(accepted.plan.implementationBoundary.nativeEditAllowRules[0].endsWith("/src/dispatcher.mjs)"), true);
+  assert.equal(accepted.plan.implementationBoundary.nativeEditAllowRules[1].endsWith("/src/dispatcher.test.mjs)"), true);
   assert.deepEqual(observedDiffRequest, { purpose: "implementation", paths: ["src/dispatcher.mjs", "src/dispatcher.test.mjs"] });
   assert.deepEqual(accepted.plan.implementationBoundary.capabilityProbe, { tool: "Edit", path: "src/dispatcher.mjs" });
   assert.deepEqual(accepted.plan.boundaryCapability, ACCEPTED_BOUNDARY_PROBE());
@@ -1329,6 +1379,12 @@ test("bounded dontAsk implementation requires live handoff, exact edit boundarie
   await assert.rejects(dispatchClaude(common, dependencies), /cannot authorize irreversible, billed, or external-contact/u);
   await writeFile(promptFile, implementationPrompt({ edit_paths: ["src/*.mjs"] }), "utf8");
   await assert.rejects(dispatchClaude(common, dependencies), /must be an exact permission-safe repo-relative path/u);
+  for (const permissionMetacharPath of ["!negated.mjs", "#comment.mjs", ":(glob)magic.mjs"]) {
+    assert.throws(
+      () => validateImplementationBrief(implementationPrompt({ edit_paths: [permissionMetacharPath], capability_probe: { tool: "Write", path: permissionMetacharPath } }), root, ["Read", "Write"]),
+      /must be an exact permission-safe repo-relative path/u,
+    );
+  }
   for (const gitPath of [".git/hooks/pre-commit", ".GIT/config", "src/../.GiT/hooks/pre-commit"]) {
     await writeFile(promptFile, implementationPrompt({ edit_paths: [gitPath], capability_probe: { tool: "Write", path: gitPath } }), "utf8");
     await assert.rejects(dispatchClaude(common, dependencies), /must not target repository Git metadata/u);
@@ -1531,7 +1587,7 @@ test("Generated settings use one native catch-all hook, and ignored Claude setti
   const settingsPath = path.join(temp, "settings.json");
   const mcpConfigPath = path.join(temp, "mcp.json");
   const manifest = createBoundaryManifest({ projectRoot: root, readPaths: ["src"], editPaths: ["src/edit.mjs"], skillNames: [] });
-  const settings = buildBoundarySettings({ nodeExecutable: process.execPath, hookPath, manifestPath, activationPath, activationNonce, editPaths: manifest.edit_paths });
+  const settings = buildBoundarySettings({ nodeExecutable: process.execPath, hookPath, manifestPath, activationPath, activationNonce, projectRoot: manifest.project_root, editPaths: manifest.edit_paths });
   await writeFile(manifestPath, JSON.stringify(manifest), "utf8");
   await writeFile(activationPath, JSON.stringify({ schema_version: BOUNDARY_SCHEMA_VERSION, nonce: activationNonce, project_root: manifest.project_root }), "utf8");
   await writeFile(settingsPath, JSON.stringify(settings), "utf8");
@@ -1630,6 +1686,7 @@ test("Proves init-only plugin inventory and live init evidence exactly match run
     manifestPath,
     activationPath,
     activationNonce: nonce,
+    projectRoot: manifest.project_root,
     editPaths: ["edit.mjs"],
     trustedReadPaths: skillPlugin.skillDirectories.map((entry) => entry.path),
   });
@@ -1752,6 +1809,30 @@ test("Clean-worktree capture includes tracked, untracked, and both rename paths 
   });
   assert.deepEqual(state.changedPaths, ["src/original.mjs", "src/renamed.mjs", "src/tracked.mjs", "src/untracked.mjs"]);
   assert.deepEqual(calls[1].argv, ["status", "--porcelain=v1", "-z", "--untracked-files=all"]);
+  assert.equal(calls.every((call) => call.options.shell === false), true);
+});
+
+test("Declared edit paths that Git ignores fail before dispatch while a nonignored exact target remains live; mutation: rely only on ordinary git status", () => {
+  const root = path.resolve("C:/worktrees/isolated-implementation");
+  const calls = [];
+  const invoke = (ignoredOutput) => captureGitWorktreeState(root, {
+    platform: "linux",
+    realpathSync: IDENTITY_REALPATH,
+    editPaths: ["generated/exact-output.json"],
+    spawnSyncProcess: (executable, argv, options) => {
+      calls.push({ executable, argv, options });
+      if (argv[0] === "rev-parse") return { status: 0, stdout: `${root}\n` };
+      if (argv[0] === "--literal-pathspecs") return { status: 0, stdout: ignoredOutput };
+      return { status: 0, stdout: "" };
+    },
+  });
+  assert.throws(() => invoke("!! generated/exact-output.json\0"), /declared edit paths are ignored.*exact-output\.json/u);
+  calls.length = 0;
+  assert.deepEqual(invoke(""), { root, changedPaths: [] });
+  assert.deepEqual(calls[2].argv, [
+    "--literal-pathspecs", "status", "--porcelain=v1", "-z", "--untracked-files=all",
+    "--ignored=matching", "--", "generated/exact-output.json",
+  ]);
   assert.equal(calls.every((call) => call.options.shell === false), true);
 });
 
@@ -1890,6 +1971,23 @@ test("stdin transport failure terminates Claude then still captures post-run con
   assert.equal(captureCount, 3);
   assert.equal(await readFile(stdoutFile, "utf8"), "");
   assert.equal(await readFile(stderrFile, "utf8"), "");
+  const dispatchState = JSON.parse(await readFile(`${stderrFile}.dispatch.json`, "utf8"));
+  assert.equal(dispatchState.state, "failed");
+  assert.match(dispatchState.failure, /stdin transport failed: broken pipe/u);
+});
+
+test("Incremental stream and running-state evidence exist before the Claude child exits; mutation: write evidence only after close", async (t) => {
+  const controlled = await controlledDispatch(t, { parentAlive: false });
+  controlled.child.stdout.write("partial-stream-before-close\n");
+  controlled.child.stderr.write("partial-stderr-before-close\n");
+  assert.equal(await readFile(controlled.stdoutFile, "utf8"), "partial-stream-before-close\n");
+  assert.equal(await readFile(controlled.stderrFile, "utf8"), "partial-stderr-before-close\n");
+  const running = JSON.parse(await readFile(`${controlled.stderrFile}.dispatch.json`, "utf8"));
+  assert.equal(running.state, "running");
+  controlled.intervals[0].callback();
+  await assert.rejects(controlled.promise, /parent process .* is no longer alive/u);
+  const failed = JSON.parse(await readFile(`${controlled.stderrFile}.dispatch.json`, "utf8"));
+  assert.equal(failed.state, "failed");
 });
 
 test("outside-evidence containment denies a symlink or junction alias back into the repository", async (t) => {
@@ -2009,6 +2107,7 @@ test("Proves Windows tree termination targets only the exact child PID without a
   const captured = {};
   terminateProcessTree(4242, {
     platform: "win32",
+    environment: { SystemRoot: "C:\\Windows" },
     spawnSyncProcess: (executable, argv, options) => {
       captured.executable = executable;
       captured.argv = argv;
@@ -2016,9 +2115,35 @@ test("Proves Windows tree termination targets only the exact child PID without a
       return { status: 0 };
     },
   });
-  assert.equal(captured.executable, "taskkill");
+  assert.equal(captured.executable, path.win32.join("C:\\Windows", "System32", "taskkill.exe"));
   assert.deepEqual(captured.argv, ["/PID", "4242", "/T", "/F"]);
   assert.equal(captured.options.shell, false);
+  assert.deepEqual(captured.options.env, { SystemRoot: "C:\\Windows" });
+});
+
+test("Proves dispatcher children receive a minimal registered environment; mutation: inherit Node, Git, Claude-root, proxy, or arbitrary ambient injection", () => {
+  const sanitized = buildDispatchChildEnvironment({
+    Path: "C:\\safe-bin",
+    SystemRoot: "C:\\Windows",
+    USERPROFILE: "C:\\Users\\tester",
+    CLAUDE_CODE_OAUTH_TOKEN: "registered-auth",
+    GH_TOKEN: "registered-gh-auth",
+    NODE_OPTIONS: "--require C:\\attack.cjs",
+    NODE_PATH: "C:\\attack-modules",
+    GIT_DIR: "C:\\attacker-git-dir",
+    GIT_WORK_TREE: "C:\\attacker-worktree",
+    CLAUDE_PROJECT_DIR: "C:\\attacker-project",
+    CLAUDE_CONFIG_DIR: "C:\\attacker-config",
+    HTTPS_PROXY: "http://attacker.invalid",
+    ATTACKER_DEFINED: "payload",
+  });
+  assert.deepEqual(sanitized, {
+    Path: "C:\\safe-bin",
+    SystemRoot: "C:\\Windows",
+    USERPROFILE: "C:\\Users\\tester",
+    CLAUDE_CODE_OAUTH_TOKEN: "registered-auth",
+    GH_TOKEN: "registered-gh-auth",
+  });
 });
 
 test("Proves POSIX termination targets the dispatch process group and escalates safely; mutation: kill only the parent child PID", () => {
