@@ -39,6 +39,76 @@ function rootedHookErrors(settings) {
   return errors;
 }
 
+function writePostToolFixture(project, fixtureRoot) {
+  const scriptsDir = path.join(fixtureRoot, 'scripts');
+  fs.mkdirSync(scriptsDir, { recursive: true });
+  const recorder = [
+    "import fs from 'node:fs';",
+    "fs.appendFileSync(new URL('./gate-cwds.jsonl', import.meta.url), `${JSON.stringify({ cwd: process.cwd(), marker: process.argv[2] })}\\n`);",
+  ].join('\n');
+  fs.writeFileSync(path.join(fixtureRoot, 'record-cwd.mjs'), recorder);
+
+  if (project === 'bootstrap') {
+    const source = read('templates/claude-posttooluse-gate.mjs.template')
+      .replaceAll('{{RULES_DIR_LEAF}}', '\\.claude\\/rules')
+      .replaceAll('{{RULE_EXT_BARE}}', 'md');
+    fs.writeFileSync(path.join(scriptsDir, 'claude-posttooluse-gate.mjs'), source);
+    fs.writeFileSync(path.join(fixtureRoot, 'package.json'), JSON.stringify({
+      scripts: { 'gate:test-intent': 'node record-cwd.mjs test-intent' },
+    }));
+    return '/fixture/example.test.mjs';
+  }
+
+  const sourceRoot = path.join(root, 'overlays', project, 'project-files');
+  fs.copyFileSync(
+    path.join(sourceRoot, 'scripts', 'claude-posttooluse-gate.mjs'),
+    path.join(scriptsDir, 'claude-posttooluse-gate.mjs'),
+  );
+  if (project === 'auxara-dialer') {
+    fs.mkdirSync(path.join(scriptsDir, 'lib'), { recursive: true });
+    fs.copyFileSync(
+      path.join(sourceRoot, 'scripts', 'lib', 'claudeGateRouter.mjs'),
+      path.join(scriptsDir, 'lib', 'claudeGateRouter.mjs'),
+    );
+    fs.mkdirSync(path.join(fixtureRoot, '.ai-organization'), { recursive: true });
+    fs.copyFileSync(
+      path.join(sourceRoot, '.ai-organization', 'completion-profiles.json'),
+      path.join(fixtureRoot, '.ai-organization', 'completion-profiles.json'),
+    );
+    fs.writeFileSync(path.join(fixtureRoot, 'package.json'), JSON.stringify({
+      scripts: { 'gate:test-intent': 'node record-cwd.mjs test-intent' },
+    }));
+    return '/fixture/example.test.mjs';
+  }
+
+  fs.mkdirSync(path.join(scriptsDir, 'lib'), { recursive: true });
+  fs.writeFileSync(
+    path.join(scriptsDir, 'lib', 'test-file-match.mjs'),
+    "export const isTestFile = (value) => /\\.(test|spec)\\.[^.]+$/u.test(String(value));\n",
+  );
+  fs.writeFileSync(path.join(fixtureRoot, 'package.json'), JSON.stringify({
+    scripts: {
+      'check:ui': 'node record-cwd.mjs ui',
+      'check:ui-continuity': 'node record-cwd.mjs ui-continuity',
+    },
+  }));
+  return '/fixture/frontend/src/example.ts';
+}
+
+function runPostToolHook(fixtureRoot, launchCwd, filePath, inputOverride) {
+  const input = inputOverride ?? JSON.stringify({
+    hook_event_name: 'PostToolUse',
+    tool_name: 'Edit',
+    tool_input: { file_path: filePath },
+  });
+  return spawnSync(process.execPath, [path.join(fixtureRoot, 'scripts', 'claude-posttooluse-gate.mjs')], {
+    cwd: launchCwd,
+    input,
+    encoding: 'utf8',
+    env: { ...process.env, CLAUDE_PROJECT_DIR: fixtureRoot },
+  });
+}
+
 function actionAuthorityErrors(policy) {
   const errors = [];
   for (const action of ['create_branch_or_worktree', 'commit_in_scope_changes', 'push_branch', 'open_or_update_pull_request']) {
@@ -214,6 +284,54 @@ test('Proves: ORG-HOOK-003; Test type: runtime counterexample; Surface: Auxara a
     const telemetryFile = project === 'coachai' ? 'lifecycle.jsonl' : 'events.jsonl';
     assert.equal(fs.existsSync(path.join(fixtureRoot, 'tmp', 'agent-telemetry', telemetryFile)), true, `${project} writes telemetry below the configured project root`);
     assert.equal(fs.existsSync(path.join(nestedCwd, 'tmp', 'agent-telemetry', telemetryFile)), false, `${project} must not write telemetry below nested cwd`);
+  }
+});
+
+test('Proves: ORG-HOOK-004; Test type: nested-cwd runtime mutation and root counterexample; Surface: universal, Auxara, and CoachAI PostToolUse gate children; Authority: configured project root; Killer mutation: spawn npm or node from process.cwd(); Gated command: npm test', (t) => {
+  for (const project of ['bootstrap', 'auxara-dialer', 'coachai']) {
+    const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), `${project} posttool root with spaces-`));
+    t.after(() => fs.rmSync(fixtureRoot, { recursive: true, force: true }));
+    const filePath = writePostToolFixture(project, fixtureRoot);
+    const nestedCwd = path.join(fixtureRoot, 'packages', 'nested package');
+    fs.mkdirSync(nestedCwd, { recursive: true });
+    fs.copyFileSync(path.join(fixtureRoot, 'package.json'), path.join(nestedCwd, 'package.json'));
+
+    for (const launchCwd of [fixtureRoot, nestedCwd]) {
+      fs.rmSync(path.join(fixtureRoot, 'gate-cwds.jsonl'), { force: true });
+      const result = runPostToolHook(fixtureRoot, launchCwd, filePath);
+      assert.equal(result.status, 0, `${project} from ${launchCwd}: ${result.stderr}`);
+      const records = fs.readFileSync(path.join(fixtureRoot, 'gate-cwds.jsonl'), 'utf8')
+        .trim().split(/\r?\n/u).map((line) => JSON.parse(line));
+      assert.equal(records.length > 0, true, `${project} must execute at least one routed gate`);
+      assert.deepEqual(new Set(records.map((record) => path.resolve(record.cwd))), new Set([path.resolve(fixtureRoot)]));
+    }
+  }
+});
+
+test('Proves: ORG-HOOK-005; Test type: malformed-input mutation and no-op counterexample; Surface: universal, Auxara, and CoachAI PostToolUse gate parsing; Authority: Edit/Write hook payload contract; Killer mutation: catch malformed JSON and exit zero; Gated command: npm test', (t) => {
+  for (const project of ['bootstrap', 'auxara-dialer', 'coachai']) {
+    const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), `${project} posttool payload-`));
+    t.after(() => fs.rmSync(fixtureRoot, { recursive: true, force: true }));
+    const filePath = writePostToolFixture(project, fixtureRoot);
+    const malformed = runPostToolHook(fixtureRoot, fixtureRoot, filePath, '{not-json');
+    assert.equal(malformed.status, 2, `${project} malformed payload must block`);
+    assert.match(malformed.stderr, /malformed|invalid.*payload/iu);
+
+    const missingEditPath = runPostToolHook(
+      fixtureRoot,
+      fixtureRoot,
+      filePath,
+      JSON.stringify({ hook_event_name: 'PostToolUse', tool_name: 'Write', tool_input: {} }),
+    );
+    assert.equal(missingEditPath.status, 2, `${project} Edit/Write without file_path must block`);
+
+    const nonEdit = runPostToolHook(
+      fixtureRoot,
+      fixtureRoot,
+      filePath,
+      JSON.stringify({ hook_event_name: 'PostToolUse', tool_name: 'Read', tool_input: {} }),
+    );
+    assert.equal(nonEdit.status, 0, `${project} well-formed non-edit event remains a no-op`);
   }
 });
 
