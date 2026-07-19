@@ -16,6 +16,7 @@ test('Proves: ORG-AUTH-002; Test type: semantic mutation; Surface: human action 
     mutated.human_required = mutated.human_required.filter((candidate) => candidate !== action);
     mutated.autonomous.push(action);
     assert.equal(assessAction(mutated, action).verdict, 'allowed');
+    assert.match(validateActionPolicySemantics(mutated).join('\n'), new RegExp(`Required human action is not human_required: ${action}`, 'u'));
   }
   const overlap = structuredClone(policy);
   overlap.human_required.push(overlap.autonomous[0]);
@@ -52,4 +53,6 @@ test('Proves: ORG-AUTH-003; Test type: decision matrix; Surface: action evaluato
   assert.equal(blocked.verdict, 'human_required');
   assert.deepEqual(blocked.missing, ['actual_diff_verified']);
   assert.equal(assessAction(policy, 'unknown_action').verdict, 'human_required');
+  assert.deepEqual(assessAction(policy, 'constructor'), { verdict: 'human_required', action: 'constructor', missing: ['unclassified_action'] });
+  assert.deepEqual(assessAction({ default: 'human_required' }, 'push_branch'), { verdict: 'human_required', action: 'push_branch', missing: ['unclassified_action'] });
 });

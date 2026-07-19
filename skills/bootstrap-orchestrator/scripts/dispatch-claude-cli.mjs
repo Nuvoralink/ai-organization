@@ -2,15 +2,15 @@
 
 import { spawn, spawnSync } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
-import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from "node:fs";
+import { appendFileSync, existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import { copyFile, lstat, mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import {
-  allowedDecision,
   createBoundaryManifest,
+  neutralDecision,
 } from "./dispatch-boundary-hook.mjs";
 
 const SAFE_PERMISSION_MODE = "dontAsk";
@@ -72,6 +72,23 @@ const GITHUB_HANDOFF_QUERY = `query MaterializeHandoff($owner: String!, $name: S
 export const DEFAULT_MAX_RUNTIME_MS = 30 * 60 * 1000;
 const DEFAULT_PARENT_WATCHDOG_INTERVAL_MS = 1000;
 const DEFAULT_TERMINATION_GRACE_MS = 5000;
+const DISPATCH_CHILD_ENV_ALLOWLIST = new Set([
+  "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "APPDATA", "CI", "CLAUDE_CODE_OAUTH_TOKEN",
+  "COLORTERM", "COMMONPROGRAMFILES", "COMMONPROGRAMFILES(X86)", "COMSPEC", "FORCE_COLOR",
+  "GH_HOST", "GH_TOKEN", "GITHUB_TOKEN", "HOME", "HOMEDRIVE", "HOMEPATH", "LANG",
+  "LC_ALL", "LC_CTYPE", "LOCALAPPDATA", "LOGNAME", "NO_COLOR", "PATH", "PATHEXT",
+  "PROGRAMDATA", "PROGRAMFILES", "PROGRAMFILES(X86)", "SHELL", "SYSTEMROOT", "TEMP",
+  "TERM", "TMP", "TMPDIR", "USER", "USERNAME", "USERPROFILE", "WINDIR",
+  "XDG_CACHE_HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME",
+]);
+
+export function buildDispatchChildEnvironment(environment = process.env) {
+  if (!environment || typeof environment !== "object" || Array.isArray(environment)) {
+    throw new Error("dispatcher child environment source must be an object");
+  }
+  return Object.fromEntries(Object.entries(environment).filter(([name, value]) =>
+    DISPATCH_CHILD_ENV_ALLOWLIST.has(name.toUpperCase()) && typeof value === "string"));
+}
 
 export function parsePositiveInteger(value, optionName) {
   const normalized =
@@ -105,14 +122,21 @@ export function terminateProcessTree(
     spawnSyncProcess = spawnSync,
     killProcess = process.kill,
     processAlive = (candidatePid) => isProcessAlive(candidatePid, killProcess),
+    environment = process.env,
   } = {},
 ) {
   const exactPid = parsePositiveInteger(pid, "child PID");
   if (platform === "win32") {
+    const systemRoot = environment.SystemRoot ?? environment.SYSTEMROOT ?? environment.WINDIR ?? environment.windir;
+    if (typeof systemRoot !== "string" || systemRoot.trim() === "") {
+      throw new Error("Windows process-tree termination requires an exact SystemRoot or WINDIR");
+    }
+    const taskkillExecutable = path.win32.join(systemRoot, "System32", "taskkill.exe");
     const result = spawnSyncProcess(
-      "taskkill",
+      taskkillExecutable,
       ["/PID", String(exactPid), "/T", "/F"],
       {
+        env: buildDispatchChildEnvironment(environment),
         shell: false,
         windowsHide: true,
         stdio: "ignore",
@@ -441,6 +465,7 @@ export function materializeGitHubHandoff(handoffRef, dependencies = {}) {
     "-F", `number=${descriptor.number}`,
   ];
   const result = spawnSyncProcess(executable, argv, {
+    env: buildDispatchChildEnvironment(dependencies.environment ?? process.env),
     shell: false,
     windowsHide: true,
     maxBuffer: MAX_GITHUB_RESPONSE_BYTES,
@@ -488,6 +513,7 @@ function runGitExactBytes(cwd, argv, dependencies = {}, { label = "Git command",
   const timeout = parsePositiveInteger(dependencies.gitTimeoutMs ?? DEFAULT_GIT_TIMEOUT_MS, "Git timeout");
   const result = spawnSyncProcess(resolveGitExecutable(dependencies), argv, {
     cwd,
+    env: buildDispatchChildEnvironment(dependencies.environment ?? process.env),
     shell: false,
     windowsHide: true,
     maxBuffer,
@@ -597,6 +623,19 @@ export function captureGitWorktreeState(cwd, dependencies = {}) {
   const pathKey = (value) => platform === "win32" ? value.toLowerCase() : value;
   if (pathKey(root) !== pathKey(requestedReal)) throw new Error(`CAPABILITY_BLOCKED: implementation/review cwd must canonically equal the isolated repository root; resolved ${root}`);
   const status = runGitExact(root, ["status", "--porcelain=v1", "-z", "--untracked-files=all"], dependencies, { label: "worktree status probe" });
+  if (Array.isArray(dependencies.editPaths) && dependencies.editPaths.length > 0) {
+    const ignoredStatus = runGitExact(
+      root,
+      ["--literal-pathspecs", "status", "--porcelain=v1", "-z", "--untracked-files=all", "--ignored=matching", "--", ...dependencies.editPaths],
+      dependencies,
+      { label: "declared edit-path ignore probe" },
+    );
+    const ignoredPaths = ignoredStatus.split("\0").filter((record) => record.startsWith("!! "))
+      .map((record) => normalizeRepositoryPath(record.slice(3), root, "ignored declared edit path"));
+    if (ignoredPaths.length > 0) {
+      throw new Error(`CAPABILITY_BLOCKED: declared edit paths are ignored and cannot be attributed by the worktree boundary: ${JSON.stringify([...new Set(ignoredPaths)].sort())}`);
+    }
+  }
   return { root, changedPaths: parsePorcelainPaths(status, root) };
 }
 
@@ -918,7 +957,7 @@ export function validateImplementationBrief(prompt, cwd, tools) {
   if (!Array.isArray(value.edit_paths) || value.edit_paths.length === 0 || value.edit_paths.length > 100) throw new Error(`${IMPLEMENTATION_BOUNDARY_MARKER} edit_paths must contain 1-100 exact paths`);
   const projectRoot = path.resolve(cwd);
   const editPaths = value.edit_paths.map((entry, index) => {
-    if (typeof entry !== "string" || entry.trim() !== entry || entry.length === 0 || /[()*?{}[\]\r\n]/u.test(entry) || path.isAbsolute(entry)) throw new Error(`${IMPLEMENTATION_BOUNDARY_MARKER} edit_paths[${index}] must be an exact permission-safe repo-relative path`);
+    if (typeof entry !== "string" || entry.trim() !== entry || entry.length === 0 || /[!#()*:?{}[\]\r\n]/u.test(entry) || path.isAbsolute(entry)) throw new Error(`${IMPLEMENTATION_BOUNDARY_MARKER} edit_paths[${index}] must be an exact permission-safe repo-relative path`);
     const resolved = path.resolve(projectRoot, entry);
     const relative = path.relative(projectRoot, resolved);
     if (relative === "" || relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) throw new Error(`${IMPLEMENTATION_BOUNDARY_MARKER} edit_paths[${index}] escapes or names the project root`);
@@ -1114,11 +1153,16 @@ export async function materializeSkillPlugin({ skillNames, sourceRoots, destinat
   return result;
 }
 
-function trustedSkillSourceRoots(skillNames, explicitRoots, environment = process.env) {
+export function trustedSkillSourceRoots(skillNames, explicitRoots, environment = process.env) {
   if (explicitRoots !== undefined && (!Array.isArray(explicitRoots) || explicitRoots.some((entry) => typeof entry !== "string"))) {
     throw new Error("--skill-source-root must provide exact absolute trusted roots");
   }
   const roots = [];
+  for (const root of explicitRoots ?? []) {
+    const real = assertRealDirectory(root, "explicit trusted skill source root");
+    if (!roots.some((entry) => repositoryPathKey(entry) === repositoryPathKey(real))) roots.push(real);
+  }
+  if (roots.length > 0) return roots;
   const preferred = typeof environment.USERPROFILE === "string"
     ? path.join(environment.USERPROFILE, ".claude", "skills")
     : null;
@@ -1130,10 +1174,6 @@ function trustedSkillSourceRoots(skillNames, explicitRoots, environment = proces
         || repositoryPathKey(candidate) !== repositoryPathKey(realpathSync.native(candidate)));
     });
     if (!hasUnsafeDeclaredAlias) roots.push(preferredReal);
-  }
-  for (const root of explicitRoots ?? []) {
-    const real = assertRealDirectory(root, "explicit trusted skill source root");
-    if (!roots.some((entry) => repositoryPathKey(entry) === repositoryPathKey(real))) roots.push(real);
   }
   if (roots.length === 0) {
     throw new Error("declared skills require an exact non-reparse trusted root; pass --skill-source-root for the canonical skill directory");
@@ -1198,10 +1238,19 @@ export function validateMcpConfigText(text) {
   return parsed;
 }
 
-export function buildBoundarySettings({ nodeExecutable, hookPath, manifestPath, activationPath, activationNonce, editPaths, trustedReadPaths = [] }) {
+function nativeAbsolutePermissionPath(value) {
+  const absolute = path.resolve(value).replace(/\\/gu, "/");
+  const normalized = /^[A-Za-z]:\//u.test(absolute)
+    ? `${absolute[0].toLowerCase()}${absolute.slice(2)}`
+    : absolute.replace(/^\/+/, "");
+  return `//${normalized}`;
+}
+
+export function buildBoundarySettings({ nodeExecutable, hookPath, manifestPath, activationPath, activationNonce, projectRoot, editPaths, trustedReadPaths = [] }) {
   for (const [label, value] of [["node executable", nodeExecutable], ["boundary hook", hookPath], ["boundary manifest", manifestPath], ["activation proof", activationPath]]) {
     if (typeof value !== "string" || !path.isAbsolute(value)) throw new Error(`${label} path must be absolute`);
   }
+  if (typeof projectRoot !== "string" || !path.isAbsolute(projectRoot)) throw new Error("boundary settings project root must be absolute");
   if (typeof activationNonce !== "string" || !/^[a-f0-9]{32}$/u.test(activationNonce)) throw new Error("activation nonce must be 16 random bytes encoded as hex");
   if (!Array.isArray(editPaths) || editPaths.length === 0) throw new Error("boundary settings require exact edit paths");
   if (!Array.isArray(trustedReadPaths) || trustedReadPaths.some((entry) => typeof entry !== "string" || !path.isAbsolute(entry))) throw new Error("boundary settings trusted Read paths must be exact absolute directories");
@@ -1209,8 +1258,8 @@ export function buildBoundarySettings({ nodeExecutable, hookPath, manifestPath, 
     permissions: {
       defaultMode: "dontAsk",
       allow: [
-        ...editPaths.map((entry) => `Edit(/${entry.replace(/\\/gu, "/")})`),
-        ...trustedReadPaths.map((entry) => `Read(//${path.resolve(entry).replace(/\\/gu, "/").replace(/^\/+/, "")}/**)`),
+        ...editPaths.map((entry) => `Edit(${nativeAbsolutePermissionPath(path.resolve(projectRoot, entry))})`),
+        ...trustedReadPaths.map((entry) => `Read(${nativeAbsolutePermissionPath(entry)}/**)`),
       ],
     },
     hooks: {
@@ -1243,7 +1292,7 @@ export function validateBoundarySettingsText(text, expected) {
   const hook = parsed.hooks?.PreToolUse?.[0]?.hooks?.[0];
   const activation = parsed.hooks?.SessionStart?.[0]?.hooks?.[0];
   if (parsed.permissions?.defaultMode !== "dontAsk" || !Array.isArray(parsed.permissions?.allow)
-    || parsed.permissions.allow.length === 0 || parsed.permissions.allow.some((rule) => !/^(?:Edit\(\/.+\)|Read\(\/\/.+\/\*\*\))$/u.test(rule))
+    || parsed.permissions.allow.length === 0 || parsed.permissions.allow.some((rule) => !/^(?:Edit\(\/\/.+\)|Read\(\/\/.+\/\*\*\))$/u.test(rule))
     || new Set(parsed.permissions.allow).size !== parsed.permissions.allow.length
     || parsed.hooks.PreToolUse.length !== 1 || parsed.hooks.PreToolUse[0].matcher !== "*"
     || parsed.hooks.PreToolUse[0].hooks.length !== 1 || hook?.type !== "command"
@@ -1276,6 +1325,7 @@ function runBoundaryHookProbe(nodeExecutable, hookPath, manifestPath, activation
   const spawnSyncProcess = dependencies.spawnSyncProcess ?? spawnSync;
   return spawnSyncProcess(nodeExecutable, [hookPath, "--enforce", manifestPath, activationPath, activationNonce], {
     cwd: path.dirname(manifestPath),
+    env: buildDispatchChildEnvironment(dependencies.environment ?? process.env),
     shell: false,
     windowsHide: true,
     encoding: "utf8",
@@ -1324,17 +1374,18 @@ function exactSkillInitEvidence(text, skillPlugin) {
 
 export function probeDispatchBoundaryCapability({ claudeExecutable, settingsPath, mcpConfigPath, hookPath, manifestPath, activationPath, activationNonce, manifest, capabilityProbe, skillPlugin = null }, dependencies = {}) {
   const spawnSyncProcess = dependencies.spawnSyncProcess ?? spawnSync;
+  const childEnvironment = buildDispatchChildEnvironment(dependencies.environment ?? process.env);
   if (typeof mcpConfigPath !== "string" || !path.isAbsolute(mcpConfigPath)) throw new Error("CAPABILITY_BLOCKED: boundary probe requires the exact absolute empty MCP config");
   let pluginDetailsEvidence = null;
   let skillInitEvidence = null;
   if (skillPlugin) {
     validateMaterializedSkillPlugin(skillPlugin);
     const validation = spawnSyncProcess(claudeExecutable, ["plugin", "validate", "--strict", skillPlugin.pluginDir], {
-      cwd: path.dirname(settingsPath), shell: false, windowsHide: true, encoding: "utf8", timeout: BOUNDARY_PROBE_TIMEOUT_MS, maxBuffer: 2 * 1024 * 1024,
+      cwd: path.dirname(settingsPath), env: childEnvironment, shell: false, windowsHide: true, encoding: "utf8", timeout: BOUNDARY_PROBE_TIMEOUT_MS, maxBuffer: 2 * 1024 * 1024,
     });
     if (validation?.error || validation?.status !== 0) throw new Error(`CAPABILITY_BLOCKED: Claude rejected the exact generated skill plugin: ${validation?.error?.message ?? validation?.stderr ?? `exit ${validation?.status}`}`);
     const details = spawnSyncProcess(claudeExecutable, ["--setting-sources", "", "--plugin-dir", skillPlugin.pluginDir, "plugin", "details", skillPlugin.pluginName], {
-      cwd: path.dirname(settingsPath), shell: false, windowsHide: true, encoding: "utf8", timeout: BOUNDARY_PROBE_TIMEOUT_MS, maxBuffer: 2 * 1024 * 1024,
+      cwd: path.dirname(settingsPath), env: childEnvironment, shell: false, windowsHide: true, encoding: "utf8", timeout: BOUNDARY_PROBE_TIMEOUT_MS, maxBuffer: 2 * 1024 * 1024,
     });
     const detailsOutput = `${details?.stdout ?? ""}\n${details?.stderr ?? ""}`;
     if (details?.error || details?.status !== 0) throw new Error("CAPABILITY_BLOCKED: Claude rejected generated skill plugin details inspection");
@@ -1342,6 +1393,7 @@ export function probeDispatchBoundaryCapability({ claudeExecutable, settingsPath
   }
   const doctor = spawnSyncProcess(claudeExecutable, ["--setting-sources", "", "--settings", settingsPath, "doctor"], {
     cwd: path.dirname(settingsPath),
+    env: childEnvironment,
     shell: false,
     windowsHide: true,
     encoding: "utf8",
@@ -1358,6 +1410,7 @@ export function probeDispatchBoundaryCapability({ claudeExecutable, settingsPath
     ...(skillPlugin ? ["--plugin-dir", skillPlugin.pluginDir] : []), "--debug-file", debugFile, "--init-only"];
   const init = spawnSyncProcess(claudeExecutable, initArgv, {
     cwd: manifest.project_root,
+    env: childEnvironment,
     shell: false,
     windowsHide: true,
     encoding: "utf8",
@@ -1383,8 +1436,8 @@ export function probeDispatchBoundaryCapability({ claudeExecutable, settingsPath
   if (allowed?.error || allowed?.status !== 0) throw new Error(`CAPABILITY_BLOCKED: generated boundary hook rejected its declared probe: ${allowed?.error?.message ?? allowed?.stderr ?? `exit ${allowed?.status}`}`);
   let allowedOutput;
   try { allowedOutput = JSON.parse(String(allowed.stdout).trim()); } catch { throw new Error("CAPABILITY_BLOCKED: generated boundary hook did not emit its structured allow decision"); }
-  const expectedAllow = allowedDecision({ tool: capabilityProbe.tool, target: capabilityProbe.path.replace(/\\/gu, "/") });
-  if (JSON.stringify(allowedOutput) !== JSON.stringify(expectedAllow)) throw new Error("CAPABILITY_BLOCKED: generated boundary hook allow probe returned an unexpected decision");
+  const expectedNeutral = neutralDecision();
+  if (JSON.stringify(allowedOutput) !== JSON.stringify(expectedNeutral)) throw new Error("CAPABILITY_BLOCKED: generated boundary hook positive probe was not decision-neutral");
 
   const forbidden = runBoundaryHookProbe(process.execPath, hookPath, manifestPath, activationPath, activationNonce, boundaryProbeEvent(manifest.project_root, "Read", path.resolve(manifest.project_root, "..", "dispatcher-forbidden-probe.txt")), dependencies);
   if (forbidden?.error || forbidden?.status !== 2 || !String(forbidden.stderr).includes("CAPABILITY_BLOCKED")) {
@@ -1392,9 +1445,9 @@ export function probeDispatchBoundaryCapability({ claudeExecutable, settingsPath
   }
 
   return {
-    claudeHookActivated: true,
-    hookAllowProbe: true,
-    hookDenyProbe: true,
+    sessionStartActivated: true,
+    directHookNeutralProbe: true,
+    directHookDenyProbe: true,
     claudeSettingsAccepted: true,
     skillPluginValidated: Boolean(skillPlugin),
     sourceSkillNames: skillPlugin?.sourceSkillNames ?? [],
@@ -1808,6 +1861,7 @@ function runChild(executable, argv, options, prompt, dependencies = {}) {
 
     const child = spawnProcess(executable, argv, {
       cwd: options.cwd,
+      env: buildDispatchChildEnvironment(dependencies.environment ?? process.env),
       detached: platform !== "win32",
       shell: false,
       windowsHide: true,
@@ -1883,16 +1937,32 @@ function runChild(executable, argv, options, prompt, dependencies = {}) {
       forceTimer?.unref?.();
     };
 
-    const appendBounded = (target, chunk, usedBytes, limit, label) => {
+    const appendBounded = (target, chunk, usedBytes, limit, label, persistChunk) => {
       const buffer = Buffer.from(chunk);
       const remaining = Math.max(0, limit - usedBytes);
-      if (remaining > 0) target.push(buffer.subarray(0, remaining));
+      if (remaining > 0) {
+        const accepted = buffer.subarray(0, remaining);
+        target.push(accepted);
+        persistChunk?.(accepted);
+      }
       const nextBytes = usedBytes + buffer.length;
       if (nextBytes > limit) terminate(`Claude CLI ${label} exceeded bounded evidence limit of ${limit} bytes`);
       return nextBytes;
     };
-    child.stdout.on("data", (chunk) => { stdoutBytes = appendBounded(stdout, chunk, stdoutBytes, MAX_CHILD_STDOUT_BYTES, "stdout"); });
-    child.stderr.on("data", (chunk) => { stderrBytes = appendBounded(stderr, chunk, stderrBytes, MAX_CHILD_STDERR_BYTES, "stderr"); });
+    child.stdout.on("data", (chunk) => {
+      try {
+        stdoutBytes = appendBounded(stdout, chunk, stdoutBytes, MAX_CHILD_STDOUT_BYTES, "stdout", dependencies.persistStdoutChunk);
+      } catch (error) {
+        terminate(`Claude CLI stdout evidence persistence failed: ${error.message}`);
+      }
+    });
+    child.stderr.on("data", (chunk) => {
+      try {
+        stderrBytes = appendBounded(stderr, chunk, stderrBytes, MAX_CHILD_STDERR_BYTES, "stderr", dependencies.persistStderrChunk);
+      } catch (error) {
+        terminate(`Claude CLI stderr evidence persistence failed: ${error.message}`);
+      }
+    });
     child.once("error", (error) => finish(terminationError ?? error));
     child.once("close", (code, signal) => {
       if (terminationError) {
@@ -1960,6 +2030,12 @@ export async function dispatchClaude(options, dependencies = {}) {
   const promptFile = path.resolve(options.promptFile);
   const stdoutFile = path.resolve(options.stdoutFile);
   const stderrFile = path.resolve(options.stderrFile);
+  const dispatchStateFile = `${stderrFile}.dispatch.json`;
+  const evidencePathKeys = [stdoutFile, stderrFile, dispatchStateFile]
+    .map((value) => repositoryPathKey(value, dependencies.platform ?? process.platform));
+  if (new Set(evidencePathKeys).size !== evidencePathKeys.length) {
+    throw new Error("stdout, stderr, and dispatch-state evidence paths must be pairwise distinct");
+  }
   const tools = Array.isArray(options.tools)
     ? options.tools
     : parseTools(options.tools);
@@ -1979,7 +2055,7 @@ export async function dispatchClaude(options, dependencies = {}) {
   const mcpConfigPath = path.join(tempRoot, "mcp.json");
   try {
     assertOutsideRepository(cwd, tempRoot, "dispatcher temporary settings, hooks, and manifests", dependencies);
-    for (const [label, outputPath] of [["stdout evidence", stdoutFile], ["stderr evidence", stderrFile]]) {
+    for (const [label, outputPath] of [["stdout evidence", stdoutFile], ["stderr evidence", stderrFile], ["dispatch state evidence", dispatchStateFile]]) {
       assertOutsideRepository(cwd, outputPath, `${mode} ${label}`, dependencies);
     }
     await writeFile(mcpConfigPath, '{"mcpServers":{}}\n', "utf8");
@@ -2014,7 +2090,7 @@ export async function dispatchClaude(options, dependencies = {}) {
         if (Array.isArray(options.skillSourceRoots) && options.skillSourceRoots.length > 0) throw new Error("trusted skill source roots are forbidden when skill_names is empty");
       }
       const captureWorktree = dependencies.captureWorktreeState ?? captureGitWorktreeState;
-      implementationBaseline = await captureWorktree(cwd, dependencies);
+      implementationBaseline = await captureWorktree(cwd, { ...dependencies, editPaths: implementationBoundary.editPaths });
       if (implementationBaseline.changedPaths.length > 0) {
         throw new Error(`CAPABILITY_BLOCKED: bounded implementation requires an isolated clean worktree before boundary probing; pre-existing paths: ${JSON.stringify(implementationBaseline.changedPaths)}`);
       }
@@ -2038,6 +2114,7 @@ export async function dispatchClaude(options, dependencies = {}) {
         manifestPath,
         activationPath,
         activationNonce,
+        projectRoot: manifest.project_root,
         editPaths: manifest.edit_paths,
         trustedReadPaths: manifest.trusted_read_paths.map((entry) => entry.path),
       });
@@ -2146,6 +2223,25 @@ export async function dispatchClaude(options, dependencies = {}) {
 
     await mkdir(path.dirname(stdoutFile), { recursive: true });
     await mkdir(path.dirname(stderrFile), { recursive: true });
+    const startedAt = new Date().toISOString();
+    const planSha256 = sha256Bytes(Buffer.from(JSON.stringify(plan), "utf8"));
+    const stateRecord = (state, additions = {}) => ({
+      schema_version: 1,
+      state,
+      started_at: startedAt,
+      updated_at: new Date().toISOString(),
+      profile: plan.profile,
+      tools: plan.tools,
+      mode: plan.mode,
+      handoff_ref: plan.handoffRef ?? null,
+      plan_sha256: planSha256,
+      stdout_file: stdoutFile,
+      stderr_file: stderrFile,
+      ...additions,
+    });
+    await writeFile(stdoutFile, "", "utf8");
+    await writeFile(stderrFile, "", "utf8");
+    await writeFile(dispatchStateFile, `${JSON.stringify(stateRecord("running"))}\n`, "utf8");
     let result;
     let runError = null;
     try {
@@ -2154,7 +2250,11 @@ export async function dispatchClaude(options, dependencies = {}) {
         plan.argv,
         plan,
         materializedPrompt,
-        dependencies,
+        {
+          ...dependencies,
+          persistStdoutChunk: (chunk) => appendFileSync(stdoutFile, chunk),
+          persistStderrChunk: (chunk) => appendFileSync(stderrFile, chunk),
+        },
       );
     } catch (error) {
       runError = error;
@@ -2197,13 +2297,36 @@ export async function dispatchClaude(options, dependencies = {}) {
     if (runError || auditError || implementationVerificationError || evidenceWriteError) {
       const causes = [runError?.message, auditError?.message, implementationVerificationError?.message, evidenceWriteError?.message].filter(Boolean);
       if (implementationChanges) causes.push(`post-run implementation evidence=${JSON.stringify(implementationChanges)}`);
+      try {
+        await writeFile(dispatchStateFile, `${JSON.stringify(stateRecord("failed", {
+          exit_code: result.code,
+          signal: result.signal,
+          failure: causes.join("; ").slice(0, 16 * 1024),
+          implementation_changes: implementationChanges,
+        }))}\n`, "utf8");
+      } catch (error) {
+        causes.push(`failed to persist dispatcher state evidence: ${error.message}`);
+      }
       throw new Error(causes.join("; "));
     }
     if (result.code !== 0) {
+      const failure = `Claude CLI exited ${result.code}${result.signal ? ` (signal ${result.signal})` : ""}; post-run implementation evidence=${JSON.stringify(implementationChanges)}`;
+      await writeFile(dispatchStateFile, `${JSON.stringify(stateRecord("failed", {
+        exit_code: result.code,
+        signal: result.signal,
+        failure: failure.slice(0, 16 * 1024),
+        implementation_changes: implementationChanges,
+      }))}\n`, "utf8");
       throw new Error(
-        `Claude CLI exited ${result.code}${result.signal ? ` (signal ${result.signal})` : ""}; post-run implementation evidence=${JSON.stringify(implementationChanges)}`,
+        failure,
       );
     }
+    await writeFile(dispatchStateFile, `${JSON.stringify(stateRecord("completed", {
+      exit_code: result.code,
+      signal: result.signal,
+      observed_tools: observedTools,
+      implementation_changes: implementationChanges,
+    }))}\n`, "utf8");
     return {
       kind: "dispatch",
       plan,

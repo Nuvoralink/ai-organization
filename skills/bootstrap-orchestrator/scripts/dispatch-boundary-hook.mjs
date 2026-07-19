@@ -392,14 +392,10 @@ export function evaluateBoundaryToolUse(event, manifestValue) {
   return { tool: input.tool_name, target: path.relative(root.lexical, searchRoot).replace(/\\/gu, "/") || "." };
 }
 
-export function allowedDecision(result) {
-  return {
-    hookSpecificOutput: {
-      hookEventName: "PreToolUse",
-      permissionDecision: "allow",
-      permissionDecisionReason: `Dispatcher boundary allowed ${result.tool} for ${result.target}`,
-    },
-  };
+export function neutralDecision() {
+  // Success is deliberately decision-neutral. The hook denies boundary escapes with exit 2,
+  // while Claude's native dontAsk + exact permissions.allow rules remain the positive authority.
+  return {};
 }
 
 function validateActivation(manifest, activationPath, nonce) {
@@ -457,7 +453,8 @@ function runCli() {
       return;
     }
     validateActivation(manifest, activationPath, nonce);
-    process.stdout.write(`${JSON.stringify(allowedDecision(evaluateBoundaryToolUse(input, manifest)))}\n`);
+    evaluateBoundaryToolUse(input, manifest);
+    process.stdout.write(`${JSON.stringify(neutralDecision())}\n`);
   } catch (error) {
     process.stderr.write(`CAPABILITY_BLOCKED: ${error.message}\n`);
     process.exitCode = 2;
