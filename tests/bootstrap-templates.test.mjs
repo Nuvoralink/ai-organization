@@ -314,6 +314,20 @@ test('Proves: ORG-HOOK-003; Test type: runtime counterexample; Surface: Auxara a
       assert.equal(malformed.status, 2, `${project} hostile lifecycle payload ${hostileInput} must block`);
       assert.match(malformed.stderr, /malformed hook payload|payload must be a JSON object/iu);
     }
+    if (project === 'coachai') {
+      const malformedEvent = spawnSync(process.execPath, [path.join(fixtureRoot, 'scripts', 'claude-lifecycle-hook.mjs')], {
+        cwd: nestedCwd,
+        input: JSON.stringify({ hook_event_name: { nested: true }, session_id: 'malformed-event-name' }),
+        encoding: 'utf8',
+        env: { ...process.env, CLAUDE_PROJECT_DIR: fixtureRoot },
+      });
+      assert.equal(malformedEvent.status, 0, malformedEvent.stderr);
+      const rows = fs.readFileSync(path.join(fixtureRoot, 'tmp', 'agent-telemetry', telemetryFile), 'utf8').trim().split(/\r?\n/u);
+      const lastRecord = JSON.parse(rows.at(-1));
+      assert.equal(lastRecord.event, 'Malformed');
+      assert.equal(typeof lastRecord.event, 'string');
+      assert.match(malformedEvent.stdout, /lifecycle Malformed: ACCEPTED/u);
+    }
   }
 });
 

@@ -157,7 +157,7 @@ test('Proves: dry-run never writes; Test type: negative; Surface: installer; Aut
   assert.equal(fs.existsSync(target), false);
 });
 
-test('Proves: exact mapping rollout does not inspect or mutate unrelated installed drift; Test type: selection mutation; Surface: install and parity check; Authority: mapping registry; Killer mutation: ignore --mapping for install/check or accept an unknown mapping; Gated command: npm test', () => {
+test('Proves: exact mapping rollout excludes unrelated installed drift while canonical validation stays repo-wide; Test type: selection mutation; Surface: install and parity check; Authority: mapping registry; Killer mutation: ignore --mapping for installed targets, skip canonical safety, or accept an unknown mapping; Gated command: npm test', () => {
   const f = fixture();
   const secondarySource = path.join(f.repoRoot, 'canonical', 'secondary');
   const secondaryDestination = path.join(f.home, '.claude', 'secondary');
@@ -180,6 +180,11 @@ test('Proves: exact mapping rollout does not inspect or mutate unrelated install
   assert.equal(fs.readFileSync(path.join(secondaryDestination, 'other.md'), 'utf8'), '# Unrelated local drift\n');
   assert.deepEqual(runCheck({ ...f, mappingIds: ['claude-rules'] }), []);
   assert.ok(runCheck(f).some((problem) => problem.mapping === 'secondary-rules' && problem.type === 'drift'));
+  const tokenShape = ['ghp', 'abcdefghijklmnopqrstuvwxyz123456'].join('_');
+  fs.writeFileSync(path.join(secondarySource, 'other.md'), `token=${tokenShape}\n`);
+  assert.ok(runCheck({ ...f, mappingIds: ['claude-rules'] }).some((problem) =>
+    problem.mapping === 'secondary-rules' && problem.type === 'secret-shaped-content'));
+  assert.equal(fs.readFileSync(path.join(secondaryDestination, 'other.md'), 'utf8'), '# Unrelated local drift\n');
   assert.throws(() => runInstall({ ...f, mappingIds: ['unknown-mapping'] }), /Unknown install mapping\(s\): unknown-mapping/u);
   assert.throws(() => runCheck({ ...f, mappingIds: ['unknown-mapping'] }), /Unknown check mapping\(s\): unknown-mapping/u);
 });
