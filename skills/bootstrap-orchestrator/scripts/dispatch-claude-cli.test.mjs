@@ -26,6 +26,7 @@ import {
   normalizeGitHubHandoffResponse,
   parsePullRequestDiffScope,
   parsePositiveInteger,
+  parseCliArgs,
   probeDispatchBoundaryCapability,
   resolveClaudeExecutable,
   resolveGhExecutable,
@@ -204,7 +205,7 @@ const ACCEPTED_BOUNDARY_PROBE = () => ({
   sessionStartActivated: true,
   directHookNeutralProbe: true,
   directHookDenyProbe: true,
-  claudeSettingsAccepted: true,
+  claudeSettingsParsed: true,
   skillPluginValidated: false,
   sourceSkillNames: [],
   runtimeSkillNames: [],
@@ -702,6 +703,16 @@ test("dontAsk evidence paths are contained outside the repository before preflig
     }),
     /evidence paths must be pairwise distinct/u,
   );
+  await writeFile(promptFile, "Read @../outside-secret.txt", "utf8");
+  await assert.rejects(
+    dispatchClaude({
+      ...base,
+      stdoutFile: path.join(evidenceRoot, "stdout.jsonl"),
+      stderrFile: path.join(evidenceRoot, "stderr.log"),
+    }),
+    /@file expansion bypasses PreToolUse/u,
+  );
+  await writeFile(promptFile, "bounded read-only audit", "utf8");
 
   const accepted = await dispatchClaude({
     ...base,
@@ -1428,12 +1439,14 @@ test("PreToolUse containment allows declared directory reads and exact edits whi
   const sibling = path.join(fixture, "sibling-repository");
   await mkdir(path.join(root, "docs"), { recursive: true });
   await mkdir(path.join(root, "src"), { recursive: true });
+  await mkdir(path.join(root, ".git"), { recursive: true });
   const copiedSkill = path.join(fixture, "outside-dispatch", "skills", "testing-strategy-and-tdd");
   await mkdir(path.join(copiedSkill, "references"), { recursive: true });
   await mkdir(sibling, { recursive: true });
   await writeFile(path.join(root, "docs", "guide.md"), "guide", "utf8");
   await writeFile(path.join(root, "src", "exact-edit.mjs"), "export {};", "utf8");
   await writeFile(path.join(root, "src", "undeclared.mjs"), "export {};", "utf8");
+  await writeFile(path.join(root, ".git", "config"), "credentialed remote must remain unreadable", "utf8");
   await writeFile(path.join(copiedSkill, "references", "guide.md"), "trusted skill support", "utf8");
   await writeFile(path.join(sibling, "secret.txt"), "never read", "utf8");
   const manifest = createBoundaryManifest({
@@ -1482,6 +1495,9 @@ test("PreToolUse containment allows declared directory reads and exact edits whi
   const rootManifest = createBoundaryManifest({ projectRoot: root, readPaths: ["."], editPaths: ["src/exact-edit.mjs"], skillNames: [] });
   assert.equal(evaluateBoundaryToolUse(preToolEvent(root, "Glob", { pattern: "**/*.md" }), rootManifest).target, ".");
   assert.equal(evaluateBoundaryToolUse(preToolEvent(root, "Grep", { pattern: "guide" }), rootManifest).target, ".");
+  assert.throws(() => evaluateBoundaryToolUse(preToolEvent(root, "Read", { file_path: ".git/config" }), rootManifest), /outside declared read_paths|Git metadata/u);
+  assert.throws(() => evaluateBoundaryToolUse(preToolEvent(root, "Glob", { path: ".git", pattern: "**/*" }), rootManifest), /must not target repository Git metadata/u);
+  assert.throws(() => createBoundaryManifest({ projectRoot: root, readPaths: [".git"], editPaths: ["src/exact-edit.mjs"], skillNames: [] }), /must not target repository Git metadata/u);
   assert.throws(() => createBoundaryManifest({ projectRoot: root, readPaths: ["."], editPaths: [".git/hooks/pre-commit"], skillNames: [] }), /must not target repository Git metadata/u);
   assert.throws(() => createBoundaryManifest({ projectRoot: root, readPaths: ["."], editPaths: [".GIT/config"], skillNames: [] }), /must not target repository Git metadata/u);
 });
@@ -1822,18 +1838,30 @@ test("Declared edit paths that Git ignores fail before dispatch while a nonignor
     spawnSyncProcess: (executable, argv, options) => {
       calls.push({ executable, argv, options });
       if (argv[0] === "rev-parse") return { status: 0, stdout: `${root}\n` };
-      if (argv[0] === "--literal-pathspecs") return { status: 0, stdout: ignoredOutput };
+      if (argv[0] === "check-ignore") return { status: ignoredOutput ? 0 : 1, stdout: ignoredOutput };
       return { status: 0, stdout: "" };
     },
   });
-  assert.throws(() => invoke("!! generated/exact-output.json\0"), /declared edit paths are ignored.*exact-output\.json/u);
+  assert.throws(() => invoke("generated/exact-output.json\0"), /declared edit paths are ignored.*exact-output\.json/u);
   calls.length = 0;
   assert.deepEqual(invoke(""), { root, changedPaths: [] });
   assert.deepEqual(calls[2].argv, [
-    "--literal-pathspecs", "status", "--porcelain=v1", "-z", "--untracked-files=all",
-    "--ignored=matching", "--", "generated/exact-output.json",
+    "check-ignore", "--no-index", "-z", "--stdin",
   ]);
+  assert.deepEqual(calls[2].options.input, Buffer.from("generated/exact-output.json\0", "utf8"));
   assert.equal(calls.every((call) => call.options.shell === false), true);
+});
+
+test("Real Git ignore semantics reject a not-yet-created declared target; mutation: test only an existing ignored fixture", async (t) => {
+  const root = await mkdtemp(path.join(tmpdir(), "dispatch-real-ignore-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  assert.equal(spawnSync("git", ["init", "-b", "ignore-proof"], { cwd: root, encoding: "utf8" }).status, 0);
+  await writeFile(path.join(root, ".gitignore"), "logs/\n", "utf8");
+  assert.throws(
+    () => captureGitWorktreeState(root, { editPaths: ["logs/not-created.json"] }),
+    /declared edit paths are ignored.*logs\/not-created\.json/u,
+  );
+  assert.deepEqual(captureGitWorktreeState(root, { editPaths: ["src/not-created.mjs"] }).changedPaths, [".gitignore"]);
 });
 
 test("Repository-root proof compares canonical realpaths and folds Windows case without accepting a different target", () => {
@@ -1990,6 +2018,14 @@ test("Incremental stream and running-state evidence exist before the Claude chil
   assert.equal(failed.state, "failed");
 });
 
+test("A chunk arriving after the child error snapshot is never truncated by a final evidence rewrite; mutation: overwrite the append-only file from partialStdout", async (t) => {
+  const controlled = await controlledDispatch(t);
+  controlled.child.emit("error", new Error("simulated child error"));
+  controlled.child.stdout.write("late-after-error-snapshot\n");
+  await assert.rejects(controlled.promise, /simulated child error/u);
+  assert.equal(await readFile(controlled.stdoutFile, "utf8"), "late-after-error-snapshot\n");
+});
+
 test("outside-evidence containment denies a symlink or junction alias back into the repository", async (t) => {
   const fixture = await mkdtemp(path.join(tmpdir(), "dispatch-evidence-alias-"));
   t.after(() => rm(fixture, { recursive: true, force: true }));
@@ -2118,7 +2154,7 @@ test("Proves Windows tree termination targets only the exact child PID without a
   assert.equal(captured.executable, path.win32.join("C:\\Windows", "System32", "taskkill.exe"));
   assert.deepEqual(captured.argv, ["/PID", "4242", "/T", "/F"]);
   assert.equal(captured.options.shell, false);
-  assert.deepEqual(captured.options.env, { SystemRoot: "C:\\Windows" });
+  assert.deepEqual(captured.options.env, { SYSTEMROOT: "C:\\Windows" });
 });
 
 test("Proves dispatcher children receive a minimal registered environment; mutation: inherit Node, Git, Claude-root, proxy, or arbitrary ambient injection", () => {
@@ -2138,12 +2174,16 @@ test("Proves dispatcher children receive a minimal registered environment; mutat
     ATTACKER_DEFINED: "payload",
   });
   assert.deepEqual(sanitized, {
-    Path: "C:\\safe-bin",
-    SystemRoot: "C:\\Windows",
+    PATH: "C:\\safe-bin",
+    SYSTEMROOT: "C:\\Windows",
     USERPROFILE: "C:\\Users\\tester",
     CLAUDE_CODE_OAUTH_TOKEN: "registered-auth",
     GH_TOKEN: "registered-gh-auth",
   });
+  assert.throws(
+    () => buildDispatchChildEnvironment({ PATH: "C:\\first", Path: "C:\\second" }),
+    /duplicate case-insensitive key: PATH/u,
+  );
 });
 
 test("Proves POSIX termination targets the dispatch process group and escalates safely; mutation: kill only the parent child PID", () => {
@@ -2193,6 +2233,20 @@ test("Proves Windows dispatch fails before spawn when only a shell wrapper is av
 
 test("Preserves the direct executable counterexample on non-Windows platforms", () => {
   assert.equal(resolveClaudeExecutable({ platform: "linux" }), "claude");
+});
+
+test("CLI parsing rejects unknown and duplicate single-value flags while preserving repeated explicit skill roots; mutation: silently accept typo flags or last-wins authority", () => {
+  assert.throws(() => parseCliArgs(["--toolz", "Read"]), /invalid argument: --toolz/u);
+  assert.throws(() => parseCliArgs(["--tools", "Read", "--tools", "Write"]), /duplicate argument: --tools/u);
+  assert.throws(() => parseCliArgs(["--preflight", "--preflight"]), /duplicate argument: --preflight/u);
+  assert.deepEqual(parseCliArgs([
+    "--tools", "Read,Skill,Edit",
+    "--skill-source-root", "C:\\skills-one",
+    "--skill-source-root", "D:\\skills-two",
+  ]), {
+    tools: "Read,Skill,Edit",
+    skillSourceRoots: ["C:\\skills-one", "D:\\skills-two"],
+  });
 });
 
 test("Proves the dispatcher writes prompt bytes to stdin, never argv; mutation: append prompt to argv", async (t) => {
@@ -2337,7 +2391,7 @@ test("Proves dontAsk rejects every subset, superset, reordered, shell, or delega
           mode: "dontAsk",
           mcpConfigPath: CONFIG_PATH,
         }),
-      /exact dispatcher profile|generated settings/iu,
+      /exact dispatcher profile|generated settings|exact registered order/iu,
     );
   }
 });

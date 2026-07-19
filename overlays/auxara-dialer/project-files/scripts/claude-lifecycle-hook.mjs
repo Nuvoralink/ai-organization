@@ -506,6 +506,14 @@ try {
   process.stderr.write(`[lifecycle-hook] blocked: malformed hook payload: ${error.message}\n`);
   process.exit(2);
 }
+if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
+  safelyAppendTelemetry(
+    { eventName: 'Malformed', outcome: 'block', malformedCount: 1 },
+    telemetryDir,
+  );
+  process.stderr.write('[lifecycle-hook] blocked: hook payload must be a JSON object\n');
+  process.exit(2);
+}
 
 try {
   switch (payload?.hook_event_name) {
