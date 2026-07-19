@@ -35,7 +35,10 @@ if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
   console.error('lifecycle payload: BLOCKED\n- hook payload must be a JSON object');
   process.exit(2);
 }
-const event = payload.hook_event_name ?? payload.event ?? process.env.CLAUDE_HOOK_EVENT ?? 'Unknown';
+const rawEvent = payload.hook_event_name ?? payload.event ?? process.env.CLAUDE_HOOK_EVENT ?? 'Unknown';
+const event = typeof rawEvent === 'string' && /^[A-Za-z][A-Za-z0-9]{0,31}$/u.test(rawEvent)
+  ? rawEvent
+  : 'Malformed';
 const raw = JSON.stringify(payload);
 const errors = [];
 

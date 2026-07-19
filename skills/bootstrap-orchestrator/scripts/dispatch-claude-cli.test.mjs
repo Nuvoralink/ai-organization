@@ -1589,7 +1589,7 @@ test("dispatcher boundary fixture path remains import-meta rooted when tests lau
   assert.equal(path.dirname(BOUNDARY_HOOK_PATH), TEST_DIRECTORY);
 });
 
-test("Generated settings use one native catch-all hook, and ignored Claude settings fail the active allow/deny capability probe before dispatch", async (t) => {
+test("Generated settings use one native catch-all hook, and invalid or ignored Claude settings fail the doctor parse gate before dispatch", async (t) => {
   const root = await mkdtemp(path.join(tmpdir(), "dispatch-settings-probe-repo-"));
   const temp = await mkdtemp(path.join(tmpdir(), "dispatch-settings-probe-config-"));
   t.after(() => rm(root, { recursive: true, force: true }));

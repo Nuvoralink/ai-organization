@@ -113,7 +113,7 @@ Then a **seeded-violation spot-check** on `gate:test-intent`: create a throwaway
 
 ## STEP 5 — Register
 
-When rolling out one reviewed universal asset to an existing machine, use the control plane's exact mapping boundary for both install and parity proof (`control:install -- --mapping <id>` then `control:check -- --mapping <id>`). Do not run an all-mapping install merely to update one skill when other installed mappings are drifted; selection must fail closed for unknown IDs, and the regression proof must show an unselected dirty mapping is neither inspected nor changed.
+When rolling out one reviewed universal asset to an existing machine, use the control plane's exact mapping boundary for both install and parity proof (`control:install -- --mapping <id>` then `control:check -- --mapping <id>`). Do not run an all-mapping install merely to update one skill when other installed mappings are drifted; selection must fail closed for unknown IDs, and the regression proof must show an unselected dirty installed mapping is neither inspected nor changed while canonical source safety remains repository-wide.
 
 1. **Codex trust** — add `[projects."<abs repo path>"] trust_level = "trusted"` to `~/.codex/config.toml` if absent (so `codex exec` runs unsandboxed for backend slices).
 2. **CLAUDE.md / AGENTS.md fleet pointers** — confirm Step 3.6 landed and `gate:rules-wiring` is green.

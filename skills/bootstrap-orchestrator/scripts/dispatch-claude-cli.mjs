@@ -1914,6 +1914,8 @@ function runChild(executable, argv, options, prompt, dependencies = {}) {
       if (forceTimer !== undefined) clearTimeoutFn(forceTimer);
       forceTimer = undefined;
       if (error) {
+        // This in-memory snapshot is bounded diagnostic context at rejection time. The append-only
+        // stdout/stderr files remain authoritative if a final chunk arrives after this snapshot.
         error.partialStdout = Buffer.concat(stdout).toString("utf8");
         error.partialStderr = Buffer.concat(stderr).toString("utf8");
         reject(error);
