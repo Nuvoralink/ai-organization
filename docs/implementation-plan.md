@@ -68,6 +68,8 @@ Exit-0 dispatcher evidence requires exactly one later top-level result for every
 
 Install begins with `--dry-run`; capture never overwrites canonical data without a reviewed diff. Product changes occur in isolated fetched-base worktrees. Existing installed files are backed up by hash-addressed snapshots before replacement. Rollback restores the previous manifest release and reinstalls; no application schema/data migration is involved.
 
+Outstanding installed-bootstrap reconciliation (2026-07-19): the Codex and Claude installed `bootstrap-orchestrator` trees are byte-identical to each other but diverge from canonical in both directions. Canonical owns the new bounded PR/issue dispatcher; the installed twins contain later learned template rows not yet backflowed. Do not use `--adopt-existing` or overwrite either side. First merge every installed-only lesson into canonical without regressing the dispatcher, run the full canonical/overlay gates, then use the exact `skill-bootstrap-orchestrator` mapping for dry-run, install, and parity check. Closure proof is zero drift for both installed destinations while unrelated mappings remain untouched.
+
 ## Implemented control surface
 
 - Safe canonical boundary enforcement, secret/path refusal, destination-collision detection, deterministic install/check, local-only detection, snapshots, failure rollback, and explicit rollback.
