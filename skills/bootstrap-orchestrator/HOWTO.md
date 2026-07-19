@@ -42,7 +42,7 @@ It will *ask you* only the product-judgment things it can't read from code:
 ## What you approve
 - **The crown jewels** — you confirm the list, because it defines what your domain reviewer guards. Get this right and the reviewer is sharp; get it vague and it's useless.
 - **Any visible UI change** stays mockup-first as always — the setup doesn't change that rule, it enforces it.
-- **Merge policy** — branch/commit/push/PR work proceeds autonomously. A low-risk, additive/isolated merge can proceed only when every capability-matrix condition is proven and it has no deploy/production effect; otherwise you approve. Deploy, production mutation, deletion, billing, external contact, and unresolved product/design/architecture decisions remain yours.
+- **Push and merge policy** — branch creation, commit, and PR creation/update proceed autonomously. Push proceeds only after live proof that it cannot trigger a preview/production deploy, publish or billed build, production write, or external contact; preview deploys count as deploys. A low-risk, additive/isolated merge can proceed only when every capability-matrix condition is proven and it has no deploy/production effect; otherwise you approve. Deploy, production mutation, deletion, billing, external contact, and unresolved product/design/architecture decisions remain yours.
 
 ## How to maintain it (mostly: you don't — it maintains itself)
 - The **learning loop** keeps the reviewers' job descriptions growing: each caught bug can add a checklist row to the right reviewer, so it gets smarter over time.

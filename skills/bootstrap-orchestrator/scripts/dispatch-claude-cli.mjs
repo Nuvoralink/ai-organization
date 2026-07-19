@@ -2,8 +2,8 @@
 
 import { spawn, spawnSync } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
-import { existsSync, readFileSync, realpathSync } from "node:fs";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from "node:fs";
+import { copyFile, lstat, mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -13,7 +13,7 @@ import {
   createBoundaryManifest,
 } from "./dispatch-boundary-hook.mjs";
 
-const SAFE_PERMISSION_MODES = new Set(["bypassPermissions", "dontAsk"]);
+const SAFE_PERMISSION_MODE = "dontAsk";
 
 const EXACT_TOOL_NAME = /^[A-Za-z][A-Za-z0-9_.:-]*$/;
 const HANDOFF_EXEMPT_READ_ONLY_TOOLS = new Set([
@@ -26,8 +26,11 @@ const HANDOFF_EXEMPT_READ_ONLY_TOOLS = new Set([
 const EXACT_READ_ONLY_TOOLS = ["Read", "Glob", "Grep", "WebFetch", "WebSearch"];
 const GITHUB_OWNER = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/u;
 const GITHUB_REPOSITORY = /^[A-Za-z0-9_.-]{1,100}$/u;
-const BYPASS_PERMISSION_TOOLS = new Set(["Read", "Glob", "Grep", "Skill", "Edit", "Write"]);
-const TRUSTED_SKILL_NAME = /^[a-z0-9][a-z0-9:_-]{0,127}$/u;
+const IMPLEMENTATION_TOOLS = new Set(["Read", "Glob", "Grep", "Skill", "Edit", "Write"]);
+const SKILL_PLUGIN_NAME = "bounded-dispatch";
+const MAX_SKILL_FILES = 1_000;
+const MAX_SKILL_BYTES = 10 * 1024 * 1024;
+const TRUSTED_SKILL_NAME = /^[a-z0-9][a-z0-9_-]{0,127}$/u;
 const IMPLEMENTATION_BOUNDARY_MARKER = "CLAUDE_DISPATCH_BOUNDARY_JSON:";
 const PR_DIFF_SCOPE_MARKER = "CLAUDE_PR_DIFF_SCOPE_JSON:";
 const BOUNDARY_HOOK_SOURCE_PATH = path.resolve(
@@ -903,10 +906,10 @@ function structuredPromptMarker(prompt, marker) {
   try { return JSON.parse(line.slice(marker.length).trim()); } catch { throw new Error(`${marker} must contain valid JSON on one line`); }
 }
 
-export function validateBypassPermissionsBrief(prompt, cwd, tools) {
-  const unexpectedTools = tools.filter((tool) => !BYPASS_PERMISSION_TOOLS.has(tool));
+export function validateImplementationBrief(prompt, cwd, tools) {
+  const unexpectedTools = tools.filter((tool) => !IMPLEMENTATION_TOOLS.has(tool));
   if (unexpectedTools.length > 0 || !tools.some((tool) => tool === "Edit" || tool === "Write")) {
-    throw new Error(`bypassPermissions requires an exact bounded implementation tool allowlist; rejected: ${unexpectedTools.join(", ") || "no Edit/Write capability"}`);
+    throw new Error(`bounded implementation requires an exact tool allowlist; rejected: ${unexpectedTools.join(", ") || "no Edit/Write capability"}`);
   }
   const contract = structuredPromptMarker(prompt, IMPLEMENTATION_BOUNDARY_MARKER);
   const value = exactObject(contract, IMPLEMENTATION_BOUNDARY_MARKER);
@@ -915,7 +918,7 @@ export function validateBypassPermissionsBrief(prompt, cwd, tools) {
   if (!Array.isArray(value.edit_paths) || value.edit_paths.length === 0 || value.edit_paths.length > 100) throw new Error(`${IMPLEMENTATION_BOUNDARY_MARKER} edit_paths must contain 1-100 exact paths`);
   const projectRoot = path.resolve(cwd);
   const editPaths = value.edit_paths.map((entry, index) => {
-    if (typeof entry !== "string" || entry.trim() !== entry || entry.length === 0 || /[*?{}[\]]/u.test(entry) || path.isAbsolute(entry)) throw new Error(`${IMPLEMENTATION_BOUNDARY_MARKER} edit_paths[${index}] must be an exact repo-relative path`);
+    if (typeof entry !== "string" || entry.trim() !== entry || entry.length === 0 || /[()*?{}[\]\r\n]/u.test(entry) || path.isAbsolute(entry)) throw new Error(`${IMPLEMENTATION_BOUNDARY_MARKER} edit_paths[${index}] must be an exact permission-safe repo-relative path`);
     const resolved = path.resolve(projectRoot, entry);
     const relative = path.relative(projectRoot, resolved);
     if (relative === "" || relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) throw new Error(`${IMPLEMENTATION_BOUNDARY_MARKER} edit_paths[${index}] escapes or names the project root`);
@@ -943,8 +946,199 @@ export function validateBypassPermissionsBrief(prompt, cwd, tools) {
   }
   const authority = exactObject(value.authority, `${IMPLEMENTATION_BOUNDARY_MARKER} authority`);
   const authorityKeys = Object.keys(authority).sort();
-  if (JSON.stringify(authorityKeys) !== JSON.stringify(["billed", "external_contact", "irreversible"]) || authority.billed !== false || authority.external_contact !== false || authority.irreversible !== false) throw new Error("bypassPermissions cannot authorize irreversible, billed, or external-contact actions");
+  if (JSON.stringify(authorityKeys) !== JSON.stringify(["billed", "external_contact", "irreversible"]) || authority.billed !== false || authority.external_contact !== false || authority.irreversible !== false) throw new Error("bounded implementation cannot authorize irreversible, billed, or external-contact actions");
   return { readPaths, editPaths, skillNames: value.skill_names, boundaryCount: value.boundaries.length, capabilityProbe, authority };
+}
+
+function runtimeSkillName(sourceName) {
+  return `${SKILL_PLUGIN_NAME}:${sourceName}`;
+}
+
+function sha256Bytes(value) {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function assertRealDirectory(value, label) {
+  if (typeof value !== "string" || !path.isAbsolute(value)) throw new Error(`${label} must be an existing absolute directory`);
+  const lexical = path.resolve(value);
+  if (!existsSync(lexical)) throw new Error(`${label} must be an existing absolute directory`);
+  const info = lstatSync(lexical);
+  if (info.isSymbolicLink() || !info.isDirectory()) throw new Error(`${label} must be a real directory, not a symlink/reparse point`);
+  const real = path.resolve(realpathSync.native(lexical));
+  if (repositoryPathKey(lexical) !== repositoryPathKey(real)) throw new Error(`${label} must not be a symlink/reparse alias`);
+  return real;
+}
+
+async function copyBoundedSkillTree(source, destination, skillName, budget, relativeRoot = "") {
+  await mkdir(destination, { recursive: true });
+  const entries = (await readdir(source, { withFileTypes: true })).sort((left, right) => left.name.localeCompare(right.name, "en"));
+  for (const entry of entries) {
+    budget.files += 1;
+    if (budget.files > MAX_SKILL_FILES) throw new Error(`trusted skill source exceeds ${MAX_SKILL_FILES} files`);
+    const sourcePath = path.join(source, entry.name);
+    const destinationPath = path.join(destination, entry.name);
+    const relativePath = path.posix.join(relativeRoot, entry.name);
+    const info = await lstat(sourcePath);
+    const sourceReal = path.resolve(realpathSync.native(sourcePath));
+    if (info.isSymbolicLink() || repositoryPathKey(sourcePath) !== repositoryPathKey(sourceReal)) throw new Error(`trusted skill source contains a symlink/reparse entry: ${sourcePath}`);
+    if (info.isDirectory()) {
+      await copyBoundedSkillTree(sourcePath, destinationPath, skillName, budget, relativePath);
+      continue;
+    }
+    if (!info.isFile()) throw new Error(`trusted skill source contains an unsupported filesystem entry: ${sourcePath}`);
+    budget.bytes += info.size;
+    if (budget.bytes > MAX_SKILL_BYTES) throw new Error(`trusted skill source exceeds ${MAX_SKILL_BYTES} bytes`);
+    const sourceBytes = await readFile(sourcePath);
+    const sourceDigest = sha256Bytes(sourceBytes);
+    await copyFile(sourcePath, destinationPath);
+    const copiedBytes = await readFile(destinationPath);
+    const copiedDigest = sha256Bytes(copiedBytes);
+    if (!sourceBytes.equals(copiedBytes) || copiedDigest !== sourceDigest) throw new Error(`trusted skill copy did not preserve exact bytes: ${sourcePath}`);
+    budget.entries.push({
+      skill_name: skillName,
+      path: relativePath,
+      bytes: sourceBytes.length,
+      source_sha256: sourceDigest,
+      copied_sha256: copiedDigest,
+    });
+  }
+}
+
+function pluginFileInventory(root, relativeRoot = "") {
+  const result = [];
+  for (const entry of readdirSync(path.join(root, relativeRoot), { withFileTypes: true }).sort((left, right) => left.name.localeCompare(right.name, "en"))) {
+    const relativePath = path.posix.join(relativeRoot.replace(/\\/gu, "/"), entry.name);
+    const absolute = path.join(root, relativePath);
+    const info = lstatSync(absolute);
+    if (info.isSymbolicLink() || repositoryPathKey(absolute) !== repositoryPathKey(realpathSync.native(absolute))) {
+      throw new Error(`generated skill plugin contains a symlink/reparse entry: ${relativePath}`);
+    }
+    if (info.isDirectory()) result.push(...pluginFileInventory(root, relativePath));
+    else if (info.isFile()) result.push({ path: relativePath, bytes: info.size, sha256: sha256Bytes(readFileSync(absolute)) });
+    else throw new Error(`generated skill plugin contains an unsupported filesystem entry: ${relativePath}`);
+  }
+  return result;
+}
+
+export function validateMaterializedSkillPlugin(skillPlugin) {
+  const pluginDir = assertRealDirectory(skillPlugin?.pluginDir, "generated skill plugin");
+  if (skillPlugin.pluginName !== SKILL_PLUGIN_NAME) throw new Error(`generated skill plugin namespace must be exactly ${SKILL_PLUGIN_NAME}`);
+  const expectedTopLevel = [".claude-plugin", "skills"];
+  const topLevel = readdirSync(pluginDir, { withFileTypes: true }).map((entry) => entry.name).sort();
+  if (JSON.stringify(topLevel) !== JSON.stringify(expectedTopLevel)) throw new Error("generated skill plugin contains an extra or missing top-level component");
+  const metadataEntries = readdirSync(path.join(pluginDir, ".claude-plugin"), { withFileTypes: true });
+  if (metadataEntries.length !== 1 || metadataEntries[0].name !== "plugin.json" || !metadataEntries[0].isFile()) {
+    throw new Error("generated skill plugin metadata must contain only plugin.json");
+  }
+  const skillDirectories = readdirSync(path.join(pluginDir, "skills"), { withFileTypes: true });
+  const actualSkillNames = skillDirectories.map((entry) => entry.name).sort();
+  const expectedSkillNames = [...skillPlugin.sourceSkillNames].sort();
+  if (skillDirectories.some((entry) => !entry.isDirectory()) || JSON.stringify(actualSkillNames) !== JSON.stringify(expectedSkillNames)) {
+    throw new Error("generated skill plugin skills directory does not exactly match declared skills");
+  }
+  const pluginManifest = JSON.parse(readFileSync(path.join(pluginDir, ".claude-plugin", "plugin.json"), "utf8"));
+  const expectedManifest = {
+    name: SKILL_PLUGIN_NAME,
+    description: "Exact trusted skills materialized for one bounded dispatcher run",
+    version: "1.0.0",
+    author: { name: "AI Organization Control Plane" },
+  };
+  if (JSON.stringify(pluginManifest) !== JSON.stringify(expectedManifest)) throw new Error("generated skill plugin manifest drifted from the exact skill-only contract");
+  const actualFiles = pluginFileInventory(pluginDir);
+  if (JSON.stringify(actualFiles) !== JSON.stringify(skillPlugin.fileInventory)) throw new Error("generated skill plugin content digest drifted after materialization");
+  return { pluginDir, actualSkillNames, fileInventory: actualFiles };
+}
+
+export async function materializeSkillPlugin({ skillNames, sourceRoots, destinationRoot }) {
+  if (!Array.isArray(skillNames) || skillNames.length === 0 || skillNames.some((name) => typeof name !== "string" || !TRUSTED_SKILL_NAME.test(name)) || new Set(skillNames).size !== skillNames.length) {
+    throw new Error("skill materialization requires unique exact declared skill names");
+  }
+  if (!Array.isArray(sourceRoots) || sourceRoots.length === 0) throw new Error("declared skills require at least one exact trusted skill source root");
+  const roots = [];
+  for (const [index, root] of sourceRoots.entries()) {
+    if (typeof root !== "string") throw new Error(`trusted skill source root ${index} must be an existing absolute directory`);
+    const real = assertRealDirectory(root, `trusted skill source root ${index}`);
+    if (!roots.some((entry) => repositoryPathKey(entry) === repositoryPathKey(real))) roots.push(real);
+  }
+  await mkdir(destinationRoot, { recursive: true });
+  const destination = assertRealDirectory(destinationRoot, "skill plugin destination root");
+  const pluginDir = path.join(destinationRoot, "skill-plugin");
+  await mkdir(path.join(pluginDir, ".claude-plugin"), { recursive: true });
+  await mkdir(path.join(pluginDir, "skills"), { recursive: true });
+  const budget = { files: 0, bytes: 0, entries: [] };
+  const sources = [];
+  for (const name of skillNames) {
+    let selected = null;
+    for (const root of roots) {
+      const candidate = path.join(root, name);
+      if (!existsSync(candidate)) continue;
+      const info = lstatSync(candidate);
+      if (info.isSymbolicLink() || !info.isDirectory()) throw new Error(`trusted skill ${name} must be a real directory`);
+      const real = path.resolve(realpathSync.native(candidate));
+      if (!real.startsWith(`${root}${path.sep}`) || repositoryPathKey(candidate) !== repositoryPathKey(real)) throw new Error(`trusted skill ${name} resolves outside its configured source root`);
+      selected = real;
+      break;
+    }
+    if (selected === null) throw new Error(`missing exact trusted skill source: ${name}`);
+    if (!existsSync(path.join(selected, "SKILL.md"))) throw new Error(`trusted skill ${name} is missing SKILL.md`);
+    await copyBoundedSkillTree(selected, path.join(pluginDir, "skills", name), name, budget);
+    const skillEntries = budget.entries.filter((entry) => entry.skill_name === name);
+    const sourceDigest = sha256Bytes(Buffer.from(JSON.stringify(skillEntries.map(({ path: entryPath, bytes, source_sha256 }) => ({ path: entryPath, bytes, sha256: source_sha256 })))));
+    const copiedDigest = sha256Bytes(Buffer.from(JSON.stringify(skillEntries.map(({ path: entryPath, bytes, copied_sha256 }) => ({ path: entryPath, bytes, sha256: copied_sha256 })))));
+    if (sourceDigest !== copiedDigest) throw new Error(`trusted skill ${name} source and copied tree digests differ`);
+    sources.push({ name, source: selected, source_sha256: sourceDigest, copied_sha256: copiedDigest });
+  }
+  const manifest = {
+    name: SKILL_PLUGIN_NAME,
+    description: "Exact trusted skills materialized for one bounded dispatcher run",
+    version: "1.0.0",
+    author: { name: "AI Organization Control Plane" },
+  };
+  await writeFile(path.join(pluginDir, ".claude-plugin", "plugin.json"), `${JSON.stringify(manifest)}\n`, "utf8");
+  const fileInventory = pluginFileInventory(pluginDir);
+  const proofPath = path.join(destination, "skill-plugin-proof.json");
+  await writeFile(proofPath, `${JSON.stringify({ plugin_name: SKILL_PLUGIN_NAME, sources, files: budget.entries })}\n`, "utf8");
+  const result = {
+    pluginDir,
+    pluginName: SKILL_PLUGIN_NAME,
+    sourceSkillNames: [...skillNames],
+    runtimeSkillNames: skillNames.map(runtimeSkillName),
+    sources,
+    fileInventory,
+    proofPath,
+    skillDirectories: skillNames.map((name) => ({ skillName: runtimeSkillName(name), path: path.join(pluginDir, "skills", name) })),
+    copiedFiles: budget.files,
+    copiedBytes: budget.bytes,
+  };
+  validateMaterializedSkillPlugin(result);
+  return result;
+}
+
+function trustedSkillSourceRoots(skillNames, explicitRoots, environment = process.env) {
+  if (explicitRoots !== undefined && (!Array.isArray(explicitRoots) || explicitRoots.some((entry) => typeof entry !== "string"))) {
+    throw new Error("--skill-source-root must provide exact absolute trusted roots");
+  }
+  const roots = [];
+  const preferred = typeof environment.USERPROFILE === "string"
+    ? path.join(environment.USERPROFILE, ".claude", "skills")
+    : null;
+  if (preferred && existsSync(preferred)) {
+    const preferredReal = assertRealDirectory(preferred, "preferred trusted skill source root");
+    const hasUnsafeDeclaredAlias = skillNames.some((name) => {
+      const candidate = path.join(preferredReal, name);
+      return existsSync(candidate) && (lstatSync(candidate).isSymbolicLink()
+        || repositoryPathKey(candidate) !== repositoryPathKey(realpathSync.native(candidate)));
+    });
+    if (!hasUnsafeDeclaredAlias) roots.push(preferredReal);
+  }
+  for (const root of explicitRoots ?? []) {
+    const real = assertRealDirectory(root, "explicit trusted skill source root");
+    if (!roots.some((entry) => repositoryPathKey(entry) === repositoryPathKey(real))) roots.push(real);
+  }
+  if (roots.length === 0) {
+    throw new Error("declared skills require an exact non-reparse trusted root; pass --skill-source-root for the canonical skill directory");
+  }
+  return roots;
 }
 
 export function classifyDispatchTools(tools) {
@@ -1004,12 +1198,21 @@ export function validateMcpConfigText(text) {
   return parsed;
 }
 
-export function buildBoundarySettings({ nodeExecutable, hookPath, manifestPath, activationPath, activationNonce }) {
+export function buildBoundarySettings({ nodeExecutable, hookPath, manifestPath, activationPath, activationNonce, editPaths, trustedReadPaths = [] }) {
   for (const [label, value] of [["node executable", nodeExecutable], ["boundary hook", hookPath], ["boundary manifest", manifestPath], ["activation proof", activationPath]]) {
     if (typeof value !== "string" || !path.isAbsolute(value)) throw new Error(`${label} path must be absolute`);
   }
   if (typeof activationNonce !== "string" || !/^[a-f0-9]{32}$/u.test(activationNonce)) throw new Error("activation nonce must be 16 random bytes encoded as hex");
+  if (!Array.isArray(editPaths) || editPaths.length === 0) throw new Error("boundary settings require exact edit paths");
+  if (!Array.isArray(trustedReadPaths) || trustedReadPaths.some((entry) => typeof entry !== "string" || !path.isAbsolute(entry))) throw new Error("boundary settings trusted Read paths must be exact absolute directories");
   return {
+    permissions: {
+      defaultMode: "dontAsk",
+      allow: [
+        ...editPaths.map((entry) => `Edit(/${entry.replace(/\\/gu, "/")})`),
+        ...trustedReadPaths.map((entry) => `Read(//${path.resolve(entry).replace(/\\/gu, "/").replace(/^\/+/, "")}/**)`),
+      ],
+    },
     hooks: {
       SessionStart: [{
         matcher: "startup",
@@ -1039,7 +1242,10 @@ export function validateBoundarySettingsText(text, expected) {
   if (JSON.stringify(parsed) !== JSON.stringify(expected)) throw new Error("boundary settings differ from the dispatcher-generated exact hook contract");
   const hook = parsed.hooks?.PreToolUse?.[0]?.hooks?.[0];
   const activation = parsed.hooks?.SessionStart?.[0]?.hooks?.[0];
-  if (parsed.hooks.PreToolUse.length !== 1 || parsed.hooks.PreToolUse[0].matcher !== "*"
+  if (parsed.permissions?.defaultMode !== "dontAsk" || !Array.isArray(parsed.permissions?.allow)
+    || parsed.permissions.allow.length === 0 || parsed.permissions.allow.some((rule) => !/^(?:Edit\(\/.+\)|Read\(\/\/.+\/\*\*\))$/u.test(rule))
+    || new Set(parsed.permissions.allow).size !== parsed.permissions.allow.length
+    || parsed.hooks.PreToolUse.length !== 1 || parsed.hooks.PreToolUse[0].matcher !== "*"
     || parsed.hooks.PreToolUse[0].hooks.length !== 1 || hook?.type !== "command"
     || !path.isAbsolute(hook.command) || !Array.isArray(hook.args) || hook.args.length !== 5
     || !path.isAbsolute(hook.args[0]) || hook.args[1] !== "--enforce" || hook.args.slice(2, 4).some((entry) => !path.isAbsolute(entry))
@@ -1058,7 +1264,7 @@ function boundaryProbeEvent(root, tool, filePath) {
     session_id: "dispatcher-boundary-probe",
     transcript_path: path.join(root, ".dispatcher-boundary-probe.jsonl"),
     cwd: root,
-    permission_mode: "bypassPermissions",
+    permission_mode: "dontAsk",
     hook_event_name: "PreToolUse",
     tool_name: tool,
     tool_input: { file_path: filePath, ...(tool === "Edit" ? { old_string: "probe", new_string: "probe" } : { content: "probe" }) },
@@ -1079,9 +1285,62 @@ function runBoundaryHookProbe(nodeExecutable, hookPath, manifestPath, activation
   });
 }
 
-export function probeDispatchBoundaryCapability({ claudeExecutable, settingsPath, hookPath, manifestPath, activationPath, activationNonce, manifest, capabilityProbe }, dependencies = {}) {
+function exactPluginDetailsInventory(text, skillPlugin) {
+  const expectedSkills = [...skillPlugin.sourceSkillNames].sort();
+  const skillMatch = /^\s*Skills \((\d+)\)\s*(.*?)\s*$/mu.exec(text);
+  const skillNames = skillMatch?.[2]?.split(/\s*,\s*/u).filter(Boolean).sort() ?? [];
+  const counts = Object.fromEntries(["Agents", "Hooks", "MCP servers", "LSP servers"].map((label) => {
+    const match = new RegExp(`^\\s*${label.replace(" ", "\\s+")} \\((\\d+)\\)\\s*$`, "mu").exec(text);
+    return [label, match ? Number(match[1]) : null];
+  }));
+  if (!text.startsWith(`${SKILL_PLUGIN_NAME} 1.0.0\n`) || !text.includes(`Source: ${SKILL_PLUGIN_NAME}@inline`)
+    || Number(skillMatch?.[1]) !== expectedSkills.length || JSON.stringify(skillNames) !== JSON.stringify(expectedSkills)
+    || Object.values(counts).some((count) => count !== 0)) {
+    throw new Error("CAPABILITY_BLOCKED: Claude plugin details do not prove the exact skill-only component inventory");
+  }
+  return { skillNames, counts };
+}
+
+function exactSkillInitEvidence(text, skillPlugin) {
+  const expectedCount = skillPlugin.sourceSkillNames.length;
+  const assertions = [
+    [/Loaded 1 session-only plugins from --plugin-dir/u, "one session-only plugin"],
+    [/Found 1 plugins \(1 enabled, 0 disabled\)/u, "one enabled plugin"],
+    [new RegExp(`Loaded inline plugin from path: ${SKILL_PLUGIN_NAME}`, "u"), "fixed inline plugin namespace"],
+    [/Total plugin workflows loaded: 0/u, "zero workflows"],
+    [/Total plugin commands loaded: 0/u, "zero commands"],
+    [/Registered 0 hooks from 1 plugins/u, "zero plugin hooks"],
+    [/Total plugin agents loaded: 0/u, "zero plugin agents"],
+    [new RegExp(`Loaded ${expectedCount} skills from plugin ${SKILL_PLUGIN_NAME} default directory`, "u"), "declared skills loaded from fixed plugin"],
+    [new RegExp(`Total plugin skills loaded: ${expectedCount} \\(0 duplicate/user-owned entries skipped\\)`, "u"), "no skill collision"],
+    [new RegExp(`getSkills returning: 0 skill dir commands, ${expectedCount} plugin skills, \\d+ bundled skills, 0 builtin plugin skills`, "u"), "only generated plugin skills"],
+  ];
+  const missing = assertions.filter(([pattern]) => !pattern.test(text)).map(([, label]) => label);
+  if (missing.length > 0 || /(?:connected|connection established).*MCP|MCP.*(?:connected|connection established)/iu.test(text)) {
+    throw new Error(`CAPABILITY_BLOCKED: Claude init did not prove the exact generated skill-only plugin boundary: ${missing.join(", ") || "unexpected MCP connection"}`);
+  }
+  return { pluginCount: 1, skillCount: expectedCount, agents: 0, hooks: 0, commands: 0, workflows: 0, mcpConnections: 0 };
+}
+
+export function probeDispatchBoundaryCapability({ claudeExecutable, settingsPath, mcpConfigPath, hookPath, manifestPath, activationPath, activationNonce, manifest, capabilityProbe, skillPlugin = null }, dependencies = {}) {
   const spawnSyncProcess = dependencies.spawnSyncProcess ?? spawnSync;
-  const doctor = spawnSyncProcess(claudeExecutable, ["--settings", settingsPath, "doctor"], {
+  if (typeof mcpConfigPath !== "string" || !path.isAbsolute(mcpConfigPath)) throw new Error("CAPABILITY_BLOCKED: boundary probe requires the exact absolute empty MCP config");
+  let pluginDetailsEvidence = null;
+  let skillInitEvidence = null;
+  if (skillPlugin) {
+    validateMaterializedSkillPlugin(skillPlugin);
+    const validation = spawnSyncProcess(claudeExecutable, ["plugin", "validate", "--strict", skillPlugin.pluginDir], {
+      cwd: path.dirname(settingsPath), shell: false, windowsHide: true, encoding: "utf8", timeout: BOUNDARY_PROBE_TIMEOUT_MS, maxBuffer: 2 * 1024 * 1024,
+    });
+    if (validation?.error || validation?.status !== 0) throw new Error(`CAPABILITY_BLOCKED: Claude rejected the exact generated skill plugin: ${validation?.error?.message ?? validation?.stderr ?? `exit ${validation?.status}`}`);
+    const details = spawnSyncProcess(claudeExecutable, ["--setting-sources", "", "--plugin-dir", skillPlugin.pluginDir, "plugin", "details", skillPlugin.pluginName], {
+      cwd: path.dirname(settingsPath), shell: false, windowsHide: true, encoding: "utf8", timeout: BOUNDARY_PROBE_TIMEOUT_MS, maxBuffer: 2 * 1024 * 1024,
+    });
+    const detailsOutput = `${details?.stdout ?? ""}\n${details?.stderr ?? ""}`;
+    if (details?.error || details?.status !== 0) throw new Error("CAPABILITY_BLOCKED: Claude rejected generated skill plugin details inspection");
+    pluginDetailsEvidence = exactPluginDetailsInventory(detailsOutput, skillPlugin);
+  }
+  const doctor = spawnSyncProcess(claudeExecutable, ["--setting-sources", "", "--settings", settingsPath, "doctor"], {
     cwd: path.dirname(settingsPath),
     shell: false,
     windowsHide: true,
@@ -1094,7 +1353,10 @@ export function probeDispatchBoundaryCapability({ claudeExecutable, settingsPath
     throw new Error(`CAPABILITY_BLOCKED: Claude rejected or ignored the generated boundary settings: ${doctor?.error?.message ?? doctorOutput.trim() ?? `exit ${doctor?.status}`}`);
   }
 
-  const init = spawnSyncProcess(claudeExecutable, ["--setting-sources", "", "--settings", settingsPath, "--init-only"], {
+  const debugFile = path.join(path.dirname(settingsPath), "dispatch-init-debug.log");
+  const initArgv = ["--setting-sources", "", "--settings", settingsPath, "--strict-mcp-config", "--mcp-config", mcpConfigPath,
+    ...(skillPlugin ? ["--plugin-dir", skillPlugin.pluginDir] : []), "--debug-file", debugFile, "--init-only"];
+  const init = spawnSyncProcess(claudeExecutable, initArgv, {
     cwd: manifest.project_root,
     shell: false,
     windowsHide: true,
@@ -1107,6 +1369,13 @@ export function probeDispatchBoundaryCapability({ claudeExecutable, settingsPath
   try { activation = JSON.parse(dependencies.readActivation ? dependencies.readActivation(activationPath) : readFileSync(activationPath, "utf8")); } catch { throw new Error("CAPABILITY_BLOCKED: Claude boundary activation proof is missing or invalid"); }
   if (activation?.nonce !== activationNonce || path.resolve(activation?.project_root ?? "") !== path.resolve(manifest.project_root)) {
     throw new Error("CAPABILITY_BLOCKED: Claude boundary activation proof does not match this dispatch");
+  }
+  if (skillPlugin) {
+    if (!existsSync(debugFile)) throw new Error("CAPABILITY_BLOCKED: Claude init did not persist skill/plugin debug evidence");
+    const debugInfo = lstatSync(debugFile);
+    if (!debugInfo.isFile() || debugInfo.size > 2 * 1024 * 1024) throw new Error("CAPABILITY_BLOCKED: Claude init skill/plugin debug evidence is missing or oversized");
+    skillInitEvidence = exactSkillInitEvidence(readFileSync(debugFile, "utf8"), skillPlugin);
+    validateMaterializedSkillPlugin(skillPlugin);
   }
 
   const allowedPath = path.resolve(manifest.project_root, capabilityProbe.path);
@@ -1122,39 +1391,51 @@ export function probeDispatchBoundaryCapability({ claudeExecutable, settingsPath
     throw new Error("CAPABILITY_BLOCKED: generated boundary hook did not pre-deny an escaping read probe");
   }
 
-  return { claudeHookActivated: true, hookAllowProbe: true, hookDenyProbe: true, claudeSettingsAccepted: true };
+  return {
+    claudeHookActivated: true,
+    hookAllowProbe: true,
+    hookDenyProbe: true,
+    claudeSettingsAccepted: true,
+    skillPluginValidated: Boolean(skillPlugin),
+    sourceSkillNames: skillPlugin?.sourceSkillNames ?? [],
+    runtimeSkillNames: skillPlugin?.runtimeSkillNames ?? [],
+    pluginDetailsEvidence,
+    skillInitEvidence,
+  };
 }
 
-export function buildClaudeArgv({ tools, mode, mcpConfigPath, settingsPath = null }) {
+function dispatchProfileForTools(tools) {
+  if (JSON.stringify(tools) === JSON.stringify(EXACT_READ_ONLY_TOOLS)) return "read_only";
+  const unexpected = tools.filter((tool) => !IMPLEMENTATION_TOOLS.has(tool));
+  if (unexpected.length === 0 && tools.some((tool) => tool === "Edit" || tool === "Write")) return "bounded_implementation";
+  throw new Error(`CAPABILITY_BLOCKED: tools do not match either exact dispatcher profile; rejected: ${unexpected.join(", ") || "missing Edit/Write capability"}`);
+}
+
+export function buildClaudeArgv({ tools, mode, mcpConfigPath, settingsPath = null, pluginDir = null }) {
   if (!Array.isArray(tools) || tools.length === 0) {
     throw new Error("tools must be a non-empty array");
   }
   parseTools(tools.join(","));
-  if (!SAFE_PERMISSION_MODES.has(mode)) {
-    throw new Error(`CAPABILITY_BLOCKED: unsupported noninteractive permission mode ${mode}; use exact dontAsk read-only audit or bounded bypassPermissions implementation`);
-  }
-  if (mode === "dontAsk" && JSON.stringify(tools) !== JSON.stringify(EXACT_READ_ONLY_TOOLS)) {
-    throw new Error(`CAPABILITY_BLOCKED: dontAsk requires the exact read-only tool profile ${EXACT_READ_ONLY_TOOLS.join(",")}`);
-  }
-  if (mode === "bypassPermissions") {
-    const unexpected = tools.filter((tool) => !BYPASS_PERMISSION_TOOLS.has(tool));
-    if (unexpected.length > 0 || !tools.some((tool) => tool === "Edit" || tool === "Write")) {
-      throw new Error(`CAPABILITY_BLOCKED: bypassPermissions requires the bounded implementation tool profile; rejected: ${unexpected.join(", ") || "no Edit/Write capability"}`);
-    }
-  }
-  if (mode === "dontAsk" && settingsPath !== null) throw new Error("CAPABILITY_BLOCKED: read-only dontAsk profile must not load implementation boundary settings");
-  if (mode === "bypassPermissions" && settingsPath === null) throw new Error("CAPABILITY_BLOCKED: bypassPermissions requires generated implementation boundary settings");
+  if (mode !== SAFE_PERMISSION_MODE) throw new Error(`CAPABILITY_BLOCKED: unsupported noninteractive permission mode ${mode}; bypassPermissions is rejected and both exact profiles use dontAsk`);
+  const profile = dispatchProfileForTools(tools);
+  if (profile === "read_only" && (settingsPath !== null || pluginDir !== null)) throw new Error("CAPABILITY_BLOCKED: read-only profile must not load implementation settings or skills");
+  if (profile === "bounded_implementation" && settingsPath === null) throw new Error("CAPABILITY_BLOCKED: bounded implementation requires generated settings with native Edit allow rules");
+  if (profile === "bounded_implementation" && tools.includes("Skill") !== (pluginDir !== null)) throw new Error("CAPABILITY_BLOCKED: Skill capability and the exact generated skill plugin must be enabled together");
   if (!path.isAbsolute(mcpConfigPath)) {
     throw new Error("MCP config path must be absolute");
   }
 
   const argv = ["--setting-sources", ""];
-  if (mode === "dontAsk") {
+  if (profile === "read_only") {
     argv.push("--safe-mode", "--disable-slash-commands", "--no-session-persistence");
   }
   if (settingsPath !== null) {
     if (!path.isAbsolute(settingsPath)) throw new Error("boundary settings path must be absolute");
     argv.push("--settings", settingsPath, "--include-hook-events");
+  }
+  if (pluginDir !== null) {
+    if (profile !== "bounded_implementation" || !path.isAbsolute(pluginDir)) throw new Error("bounded skill plugin path must be absolute");
+    argv.push("--plugin-dir", pluginDir);
   }
   argv.push(
     "--print",
@@ -1246,11 +1527,11 @@ export function verifyPreToolHookCoverage(streamJson, toolEvents = observedToolE
   }
   const hookKeys = new Set(hookEvents.map((event) => `${event.id}\0${event.name}`));
   const missing = toolEvents
-    .filter((event) => BYPASS_PERMISSION_TOOLS.has(event.name))
+    .filter((event) => IMPLEMENTATION_TOOLS.has(event.name))
     .filter((event) => typeof event.id !== "string" || !hookKeys.has(`${event.id}\0${event.name}`))
     .map((event) => `${event.name}:${String(event.id)}`);
   if (missing.length > 0) throw new Error(`CAPABILITY_BLOCKED: observed bounded tool_use lacks matching included PreToolUse hook evidence: ${missing.join(", ")}`);
-  return { observedHookEvents: hookEvents.length, coveredToolEvents: toolEvents.filter((event) => BYPASS_PERMISSION_TOOLS.has(event.name)).length };
+  return { observedHookEvents: hookEvents.length, coveredToolEvents: toolEvents.filter((event) => IMPLEMENTATION_TOOLS.has(event.name)).length };
 }
 
 export function observedToolEvents(streamJson) {
@@ -1309,7 +1590,7 @@ function exactUniqueToolSet(actual, expected) {
     && [...actualSet].every((tool) => expectedSet.has(tool));
 }
 
-export function auditObservedTools(streamJson, allowedTools, { permissionMode } = {}) {
+export function auditObservedTools(streamJson, allowedTools, { permissionMode, expectedSkills = [] } = {}) {
   const allowed = new Set(allowedTools);
   const envelopes = parsedStreamEnvelopes(streamJson);
   const events = [];
@@ -1333,6 +1614,7 @@ export function auditObservedTools(streamJson, allowedTools, { permissionMode } 
   if (!exactUniqueToolSet(init[0].value.tools, allowedTools)) throw new Error("successful tool audit init tools do not match the exact allowed profile as a unique set");
   if (init[0].value.permissionMode !== permissionMode) throw new Error("successful tool audit init permission mode does not match the dispatch profile");
   if (!Array.isArray(init[0].value.mcp_servers) || init[0].value.mcp_servers.length !== 0) throw new Error("successful tool audit init MCP servers must be exactly empty");
+  if (!exactUniqueToolSet(init[0].value.skills ?? [], expectedSkills)) throw new Error("successful tool audit init skills do not match the exact declared runtime skill set");
 
   const terminalResults = envelopes.filter((envelope) => envelope.value?.type === "result");
   if (terminalResults.length !== 1 || terminalResults[0].value?.subtype !== "success" || envelopes.at(-1) !== terminalResults[0]) {
@@ -1420,6 +1702,7 @@ export function verifyImplementationChanges(streamJson, boundary, beforeState, a
   const undeclaredChangedPaths = actualChangedPaths.filter((entry) => !declaredKeys.has(repositoryPathKey(entry, platform)));
   const observedWritePaths = [];
   const observedSkillNames = [];
+  const allowedSkillNames = boundary.runtimeSkillNames ?? boundary.skillNames;
   const invalidToolPaths = [];
   let events = [];
   let hookCoverage = null;
@@ -1434,7 +1717,7 @@ export function verifyImplementationChanges(streamJson, boundary, beforeState, a
   for (const event of events) {
     if (event.name === "Skill") {
       const skillName = event.input?.skill;
-      if (typeof skillName !== "string" || !boundary.skillNames.includes(skillName)) invalidToolPaths.push(`Skill: undeclared trusted skill ${String(skillName)}`);
+      if (typeof skillName !== "string" || !allowedSkillNames.includes(skillName)) invalidToolPaths.push(`Skill: undeclared trusted skill ${String(skillName)}`);
       else observedSkillNames.push(skillName);
       continue;
     }
@@ -1461,8 +1744,8 @@ export function verifyImplementationChanges(streamJson, boundary, beforeState, a
   if (undeclaredChangedPaths.length > 0 || invalidToolPaths.length > 0) {
     throw new Error(`CAPABILITY_BLOCKED: implementation escaped its exact edit boundary; evidence=${JSON.stringify(evidence)}`);
   }
-  if (requireLiveness && observedWritePaths.length === 0) throw new Error(`CAPABILITY_BLOCKED: bypassPermissions implementation observed no Edit/Write event; route an idempotent audit through the read-only path; evidence=${JSON.stringify(evidence)}`);
-  if (requireLiveness && actualChangedPaths.length === 0) throw new Error(`CAPABILITY_BLOCKED: bypassPermissions Edit/Write was a no-op with no actual changed path; evidence=${JSON.stringify(evidence)}`);
+  if (requireLiveness && observedWritePaths.length === 0) throw new Error(`CAPABILITY_BLOCKED: bounded implementation observed no Edit/Write event; route an idempotent audit through the read-only path; evidence=${JSON.stringify(evidence)}`);
+  if (requireLiveness && actualChangedPaths.length === 0) throw new Error(`CAPABILITY_BLOCKED: bounded Edit/Write was a no-op with no actual changed path; evidence=${JSON.stringify(evidence)}`);
   return evidence;
 }
 
@@ -1479,10 +1762,12 @@ export function createDispatchPlan(
     maxRuntimeMs = DEFAULT_MAX_RUNTIME_MS,
     parentPid = process.ppid,
     handoffRef,
+    pluginDir = null,
   },
   dependencies = {},
 ) {
-  const argv = buildClaudeArgv({ tools, mode, mcpConfigPath, settingsPath });
+  const profile = dispatchProfileForTools(tools);
+  const argv = buildClaudeArgv({ tools, mode, mcpConfigPath, settingsPath, pluginDir });
   const handoff = resolveDispatchHandoff(tools, handoffRef);
   return {
     executable: resolveClaudeExecutable(dependencies),
@@ -1491,6 +1776,7 @@ export function createDispatchPlan(
     promptTransport: "stdin",
     tools,
     mode,
+    profile,
     stdoutFile,
     stderrFile,
     maxRuntimeMs: parsePositiveInteger(maxRuntimeMs, "--max-runtime-ms"),
@@ -1678,6 +1964,7 @@ export async function dispatchClaude(options, dependencies = {}) {
     ? options.tools
     : parseTools(options.tools);
   const mode = options.mode;
+  const profile = dispatchProfileForTools(tools);
   const maxRuntimeMs = parsePositiveInteger(
     options.maxRuntimeMs ?? DEFAULT_MAX_RUNTIME_MS,
     "--max-runtime-ms",
@@ -1701,20 +1988,35 @@ export async function dispatchClaude(options, dependencies = {}) {
     let implementationBaseline = null;
     let boundaryCapability = null;
     let settingsPath = null;
-    if (mode === "bypassPermissions") {
-      const bypassHandoff = resolveDispatchHandoff(tools, options.handoffRef);
-      if (!bypassHandoff.handoffRequired || !bypassHandoff.handoffRef) {
-        throw new Error("bypassPermissions requires a live durable GitHub handoff");
+    let skillPlugin = null;
+    if (profile === "bounded_implementation") {
+      if (mode !== "dontAsk") throw new Error("CAPABILITY_BLOCKED: bounded implementation uses dontAsk; bypassPermissions is rejected");
+      const implementationHandoff = resolveDispatchHandoff(tools, options.handoffRef);
+      if (!implementationHandoff.handoffRequired || !implementationHandoff.handoffRef) {
+        throw new Error("bounded implementation requires a live durable GitHub handoff");
       }
       validateNoPromptFileExpansion(prompt);
       if (structuredPromptMarker(prompt, PR_DIFF_SCOPE_MARKER) !== null) {
         throw new Error(`CAPABILITY_BLOCKED: ${PR_DIFF_SCOPE_MARKER} is review-only; implementation patch scope is derived automatically from declared edit_paths`);
       }
-      implementationBoundary = validateBypassPermissionsBrief(prompt, cwd, tools);
+      implementationBoundary = validateImplementationBrief(prompt, cwd, tools);
+      if (implementationBoundary.skillNames.length > 0) {
+        skillPlugin = await materializeSkillPlugin({
+          skillNames: implementationBoundary.skillNames,
+          sourceRoots: trustedSkillSourceRoots(implementationBoundary.skillNames, options.skillSourceRoots, dependencies.environment ?? process.env),
+          destinationRoot: tempRoot,
+        });
+        implementationBoundary.runtimeSkillNames = skillPlugin.runtimeSkillNames;
+        implementationBoundary.skillRuntimeMap = Object.fromEntries(implementationBoundary.skillNames.map((name, index) => [name, skillPlugin.runtimeSkillNames[index]]));
+      } else {
+        implementationBoundary.runtimeSkillNames = [];
+        implementationBoundary.skillRuntimeMap = {};
+        if (Array.isArray(options.skillSourceRoots) && options.skillSourceRoots.length > 0) throw new Error("trusted skill source roots are forbidden when skill_names is empty");
+      }
       const captureWorktree = dependencies.captureWorktreeState ?? captureGitWorktreeState;
       implementationBaseline = await captureWorktree(cwd, dependencies);
       if (implementationBaseline.changedPaths.length > 0) {
-        throw new Error(`CAPABILITY_BLOCKED: bypassPermissions requires an isolated clean worktree before boundary probing; pre-existing paths: ${JSON.stringify(implementationBaseline.changedPaths)}`);
+        throw new Error(`CAPABILITY_BLOCKED: bounded implementation requires an isolated clean worktree before boundary probing; pre-existing paths: ${JSON.stringify(implementationBaseline.changedPaths)}`);
       }
       const hookPath = path.join(tempRoot, "dispatch-boundary-hook.mjs");
       const manifestPath = path.join(tempRoot, "dispatch-boundary.json");
@@ -1725,23 +2027,36 @@ export async function dispatchClaude(options, dependencies = {}) {
         projectRoot: cwd,
         readPaths: implementationBoundary.readPaths,
         editPaths: implementationBoundary.editPaths,
-        skillNames: implementationBoundary.skillNames,
+        skillNames: implementationBoundary.runtimeSkillNames,
+        trustedReadPaths: skillPlugin?.skillDirectories.map((entry) => ({ skill_name: entry.skillName, path: entry.path })) ?? [],
       });
       await writeFile(hookPath, await readFile(BOUNDARY_HOOK_SOURCE_PATH, "utf8"), "utf8");
       await writeFile(manifestPath, `${JSON.stringify(manifest)}\n`, "utf8");
-      const settings = buildBoundarySettings({ nodeExecutable: process.execPath, hookPath, manifestPath, activationPath, activationNonce });
+      const settings = buildBoundarySettings({
+        nodeExecutable: process.execPath,
+        hookPath,
+        manifestPath,
+        activationPath,
+        activationNonce,
+        editPaths: manifest.edit_paths,
+        trustedReadPaths: manifest.trusted_read_paths.map((entry) => entry.path),
+      });
+      implementationBoundary.nativeEditAllowRules = settings.permissions.allow.filter((rule) => rule.startsWith("Edit("));
+      implementationBoundary.nativeTrustedSkillReadAllowRules = settings.permissions.allow.filter((rule) => rule.startsWith("Read("));
       await writeFile(settingsPath, `${JSON.stringify(settings)}\n`, "utf8");
       validateBoundarySettingsText(await readFile(settingsPath, "utf8"), settings);
       const probe = dependencies.probeDispatchBoundaryCapability ?? probeDispatchBoundaryCapability;
       boundaryCapability = await probe({
         claudeExecutable: resolveClaudeExecutable(dependencies),
         settingsPath,
+        mcpConfigPath,
         hookPath,
         manifestPath,
         activationPath,
         activationNonce,
         manifest,
         capabilityProbe: implementationBoundary.capabilityProbe,
+        skillPlugin,
       }, dependencies);
       const postProbeState = await captureWorktree(cwd, dependencies);
       const platform = dependencies.platform ?? process.platform;
@@ -1760,15 +2075,16 @@ export async function dispatchClaude(options, dependencies = {}) {
         stderrFile,
         mcpConfigPath,
         settingsPath,
+        pluginDir: skillPlugin?.pluginDir ?? null,
         maxRuntimeMs,
         parentPid,
         handoffRef: options.handoffRef,
       },
       dependencies,
     );
-    if (mode === "bypassPermissions") {
+    if (profile === "bounded_implementation") {
       if (!basePlan.handoffRequired || !basePlan.handoffRef) {
-        throw new Error("bypassPermissions requires a live durable GitHub handoff");
+        throw new Error("bounded implementation requires a live durable GitHub handoff");
       }
     }
     const materializer = dependencies.materializeHandoff ?? materializeGitHubHandoff;
@@ -1779,7 +2095,7 @@ export async function dispatchClaude(options, dependencies = {}) {
       throw new Error("materialized GitHub handoff does not match the validated --handoff-ref");
     }
     const diffMaterializer = dependencies.materializePullRequestDiff ?? materializePullRequestDiff;
-    const pullRequestDiffRequest = mode === "bypassPermissions"
+    const pullRequestDiffRequest = profile === "bounded_implementation"
       ? { purpose: "implementation", paths: implementationBoundary.editPaths }
       : { purpose: "review", scope: parsePullRequestDiffScope(prompt, cwd) };
     const rawPullRequestDiff = handoffSnapshot?.type === "pull_request"
@@ -1801,10 +2117,23 @@ export async function dispatchClaude(options, dependencies = {}) {
       implementationBoundary,
       boundaryCapability,
       implementationBaseline: implementationBaseline ? { root: implementationBaseline.root, clean: true } : null,
+      skillPlugin: skillPlugin ? {
+        pluginName: skillPlugin.pluginName,
+        sourceSkillNames: skillPlugin.sourceSkillNames,
+        runtimeSkillNames: skillPlugin.runtimeSkillNames,
+        copiedFiles: skillPlugin.copiedFiles,
+        copiedBytes: skillPlugin.copiedBytes,
+        sources: skillPlugin.sources,
+        fileInventory: skillPlugin.fileInventory,
+        proofSha256: sha256Bytes(readFileSync(skillPlugin.proofPath)),
+      } : null,
     };
-    const materializedPrompt = handoffSnapshot
-      ? appendHandoffSnapshot(prompt, handoffSnapshot, pullRequestDiff)
+    const skillGroundedPrompt = skillPlugin
+      ? `${prompt}\n\nDISPATCH_TRUSTED_SKILL_RUNTIME_MAP_JSON:${JSON.stringify(implementationBoundary.skillRuntimeMap)}\nUse only these exact runtime Skill names for the caller-declared trusted skills.`
       : prompt;
+    const materializedPrompt = handoffSnapshot
+      ? appendHandoffSnapshot(skillGroundedPrompt, handoffSnapshot, pullRequestDiff)
+      : skillGroundedPrompt;
 
     if (options.preflight || options.dryRun) {
       return {
@@ -1837,7 +2166,7 @@ export async function dispatchClaude(options, dependencies = {}) {
     let auditError = null;
     if (!runError && result.code === 0) {
       try {
-        toolAuditEvidence = auditObservedTools(result.stdout, tools, { permissionMode: mode });
+        toolAuditEvidence = auditObservedTools(result.stdout, tools, { permissionMode: mode, expectedSkills: skillPlugin?.runtimeSkillNames ?? [] });
         observedTools = toolAuditEvidence.allowedToolUses.map((event) => event.name);
         deniedUnavailableToolAttempts = toolAuditEvidence.deniedUnavailableToolAttempts;
       } catch (error) { auditError = error; }
@@ -1846,6 +2175,7 @@ export async function dispatchClaude(options, dependencies = {}) {
     let implementationVerificationError = null;
     if (implementationBoundary) {
       try {
+        if (skillPlugin) validateMaterializedSkillPlugin(skillPlugin);
         const captureWorktree = dependencies.captureWorktreeState ?? captureGitWorktreeState;
         const afterState = await captureWorktree(cwd, dependencies);
         implementationChanges = verifyImplementationChanges(result.stdout, implementationBoundary, implementationBaseline, afterState, {
@@ -1892,6 +2222,7 @@ export async function dispatchClaude(options, dependencies = {}) {
 function parseCliArgs(argv) {
   const values = {};
   const booleans = new Set(["--dry-run", "--preflight"]);
+  const repeatable = new Set(["--skill-source-root"]);
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
     if (booleans.has(token)) {
@@ -1900,6 +2231,12 @@ function parseCliArgs(argv) {
     }
     if (!token.startsWith("--") || index + 1 >= argv.length) {
       throw new Error(`invalid argument: ${token}`);
+    }
+    if (repeatable.has(token)) {
+      values.skillSourceRoots ??= [];
+      values.skillSourceRoots.push(argv[index + 1]);
+      index += 1;
+      continue;
     }
     values[
       token.slice(2).replace(/-([a-z])/gu, (_, letter) => letter.toUpperCase())

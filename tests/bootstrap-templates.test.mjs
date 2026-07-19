@@ -111,22 +111,35 @@ function runPostToolHook(fixtureRoot, launchCwd, filePath, inputOverride) {
 
 function actionAuthorityErrors(policy) {
   const errors = [];
-  for (const action of ['create_branch_or_worktree', 'commit_in_scope_changes', 'push_branch', 'open_or_update_pull_request']) {
+  for (const action of ['create_branch_or_worktree', 'commit_in_scope_changes', 'open_or_update_pull_request']) {
     if (!policy.autonomous.includes(action)) errors.push(`missing autonomous ${action}`);
   }
+  if (policy.autonomous.includes('push_branch')) errors.push('push_branch must not be unconditionally autonomous');
+  for (const predicate of ['no_preview_or_production_deploy', 'no_publish_or_billed_build', 'no_production_write_or_external_contact']) {
+    if (!policy.conditional.push_branch?.all?.includes(predicate)) errors.push(`conditional push missing ${predicate}`);
+  }
+  if (policy.conditional.push_branch?.on_uncertainty !== 'human_required') errors.push('push does not fail closed');
   if (!policy.conditional.merge_pull_request.all.includes('no_deploy_or_production_effect')) errors.push('merge lacks production boundary');
   if (policy.conditional.merge_pull_request.on_uncertainty !== 'human_required') errors.push('merge does not fail closed');
   if (!policy.human_required.includes('merge_that_deploys_or_mutates_production')) errors.push('production merge not human gated');
   return errors;
 }
 
-test('Proves: ORG-AUTH-001; Test type: mutation; Surface: action-authority template; Authority: policies/action-authority.v1.json; Killer mutation: remove autonomous push and no-production merge condition; Gated command: npm test', () => {
+test('Proves: ORG-AUTH-001; Test type: mutation; Surface: action-authority template; Authority: policies/action-authority.v1.json; Killer mutation: restore unconditional push or remove push and merge side-effect predicates; Gated command: npm test', () => {
   const policy = JSON.parse(fs.readFileSync(path.join(root, 'policies', 'action-authority.v1.json'), 'utf8'));
   assert.deepEqual(actionAuthorityErrors(policy), []);
   const mutated = structuredClone(policy);
-  mutated.autonomous = mutated.autonomous.filter((value) => value !== 'push_branch');
+  mutated.autonomous.push('push_branch');
+  delete mutated.conditional.push_branch;
   mutated.conditional.merge_pull_request.all = mutated.conditional.merge_pull_request.all.filter((value) => value !== 'no_deploy_or_production_effect');
-  assert.deepEqual(actionAuthorityErrors(mutated), ['missing autonomous push_branch', 'merge lacks production boundary']);
+  assert.deepEqual(actionAuthorityErrors(mutated), [
+    'push_branch must not be unconditionally autonomous',
+    'conditional push missing no_preview_or_production_deploy',
+    'conditional push missing no_publish_or_billed_build',
+    'conditional push missing no_production_write_or_external_contact',
+    'push does not fail closed',
+    'merge lacks production boundary',
+  ]);
 });
 
 test('Proves: ORG-AUTH-004; Test type: authority-retirement mutation; Surface: bootstrap and project gates; Authority: policies/action-authority.v1.json; Killer mutation: restore a legacy authority path or hardcoded runtime action-list constant; Gated command: npm test', () => {
@@ -254,14 +267,20 @@ test('Proves: ORG-HOOK-002; Test type: telemetry-root mutation; Surface: lifecyc
   const validates = (name, source) => {
     if (name === 'bootstrap') return source.includes('const root = configuredProjectRoot();') && !source.includes('repoRoot(payload?.cwd ?? process.cwd())');
     if (name === 'auxara') return source.includes('const telemetryDir = telemetryDirectory(projectRoot);') && !source.includes('telemetryDirectory(process.cwd())');
-    return source.includes('configuredProjectDir || path.resolve(path.dirname(fileURLToPath(import.meta.url)), \'..\')') && !source.includes('const root = process.cwd();');
+    return source.includes("const scriptRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');")
+      && source.includes('fs.realpathSync.native(path.resolve(configuredProjectDir))')
+      && source.includes('CLAUDE_PROJECT_DIR does not match the script-derived repository root')
+      && !source.includes('const root = process.cwd();');
   };
   for (const [name, source] of Object.entries(sources)) {
     assert.equal(validates(name, source), true, `${name} roots lifecycle telemetry outside cwd`);
   }
   assert.equal(validates('bootstrap', sources.bootstrap.replace('const root = configuredProjectRoot();', 'const root = repoRoot(payload?.cwd ?? process.cwd());')), false);
   assert.equal(validates('auxara', sources.auxara.replace('const telemetryDir = telemetryDirectory(projectRoot);', 'const telemetryDir = telemetryDirectory(process.cwd());')), false);
-  assert.equal(validates('coachai', sources.coachai.replace(/const root = path\.resolve\([\s\S]*?\n\);/u, 'const root = process.cwd();')), false);
+  assert.equal(validates('coachai', sources.coachai.replace(
+    "const scriptRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');",
+    'const scriptRoot = process.cwd();',
+  )), false);
 });
 
 test('Proves: ORG-HOOK-003; Test type: runtime counterexample; Surface: Auxara and CoachAI lifecycle telemetry; Authority: configured project root; Killer mutation: derive telemetry from the nested launch cwd; Gated command: npm test', (t) => {
@@ -274,9 +293,17 @@ test('Proves: ORG-HOOK-003; Test type: runtime counterexample; Surface: Auxara a
     fs.cpSync(path.join(root, 'core'), path.join(fixtureRoot, '.ai-organization', 'runtime', 'core'), { recursive: true });
     const nestedCwd = path.join(fixtureRoot, 'fixtures', 'mock package with spaces');
     fs.mkdirSync(nestedCwd, { recursive: true });
+    const siblingRoot = fs.mkdtempSync(path.join(os.tmpdir(), `${project} sibling repository-`));
+    t.after(() => fs.rmSync(siblingRoot, { recursive: true, force: true }));
+    if (project === 'auxara-dialer') {
+      assert.equal(spawnSync('git', ['init', '-b', 'root-proof'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);
+      assert.equal(spawnSync('git', ['init', '-b', 'sibling-proof'], { cwd: siblingRoot, encoding: 'utf8' }).status, 0);
+    }
     const result = spawnSync(process.execPath, [path.join(fixtureRoot, 'scripts', 'claude-lifecycle-hook.mjs')], {
       cwd: nestedCwd,
-      input: JSON.stringify({ hook_event_name: 'SessionEnd', session_id: `${project}-nested` }),
+      input: JSON.stringify(project === 'auxara-dialer'
+        ? { hook_event_name: 'SessionStart', session_id: `${project}-nested`, cwd: siblingRoot, source: 'startup' }
+        : { hook_event_name: 'SessionEnd', session_id: `${project}-nested`, cwd: siblingRoot }),
       encoding: 'utf8',
       env: { ...process.env, CLAUDE_PROJECT_DIR: fixtureRoot },
     });
@@ -284,7 +311,31 @@ test('Proves: ORG-HOOK-003; Test type: runtime counterexample; Surface: Auxara a
     const telemetryFile = project === 'coachai' ? 'lifecycle.jsonl' : 'events.jsonl';
     assert.equal(fs.existsSync(path.join(fixtureRoot, 'tmp', 'agent-telemetry', telemetryFile)), true, `${project} writes telemetry below the configured project root`);
     assert.equal(fs.existsSync(path.join(nestedCwd, 'tmp', 'agent-telemetry', telemetryFile)), false, `${project} must not write telemetry below nested cwd`);
+    if (project === 'auxara-dialer') {
+      assert.match(result.stdout, /root-proof/u, 'Auxara state must come from the verified project root');
+      assert.doesNotMatch(result.stdout, /sibling-proof/u, 'payload.cwd must not redirect Auxara state collection');
+    }
   }
+});
+
+test('Proves: ORG-HOOK-003B; Test type: spoofed-root runtime mutation; Surface: CoachAI lifecycle root; Authority: script-derived canonical repository root; Killer mutation: trust mismatched CLAUDE_PROJECT_DIR; Gated command: npm test', (t) => {
+  const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'coachai lifecycle verified root-'));
+  const siblingRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'coachai lifecycle spoofed root-'));
+  t.after(() => fs.rmSync(fixtureRoot, { recursive: true, force: true }));
+  t.after(() => fs.rmSync(siblingRoot, { recursive: true, force: true }));
+  const sourceRoot = path.join(root, 'overlays', 'coachai', 'project-files');
+  fs.cpSync(path.join(sourceRoot, 'scripts'), path.join(fixtureRoot, 'scripts'), { recursive: true });
+  fs.cpSync(path.join(sourceRoot, '.ai-organization'), path.join(fixtureRoot, '.ai-organization'), { recursive: true });
+  fs.cpSync(path.join(root, 'core'), path.join(fixtureRoot, '.ai-organization', 'runtime', 'core'), { recursive: true });
+  const result = spawnSync(process.execPath, [path.join(fixtureRoot, 'scripts', 'claude-lifecycle-hook.mjs')], {
+    cwd: fixtureRoot,
+    input: JSON.stringify({ hook_event_name: 'SessionEnd', session_id: 'spoofed-root' }),
+    encoding: 'utf8',
+    env: { ...process.env, CLAUDE_PROJECT_DIR: siblingRoot },
+  });
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /CLAUDE_PROJECT_DIR does not match/iu);
+  assert.equal(fs.existsSync(path.join(siblingRoot, 'tmp', 'agent-telemetry', 'lifecycle.jsonl')), false);
 });
 
 test('Proves: ORG-HOOK-004; Test type: nested-cwd runtime mutation and root counterexample; Surface: universal, Auxara, and CoachAI PostToolUse gate children; Authority: configured project root; Killer mutation: spawn npm or node from process.cwd(); Gated command: npm test', (t) => {

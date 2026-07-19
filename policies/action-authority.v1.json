@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/action-authority.v1.schema.json",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "default": "human_required",
   "autonomous": [
     "read_in_scope",
@@ -9,10 +9,17 @@
     "run_local_tests_and_safe_read_only_checks",
     "create_branch_or_worktree",
     "commit_in_scope_changes",
-    "push_branch",
     "open_or_update_pull_request"
   ],
   "conditional": {
+    "push_branch": {
+      "all": [
+        "no_preview_or_production_deploy",
+        "no_publish_or_billed_build",
+        "no_production_write_or_external_contact"
+      ],
+      "on_uncertainty": "human_required"
+    },
     "merge_pull_request": {
       "all": [
         "no_deploy_or_production_effect",

@@ -21,10 +21,12 @@ repo/GitHub/control discrepancies and never edits.
 ## Action authority
 
 `{{ACTION_AUTHORITY_PATH}}` is the single machine-readable authority. In-scope branch/worktree creation,
-commit, push, and draft/ready PR publication are autonomous. PR merge is conditional: every listed condition
-must be proven, including no deploy or production effect; uncertainty falls back to human approval.
+commit, and draft/ready PR creation/update are autonomous. Push is conditional on live proof that it cannot
+trigger a preview/production deploy, publish or billed build, production write, or external contact; a preview
+counts as a deploy and uncertainty falls back to human approval. PR merge is conditional: every listed
+condition must be proven, including no deploy or production effect; uncertainty falls back to human approval.
 
-Deploy/publish, production mutation or configuration, data migrations, destructive/irreversible actions,
+Production-affecting push, deploy/publish, production mutation or configuration, data migrations, destructive/irreversible actions,
 billed actions or purchases, external contact, secrets, and unresolved product/design/material-architecture
 decisions remain human-gated. A merge that auto-deploys or otherwise mutates production is human-gated.
 

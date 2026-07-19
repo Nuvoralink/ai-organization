@@ -9,9 +9,20 @@ import { acceptLifecycleTask, completeLifecycleTask, recordLifecycleCompletionRe
 import { extractStructured, validateAgentReport, validateTaskContract } from './task-governor.mjs';
 
 const configuredProjectDir = String(process.env.CLAUDE_PROJECT_DIR ?? '').trim();
-const root = path.resolve(
-  configuredProjectDir || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'),
-);
+const scriptRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+let root;
+try {
+  const scriptReal = path.resolve(fs.realpathSync.native(scriptRoot));
+  const configuredReal = configuredProjectDir
+    ? path.resolve(fs.realpathSync.native(path.resolve(configuredProjectDir)))
+    : scriptReal;
+  const key = (value) => process.platform === 'win32' ? value.toLowerCase() : value;
+  if (key(configuredReal) !== key(scriptReal)) throw new Error('CLAUDE_PROJECT_DIR does not match the script-derived repository root');
+  root = scriptReal;
+} catch (error) {
+  console.error(`lifecycle root: BLOCKED\n- ${error.message}`);
+  process.exit(2);
+}
 let payload = {};
 try { payload = JSON.parse(fs.readFileSync(0, 'utf8') || '{}'); } catch { payload = {}; }
 const event = payload.hook_event_name ?? payload.event ?? process.env.CLAUDE_HOOK_EVENT ?? 'Unknown';

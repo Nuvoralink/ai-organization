@@ -49,7 +49,7 @@ For a project overlay, use `node scripts/project-overlay.mjs rollback <project> 
 
 ## Human gates
 
-Local validation, branches, commits, pushes, and PR creation are agent-authorized inside task scope. Deployment, production mutation/configuration, migrations, destructive or billed actions, external contact, secrets, visible-design approval, and unresolved product/material-architecture decisions require the user. Conditional agent merge is never used for a broad control-plane change or any change with a deploy effect.
+Local validation, branches, commits, and PR creation/update are agent-authorized inside task scope. Push is conditional on live proof that it cannot trigger a preview/production deploy, publish or billed build, production write, or external contact; preview counts as deploy and uncertainty requires the user. Deployment, production mutation/configuration, migrations, destructive or billed actions, external contact, secrets, visible-design approval, and unresolved product/material-architecture decisions require the user. Conditional agent merge is never used for a broad control-plane change or any change with a deploy effect.
 
 ## Sensitive-state boundary
 

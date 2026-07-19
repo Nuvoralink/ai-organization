@@ -7,7 +7,7 @@ body:
       value: |
         This issue is the durable handoff artifact. Quote settled decisions verbatim, pin the worktree,
         and require command-owned exit codes. An agent status is a lead; attach the output that proves it.
-        `.ai-organization/policies/action-authority.v1.json` is canonical: branch/commit/push/PR are task-authorized;
+        `.ai-organization/policies/action-authority.v1.json` is canonical: branch/commit/PR are task-authorized; push is conditional on live no-deploy/publish/billed-build/production-write/external-contact proof;
         conditional merge requires every low-risk criterion; human-gated actions never inherit approval.
 
   - type: dropdown
@@ -88,7 +88,7 @@ body:
         MUST NOT:
         - edit outside the allowlist or cross any human-gated action in action-authority.v1.json
         MAY:
-        - branch, commit, push, and open/update a PR inside this authorized task
+        - branch, commit, and open/update a PR inside this authorized task; push only with live no-side-effect proof
         CONDITIONAL MERGE:
         - only when low-risk, additive/isolated, conflict-free, independently verified, and with no
           production/deploy effect
