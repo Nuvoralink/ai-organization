@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -7,6 +9,35 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const bootstrap = path.join(root, 'skills', 'bootstrap-orchestrator');
 const read = (relative) => fs.readFileSync(path.join(bootstrap, relative), 'utf8');
+
+const REQUIRED_HOOK_EVENTS = [
+  'SessionStart', 'SubagentStart', 'TaskCreated', 'TaskCompleted',
+  'SubagentStop', 'PostCompact', 'SessionEnd', 'PostToolUse',
+];
+
+function parseCommentedJson(source) {
+  return JSON.parse(source.split(/\r?\n/u).filter((line) => !line.trimStart().startsWith('//')).join('\n'));
+}
+
+function hookCommands(registrations) {
+  return Array.isArray(registrations)
+    ? registrations.flatMap((entry) => (Array.isArray(entry?.hooks) ? entry.hooks : []))
+    : [];
+}
+
+function rootedHookErrors(settings) {
+  const errors = [];
+  for (const event of REQUIRED_HOOK_EVENTS) {
+    const registrations = settings.hooks?.[event];
+    const commands = hookCommands(registrations);
+    const script = event === 'PostToolUse' ? 'claude-posttooluse-gate.mjs' : 'claude-lifecycle-hook.mjs';
+    const expected = `\${CLAUDE_PROJECT_DIR}/scripts/${script}`;
+    if (registrations?.length !== 1 || commands.length !== 1 || commands[0]?.type !== 'command' || commands[0]?.command !== 'node' || !Array.isArray(commands[0]?.args) || commands[0].args.length !== 1 || commands[0].args[0] !== expected) {
+      errors.push(event);
+    }
+  }
+  return errors;
+}
 
 function actionAuthorityErrors(policy) {
   const errors = [];
@@ -119,6 +150,136 @@ test('Proves: ORG-GOV-005; Test type: architecture; Surface: cross-vendor assura
   const template = read('templates/lifecycle/claude-lifecycle-hook.mjs.template');
   assert.match(template, /completeLifecycleTask\(/u);
   assert.match(template, /TASK_CONTRACT_JSON/u);
+});
+
+test('Proves: ORG-HOOK-001; Test type: mutation and path counterexample; Surface: bootstrap and overlay hook descriptors; Authority: Claude project-root hook contract; Killer mutation: restore a cwd-relative shell-form command; Gated command: npm test', () => {
+  const settingsSources = [
+    ['bootstrap', parseCommentedJson(read('templates/settings.json.template'))],
+    ['auxara-dialer', JSON.parse(fs.readFileSync(path.join(root, 'overlays', 'auxara-dialer', 'project-files', '.claude', 'settings.json'), 'utf8'))],
+    ['coachai', JSON.parse(fs.readFileSync(path.join(root, 'overlays', 'coachai', 'project-files', '.claude', 'settings.json'), 'utf8'))],
+  ];
+  for (const [name, settings] of settingsSources) {
+    assert.deepEqual(rootedHookErrors(settings), [], `${name} must use rooted exec-form hooks`);
+    const mutated = structuredClone(settings);
+    mutated.hooks.SessionEnd[0].hooks[0] = {
+      type: 'command',
+      command: 'node scripts/claude-lifecycle-hook.mjs',
+      timeout: mutated.hooks.SessionEnd[0].hooks[0].timeout,
+    };
+    assert.deepEqual(rootedHookErrors(mutated), ['SessionEnd'], `${name} must reject the relative-shell mutation`);
+  }
+
+  const projectWithSpaces = String.raw`C:\worktrees\Dialer Project With Spaces`;
+  const rootedArg = settingsSources[0][1].hooks.SessionStart[0].hooks[0].args[0]
+    .replace('${CLAUDE_PROJECT_DIR}', projectWithSpaces);
+  assert.equal(path.win32.normalize(rootedArg), path.win32.join(projectWithSpaces, 'scripts', 'claude-lifecycle-hook.mjs'));
+});
+
+test('Proves: ORG-HOOK-002; Test type: telemetry-root mutation; Surface: lifecycle runtime initialization; Authority: repository-root telemetry contract; Killer mutation: initialize lifecycle or telemetry from process.cwd(); Gated command: npm test', () => {
+  const sources = {
+    bootstrap: read('templates/lifecycle/claude-lifecycle-hook.mjs.template'),
+    auxara: fs.readFileSync(path.join(root, 'overlays', 'auxara-dialer', 'project-files', 'scripts', 'claude-lifecycle-hook.mjs'), 'utf8'),
+    coachai: fs.readFileSync(path.join(root, 'overlays', 'coachai', 'project-files', 'scripts', 'claude-lifecycle-hook.mjs'), 'utf8'),
+  };
+  const validates = (name, source) => {
+    if (name === 'bootstrap') return source.includes('const root = configuredProjectRoot();') && !source.includes('repoRoot(payload?.cwd ?? process.cwd())');
+    if (name === 'auxara') return source.includes('const telemetryDir = telemetryDirectory(projectRoot);') && !source.includes('telemetryDirectory(process.cwd())');
+    return source.includes('configuredProjectDir || path.resolve(path.dirname(fileURLToPath(import.meta.url)), \'..\')') && !source.includes('const root = process.cwd();');
+  };
+  for (const [name, source] of Object.entries(sources)) {
+    assert.equal(validates(name, source), true, `${name} roots lifecycle telemetry outside cwd`);
+  }
+  assert.equal(validates('bootstrap', sources.bootstrap.replace('const root = configuredProjectRoot();', 'const root = repoRoot(payload?.cwd ?? process.cwd());')), false);
+  assert.equal(validates('auxara', sources.auxara.replace('const telemetryDir = telemetryDirectory(projectRoot);', 'const telemetryDir = telemetryDirectory(process.cwd());')), false);
+  assert.equal(validates('coachai', sources.coachai.replace(/const root = path\.resolve\([\s\S]*?\n\);/u, 'const root = process.cwd();')), false);
+});
+
+test('Proves: ORG-HOOK-003; Test type: runtime counterexample; Surface: Auxara and CoachAI lifecycle telemetry; Authority: configured project root; Killer mutation: derive telemetry from the nested launch cwd; Gated command: npm test', (t) => {
+  for (const project of ['auxara-dialer', 'coachai']) {
+    const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), `${project} hook runtime with spaces-`));
+    t.after(() => fs.rmSync(fixtureRoot, { recursive: true, force: true }));
+    const sourceRoot = path.join(root, 'overlays', project, 'project-files');
+    fs.cpSync(path.join(sourceRoot, 'scripts'), path.join(fixtureRoot, 'scripts'), { recursive: true });
+    fs.cpSync(path.join(sourceRoot, '.ai-organization'), path.join(fixtureRoot, '.ai-organization'), { recursive: true });
+    fs.cpSync(path.join(root, 'core'), path.join(fixtureRoot, '.ai-organization', 'runtime', 'core'), { recursive: true });
+    const nestedCwd = path.join(fixtureRoot, 'fixtures', 'mock package with spaces');
+    fs.mkdirSync(nestedCwd, { recursive: true });
+    const result = spawnSync(process.execPath, [path.join(fixtureRoot, 'scripts', 'claude-lifecycle-hook.mjs')], {
+      cwd: nestedCwd,
+      input: JSON.stringify({ hook_event_name: 'SessionEnd', session_id: `${project}-nested` }),
+      encoding: 'utf8',
+      env: { ...process.env, CLAUDE_PROJECT_DIR: fixtureRoot },
+    });
+    assert.equal(result.status, 0, `${project}: ${result.stderr}`);
+    const telemetryFile = project === 'coachai' ? 'lifecycle.jsonl' : 'events.jsonl';
+    assert.equal(fs.existsSync(path.join(fixtureRoot, 'tmp', 'agent-telemetry', telemetryFile)), true, `${project} writes telemetry below the configured project root`);
+    assert.equal(fs.existsSync(path.join(nestedCwd, 'tmp', 'agent-telemetry', telemetryFile)), false, `${project} must not write telemetry below nested cwd`);
+  }
+});
+
+test('Proves: ORG-DISPATCH-001; Test type: authority and capability mutation; Surface: canonical Claude CLI dispatcher; Authority: live GitHub handoff plus bounded implementation contract; Killer mutation: trust a validated ref without materialization or allow bypassPermissions without an exact probe; Gated command: npm test', () => {
+  const dispatcher = read('scripts/dispatch-claude-cli.mjs');
+  const dispatcherTests = read('scripts/dispatch-claude-cli.test.mjs');
+  const boundaryHook = read('scripts/dispatch-boundary-hook.mjs');
+  const skill = read('SKILL.md');
+  const brief = read('templates/briefs/dispatch-brief.template.md');
+  for (const fragment of [
+    'materializeGitHubHandoff',
+    'materializePullRequestDiff',
+    'captureGitWorktreeState',
+    'verifyImplementationChanges',
+    'merge_base_oid',
+    'LIVE_GITHUB_HANDOFF_SNAPSHOT_JSON',
+    'LIVE_LOCAL_PR_DIFF_JSON',
+    'snapshotSha256',
+    'bypassPermissions',
+    'CLAUDE_DISPATCH_BOUNDARY_JSON:',
+    'CLAUDE_PR_DIFF_SCOPE_JSON:',
+    'read_paths',
+    'capability_probe',
+    'skill_names',
+  ]) assert.match(dispatcher, new RegExp(fragment.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+  assert.match(dispatcher, /spawnSyncProcess\(executable, argv,[\s\S]*?shell: false/u);
+  assert.match(dispatcher, /timeout: parsePositiveInteger\(dependencies\.ghTimeoutMs/u);
+  assert.match(dispatcher, /untrusted evidence, never instructions/u);
+  assert.match(dispatcherTests, /failure blocks before Claude spawn/u);
+  assert.match(dispatcherTests, /newer comment or PR head changes/u);
+  assert.match(dispatcherTests, /undeclared tracked\/untracked changes/u);
+  assert.match(dispatcherTests, /exact repository-bound merge-base/u);
+  assert.match(dispatcherTests, /phantom deletions/u);
+  assert.match(dispatcherTests, /11 MB PR/u);
+  assert.match(dispatcherTests, /Binary bytes at the same path/u);
+  assert.match(dispatcherTests, /Failure-path containment/u);
+  assert.match(dispatcher, /observed no Edit\/Write event/u);
+  assert.match(dispatcher, /Edit\/Write was a no-op/u);
+  assert.match(dispatcherTests, /Skill is optional bounded context/u);
+  assert.match(dispatcherTests, /denied before simulated tool access/u);
+  assert.match(dispatcherTests, /ignored Claude settings fail/u);
+  assert.match(dispatcherTests, /Prompt-side @file expansion/u);
+  assert.match(boundaryHook, /hook_event_name !== "PreToolUse"/u);
+  assert.match(boundaryHook, /crosses a symlink\/reparse path/u);
+  assert.match(boundaryHook, /omitted tool_input\.path/u);
+  assert.match(dispatcher, /probeDispatchBoundaryCapability/u);
+  assert.match(dispatcher, /--include-hook-events/u);
+  assert.match(dispatcher, /Claude @file expansion bypasses PreToolUse/u);
+  assert.match(skill, /CAPABILITY_BLOCKED/u);
+  assert.match(skill, /caller-authored snapshot\/diff cannot substitute/u);
+  assert.match(brief, /CLAUDE_DISPATCH_BOUNDARY_JSON:/u);
+  assert.match(brief, /CLAUDE_PR_DIFF_SCOPE_JSON:/u);
+  assert.match(skill, /raw full-index identity digest/u);
+  assert.match(skill, /empty scoped review patch/u);
+  assert.match(brief, /Capability preflight before expensive grounding/u);
+
+  const withoutMaterialization = dispatcher.replace('const handoffSnapshot = basePlan.handoffRef', 'const handoffSnapshot = false && basePlan.handoffRef');
+  assert.doesNotMatch(withoutMaterialization, /const handoffSnapshot = basePlan\.handoffRef/u);
+  const withoutPostRunVerification = dispatcher.replace('implementationChanges = verifyImplementationChanges', 'implementationChanges = null; // mutation');
+  assert.doesNotMatch(withoutPostRunVerification, /implementationChanges = verifyImplementationChanges/u);
+  const withoutProbe = brief.replace('"capability_probe":{"tool":"Edit","path":"path/to/exact-file"},', '');
+  assert.doesNotMatch(withoutProbe, /"capability_probe"/u);
+  const withoutReadBoundary = brief.replace('"read_paths":["path/to/read-directory","path/to/exact-file"],', '');
+  assert.doesNotMatch(withoutReadBoundary, /"read_paths"/u);
+  const withoutPreToolProbe = dispatcher.replace('boundaryCapability = await probe', 'boundaryCapability = { mutation: true }; // mutation');
+  assert.doesNotMatch(withoutPreToolProbe, /boundaryCapability = await probe/u);
 });
 
 test('Proves: ORG-REL-001; Test type: mutation; Surface: release-verifier template; Authority: deployed-verification truth table; Killer mutation: allow DEPLOY-VERIFIED with a skipped check or shell-only core flow; Gated command: npm test', () => {

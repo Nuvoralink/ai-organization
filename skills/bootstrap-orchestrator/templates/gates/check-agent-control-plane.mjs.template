@@ -49,6 +49,20 @@ const HUMAN_GATES = [
   'Human approves unresolved product scope, visible design/copy, or material architecture decision.',
 ];
 
+function commandHooks(registrations) {
+  return Array.isArray(registrations)
+    ? registrations.flatMap((entry) => Array.isArray(entry?.hooks) ? entry.hooks : [])
+    : [];
+}
+
+function isRootedExecHook(hook, script) {
+  return hook?.type === 'command'
+    && hook.command === 'node'
+    && Array.isArray(hook.args)
+    && hook.args.length === 1
+    && hook.args[0] === `\${CLAUDE_PROJECT_DIR}/scripts/${script}`;
+}
+
 function read(root, key, errors) {
   const relative = ARTIFACTS[key];
   try { return fs.readFileSync(path.join(root, relative), 'utf8'); }
@@ -159,14 +173,14 @@ export function validateAgentControlPlane(root = process.cwd()) {
   if (JSON.stringify(hookNames) !== JSON.stringify([...REQUIRED_EVENTS].sort())) errors.push(`${ARTIFACTS.settings}: hook events must be exactly ${[...REQUIRED_EVENTS].sort().join(', ')}; found ${hookNames.join(', ')}`);
   for (const event of REQUIRED_EVENTS.filter((name) => name !== 'PostToolUse')) {
     const registrations = hooks[event];
-    const commands = Array.isArray(registrations) ? registrations.flatMap((entry) => Array.isArray(entry?.hooks) ? entry.hooks : []) : [];
-    if (registrations?.length !== 1 || commands.length !== 1 || commands[0]?.type !== 'command' || commands[0]?.command !== 'node scripts/claude-lifecycle-hook.mjs') errors.push(`${ARTIFACTS.settings}: ${event} must contain exactly one node scripts/claude-lifecycle-hook.mjs command hook`);
+    const commands = commandHooks(registrations);
+    if (registrations?.length !== 1 || commands.length !== 1 || !isRootedExecHook(commands[0], 'claude-lifecycle-hook.mjs')) errors.push(`${ARTIFACTS.settings}: ${event} must contain exactly one rooted exec-form claude-lifecycle-hook.mjs command hook`);
   }
-  const taskCompletedTimeouts = hooks.TaskCompleted?.flatMap((entry) => entry.hooks ?? []).filter((hook) => hook.command === 'node scripts/claude-lifecycle-hook.mjs').map((hook) => hook.timeout) ?? [];
+  const taskCompletedTimeouts = commandHooks(hooks.TaskCompleted).filter((hook) => isRootedExecHook(hook, 'claude-lifecycle-hook.mjs')).map((hook) => hook.timeout);
   if (taskCompletedTimeouts.length !== 1 || taskCompletedTimeouts[0] * 1_000 !== proofRegistry.lifecycle_hook_timeout_ms) errors.push(`${ARTIFACTS.settings}: TaskCompleted timeout must exactly match proof registry lifecycle_hook_timeout_ms`);
   const post = hooks.PostToolUse;
-  const postCommands = Array.isArray(post) ? post.flatMap((entry) => Array.isArray(entry?.hooks) ? entry.hooks : []) : [];
-  if (post?.length !== 1 || post[0]?.matcher !== 'Edit|Write' || postCommands.length !== 1 || postCommands[0]?.type !== 'command' || postCommands[0]?.command !== 'node scripts/claude-posttooluse-gate.mjs') errors.push(`${ARTIFACTS.settings}: PostToolUse must be Edit|Write with exactly one node scripts/claude-posttooluse-gate.mjs command hook`);
+  const postCommands = commandHooks(post);
+  if (post?.length !== 1 || post[0]?.matcher !== 'Edit|Write' || postCommands.length !== 1 || !isRootedExecHook(postCommands[0], 'claude-posttooluse-gate.mjs')) errors.push(`${ARTIFACTS.settings}: PostToolUse must be Edit|Write with exactly one rooted exec-form claude-posttooluse-gate.mjs command hook`);
   if (/figma/i.test(JSON.stringify(settings?.permissions?.allow ?? []))) errors.push(`${ARTIFACTS.settings}: retired Figma tool remains actively allowlisted`);
 
   return errors;

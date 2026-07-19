@@ -178,6 +178,20 @@ const DANGEROUS_COMMANDS = Object.freeze([
 const normalize = (value) => value.trim().toLowerCase().replace(/\s+/g, ' ');
 const read = (root, relative) => fs.readFileSync(path.join(root, relative), 'utf8');
 
+function commandHooks(registrations) {
+  return Array.isArray(registrations)
+    ? registrations.flatMap((entry) => (Array.isArray(entry?.hooks) ? entry.hooks : []))
+    : [];
+}
+
+function isRootedExecHook(hook, script) {
+  return hook?.type === 'command'
+    && hook.command === 'node'
+    && Array.isArray(hook.args)
+    && hook.args.length === 1
+    && hook.args[0] === `\${CLAUDE_PROJECT_DIR}/scripts/${script}`;
+}
+
 function requireText(errors, file, source, fragments) {
   const normalized = normalize(source);
   for (const fragment of fragments) {
@@ -769,7 +783,20 @@ export function validateAgentControlPlane(root = process.cwd()) {
         );
       }
     }
-    const completionTimeouts = settings.hooks?.TaskCompleted?.flatMap((entry) => entry.hooks ?? []).filter((hook) => hook.command === 'node scripts/claude-lifecycle-hook.mjs').map((hook) => hook.timeout) ?? [];
+    const lifecycleEvents = ['SessionStart', 'SubagentStart', 'TaskCreated', 'TaskCompleted', 'SubagentStop', 'PostCompact', 'SessionEnd'];
+    for (const event of lifecycleEvents) {
+      const registrations = settings.hooks?.[event];
+      const commands = commandHooks(registrations);
+      if (registrations?.length !== 1 || commands.length !== 1 || !isRootedExecHook(commands[0], 'claude-lifecycle-hook.mjs')) {
+        errors.push(`${CONTROL_PLANE_POLICY.artifacts.settings}: ${event} must contain exactly one rooted exec-form lifecycle hook`);
+      }
+    }
+    const post = settings.hooks?.PostToolUse;
+    const postCommands = commandHooks(post);
+    if (post?.length !== 1 || post[0]?.matcher !== 'Edit|Write' || postCommands.length !== 1 || !isRootedExecHook(postCommands[0], 'claude-posttooluse-gate.mjs')) {
+      errors.push(`${CONTROL_PLANE_POLICY.artifacts.settings}: PostToolUse must contain exactly one rooted exec-form Edit|Write hook`);
+    }
+    const completionTimeouts = commandHooks(settings.hooks?.TaskCompleted).filter((hook) => isRootedExecHook(hook, 'claude-lifecycle-hook.mjs')).map((hook) => hook.timeout);
     const profileRegistry = JSON.parse(completionProfiles);
     if (completionTimeouts.length !== 1 || completionTimeouts[0] * 1_000 !== profileRegistry.lifecycle_hook_timeout_ms) errors.push(`${CONTROL_PLANE_POLICY.artifacts.settings}: TaskCompleted timeout must exactly match the completion profile authority`);
   } catch (error) {

@@ -43,7 +43,7 @@ Too little is adding another orchestration document without installing it, gatin
 ### Phase 3 — Global catalog migration
 
 - Import all safe user-authored global Claude/Codex orchestration assets; classify upstream plugin/system assets as dependencies rather than copied authorities.
-- Normalize twin doctrine, remove stale Figma/push/PR wording, add premise-and-architecture challenger, task lifecycle, release truth, uptime semantics, closure ledger, context/rule gates.
+- Normalize twin doctrine, remove stale Figma/push/PR wording, add premise-and-architecture challenger, task lifecycle, release truth, uptime semantics, closure ledger, context/rule gates, and the PR-bound Claude CLI dispatcher. The dispatcher requires and independently materializes a live GitHub issue/PR for every capability outside the exact read-only diagnostic set, preserves bounded native `shell:false` for `claude`, `gh`, and `git`, appends hashed untrusted-evidence grounding only to stdin, binds every PR review to matching origin plus clean checked-out live head and the verified merge-base..head diff, validates preflight/dry-run evidence, permits `bypassPermissions` only behind a clean isolated worktree plus exact edit-path/trusted-skill/action boundaries, verifies post-run tracked/untracked and Edit/Write paths on success and failure without auto-revert, rejects no-op implementation success, requires a capability probe before expensive implementation grounding, and treats only Claude's `Task`/`Agent` rename as an alias.
 - Proves: Claude and Codex receive the same semantic controls through tool-appropriate adapters.
 
 ### Phase 4 — Project overlays
@@ -67,6 +67,7 @@ Install begins with `--dry-run`; capture never overwrites canonical data without
 - Safe canonical boundary enforcement, secret/path refusal, destination-collision detection, deterministic install/check, local-only detection, snapshots, failure rollback, and explicit rollback.
 - Executed JSON schemas plus semantic action-policy invariants and a fail-closed action evaluator.
 - Cross-vendor task assurance runtime with immutable attempts, registry-resolved local proof profiles, parsed artifact digests, structural mutation receipts, risk-derived independent review/human gates, and replay-safe completion.
+- Rooted exec-form Claude hooks whose script paths and telemetry remain bound to `CLAUDE_PROJECT_DIR` even when a tool changes the current working directory, plus a PR-bound Claude CLI dispatcher with zero-token preflight, bounded native live-artifact and exact local-diff materialization, injection-resistant hashed stdin grounding, independently verified post-run edit boundaries, capability-first probing, and bounded child lifetime.
 - Auxara and CoachAI overlay authorities plus daily/weekly project checks and a biweekly universal backflow comparison.
 - Pull-request CI, ownership/review templates, and an editable 19-slide operating-model presentation with structural and rendered QA.
 

@@ -33,6 +33,17 @@ For every test, name the concrete **mutation** that should make it fail. If you 
 - **Stale** — references removed behavior but passes because it no longer runs the real path.
 - **Route/authority-layer behavior covered ONLY by client/unit tests that can't reach the route** — add a route/integration test that EXERCISES the handler.
 
+### Source sentinels are authority consumers
+A test that inspects source ordering or wiring must enumerate the complete set of *current*
+authority/effect anchors, assert each anchor exists before comparing positions, and bound its scan to
+the exact function or region under test. Replacing an authority or entrypoint requires updating its
+companion sentinel in the same slice; do not leave an obsolete symbol in a green source-inspection
+test. Killer mutations remove each current anchor independently, move the protected effect before its
+guard, and delete the region-end boundary so an unrelated later call cannot create a false pass. When
+a SQL `CHECK` contract requires total fail-closed behavior under three-valued logic, assert
+`(predicate) IS TRUE` or an equivalent proven-total expression; removing the totality operator must
+make the test red.
+
 ## 4. A false-passing test is P0 — fix the moment it's found (never backlog, never skip)
 A test that passes when it should fail (mocks the SUT, asserts a tautology the same patch hardcoded, never reaches the decision it claims) is worse than no test — it certifies broken code as working. The instant one is found: **fix it now** (never a backlog row, never a follow-up), **never `.skip`/`xit`/comment-out/loosen to green**, and **make it bite** (rewrite to exercise the real SUT; name the killer mutation and confirm it breaks). If a whole class slipped, strengthen the upstream control too (doctrine-loop Arm 1) — in addition, never instead.
 

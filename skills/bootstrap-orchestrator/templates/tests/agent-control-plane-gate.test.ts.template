@@ -23,7 +23,7 @@ const gate = path.join(repoRoot, 'scripts', 'check-agent-control-plane.mjs');
 describe('agent control-plane gate', () => {
   let root: string;
   beforeEach(() => {
-    root = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-control-plane-'));
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'agent control plane-'));
     for (const relative of Object.values(ARTIFACTS)) {
       const target = path.join(root, relative);
       fs.mkdirSync(path.dirname(target), { recursive: true });
@@ -48,7 +48,7 @@ describe('agent control-plane gate', () => {
     mutate('playbook', (source) => source.replace('Enter Claude plan mode first', 'Run it directly'));
     mutate('settings', (source) => source.replace('"Bash(npm run typecheck)"', '"mcp__figma__get_screenshot"'));
     mutate('settings', (source) => source.replace('"TaskCompleted":', '"TaskCompletedRemoved":'));
-    mutate('settings', (source) => source.replace('node scripts/claude-posttooluse-gate.mjs', 'node scripts/wrong-gate.mjs'));
+    mutate('settings', (source) => source.replace('${CLAUDE_PROJECT_DIR}/scripts/claude-posttooluse-gate.mjs', 'scripts/wrong-gate.mjs'));
     mutate('lifecycle', (source) => source.replace('Procedure needs a numbered step', 'Procedure heading exists'));
 
     const result = run();
@@ -57,5 +57,27 @@ describe('agent control-plane gate', () => {
     for (const fragment of ['output_contract', 'pre-checked', 'push_branch must be autonomous', 'conditional merge missing no_deploy_or_production_effect', 'readOnlyIntent: true', 'Enter Claude plan mode first', 'Figma', 'numbered step', 'hook events must be exactly', 'PostToolUse must be Edit|Write']) {
       expect(output).toContain(fragment);
     }
+  });
+
+  it('rejects a cwd-relative lifecycle shell command as a standalone mutation', () => {
+    expect(run().status).toBe(0);
+    mutate('settings', (source) => source.replace(
+      '"command": "node",\n            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"]',
+      '"command": "node scripts/claude-lifecycle-hook.mjs"',
+    ));
+    const result = run();
+    expect(result.status).toBe(1);
+    expect(`${result.stdout}${result.stderr}`).toContain('rooted exec-form claude-lifecycle-hook.mjs');
+  });
+
+  it('rejects a cwd-relative PostToolUse shell command as a standalone mutation', () => {
+    expect(run().status).toBe(0);
+    mutate('settings', (source) => source.replace(
+      '"command": "node",\n            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-posttooluse-gate.mjs"]',
+      '"command": "node scripts/claude-posttooluse-gate.mjs"',
+    ));
+    const result = run();
+    expect(result.status).toBe(1);
+    expect(`${result.stdout}${result.stderr}`).toContain('rooted exec-form claude-posttooluse-gate.mjs');
   });
 });

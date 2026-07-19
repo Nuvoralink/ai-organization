@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { Buffer } from 'node:buffer';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   appendTelemetry,
   hashSummary,
@@ -475,7 +476,10 @@ function handleSessionEnd(payload, telemetryDir) {
   );
 }
 
-const telemetryDir = telemetryDirectory(process.cwd());
+const configuredProjectDir = String(process.env.CLAUDE_PROJECT_DIR ?? '').trim();
+const scriptProjectDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const projectRoot = resolveGitRoot(configuredProjectDir || scriptProjectDir) ?? scriptProjectDir;
+const telemetryDir = telemetryDirectory(projectRoot);
 let payload;
 try {
   const stdin = readFileSync(0, 'utf8');

@@ -40,6 +40,16 @@ credential-scoped, and human-gated when billed or mutating; no ordinary env flag
 normal runner. The guard carries attack tests for public fetch, public socket, and loopback liveness.
 Killer mutations delete each wrapper independently and make its matching attack test red.
 
+**Source sentinels are authority consumers.** A test that inspects source ordering or wiring must name
+the complete set of *current* authority/effect anchors, assert every anchor exists before comparing its
+position, and bound its scan to the exact function or region under test. When an authority or entrypoint
+is replaced, its companion sentinel changes in the same slice; an old symbol found only in the test is
+not compatibility, it is stale proof. Killer mutations remove each current anchor independently, move
+the protected effect before its guard, and delete the region-end boundary so an unrelated later call
+cannot make the test pass. For SQL `CHECK` constraints whose contract requires total fail-closed
+behavior under three-valued logic, assert the total form (`(predicate) IS TRUE` or an equivalent proven
+total expression), not merely the inner predicate; removing totality must make the test red.
+
 ## 3. Forbidden shapes (a reviewer rejects these)
 - **Vacuous / tautological** — asserts something that's true by construction.
 - **Mock-the-SUT** — mocks the very thing under test, so it proves the mock, not the code.

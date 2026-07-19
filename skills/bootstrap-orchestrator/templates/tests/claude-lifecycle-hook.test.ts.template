@@ -12,6 +12,7 @@
 import {
   mkdtempSync,
   mkdirSync,
+  existsSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -50,7 +51,7 @@ function git(root: string, args: string[]) {
 }
 
 function fixture() {
-  const root = mkdtempSync(path.join(tmpdir(), 'lifecycle-template-'));
+  const root = mkdtempSync(path.join(tmpdir(), 'lifecycle template-'));
   scratch.push(root);
   git(root, ['init', '-b', 'main']);
   git(root, ['config', 'user.email', 'lifecycle@example.invalid']);
@@ -86,12 +87,13 @@ function fixture() {
   return root;
 }
 
-function run(root: string, payload: unknown) {
+function run(root: string, payload: unknown, launchCwd = root) {
   return spawnSync(process.execPath, [lifecycleScript], {
-    cwd: root,
+    cwd: launchCwd,
     input: JSON.stringify({ cwd: root, ...(payload as object) }),
     encoding: 'utf8',
     windowsHide: true,
+    env: { ...process.env, CLAUDE_PROJECT_DIR: root },
   });
 }
 
@@ -221,5 +223,19 @@ describe('Claude lifecycle bootstrap contract', () => {
     expect(telemetry).not.toContain(secret);
     expect(telemetry).not.toContain('task_description');
     expect(telemetry).toContain('taskHash');
+  });
+
+  it('keeps telemetry under the project root when launched from a nested cwd with spaces', () => {
+    const root = fixture();
+    const nestedCwd = path.join(root, 'tmp', 'mock package with spaces');
+    mkdirSync(nestedCwd, { recursive: true });
+    const result = run(root, {
+      hook_event_name: 'SessionEnd',
+      session_id: 'nested-cwd-session',
+      reason: 'other',
+    }, nestedCwd);
+    expect(result.status, result.stderr).toBe(0);
+    expect(existsSync(path.join(root, 'tmp', 'agent-telemetry', 'events.jsonl'))).toBe(true);
+    expect(existsSync(path.join(nestedCwd, 'tmp', 'agent-telemetry', 'events.jsonl'))).toBe(false);
   });
 });
