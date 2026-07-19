@@ -20,6 +20,6 @@
     "overlay:check:coachai": "node scripts/project-overlay.mjs check coachai",
     "overlay:install:auxara": "node scripts/project-overlay.mjs install auxara-dialer",
     "overlay:install:coachai": "node scripts/project-overlay.mjs install coachai",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs skills/bootstrap-orchestrator/scripts/dispatch-claude-cli.test.mjs"
   }
 }

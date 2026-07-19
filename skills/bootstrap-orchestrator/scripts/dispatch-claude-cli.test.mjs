@@ -37,11 +37,15 @@ import {
   verifyImplementationChanges,
 } from "./dispatch-claude-cli.mjs";
 import {
+  BOUNDARY_SCHEMA_VERSION,
   createBoundaryManifest,
   evaluateBoundaryToolUse,
 } from "./dispatch-boundary-hook.mjs";
 
 const CONFIG_PATH = path.resolve("C:/Temp/claude-dispatch/mcp.json");
+const SETTINGS_PATH = path.resolve("C:/Temp/claude-dispatch/settings.json");
+const READ_ONLY_TOOLS = ["Read", "Glob", "Grep", "WebFetch", "WebSearch"];
+const IDENTITY_REALPATH = (candidate) => path.resolve(candidate);
 const BASE_OID = "a".repeat(40);
 const HEAD_OID = "b".repeat(40);
 const MERGE_BASE_OID = "c".repeat(40);
@@ -283,8 +287,8 @@ async function controlledDispatch(t, { parentAlive = true } = {}) {
     {
       cwd: root,
       promptFile,
-      tools: ["Read"],
-      mode: "plan",
+      tools: READ_ONLY_TOOLS,
+      mode: "dontAsk",
       stdoutFile,
       stderrFile,
       maxRuntimeMs: 4321,
@@ -327,10 +331,8 @@ test("Proves a no-shell allowlist rejects both shell tool events; mutation: obse
   );
 });
 
-test("Proves an explicitly listed Bash tool is allowed; counterexample: exact Bash opt-in", () => {
-  assert.deepEqual(auditObservedTools(toolEvent("Bash"), ["Read", "Bash"]), [
-    "Bash",
-  ]);
+test("Proves observed-tool audit accepts only an event listed by its already-validated profile", () => {
+  assert.deepEqual(auditObservedTools(toolEvent("Read"), READ_ONLY_TOOLS), ["Read"]);
 });
 
 test("Proves argv carries --tools and the config path while the prompt stays on stdin", () => {
@@ -338,15 +340,15 @@ test("Proves argv carries --tools and the config path while the prompt stays on 
   const plan = createDispatchPlan({
     cwd: path.resolve("C:/work tree"),
     promptFile: path.resolve("C:/prompts/a prompt.md"),
-    tools: ["Read", "Glob"],
-    mode: "plan",
+    tools: READ_ONLY_TOOLS,
+    mode: "dontAsk",
     stdoutFile: path.resolve("C:/out/result.jsonl"),
     stderrFile: path.resolve("C:/out/error.log"),
     mcpConfigPath: CONFIG_PATH,
   });
   assert.equal(plan.shell, false);
   assert.equal(plan.promptTransport, "stdin");
-  assert.equal(plan.argv[plan.argv.indexOf("--tools") + 1], "Read,Glob");
+  assert.equal(plan.argv[plan.argv.indexOf("--tools") + 1], READ_ONLY_TOOLS.join(","));
   assert.equal(plan.argv[plan.argv.indexOf("--mcp-config") + 1], CONFIG_PATH);
   assert.equal(plan.argv.includes("--allowedTools"), false);
   assert.equal(plan.argv.includes(prompt), false);
@@ -357,8 +359,8 @@ test("Proves the dispatch plan exposes its validated internal lifetime bound; mu
   const plan = createDispatchPlan({
     cwd: path.resolve("C:/work tree"),
     promptFile: path.resolve("C:/prompts/a prompt.md"),
-    tools: ["Read"],
-    mode: "plan",
+    tools: READ_ONLY_TOOLS,
+    mode: "dontAsk",
     stdoutFile: path.resolve("C:/out/result.jsonl"),
     stderrFile: path.resolve("C:/out/error.log"),
     mcpConfigPath: CONFIG_PATH,
@@ -395,16 +397,8 @@ test("Proves local files and malformed references cannot impersonate durable han
   }
 });
 
-test("Proves every non-read-only capability requires a durable handoff; mutation: guard only Edit and miss delegation or shell tools", () => {
-  for (const tool of [
-    "Edit",
-    "Write",
-    "Task",
-    "Agent",
-    "Bash",
-    "PowerShell",
-    "NotebookEdit",
-  ]) {
+test("Proves every capability outside the two exact profiles is rejected even when a handoff is present", () => {
+  for (const tool of ["Edit", "Write", "Task", "Agent", "Bash", "PowerShell", "NotebookEdit"]) {
     assert.throws(
       () =>
         createDispatchPlan(
@@ -412,16 +406,20 @@ test("Proves every non-read-only capability requires a durable handoff; mutation
             cwd: path.resolve("C:/work tree"),
             promptFile: path.resolve("C:/prompts/a prompt.md"),
             tools: ["Read", tool],
-            mode: "plan",
+            mode: "dontAsk",
             stdoutFile: path.resolve("C:/out/result.jsonl"),
             stderrFile: path.resolve("C:/out/error.log"),
             mcpConfigPath: CONFIG_PATH,
             parentPid: 3131,
+            handoffRef: "acme/dialer#249",
           },
           { platform: "linux" },
         ),
-      new RegExp(`--handoff-ref.*${tool}`, "u"),
+      /exact read-only tool profile/u,
     );
+  }
+  for (const mode of ["acceptEdits", "default", "delegate", "plan"]) {
+    assert.throws(() => buildClaudeArgv({ tools: READ_ONLY_TOOLS, mode, mcpConfigPath: CONFIG_PATH }), /unsupported noninteractive permission mode/u);
   }
 });
 
@@ -431,10 +429,11 @@ test("Proves a valid PR handoff is persisted in write-capable plan evidence; mut
       cwd: path.resolve("C:/work tree"),
       promptFile: path.resolve("C:/prompts/a prompt.md"),
       tools: ["Read", "Edit", "Write"],
-      mode: "acceptEdits",
+      mode: "bypassPermissions",
       stdoutFile: path.resolve("C:/out/result.jsonl"),
       stderrFile: path.resolve("C:/out/error.log"),
       mcpConfigPath: CONFIG_PATH,
+      settingsPath: SETTINGS_PATH,
       parentPid: 3131,
       handoffRef: "https://github.com/acme/dialer/pull/248/",
     },
@@ -469,7 +468,7 @@ test("Preserves the explicit read-only diagnostic counterexample without a hando
   assert.equal(plan.handoffRef, null);
 });
 
-test("A provided PR handoff is materialized for a Read/Glob/Grep-only audit even though it is optional", async (t) => {
+test("A provided PR handoff is materialized for the exact dontAsk audit profile even though it is optional", async (t) => {
   const root = await mkdtemp(path.join(tmpdir(), "dispatch-read-only-pr-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   const promptFile = path.join(root, "prompt.md");
@@ -479,7 +478,7 @@ test("A provided PR handoff is materialized for a Read/Glob/Grep-only audit even
   const result = await dispatchClaude({
     cwd: root,
     promptFile,
-    tools: ["Read", "Glob", "Grep"],
+    tools: READ_ONLY_TOOLS,
     mode: "dontAsk",
     stdoutFile: path.join(root, "out", "stdout.jsonl"),
     stderrFile: path.join(root, "out", "stderr.log"),
@@ -496,7 +495,7 @@ test("A provided PR handoff is materialized for a Read/Glob/Grep-only audit even
   assert.equal(result.plan.pullRequestDiff.headOid, HEAD_OID);
 });
 
-test("Proves preflight fails closed without a required handoff and dry-run exposes a valid one", async (t) => {
+test("Proves bounded implementation still requires a handoff while dontAsk dry-run exposes a provided one", async (t) => {
   const root = await mkdtemp(path.join(tmpdir(), "dispatch-handoff-test-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   const promptFile = path.join(root, "prompt.md");
@@ -504,15 +503,12 @@ test("Proves preflight fails closed without a required handoff and dry-run expos
   const common = {
     cwd: root,
     promptFile,
-    tools: ["Read", "Write"],
-    mode: "acceptEdits",
+    tools: READ_ONLY_TOOLS,
+    mode: "dontAsk",
     stdoutFile: path.join(root, "out", "result.jsonl"),
     stderrFile: path.join(root, "out", "error.log"),
   };
-  await assert.rejects(
-    dispatchClaude({ ...common, preflight: true }, { platform: "linux" }),
-    /--handoff-ref.*Write/u,
-  );
+  assert.throws(() => createDispatchPlan({ ...common, tools: ["Read", "Write"], mode: "bypassPermissions", mcpConfigPath: CONFIG_PATH, settingsPath: SETTINGS_PATH, parentPid: 3131 }, { platform: "linux" }), /--handoff-ref.*Write/u);
   const dryRun = await dispatchClaude(
     {
       ...common,
@@ -522,7 +518,7 @@ test("Proves preflight fails closed without a required handoff and dry-run expos
     { platform: "linux", materializeHandoff: () => pullSnapshot(), materializePullRequestDiff: diffArtifactForRequest },
   );
   assert.equal(dryRun.kind, "dry-run");
-  assert.equal(dryRun.plan.handoffRequired, true);
+  assert.equal(dryRun.plan.handoffRequired, false);
   assert.equal(dryRun.plan.handoffRef, "acme/dialer#249");
   assert.match(dryRun.plan.handoffSnapshot.snapshotSha256, /^[a-f0-9]{64}$/u);
   assert.equal(dryRun.plan.pullRequestDiff.liveBaseOid, BASE_OID);
@@ -636,7 +632,7 @@ test("Materializes an exact repository-bound merge-base..head PR diff so unrelat
     if (argv[0] === "diff") return { status: 0, stdout: "diff --git a/src/dispatcher.mjs b/src/dispatcher.mjs\n" };
     throw new Error(`unexpected git argv: ${command}`);
   };
-  const artifact = materializePullRequestDiff(pullSnapshot(), root, { purpose: "review", scope: null }, { platform: "linux", spawnSyncProcess });
+  const artifact = materializePullRequestDiff(pullSnapshot(), root, { purpose: "review", scope: null }, { platform: "linux", realpathSync: IDENTITY_REALPATH, spawnSyncProcess });
   assert.deepEqual(artifact.full_pr_inventory.changed_files, ["src/dispatcher.mjs", "src/dispatcher.test.mjs"]);
   assert.equal(artifact.live_base_oid, BASE_OID);
   assert.equal(artifact.head_oid, HEAD_OID);
@@ -685,17 +681,19 @@ test("PR diff materialization blocks dirty, mismatched, timed-out, and oversized
     return { status: 0, stdout: "diff\n" };
   };
   const review = { purpose: "review", scope: null };
-  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, review, { platform: "linux", spawnSyncProcess: baseFake("dirty") }), /clean worktree.*rogue\.txt/u);
-  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, review, { platform: "linux", spawnSyncProcess: baseFake("mismatch") }), /local origin does not match/u);
-  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, review, { platform: "linux", spawnSyncProcess: baseFake("wrong-head") }), /checkout HEAD does not equal/u);
-  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, review, { platform: "linux", spawnSyncProcess: baseFake("merge-failure") }), /PR merge-base probe exited/u);
-  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, review, { platform: "linux", spawnSyncProcess: baseFake("ancestry-failure") }), /ancestry probe exited/u);
-  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, review, { platform: "linux", spawnSyncProcess: baseFake("oversized") }), /exact full PR diff exceeded.*CLAUDE_PR_DIFF_SCOPE_JSON/u);
-  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, review, { platform: "linux", gitTimeoutMs: 4321, spawnSyncProcess: baseFake("timeout") }), /exact full PR diff timed out after 4321 ms/u);
+  const deps = (mode, extra = {}) => ({ platform: "linux", realpathSync: IDENTITY_REALPATH, spawnSyncProcess: baseFake(mode), ...extra });
+  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, review, deps("dirty")), /clean worktree.*rogue\.txt/u);
+  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, review, deps("mismatch")), /local origin does not match/u);
+  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, review, deps("wrong-head")), /checkout HEAD does not equal/u);
+  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, review, deps("merge-failure")), /PR merge-base probe exited/u);
+  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, review, deps("ancestry-failure")), /ancestry probe exited/u);
+  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, review, deps("oversized")), /exact full PR diff exceeded.*CLAUDE_PR_DIFF_SCOPE_JSON/u);
+  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, review, deps("timeout", { gitTimeoutMs: 4321 })), /exact full PR diff timed out after 4321 ms/u);
   const counterexampleCalls = [];
   const cleanFake = baseFake("clean");
   const counterexample = materializePullRequestDiff(pullSnapshot(), root, review, {
     platform: "linux",
+    realpathSync: IDENTITY_REALPATH,
     spawnSyncProcess: (executable, argv, options) => { counterexampleCalls.push(argv); return cleanFake(executable, argv, options); },
   });
   assert.equal(counterexample.merge_base_oid, BASE_OID);
@@ -727,7 +725,7 @@ test("An 11 MB PR keeps full immutable inventory proof but implementation materi
     throw new Error(`unexpected git argv: ${command}`);
   };
   const requestedPaths = ["src/dispatcher.mjs", "src/dispatcher.test.mjs"];
-  const artifact = materializePullRequestDiff(pullSnapshot(), root, { purpose: "implementation", paths: requestedPaths }, { platform: "linux", spawnSyncProcess });
+  const artifact = materializePullRequestDiff(pullSnapshot(), root, { purpose: "implementation", paths: requestedPaths }, { platform: "linux", realpathSync: IDENTITY_REALPATH, spawnSyncProcess });
   assert.equal(artifact.full_pr_inventory.changed_file_count, 754);
   assert.match(artifact.full_pr_inventory.changed_files_sha256, /^[a-f0-9]{64}$/u);
   assert.equal(artifact.patch_scope.purpose, "bounded_implementation");
@@ -739,9 +737,9 @@ test("An 11 MB PR keeps full immutable inventory proof but implementation materi
   assert.equal(calls.some((argv) => argv[0] === "diff" && !argv.includes("--name-only") && !argv.includes("--raw") && argv.slice(argv.indexOf("--") + 1).length === 0), false);
 });
 
-test("Binary bytes at the same path change both full blob-identity and exact binary patch digests", () => {
+test("Binary patches remain content-bound while invalid Git bytes fail before hashing or prompting", () => {
   const root = path.resolve("C:/worktrees/binary-proof");
-  const fake = (blobOid, literal) => (_executable, argv) => {
+  const fake = (blobOid, literal, { invalidPatch = false, invalidRaw = false } = {}) => (_executable, argv) => {
     const command = argv.join(" ");
     if (command === "rev-parse --show-toplevel") return { status: 0, stdout: `${root}\n` };
     if (command === "status --porcelain=v1 -z --untracked-files=all") return { status: 0, stdout: "" };
@@ -753,18 +751,20 @@ test("Binary bytes at the same path change both full blob-identity and exact bin
     if (command === `rev-parse --verify ${MERGE_BASE_OID}^{commit}`) return { status: 0, stdout: `${MERGE_BASE_OID}\n` };
     if (argv[0] === "merge-base" && argv[1] === "--is-ancestor") return { status: 0, stdout: "" };
     if (argv.includes("--name-only")) return { status: 0, stdout: "assets/logo.bin\0" };
-    if (argv.includes("--raw")) return { status: 0, stdout: `:100644 100644 ${BASE_OID} ${blobOid} M\0assets/logo.bin\0` };
+    if (argv.includes("--raw")) return { status: 0, stdout: invalidRaw ? Buffer.from([0xff]) : `:100644 100644 ${BASE_OID} ${blobOid} M\0assets/logo.bin\0` };
     if (argv[0] === "diff") {
       assert.equal(argv.includes("--binary"), true);
-      return { status: 0, stdout: `diff --git a/assets/logo.bin b/assets/logo.bin\nGIT binary patch\nliteral ${literal}\n` };
+      return { status: 0, stdout: invalidPatch ? Buffer.from([0x64, 0x69, 0x66, 0x66, 0xff]) : `diff --git a/assets/logo.bin b/assets/logo.bin\nGIT binary patch\nliteral ${literal}\n` };
     }
     throw new Error(`unexpected git argv: ${command}`);
   };
   const request = { purpose: "implementation", paths: ["assets/logo.bin"] };
-  const first = materializePullRequestDiff(pullSnapshot(), root, request, { platform: "linux", spawnSyncProcess: fake("1".repeat(40), "AA") });
-  const second = materializePullRequestDiff(pullSnapshot(), root, request, { platform: "linux", spawnSyncProcess: fake("2".repeat(40), "BB") });
+  const first = materializePullRequestDiff(pullSnapshot(), root, request, { platform: "linux", realpathSync: IDENTITY_REALPATH, spawnSyncProcess: fake("1".repeat(40), "AA") });
+  const second = materializePullRequestDiff(pullSnapshot(), root, request, { platform: "linux", realpathSync: IDENTITY_REALPATH, spawnSyncProcess: fake("2".repeat(40), "BB") });
   assert.notEqual(first.full_pr_inventory.raw_diff_sha256, second.full_pr_inventory.raw_diff_sha256);
   assert.notEqual(first.patch_scope.patch_sha256, second.patch_scope.patch_sha256);
+  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, request, { platform: "linux", realpathSync: IDENTITY_REALPATH, spawnSyncProcess: fake("3".repeat(40), "CC", { invalidRaw: true }) }), /not exact UTF-8.*not hashed or dispatched/u);
+  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, request, { platform: "linux", realpathSync: IDENTITY_REALPATH, spawnSyncProcess: fake("3".repeat(40), "CC", { invalidPatch: true }) }), /not exact UTF-8.*not hashed or dispatched/u);
 });
 
 test("Oversized PR review fails closed without one exact caller scope and records partial-review evidence when scoped", () => {
@@ -794,18 +794,19 @@ test("Oversized PR review fails closed without one exact caller scope and record
     if (argv[0] === "diff") return { status: 0, stdout: emptyScope ? "" : "diff --git a/src/dispatcher.mjs b/src/dispatcher.mjs\n" };
     throw new Error(`unexpected git argv: ${command}`);
   };
-  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, { purpose: "review", scope: null }, { platform: "linux", spawnSyncProcess: fake() }), /supply one caller-authored CLAUDE_PR_DIFF_SCOPE_JSON/u);
+  const reviewDeps = (options = {}) => ({ platform: "linux", realpathSync: IDENTITY_REALPATH, spawnSyncProcess: fake(options) });
+  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, { purpose: "review", scope: null }, reviewDeps()), /supply one caller-authored CLAUDE_PR_DIFF_SCOPE_JSON/u);
   const scope = { paths: ["src/dispatcher.mjs"], baseOid: scopeBase };
-  const artifact = materializePullRequestDiff(pullSnapshot(), root, { purpose: "review", scope }, { platform: "linux", spawnSyncProcess: fake() });
+  const artifact = materializePullRequestDiff(pullSnapshot(), root, { purpose: "review", scope }, reviewDeps());
   assert.equal(artifact.full_pr_inventory.changed_file_count, 3);
   assert.equal(artifact.patch_scope.purpose, "partial_pr_review");
   assert.equal(artifact.patch_scope.base_oid, scopeBase);
   assert.equal(artifact.patch_scope.partial_review_scope, true);
   assert.equal(artifact.patch_scope.whole_pr_review, false);
   assert.equal(artifact.patch_scope.unreviewed_full_pr_file_count, 2);
-  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, { purpose: "review", scope: { paths: ["not-in-pr.txt"], baseOid: null } }, { platform: "linux", spawnSyncProcess: fake() }), /not in the full PR changed-file inventory/u);
-  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, { purpose: "review", scope }, { platform: "linux", spawnSyncProcess: fake({ nonAncestor: true }) }), /scoped-base-to-PR-head ancestry probe exited/u);
-  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, { purpose: "review", scope }, { platform: "linux", spawnSyncProcess: fake({ emptyScope: true }) }), /no substantive changed-file patch/u);
+  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, { purpose: "review", scope: { paths: ["not-in-pr.txt"], baseOid: null } }, reviewDeps()), /not in the full PR changed-file inventory/u);
+  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, { purpose: "review", scope }, reviewDeps({ nonAncestor: true })), /scoped-base-to-PR-head ancestry probe exited/u);
+  assert.throws(() => materializePullRequestDiff(pullSnapshot(), root, { purpose: "review", scope }, reviewDeps({ emptyScope: true })), /no substantive changed-file patch/u);
 });
 
 test("PR review scope marker accepts only one exact non-expanding path contract", () => {
@@ -843,8 +844,8 @@ test("Materialization failure blocks before Claude spawn even when the local pro
     dispatchClaude({
       cwd: root,
       promptFile,
-      tools: ["Read", "Edit", "Write"],
-      mode: "acceptEdits",
+      tools: READ_ONLY_TOOLS,
+      mode: "dontAsk",
       stdoutFile: path.join(root, "out", "stdout.jsonl"),
       stderrFile: path.join(root, "out", "stderr.log"),
       handoffRef: "acme/dialer#249",
@@ -889,8 +890,8 @@ test("Appends the live snapshot to stdin, never argv, and returns provenance evi
   const result = await dispatchClaude({
     cwd: root,
     promptFile,
-    tools: ["Read", "Edit"],
-    mode: "acceptEdits",
+    tools: READ_ONLY_TOOLS,
+    mode: "dontAsk",
     stdoutFile,
     stderrFile,
     handoffRef: "acme/dialer#249",
@@ -908,6 +909,9 @@ test("Appends the live snapshot to stdin, never argv, and returns provenance evi
   assert.equal(captured.argv.some((value) => value.includes("instruction from live GitHub")), false);
   assert.equal(captured.options.shell, false);
   assert.equal(result.plan.handoffSnapshot.snapshotSha256, summarizeHandoffSnapshot(snapshot).snapshotSha256);
+  assert.equal(result.plan.pullRequestDiff.patchPurpose, "full_pr_review");
+  assert.equal(result.plan.implementationBoundary, null);
+  assert.equal(result.implementationChanges, null);
 });
 
 test("bypassPermissions requires live handoff, exact edit boundaries, and non-dangerous authority", async (t) => {
@@ -952,6 +956,7 @@ test("bypassPermissions requires live handoff, exact edit boundaries, and non-da
   assert.deepEqual(accepted.plan.implementationBoundary.capabilityProbe, { tool: "Edit", path: "src/dispatcher.mjs" });
   assert.deepEqual(accepted.plan.boundaryCapability, ACCEPTED_BOUNDARY_PROBE());
   assert.match(accepted.plan.handoffSnapshot.snapshotSha256, /^[a-f0-9]{64}$/u);
+  assert.equal(accepted.plan.pullRequestDiff.patchPurpose, "bounded_implementation");
 
   await writeFile(promptFile, "local brief without boundary contract", "utf8");
   await assert.rejects(dispatchClaude(common, dependencies), /CLAUDE_DISPATCH_BOUNDARY_JSON/u);
@@ -1040,7 +1045,7 @@ test("PreToolUse containment allows declared directory reads and exact edits whi
   assert.equal(evaluateBoundaryToolUse(preToolEvent(root, "Grep", { pattern: "guide" }), rootManifest).target, ".");
 });
 
-test("PreToolUse containment rejects a symlink/reparse escape where the platform permits creating one", async (t) => {
+test("Manifest preflight rejects descendant symlinks once while PreToolUse keeps only per-path checks", async (t) => {
   const fixture = await mkdtemp(path.join(tmpdir(), "dispatch-pretool-symlink-"));
   t.after(() => rm(fixture, { recursive: true, force: true }));
   const root = path.join(fixture, "repository");
@@ -1050,6 +1055,7 @@ test("PreToolUse containment rejects a symlink/reparse escape where the platform
   await mkdir(outsideDirectory, { recursive: true });
   await writeFile(outside, "secret", "utf8");
   let link = path.join(root, "docs", "escape.txt");
+  let usedJunction = false;
   try {
     await symlink(outside, link, "file");
   } catch (error) {
@@ -1058,6 +1064,7 @@ test("PreToolUse containment rejects a symlink/reparse escape where the platform
       try {
         await symlink(outsideDirectory, junction, "junction");
         link = path.join(junction, "outside.txt");
+        usedJunction = true;
       } catch (junctionError) {
         if (["EPERM", "EACCES", "UNKNOWN"].includes(junctionError?.code)) {
           t.skip(`platform cannot create a symlink/reparse fixture: ${junctionError.code}`);
@@ -1069,15 +1076,52 @@ test("PreToolUse containment rejects a symlink/reparse escape where the platform
       throw error;
     }
   }
-  const manifest = createBoundaryManifest({ projectRoot: root, readPaths: ["docs"], editPaths: ["src/new.mjs"], skillNames: [] });
   assert.throws(
-    () => evaluateBoundaryToolUse(preToolEvent(root, "Read", { file_path: link }), manifest),
-    /symlink\/reparse|outside/u,
-  );
-  assert.throws(
-    () => evaluateBoundaryToolUse(preToolEvent(root, "Glob", { path: "docs", pattern: "**/*" }), manifest),
+    () => createBoundaryManifest({ projectRoot: root, readPaths: ["docs"], editPaths: ["src/new.mjs"], skillNames: [] }),
     /contains a symlink\/reparse descendant/u,
   );
+  await rm(path.join(root, "docs"), { recursive: true, force: true });
+  await mkdir(path.join(root, "docs"), { recursive: true });
+  const manifest = createBoundaryManifest({ projectRoot: root, readPaths: ["docs"], editPaths: ["src/new.mjs"], skillNames: [] });
+  assert.deepEqual(manifest.read_directory_scans, [{ path: "docs", entry_count: 0 }]);
+  const lateToolPath = usedJunction ? "docs/late-directory/outside.txt" : "docs/late-link.txt";
+  await symlink(usedJunction ? outsideDirectory : outside, path.join(root, "docs", usedJunction ? "late-directory" : "late-link.txt"), usedJunction ? "junction" : "file");
+  assert.throws(
+    () => evaluateBoundaryToolUse(preToolEvent(root, "Read", { file_path: lateToolPath }), manifest),
+    /symlink\/reparse|outside/u,
+  );
+  assert.equal(evaluateBoundaryToolUse(preToolEvent(root, "Glob", { path: "docs", pattern: "**/*" }), manifest).target, "docs", "same-user post-manifest tree mutation is outside the supported trust boundary; PreToolUse must not rescan descendants");
+  await rm(path.join(root, "docs", usedJunction ? "late-directory" : "late-link.txt"), { recursive: true, force: true });
+  await writeFile(path.join(root, "docs", "one.txt"), "1", "utf8");
+  await writeFile(path.join(root, "docs", "two.txt"), "2", "utf8");
+  assert.throws(() => createBoundaryManifest({ projectRoot: root, readPaths: ["docs"], editPaths: ["src/new.mjs"], skillNames: [] }, { maxSearchTreeEntries: 1 }), /inspection limit.*narrower read root/u);
+});
+
+test("SessionStart activation is idempotent only for the exact schema, nonce, and project root", async (t) => {
+  const fixture = await mkdtemp(path.join(tmpdir(), "dispatch-activation-sequence-"));
+  t.after(() => rm(fixture, { recursive: true, force: true }));
+  const firstRoot = path.join(fixture, "first");
+  const secondRoot = path.join(fixture, "second");
+  await mkdir(firstRoot, { recursive: true });
+  await mkdir(secondRoot, { recursive: true });
+  const hookPath = path.resolve("skills/bootstrap-orchestrator/scripts/dispatch-boundary-hook.mjs");
+  const manifestPath = path.join(fixture, "manifest.json");
+  const secondManifestPath = path.join(fixture, "second-manifest.json");
+  const activationPath = path.join(fixture, "activation.json");
+  const nonce = "a".repeat(32);
+  await writeFile(manifestPath, JSON.stringify(createBoundaryManifest({ projectRoot: firstRoot, readPaths: ["."], editPaths: ["new.mjs"], skillNames: [] })), "utf8");
+  await writeFile(secondManifestPath, JSON.stringify(createBoundaryManifest({ projectRoot: secondRoot, readPaths: ["."], editPaths: ["new.mjs"], skillNames: [] })), "utf8");
+  const activate = (candidateManifest, candidateNonce, cwd) => spawnSync(process.execPath, [hookPath, "--activate", candidateManifest, activationPath, candidateNonce], {
+    input: JSON.stringify({ hook_event_name: "SessionStart", source: "startup", cwd }),
+    encoding: "utf8",
+    shell: false,
+  });
+  assert.equal(activate(manifestPath, nonce, firstRoot).status, 0);
+  assert.equal(activate(manifestPath, nonce, firstRoot).status, 0);
+  assert.match(activate(manifestPath, "b".repeat(32), firstRoot).stderr, /does not exactly match/u);
+  assert.match(activate(secondManifestPath, nonce, secondRoot).stderr, /does not exactly match/u);
+  await writeFile(activationPath, JSON.stringify({ schema_version: BOUNDARY_SCHEMA_VERSION - 1, nonce, project_root: firstRoot }), "utf8");
+  assert.match(activate(manifestPath, nonce, firstRoot).stderr, /does not exactly match/u);
 });
 
 test("Generated settings use one native catch-all hook, and ignored Claude settings fail the active allow/deny capability probe before dispatch", async (t) => {
@@ -1095,7 +1139,7 @@ test("Generated settings use one native catch-all hook, and ignored Claude setti
   const manifest = createBoundaryManifest({ projectRoot: root, readPaths: ["src"], editPaths: ["src/edit.mjs"], skillNames: [] });
   const settings = buildBoundarySettings({ nodeExecutable: process.execPath, hookPath, manifestPath, activationPath, activationNonce });
   await writeFile(manifestPath, JSON.stringify(manifest), "utf8");
-  await writeFile(activationPath, JSON.stringify({ schema_version: 1, nonce: activationNonce, project_root: manifest.project_root }), "utf8");
+  await writeFile(activationPath, JSON.stringify({ schema_version: BOUNDARY_SCHEMA_VERSION, nonce: activationNonce, project_root: manifest.project_root }), "utf8");
   await writeFile(settingsPath, JSON.stringify(settings), "utf8");
   assert.deepEqual(validateBoundarySettingsText(await readFile(settingsPath, "utf8"), settings), settings);
   assert.throws(() => validateBoundarySettingsText('{"hooks":{"PreToolUse":"ignored"}}', settings), /differ|exact hook/u);
@@ -1164,6 +1208,9 @@ test("Post-run implementation attribution rejects undeclared tracked/untracked c
   assert.deepEqual(accepted.actualChangedPaths, ["src/dispatcher.mjs"]);
   assert.deepEqual(accepted.observedWritePaths, ["src/dispatcher.mjs"]);
   assert.deepEqual(accepted.hookCoverage, { observedHookEvents: 1, coveredToolEvents: 1 });
+  const caseFolded = verifyImplementationChanges(`${boundedToolEvent("Edit", { file_path: path.join(root, "SRC", "DISPATCHER.MJS") })}\n`, boundary, clean, { root: root.toUpperCase(), changedPaths: ["SRC/DISPATCHER.MJS", "src/dispatcher.mjs"] }, { platform: "win32" });
+  assert.deepEqual(caseFolded.actualChangedPaths, ["SRC/DISPATCHER.MJS"]);
+  assert.deepEqual(caseFolded.observedWritePaths, ["SRC/DISPATCHER.MJS"]);
   assert.throws(
     () => verifyImplementationChanges(`${toolEvent("Edit", { file_path: "src/dispatcher.mjs" })}\n`, boundary, clean, { root, changedPaths: ["src/dispatcher.mjs"] }),
     /lacks matching included PreToolUse hook evidence/u,
@@ -1213,6 +1260,7 @@ test("Clean-worktree capture includes tracked, untracked, and both rename paths 
   const calls = [];
   const state = captureGitWorktreeState(root, {
     platform: "linux",
+    realpathSync: IDENTITY_REALPATH,
     spawnSyncProcess: (executable, argv, options) => {
       calls.push({ executable, argv, options });
       if (argv[0] === "rev-parse") return { status: 0, stdout: `${root}\n` };
@@ -1222,6 +1270,23 @@ test("Clean-worktree capture includes tracked, untracked, and both rename paths 
   assert.deepEqual(state.changedPaths, ["src/original.mjs", "src/renamed.mjs", "src/tracked.mjs", "src/untracked.mjs"]);
   assert.deepEqual(calls[1].argv, ["status", "--porcelain=v1", "-z", "--untracked-files=all"]);
   assert.equal(calls.every((call) => call.options.shell === false), true);
+});
+
+test("Repository-root proof compares canonical realpaths and folds Windows case without accepting a different target", () => {
+  const requested = path.resolve("C:/Alias/Repo");
+  const reported = path.resolve("C:/REPORTED/REPO");
+  const canonical = path.resolve("C:/Canonical/Repo");
+  const invoke = (reportedCanonical) => captureGitWorktreeState(requested, {
+    platform: "win32",
+    realpathSync: (candidate) => path.resolve(candidate) === requested ? canonical.toUpperCase() : reportedCanonical,
+    env: { PATH: "C:\\Git" },
+    fileExists: (candidate) => candidate === path.win32.join("C:\\Git", "git.exe"),
+    spawnSyncProcess: (_executable, argv) => argv[0] === "rev-parse"
+      ? { status: 0, stdout: `${reported}\n` }
+      : { status: 0, stdout: "" },
+  });
+  assert.equal(invoke(canonical.toLowerCase()).root.toLowerCase(), canonical.toLowerCase());
+  assert.throws(() => invoke(path.resolve("C:/Other/Repo")), /must canonically equal/u);
 });
 
 test("bypassPermissions wires clean-baseline capture to post-run rejection and preserves evidence without reverting", async (t) => {
@@ -1327,8 +1392,8 @@ test("Proves an invalid internal lifetime is rejected; mutation: accept zero, fr
           {
             cwd: path.resolve("C:/work tree"),
             promptFile: path.resolve("C:/prompts/a prompt.md"),
-            tools: ["Read"],
-            mode: "plan",
+            tools: READ_ONLY_TOOLS,
+            mode: "dontAsk",
             stdoutFile: path.resolve("C:/out/result.jsonl"),
             stderrFile: path.resolve("C:/out/error.log"),
             mcpConfigPath: CONFIG_PATH,
@@ -1444,8 +1509,8 @@ test("Proves the dispatcher writes prompt bytes to stdin, never argv; mutation: 
     {
       cwd: root,
       promptFile,
-      tools: ["Read"],
-      mode: "plan",
+      tools: READ_ONLY_TOOLS,
+      mode: "dontAsk",
       stdoutFile,
       stderrFile,
     },
@@ -1512,19 +1577,15 @@ test("Proves an extra observed tool fails the post-run audit; mutation: emit an 
   assert.throws(() => auditObservedTools(stream, ["Read"]), /Write/u);
 });
 
-test("Proves Claude's Task-to-Agent tool rename is normalized without weakening the allowlist; mutation: compare raw names or normalize every tool", () => {
-  assert.doesNotThrow(() => auditObservedTools(`${toolEvent("Agent")}\n`, ["Task"]));
-  assert.doesNotThrow(() => auditObservedTools(`${toolEvent("Task")}\n`, ["Agent"]));
-  assert.throws(
-    () => auditObservedTools(`${toolEvent("Agent")}\n${toolEvent("Write")}\n`, ["Task"]),
-    /Write/u,
-  );
+test("Proves Agent and Task events remain rejected instead of being normalized into authority", () => {
+  assert.throws(() => auditObservedTools(`${toolEvent("Agent")}\n`, READ_ONLY_TOOLS), /Agent/u);
+  assert.throws(() => auditObservedTools(`${toolEvent("Task")}\n`, READ_ONLY_TOOLS), /Task/u);
 });
 
 test("Proves safe argv includes strict MCP and stream-json verbose output", () => {
   const argv = buildClaudeArgv({
-    tools: ["Read"],
-    mode: "plan",
+    tools: READ_ONLY_TOOLS,
+    mode: "dontAsk",
     mcpConfigPath: CONFIG_PATH,
   });
   assert.ok(argv.includes("--strict-mcp-config"));
@@ -1532,25 +1593,36 @@ test("Proves safe argv includes strict MCP and stream-json verbose output", () =
   assert.ok(argv.includes("--verbose"));
 });
 
-test("Proves dontAsk cannot falsely preflight shell or mutation capabilities", () => {
-  for (const denied of ["Bash", "PowerShell", "Edit", "Write"]) {
+test("Proves dontAsk rejects every subset, superset, reordered, shell, mutation, or delegation profile", () => {
+  for (const tools of [
+    ["Read"],
+    ["Read", "Glob", "Grep"],
+    [...READ_ONLY_TOOLS].reverse(),
+    [...READ_ONLY_TOOLS, "Bash"],
+    [...READ_ONLY_TOOLS, "PowerShell"],
+    [...READ_ONLY_TOOLS, "Edit"],
+    [...READ_ONLY_TOOLS, "Write"],
+    [...READ_ONLY_TOOLS, "Agent"],
+    [...READ_ONLY_TOOLS, "Task"],
+    [...READ_ONLY_TOOLS, "NotebookEdit"],
+  ]) {
     assert.throws(
       () =>
         buildClaudeArgv({
-          tools: ["Read", denied],
+          tools,
           mode: "dontAsk",
           mcpConfigPath: CONFIG_PATH,
         }),
-      /dontAsk denies shell and mutation tools at runtime/iu,
+      /exact read-only tool profile/iu,
     );
   }
 });
 
 test("Preserves the shell-free dontAsk counterexample for pre-generated audit evidence", () => {
   const argv = buildClaudeArgv({
-    tools: ["Read", "Glob", "Grep"],
+    tools: READ_ONLY_TOOLS,
     mode: "dontAsk",
     mcpConfigPath: CONFIG_PATH,
   });
-  assert.equal(argv[argv.indexOf("--tools") + 1], "Read,Glob,Grep");
+  assert.equal(argv[argv.indexOf("--tools") + 1], READ_ONLY_TOOLS.join(","));
 });

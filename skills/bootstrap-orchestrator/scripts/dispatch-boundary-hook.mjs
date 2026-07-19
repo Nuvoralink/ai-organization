@@ -12,7 +12,7 @@ import {
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-export const BOUNDARY_SCHEMA_VERSION = 1;
+export const BOUNDARY_SCHEMA_VERSION = 2;
 const BOUNDED_TOOLS = new Set(["Read", "Glob", "Grep", "Edit", "Write", "Skill"]);
 const MAX_BOUNDARY_PATHS = 100;
 const MAX_SEARCH_TREE_ENTRIES = 100_000;
@@ -85,14 +85,14 @@ function assertNoSymlinkSegments(root, candidate, label) {
   }
 }
 
-function assertNoSymlinkDescendants(directory, label) {
+function scanSymlinkDescendants(directory, label, maxEntries = MAX_SEARCH_TREE_ENTRIES) {
   const pending = [directory];
   let visited = 0;
   while (pending.length > 0) {
     const current = pending.pop();
     for (const entry of readdirSync(current, { withFileTypes: true })) {
       visited += 1;
-      if (visited > MAX_SEARCH_TREE_ENTRIES) {
+      if (visited > maxEntries) {
         throw new Error(`${label} exceeds the bounded symlink/reparse inspection limit; declare a narrower read root`);
       }
       const absolute = path.join(current, entry.name);
@@ -101,6 +101,7 @@ function assertNoSymlinkDescendants(directory, label) {
       if (stat.isDirectory()) pending.push(absolute);
     }
   }
+  return visited;
 }
 
 function resolveCandidate(root, candidate, label, { mustExist = false } = {}) {
@@ -141,7 +142,7 @@ function uniqueNormalizedPaths(values, label, options) {
   return normalized;
 }
 
-export function createBoundaryManifest({ projectRoot, readPaths, editPaths, skillNames }) {
+function buildBoundaryManifest({ projectRoot, readPaths, editPaths, skillNames }, { scanReadDirectories, maxSearchTreeEntries = MAX_SEARCH_TREE_ENTRIES } = {}) {
   const root = canonicalRoot(projectRoot);
   const normalizedReads = uniqueNormalizedPaths(readPaths, "read_paths", { allowRoot: true });
   const normalizedEdits = uniqueNormalizedPaths(editPaths, "edit_paths", { allowRoot: false });
@@ -154,6 +155,12 @@ export function createBoundaryManifest({ projectRoot, readPaths, editPaths, skil
     if (!stat.isFile() && !stat.isDirectory()) throw new Error(`read_paths[${index}] must name a file or directory`);
     return { path: relative, kind: stat.isDirectory() ? "directory" : "file" };
   });
+  const readDirectoryScans = scanReadDirectories
+    ? readEntries.filter((entry) => entry.kind === "directory").map((entry) => ({
+      path: entry.path,
+      entry_count: scanSymlinkDescendants(path.resolve(root.lexical, entry.path), `read directory ${entry.path}`, maxSearchTreeEntries),
+    }))
+    : [];
   for (const [index, relative] of normalizedEdits.entries()) {
     const absolute = resolveCandidate(root, relative, `edit_paths[${index}]`);
     if (existsSync(absolute) && !statSync(absolute).isFile()) {
@@ -165,31 +172,47 @@ export function createBoundaryManifest({ projectRoot, readPaths, editPaths, skil
     project_root: root.lexical,
     project_root_real: root.real,
     read_paths: readEntries,
+    read_directory_scans: readDirectoryScans,
     edit_paths: normalizedEdits,
     skill_names: [...skillNames],
     explicit_root_read: normalizedReads.includes("."),
   };
 }
 
+export function createBoundaryManifest(input, options = {}) {
+  return buildBoundaryManifest(input, { scanReadDirectories: true, ...options });
+}
+
 function validateManifest(value) {
   const manifest = plainObject(value, "boundary manifest");
   const keys = Object.keys(manifest).sort();
-  const expected = ["edit_paths", "explicit_root_read", "project_root", "project_root_real", "read_paths", "schema_version", "skill_names"].sort();
+  const expected = ["edit_paths", "explicit_root_read", "project_root", "project_root_real", "read_directory_scans", "read_paths", "schema_version", "skill_names"].sort();
   if (JSON.stringify(keys) !== JSON.stringify(expected) || manifest.schema_version !== BOUNDARY_SCHEMA_VERSION) {
     throw new Error("boundary manifest has an unsupported or ambiguous shape");
   }
-  const rebuilt = createBoundaryManifest({
+  const rebuilt = buildBoundaryManifest({
     projectRoot: manifest.project_root,
     readPaths: manifest.read_paths?.map((entry) => plainObject(entry, "read_paths entry").path),
     editPaths: manifest.edit_paths,
     skillNames: manifest.skill_names,
+  }, { scanReadDirectories: false });
+  if (!Array.isArray(manifest.read_directory_scans)) throw new Error("boundary manifest read-directory scan proof is malformed");
+  const expectedScanPaths = rebuilt.read_paths.filter((entry) => entry.kind === "directory").map((entry) => entry.path);
+  const scanProof = manifest.read_directory_scans.map((entry, index) => {
+    const value = plainObject(entry, `read_directory_scans[${index}]`);
+    if (JSON.stringify(Object.keys(value).sort()) !== JSON.stringify(["entry_count", "path"]) || value.path !== expectedScanPaths[index]
+      || !Number.isSafeInteger(value.entry_count) || value.entry_count < 0 || value.entry_count > MAX_SEARCH_TREE_ENTRIES) {
+      throw new Error("boundary manifest read-directory scan proof is malformed or incomplete");
+    }
+    return value;
   });
+  if (scanProof.length !== expectedScanPaths.length) throw new Error("boundary manifest read-directory scan proof is malformed or incomplete");
   if (pathKey(rebuilt.project_root_real) !== pathKey(manifest.project_root_real)
     || rebuilt.explicit_root_read !== manifest.explicit_root_read
     || JSON.stringify(rebuilt.read_paths) !== JSON.stringify(manifest.read_paths)) {
     throw new Error("boundary manifest no longer matches the live filesystem");
   }
-  return rebuilt;
+  return { ...rebuilt, read_directory_scans: scanProof };
 }
 
 function readAuthorized(manifest, root, candidate) {
@@ -270,14 +293,12 @@ export function evaluateBoundaryToolUse(event, manifestValue) {
     if (!stat.isDirectory() || !directoryReadAuthorized(manifest, root, searchRoot)) {
       throw new Error("Glob search root must be a declared in-repository read directory");
     }
-    assertNoSymlinkDescendants(searchRoot, "Glob search root");
   } else {
     if (typeof toolInput.pattern !== "string" || toolInput.pattern.length === 0) throw new Error("Grep tool_input.pattern must be a non-empty string");
     const authorized = stat.isDirectory()
       ? directoryReadAuthorized(manifest, root, searchRoot)
       : stat.isFile() && readAuthorized(manifest, root, searchRoot);
     if (!authorized) throw new Error("Grep search root must be a declared in-repository read file or directory");
-    if (stat.isDirectory()) assertNoSymlinkDescendants(searchRoot, "Grep search root");
   }
   return { tool: input.tool_name, target: path.relative(root.lexical, searchRoot).replace(/\\/gu, "/") || "." };
 }
@@ -298,8 +319,10 @@ function validateActivation(manifest, activationPath, nonce) {
   }
   let activation;
   try { activation = JSON.parse(readFileSync(activationPath, "utf8")); } catch { throw new Error("boundary hook activation proof is missing or invalid"); }
-  if (activation?.schema_version !== BOUNDARY_SCHEMA_VERSION || activation?.nonce !== nonce
-    || pathKey(activation?.project_root) !== pathKey(manifest.project_root)) {
+  if (activation === null || Array.isArray(activation) || typeof activation !== "object"
+    || JSON.stringify(Object.keys(activation).sort()) !== JSON.stringify(["nonce", "project_root", "schema_version"])
+    || activation.schema_version !== BOUNDARY_SCHEMA_VERSION || activation.nonce !== nonce
+    || activation.project_root !== manifest.project_root) {
     throw new Error("boundary hook activation proof does not match this dispatch");
   }
 }
@@ -316,7 +339,20 @@ function activateBoundaryHook(manifest, activationPath, nonce, input) {
   if (typeof activationPath !== "string" || !path.isAbsolute(activationPath) || typeof nonce !== "string" || !/^[a-f0-9]{32}$/u.test(nonce)) {
     throw new Error("boundary activation arguments are invalid");
   }
-  writeFileSync(activationPath, `${JSON.stringify({ schema_version: BOUNDARY_SCHEMA_VERSION, nonce, project_root: manifest.project_root })}\n`, { encoding: "utf8", flag: "wx" });
+  const proof = { schema_version: BOUNDARY_SCHEMA_VERSION, nonce, project_root: manifest.project_root };
+  try {
+    writeFileSync(activationPath, `${JSON.stringify(proof)}\n`, { encoding: "utf8", flag: "wx" });
+  } catch (error) {
+    if (error?.code !== "EEXIST") throw error;
+    if (lstatSync(activationPath).isSymbolicLink()) throw new Error("existing boundary activation proof is a symlink/reparse path");
+    let existing;
+    try { existing = JSON.parse(readFileSync(activationPath, "utf8")); } catch { throw new Error("existing boundary activation proof is invalid"); }
+    if (existing === null || Array.isArray(existing) || typeof existing !== "object"
+      || JSON.stringify(Object.keys(existing).sort()) !== JSON.stringify(["nonce", "project_root", "schema_version"])
+      || existing.schema_version !== proof.schema_version || existing.nonce !== proof.nonce || existing.project_root !== proof.project_root) {
+      throw new Error("existing boundary activation proof does not exactly match this dispatch");
+    }
+  }
 }
 
 function runCli() {
