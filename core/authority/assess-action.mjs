@@ -41,6 +41,20 @@ export function validateActionPolicySemantics(policy) {
     if (assessAction(policy, action, complete).verdict !== 'conditional_pass') failures.push(`Conditional action cannot pass with complete evidence: ${action}`);
     if (assessAction(policy, action, {}).verdict !== 'human_required') failures.push(`Conditional action does not fail closed when evidence is missing: ${action}`);
   }
+  const requiredPushPredicates = [
+    'no_preview_or_production_deploy',
+    'no_publish_or_billed_build',
+    'no_production_write_or_external_contact',
+  ];
+  const pushRule = conditional.push_branch;
+  if (!pushRule || autonomous.includes('push_branch') || humanRequired.includes('push_branch')) {
+    failures.push('push_branch must be conditional');
+  } else {
+    for (const predicate of requiredPushPredicates) {
+      if (!pushRule.all?.includes(predicate)) failures.push(`Conditional push_branch missing required predicate: ${predicate}`);
+    }
+    if (pushRule.on_uncertainty !== 'human_required') failures.push('Conditional push_branch must fail closed to human_required');
+  }
   if (assessAction(policy, '__unclassified_action__').verdict !== 'human_required') failures.push('Unclassified action does not fail closed');
   return [...new Set(failures)];
 }

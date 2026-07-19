@@ -47,12 +47,12 @@ function task(id) {
   };
 }
 
-function run(payload, launchCwd = root) {
+function run(payload, launchCwd = root, configuredRoot = root) {
   return spawnSync(process.execPath, [hook], {
     cwd: launchCwd,
     input: JSON.stringify(payload),
     encoding: 'utf8',
-    env: { ...process.env, CLAUDE_PROJECT_DIR: root },
+    env: { ...process.env, CLAUDE_PROJECT_DIR: configuredRoot },
   });
 }
 
@@ -169,5 +169,17 @@ test('SessionEnd telemetry remains under the project root from a nested cwd with
     assert.equal(fs.existsSync(path.join(nestedCwd, 'tmp', 'agent-telemetry', 'lifecycle.jsonl')), false);
   } finally {
     fs.rmSync(nestedCwd, { recursive: true, force: true });
+  }
+});
+
+test('spoofed CLAUDE_PROJECT_DIR fails closed instead of redirecting lifecycle state', () => {
+  const sibling = fs.mkdtempSync(path.join(root, 'tmp', 'spoofed-project-root-'));
+  try {
+    const result = run({ hook_event_name: 'SessionEnd', session_id: `spoofed-${Date.now()}` }, root, sibling);
+    assert.equal(result.status, 2);
+    assert.match(result.stderr, /CLAUDE_PROJECT_DIR does not match/iu);
+    assert.equal(fs.existsSync(path.join(sibling, 'tmp', 'agent-telemetry', 'lifecycle.jsonl')), false);
+  } finally {
+    fs.rmSync(sibling, { recursive: true, force: true });
   }
 });

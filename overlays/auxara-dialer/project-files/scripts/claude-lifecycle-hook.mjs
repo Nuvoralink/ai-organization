@@ -1,6 +1,6 @@
 // Claude Code lifecycle hook router. Reads stdin exactly once, then dispatches by hook_event_name.
 // Blocking events use exit 2 per the official Claude hooks contract; observation-only events never block.
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { Buffer } from 'node:buffer';
 import path from 'node:path';
@@ -242,8 +242,8 @@ function diffCheckFailures(repoRoot, base) {
   return failures;
 }
 
-function handleSessionStart(payload, telemetryDir) {
-  const state = collectOrchestrationState(payload.cwd ?? process.cwd());
+function handleSessionStart(payload, telemetryDir, projectRoot) {
+  const state = collectOrchestrationState(projectRoot);
   safelyRecordSessionStart(payload.session_id, telemetryDir);
   safelyAppendTelemetry(
     eventTelemetry(payload, {
@@ -259,8 +259,8 @@ function handleSessionStart(payload, telemetryDir) {
   );
 }
 
-function handleSubagentStart(payload, telemetryDir) {
-  const state = collectOrchestrationState(payload.cwd ?? process.cwd());
+function handleSubagentStart(payload, telemetryDir, projectRoot) {
+  const state = collectOrchestrationState(projectRoot);
   safelyAppendTelemetry(
     eventTelemetry(payload, { outcome: 'observe', ...stateCounts(state) }),
     telemetryDir,
@@ -288,7 +288,7 @@ function taskImplementerIdentity(payload) {
   return payload.agent_id ?? payload.agent_type ?? payload.subagent_type ?? payload.session_id;
 }
 
-function handleTaskCreated(payload, telemetryDir) {
+function handleTaskCreated(payload, telemetryDir, projectRoot) {
   const description = typeof payload.task_description === 'string' ? payload.task_description : '';
   const missing = missingExplicitSections(description, REQUIRED_BRIEF_SECTIONS);
   const contract = structuredMarker(description, 'TASK_CONTRACT_JSON:');
@@ -299,7 +299,7 @@ function handleTaskCreated(payload, telemetryDir) {
   let result = { accepted: false, failures: [] };
   let repoRoot;
   if (missing.length === 0) {
-    repoRoot = resolveGitRoot(payload.cwd ?? process.cwd());
+    repoRoot = projectRoot;
     if (!repoRoot) result.failures.push('git worktree unavailable');
     else result = acceptLifecycleTask({
       taskId: payload.task_id,
@@ -329,8 +329,8 @@ function handleTaskCreated(payload, telemetryDir) {
   }
 }
 
-function handleTaskCompleted(payload, telemetryDir) {
-  const repoRoot = resolveGitRoot(payload.cwd ?? process.cwd());
+function handleTaskCompleted(payload, telemetryDir, projectRoot) {
+  const repoRoot = projectRoot;
   if (!repoRoot) {
     safelyAppendTelemetry(eventTelemetry(payload, { outcome: 'block', failedCheckCount: 1 }), telemetryDir);
     block('[lifecycle-hook] TaskCompleted blocked: git worktree unavailable.');
@@ -404,14 +404,14 @@ function handleTaskCompleted(payload, telemetryDir) {
   }
 }
 
-function handleSubagentStop(payload, telemetryDir) {
+function handleSubagentStop(payload, telemetryDir, projectRoot) {
   const report =
     typeof payload.last_assistant_message === 'string' ? payload.last_assistant_message : '';
   const missing = missingExplicitSections(report, REQUIRED_REPORT_SECTIONS);
   const completionReport = structuredMarker(report, 'COMPLETION_REPORT_JSON:');
   const reviewReport = structuredMarker(report, 'REVIEW_REPORT_JSON:');
   const receiptFailures = [];
-  const repoRoot = resolveGitRoot(payload.cwd ?? process.cwd());
+  const repoRoot = projectRoot;
   if ((completionReport || reviewReport) && !repoRoot) receiptFailures.push('git worktree unavailable for report receipt');
   if (repoRoot) {
     try {
@@ -478,7 +478,21 @@ function handleSessionEnd(payload, telemetryDir) {
 
 const configuredProjectDir = String(process.env.CLAUDE_PROJECT_DIR ?? '').trim();
 const scriptProjectDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const projectRoot = resolveGitRoot(configuredProjectDir || scriptProjectDir) ?? scriptProjectDir;
+function verifiedProjectRoot() {
+  const scriptRoot = resolveGitRoot(scriptProjectDir) ?? scriptProjectDir;
+  const scriptReal = path.resolve(realpathSync.native(scriptRoot));
+  if (!configuredProjectDir) return scriptReal;
+  const configuredRoot = resolveGitRoot(configuredProjectDir) ?? path.resolve(configuredProjectDir);
+  const configuredReal = path.resolve(realpathSync.native(configuredRoot));
+  const key = (value) => process.platform === 'win32' ? value.toLowerCase() : value;
+  if (key(configuredReal) !== key(scriptReal)) throw new Error('CLAUDE_PROJECT_DIR does not match the script-derived repository root');
+  return scriptReal;
+}
+let projectRoot;
+try { projectRoot = verifiedProjectRoot(); } catch (error) {
+  process.stderr.write(`[lifecycle-hook] blocked: ${error.message}\n`);
+  process.exit(2);
+}
 const telemetryDir = telemetryDirectory(projectRoot);
 let payload;
 try {
@@ -495,19 +509,19 @@ try {
 try {
   switch (payload?.hook_event_name) {
     case 'SessionStart':
-      handleSessionStart(payload, telemetryDir);
+      handleSessionStart(payload, telemetryDir, projectRoot);
       break;
     case 'SubagentStart':
-      handleSubagentStart(payload, telemetryDir);
+      handleSubagentStart(payload, telemetryDir, projectRoot);
       break;
     case 'TaskCreated':
-      handleTaskCreated(payload, telemetryDir);
+      handleTaskCreated(payload, telemetryDir, projectRoot);
       break;
     case 'TaskCompleted':
-      handleTaskCompleted(payload, telemetryDir);
+      handleTaskCompleted(payload, telemetryDir, projectRoot);
       break;
     case 'SubagentStop':
-      handleSubagentStop(payload, telemetryDir);
+      handleSubagentStop(payload, telemetryDir, projectRoot);
       break;
     case 'PostCompact':
       handlePostCompact(payload, telemetryDir);

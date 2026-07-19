@@ -6,8 +6,10 @@ Last verified: {{DATE}}
 ## Authorization boundary
 
 The current transcript and `{{ACTION_AUTHORITY_PATH}}` are the authorities for scope and capability. Continue
-only already-authorized unfinished work. In-scope branch/commit/push/PR work is allowed. Merge only when every
-conditional-merge proof in the capability matrix is satisfied; otherwise stop for human approval. Never
+only already-authorized unfinished work. In-scope branch creation, commit, and PR creation/update are allowed.
+Push only after live proof of no preview/production deploy, publish or billed build, production write, or
+external contact; a preview counts as a deploy. Merge only when every conditional-merge proof in the capability
+matrix is satisfied; otherwise stop for human approval. Never
 deploy, mutate production, delete, purchase, contact anyone, change secrets, or close an unresolved
 product/design/material-architecture decision. Stop at a human gate.
 

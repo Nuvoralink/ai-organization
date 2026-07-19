@@ -12,7 +12,7 @@ import {
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-export const BOUNDARY_SCHEMA_VERSION = 2;
+export const BOUNDARY_SCHEMA_VERSION = 3;
 const BOUNDED_TOOLS = new Set(["Read", "Glob", "Grep", "Edit", "Write", "Skill"]);
 const MAX_BOUNDARY_PATHS = 100;
 const MAX_SEARCH_TREE_ENTRIES = 100_000;
@@ -145,13 +145,56 @@ function uniqueNormalizedPaths(values, label, options) {
   return normalized;
 }
 
-function buildBoundaryManifest({ projectRoot, readPaths, editPaths, skillNames }, { scanReadDirectories, maxSearchTreeEntries = MAX_SEARCH_TREE_ENTRIES } = {}) {
+function buildTrustedReadPaths(values, skillNames, { scanReadDirectories, maxSearchTreeEntries }) {
+  if (!Array.isArray(values) || values.length !== skillNames.length) {
+    throw new Error("trusted_read_paths must contain exactly one copied directory per declared skill");
+  }
+  const skillSet = new Set(skillNames);
+  const seenSkills = new Set();
+  const entries = values.map((entry, index) => {
+    const value = plainObject(entry, `trusted_read_paths[${index}]`);
+    if (JSON.stringify(Object.keys(value).sort()) !== JSON.stringify(["path", "skill_name"])) {
+      throw new Error(`trusted_read_paths[${index}] has an unsupported shape`);
+    }
+    if (typeof value.skill_name !== "string" || !skillSet.has(value.skill_name) || seenSkills.has(value.skill_name)) {
+      throw new Error(`trusted_read_paths[${index}] must name one unique declared skill`);
+    }
+    if (typeof value.path !== "string" || !path.isAbsolute(value.path) || !existsSync(value.path)) {
+      throw new Error(`trusted_read_paths[${index}] must name an existing absolute copied skill directory`);
+    }
+    const lexical = path.resolve(value.path);
+    const info = lstatSync(lexical);
+    if (info.isSymbolicLink() || !info.isDirectory()) {
+      throw new Error(`trusted_read_paths[${index}] must be a real copied skill directory`);
+    }
+    const real = realpathSync.native(lexical);
+    if (pathKey(lexical) !== pathKey(real)) {
+      throw new Error(`trusted_read_paths[${index}] must not be a symlink/reparse alias`);
+    }
+    seenSkills.add(value.skill_name);
+    return {
+      skill_name: value.skill_name,
+      path: lexical,
+      path_real: real,
+      entry_count: scanReadDirectories
+        ? scanSymlinkDescendants(lexical, `trusted skill directory ${value.skill_name}`, maxSearchTreeEntries)
+        : null,
+    };
+  });
+  if (seenSkills.size !== skillNames.length) {
+    throw new Error("trusted_read_paths must cover every declared skill exactly once");
+  }
+  return entries;
+}
+
+function buildBoundaryManifest({ projectRoot, readPaths, editPaths, skillNames, trustedReadPaths = [] }, { scanReadDirectories, maxSearchTreeEntries = MAX_SEARCH_TREE_ENTRIES } = {}) {
   const root = canonicalRoot(projectRoot);
   const normalizedReads = uniqueNormalizedPaths(readPaths, "read_paths", { allowRoot: true });
   const normalizedEdits = uniqueNormalizedPaths(editPaths, "edit_paths", { allowRoot: false, forbidGitMetadata: true });
   if (!Array.isArray(skillNames) || skillNames.some((value) => typeof value !== "string")) {
     throw new Error("skill_names must be an array of strings");
   }
+  if (new Set(skillNames).size !== skillNames.length) throw new Error("skill_names must be unique");
   const readEntries = normalizedReads.map((relative, index) => {
     const absolute = resolveCandidate(root, relative, `read_paths[${index}]`, { mustExist: true });
     const stat = statSync(absolute);
@@ -170,6 +213,7 @@ function buildBoundaryManifest({ projectRoot, readPaths, editPaths, skillNames }
       throw new Error(`edit_paths[${index}] must name a file or a not-yet-created file`);
     }
   }
+  const trustedReads = buildTrustedReadPaths(trustedReadPaths, skillNames, { scanReadDirectories, maxSearchTreeEntries });
   return {
     schema_version: BOUNDARY_SCHEMA_VERSION,
     project_root: root.lexical,
@@ -178,6 +222,7 @@ function buildBoundaryManifest({ projectRoot, readPaths, editPaths, skillNames }
     read_directory_scans: readDirectoryScans,
     edit_paths: normalizedEdits,
     skill_names: [...skillNames],
+    trusted_read_paths: trustedReads,
     explicit_root_read: normalizedReads.includes("."),
   };
 }
@@ -189,7 +234,7 @@ export function createBoundaryManifest(input, options = {}) {
 function validateManifest(value) {
   const manifest = plainObject(value, "boundary manifest");
   const keys = Object.keys(manifest).sort();
-  const expected = ["edit_paths", "explicit_root_read", "project_root", "project_root_real", "read_directory_scans", "read_paths", "schema_version", "skill_names"].sort();
+  const expected = ["edit_paths", "explicit_root_read", "project_root", "project_root_real", "read_directory_scans", "read_paths", "schema_version", "skill_names", "trusted_read_paths"].sort();
   if (JSON.stringify(keys) !== JSON.stringify(expected) || manifest.schema_version !== BOUNDARY_SCHEMA_VERSION) {
     throw new Error("boundary manifest has an unsupported or ambiguous shape");
   }
@@ -198,6 +243,10 @@ function validateManifest(value) {
     readPaths: manifest.read_paths?.map((entry) => plainObject(entry, "read_paths entry").path),
     editPaths: manifest.edit_paths,
     skillNames: manifest.skill_names,
+    trustedReadPaths: manifest.trusted_read_paths?.map((entry) => {
+      const value = plainObject(entry, "trusted_read_paths entry");
+      return { skill_name: value.skill_name, path: value.path };
+    }),
   }, { scanReadDirectories: false });
   if (!Array.isArray(manifest.read_directory_scans)) throw new Error("boundary manifest read-directory scan proof is malformed");
   const expectedScanPaths = rebuilt.read_paths.filter((entry) => entry.kind === "directory").map((entry) => entry.path);
@@ -210,12 +259,26 @@ function validateManifest(value) {
     return value;
   });
   if (scanProof.length !== expectedScanPaths.length) throw new Error("boundary manifest read-directory scan proof is malformed or incomplete");
+  if (!Array.isArray(manifest.trusted_read_paths) || manifest.trusted_read_paths.length !== rebuilt.trusted_read_paths.length) {
+    throw new Error("boundary manifest trusted skill read proof is malformed");
+  }
+  const trustedReadProof = manifest.trusted_read_paths.map((entry, index) => {
+    const value = plainObject(entry, `trusted_read_paths[${index}]`);
+    const expectedEntry = rebuilt.trusted_read_paths[index];
+    if (JSON.stringify(Object.keys(value).sort()) !== JSON.stringify(["entry_count", "path", "path_real", "skill_name"])
+      || value.skill_name !== expectedEntry.skill_name || pathKey(value.path) !== pathKey(expectedEntry.path)
+      || pathKey(value.path_real) !== pathKey(expectedEntry.path_real)
+      || !Number.isSafeInteger(value.entry_count) || value.entry_count < 0 || value.entry_count > MAX_SEARCH_TREE_ENTRIES) {
+      throw new Error("boundary manifest trusted skill read proof is malformed");
+    }
+    return value;
+  });
   if (pathKey(rebuilt.project_root_real) !== pathKey(manifest.project_root_real)
     || rebuilt.explicit_root_read !== manifest.explicit_root_read
     || JSON.stringify(rebuilt.read_paths) !== JSON.stringify(manifest.read_paths)) {
     throw new Error("boundary manifest no longer matches the live filesystem");
   }
-  return { ...rebuilt, read_directory_scans: scanProof };
+  return { ...rebuilt, read_directory_scans: scanProof, trusted_read_paths: trustedReadProof };
 }
 
 function readAuthorized(manifest, root, candidate) {
@@ -229,6 +292,20 @@ function readAuthorized(manifest, root, candidate) {
     if (entry.kind === "directory" && isContained(declared, candidate)) return true;
   }
   return false;
+}
+
+function resolveTrustedReadCandidate(manifest, candidate, label) {
+  if (typeof candidate !== "string" || !path.isAbsolute(candidate)) return null;
+  const absolute = path.resolve(candidate);
+  for (const entry of manifest.trusted_read_paths) {
+    if (!isContained(entry.path, absolute)) continue;
+    assertNoSymlinkSegments(entry.path, absolute, label);
+    if (!existsSync(absolute) || !statSync(absolute).isFile()) throw new Error(`${label} must name an existing trusted skill file`);
+    const real = realpathSync.native(absolute);
+    if (!isContained(entry.path_real, real)) throw new Error(`${label} resolves outside the copied trusted skill directory`);
+    return { entry, absolute };
+  }
+  return null;
 }
 
 function directoryReadAuthorized(manifest, root, candidate) {
@@ -250,8 +327,8 @@ function validateGlobPattern(pattern) {
 export function evaluateBoundaryToolUse(event, manifestValue) {
   const manifest = validateManifest(manifestValue);
   const input = plainObject(event, "hook input");
-  if (input.hook_event_name !== "PreToolUse" || input.permission_mode !== "bypassPermissions") {
-    throw new Error("boundary hook only accepts bypassPermissions PreToolUse events");
+  if (input.hook_event_name !== "PreToolUse" || input.permission_mode !== "dontAsk") {
+    throw new Error("boundary hook only accepts bounded dontAsk PreToolUse events");
   }
   if (typeof input.tool_use_id !== "string" || input.tool_use_id.trim() === "") {
     throw new Error("PreToolUse event is missing tool_use_id");
@@ -273,6 +350,15 @@ export function evaluateBoundaryToolUse(event, manifestValue) {
   }
 
   if (["Read", "Edit", "Write"].includes(input.tool_name)) {
+    if (input.tool_name === "Read") {
+      const trusted = resolveTrustedReadCandidate(manifest, toolInput.file_path, "Read tool_input.file_path");
+      if (trusted) {
+        return {
+          tool: "Read",
+          target: `trusted-skill:${trusted.entry.skill_name}:${path.relative(trusted.entry.path, trusted.absolute).replace(/\\/gu, "/")}`,
+        };
+      }
+    }
     const candidate = resolveCandidate(root, toolInput.file_path, `${input.tool_name} tool_input.file_path`, {
       mustExist: input.tool_name !== "Write",
     });

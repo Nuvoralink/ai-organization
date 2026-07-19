@@ -2,11 +2,13 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { EventEmitter } from "node:events";
-import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { writeFileSync } from "node:fs";
+import { access, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { test } from "node:test";
 import path from "node:path";
 import { PassThrough } from "node:stream";
+import { fileURLToPath } from "node:url";
 
 import {
   auditObservedTools,
@@ -19,6 +21,7 @@ import {
   dispatchClaude,
   materializeGitHubHandoff,
   materializePullRequestDiff,
+  materializeSkillPlugin,
   normalizeGitHubHandoffResponse,
   parsePullRequestDiffScope,
   parsePositiveInteger,
@@ -29,10 +32,11 @@ import {
   summarizeHandoffSnapshot,
   summarizePullRequestDiff,
   terminateProcessTree,
-  validateBypassPermissionsBrief,
+  validateImplementationBrief,
   validateBoundarySettingsText,
   validateHandoffRef,
   validateMcpConfigText,
+  validateMaterializedSkillPlugin,
   validateNoPromptFileExpansion,
   verifyPreToolHookCoverage,
   verifyImplementationChanges,
@@ -43,6 +47,8 @@ import {
   evaluateBoundaryToolUse,
 } from "./dispatch-boundary-hook.mjs";
 
+const TEST_DIRECTORY = path.dirname(fileURLToPath(import.meta.url));
+const BOUNDARY_HOOK_PATH = path.join(TEST_DIRECTORY, "dispatch-boundary-hook.mjs");
 const CONFIG_PATH = path.resolve("C:/Temp/claude-dispatch/mcp.json");
 const SETTINGS_PATH = path.resolve("C:/Temp/claude-dispatch/settings.json");
 const READ_ONLY_TOOLS = ["Read", "Glob", "Grep", "WebFetch", "WebSearch"];
@@ -196,6 +202,11 @@ const ACCEPTED_BOUNDARY_PROBE = () => ({
   hookAllowProbe: true,
   hookDenyProbe: true,
   claudeSettingsAccepted: true,
+  skillPluginValidated: false,
+  sourceSkillNames: [],
+  runtimeSkillNames: [],
+  pluginDetailsEvidence: null,
+  skillInitEvidence: null,
 });
 
 function preToolEvent(root, toolName, toolInput) {
@@ -203,7 +214,7 @@ function preToolEvent(root, toolName, toolInput) {
     session_id: "test-session",
     transcript_path: path.join(root, "transcript.jsonl"),
     cwd: root,
-    permission_mode: "bypassPermissions",
+    permission_mode: "dontAsk",
     hook_event_name: "PreToolUse",
     tool_name: toolName,
     tool_input: toolInput,
@@ -239,12 +250,13 @@ function deniedUnavailableToolStream(name, {
   tools = READ_ONLY_TOOLS,
   permissionMode = 'dontAsk',
   mcpServers = [],
+  skills = [],
   message = `Error: No such tool available: ${name}. ${name} exists but is not enabled in this context. Use one of the available tools instead.`,
   isError = true,
   resultSubtype = 'success',
 } = {}) {
   return [
-    JSON.stringify({ type: 'system', subtype: 'init', session_id: 'session-denial', tools, permissionMode, mcp_servers: mcpServers }),
+    JSON.stringify({ type: 'system', subtype: 'init', session_id: 'session-denial', tools, skills, permissionMode, mcp_servers: mcpServers }),
     JSON.stringify({ type: 'assistant', session_id: 'session-denial', message: { content: [{ type: 'tool_use', id, name, input: {} }] } }),
     JSON.stringify({
       type: 'user',
@@ -256,9 +268,9 @@ function deniedUnavailableToolStream(name, {
   ].join('\n');
 }
 
-function successfulNoToolStream({ tools = READ_ONLY_TOOLS, permissionMode = 'dontAsk', sessionId = 'session-success' } = {}) {
+function successfulNoToolStream({ tools = READ_ONLY_TOOLS, permissionMode = 'dontAsk', sessionId = 'session-success', skills = [] } = {}) {
   return [
-    JSON.stringify({ type: 'system', subtype: 'init', session_id: sessionId, tools, permissionMode, mcp_servers: [] }),
+    JSON.stringify({ type: 'system', subtype: 'init', session_id: sessionId, tools, skills, permissionMode, mcp_servers: [] }),
     JSON.stringify({ type: 'result', subtype: 'success', session_id: sessionId, is_error: false, permission_denials: [] }),
   ].join('\n');
 }
@@ -270,9 +282,10 @@ function successfulToolStream(name, {
   permissionMode = 'dontAsk',
   sessionId = 'session-success',
   includeHook = false,
+  skills = [],
 } = {}) {
   return [
-    JSON.stringify({ type: 'system', subtype: 'init', session_id: sessionId, tools, permissionMode, mcp_servers: [] }),
+    JSON.stringify({ type: 'system', subtype: 'init', session_id: sessionId, tools, skills, permissionMode, mcp_servers: [] }),
     ...(includeHook ? [preToolHookStreamEvent(name, input, id)] : []),
     JSON.stringify({ type: 'assistant', session_id: sessionId, message: { content: [{ type: 'tool_use', id, name, input }] } }),
     JSON.stringify({ type: 'user', session_id: sessionId, message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: id, content: 'ok', is_error: false }] } }),
@@ -365,6 +378,101 @@ test("Proves MCP input must be valid JSON; mutation: strip quotes from the schem
   assert.throws(
     () => validateMcpConfigText("{mcpServers:{}}"),
     /not valid JSON/u,
+  );
+});
+
+test("Proves bounded implementation rejects bypassPermissions before spawn and uses dontAsk with native exact Edit rules; mutation: restore bypassPermissions", () => {
+  assert.throws(
+    () => buildClaudeArgv({ tools: ["Read", "Edit", "Write"], mode: "bypassPermissions", mcpConfigPath: CONFIG_PATH, settingsPath: SETTINGS_PATH }),
+    /unsupported.*bypassPermissions|bypassPermissions.*rejected/iu,
+  );
+  const settings = buildBoundarySettings({
+    nodeExecutable: process.execPath,
+    hookPath: BOUNDARY_HOOK_PATH,
+    manifestPath: path.resolve("C:/Temp/claude-dispatch/manifest.json"),
+    activationPath: path.resolve("C:/Temp/claude-dispatch/activation.json"),
+    activationNonce: "a".repeat(32),
+    editPaths: ["src/allowed.ts", "docs/exact file.md"],
+  });
+  assert.deepEqual(settings.permissions, {
+    defaultMode: "dontAsk",
+    allow: ["Edit(/src/allowed.ts)", "Edit(/docs/exact file.md)"],
+  });
+  assert.equal(settings.permissions.allow.includes("Edit(/src/sibling.ts)"), false);
+});
+
+test("Proves exact trusted skills are copied into one isolated plugin with supporting files; mutations: add a component, load an undeclared sibling, or drift a digest", async (t) => {
+  const fixture = await mkdtemp(path.join(tmpdir(), "dispatch-skill-materialization-"));
+  t.after(() => rm(fixture, { recursive: true, force: true }));
+  const sourceRoot = path.join(fixture, "trusted-skills");
+  const destinationRoot = path.join(fixture, "dispatch-temp");
+  await mkdir(path.join(sourceRoot, "declared", "references"), { recursive: true });
+  await mkdir(path.join(sourceRoot, "undeclared"), { recursive: true });
+  await writeFile(path.join(sourceRoot, "declared", "SKILL.md"), "---\nname: declared\ndescription: declared proof\n---\nRead references/proof.md.\n", "utf8");
+  await writeFile(path.join(sourceRoot, "declared", "references", "proof.md"), "supporting proof\n", "utf8");
+  await writeFile(path.join(sourceRoot, "undeclared", "SKILL.md"), "---\nname: undeclared\ndescription: must not load\n---\n", "utf8");
+  const materialized = await materializeSkillPlugin({ skillNames: ["declared"], sourceRoots: [sourceRoot], destinationRoot });
+  assert.throws(
+    () => buildClaudeArgv({ tools: ["Read", "Skill", "Edit"], mode: "dontAsk", mcpConfigPath: CONFIG_PATH, settingsPath: SETTINGS_PATH }),
+    /Skill capability.*generated skill plugin.*together/iu,
+  );
+  assert.throws(
+    () => buildClaudeArgv({ tools: ["Read", "Edit"], mode: "dontAsk", mcpConfigPath: CONFIG_PATH, settingsPath: SETTINGS_PATH, pluginDir: materialized.pluginDir }),
+    /Skill capability.*generated skill plugin.*together/iu,
+  );
+  assert.deepEqual(materialized.sourceSkillNames, ["declared"]);
+  assert.deepEqual(materialized.runtimeSkillNames, ["bounded-dispatch:declared"]);
+  assert.equal(materialized.sources[0].source_sha256, materialized.sources[0].copied_sha256);
+  assert.equal(materialized.fileInventory.every((entry) => /^[a-f0-9]{64}$/u.test(entry.sha256)), true);
+  await access(path.join(materialized.pluginDir, "skills", "declared", "references", "proof.md"));
+  await assert.rejects(access(path.join(materialized.pluginDir, "skills", "undeclared", "SKILL.md")));
+  await assert.rejects(materializeSkillPlugin({ skillNames: ["missing"], sourceRoots: [sourceRoot], destinationRoot: path.join(fixture, "missing") }), /missing.*trusted skill source/iu);
+
+  await mkdir(path.join(materialized.pluginDir, "agents"));
+  await writeFile(path.join(materialized.pluginDir, "agents", "extra.md"), "not allowed", "utf8");
+  assert.throws(() => validateMaterializedSkillPlugin(materialized), /extra or missing top-level component/iu);
+  await rm(path.join(materialized.pluginDir, "agents"), { recursive: true, force: true });
+  await writeFile(path.join(materialized.pluginDir, "skills", "declared", "references", "proof.md"), "digest drift\n", "utf8");
+  assert.throws(() => validateMaterializedSkillPlugin(materialized), /content digest drifted/iu);
+});
+
+test("Proves trusted skill materialization rejects unsafe source shape; mutations: add a symlink/reparse entry or exceed the byte ceiling", async (t) => {
+  const fixture = await mkdtemp(path.join(tmpdir(), "dispatch-skill-rejections-"));
+  t.after(() => rm(fixture, { recursive: true, force: true }));
+  const sourceRoot = path.join(fixture, "trusted-skills");
+  await mkdir(path.join(sourceRoot, "linked"), { recursive: true });
+  await writeFile(path.join(sourceRoot, "linked", "SKILL.md"), "---\nname: linked\ndescription: link proof\n---\n", "utf8");
+  const outside = path.join(fixture, "outside.md");
+  await writeFile(outside, "outside", "utf8");
+  let linkCreated = false;
+  try {
+    await symlink(outside, path.join(sourceRoot, "linked", "reference.md"), "file");
+    linkCreated = true;
+  } catch (error) {
+    if (!["EPERM", "EACCES", "UNKNOWN"].includes(error?.code)) throw error;
+    const outsideDirectory = path.join(fixture, "outside-directory");
+    await mkdir(outsideDirectory);
+    await writeFile(path.join(outsideDirectory, "proof.md"), "outside", "utf8");
+    try {
+      await symlink(outsideDirectory, path.join(sourceRoot, "linked", "reference-directory"), "junction");
+      linkCreated = true;
+    } catch (junctionError) {
+      if (!["EPERM", "EACCES", "UNKNOWN"].includes(junctionError?.code)) throw junctionError;
+      t.diagnostic(`symlink/reparse mutation unavailable: ${junctionError.code}`);
+    }
+  }
+  if (linkCreated) {
+    await assert.rejects(
+      materializeSkillPlugin({ skillNames: ["linked"], sourceRoots: [sourceRoot], destinationRoot: path.join(fixture, "linked-output") }),
+      /symlink\/reparse entry/iu,
+    );
+  }
+
+  await mkdir(path.join(sourceRoot, "oversize"), { recursive: true });
+  await writeFile(path.join(sourceRoot, "oversize", "SKILL.md"), Buffer.alloc((10 * 1024 * 1024) + 1, 97));
+  await assert.rejects(
+    materializeSkillPlugin({ skillNames: ["oversize"], sourceRoots: [sourceRoot], destinationRoot: path.join(fixture, "oversize-output") }),
+    /exceeds 10485760 bytes/u,
   );
 });
 
@@ -617,7 +725,7 @@ test("Proves every capability outside the two exact profiles is rejected even wh
           },
           { platform: "linux" },
         ),
-      /exact read-only tool profile/u,
+      /exact dispatcher profile|generated settings/iu,
     );
   }
   for (const mode of ["acceptEdits", "default", "delegate", "plan"]) {
@@ -631,7 +739,7 @@ test("Proves a valid PR handoff is persisted in write-capable plan evidence; mut
       cwd: path.resolve("C:/work tree"),
       promptFile: path.resolve("C:/prompts/a prompt.md"),
       tools: ["Read", "Edit", "Write"],
-      mode: "bypassPermissions",
+      mode: "dontAsk",
       stdoutFile: path.resolve("C:/out/result.jsonl"),
       stderrFile: path.resolve("C:/out/error.log"),
       mcpConfigPath: CONFIG_PATH,
@@ -665,6 +773,7 @@ test("Preserves the explicit read-only diagnostic counterexample without a hando
     { platform: "linux" },
   );
   assert.equal(plan.dispatchClass, "read_only_diagnostic");
+  assert.equal(plan.profile, "read_only");
   assert.equal(plan.handoffRequired, false);
   assert.deepEqual(plan.handoffTriggerTools, []);
   assert.equal(plan.handoffRef, null);
@@ -714,7 +823,7 @@ test("Proves bounded implementation still requires a handoff while dontAsk dry-r
     stdoutFile: path.join(evidenceRoot, "result.jsonl"),
     stderrFile: path.join(evidenceRoot, "error.log"),
   };
-  assert.throws(() => createDispatchPlan({ ...common, tools: ["Read", "Write"], mode: "bypassPermissions", mcpConfigPath: CONFIG_PATH, settingsPath: SETTINGS_PATH, parentPid: 3131 }, { platform: "linux" }), /--handoff-ref.*Write/u);
+  assert.throws(() => createDispatchPlan({ ...common, tools: ["Read", "Write"], mode: "dontAsk", mcpConfigPath: CONFIG_PATH, settingsPath: SETTINGS_PATH, parentPid: 3131 }, { platform: "linux" }), /--handoff-ref.*Write/u);
   const dryRun = await dispatchClaude(
     {
       ...common,
@@ -1165,7 +1274,7 @@ test("Appends the live snapshot to stdin, never argv, and returns provenance evi
   assert.equal(result.implementationChanges, null);
 });
 
-test("bypassPermissions requires live handoff, exact edit boundaries, and non-dangerous authority", async (t) => {
+test("bounded dontAsk implementation requires live handoff, exact edit boundaries, and non-dangerous authority", async (t) => {
   const root = await mkdtemp(path.join(tmpdir(), "dispatch-bypass-boundary-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   const promptFile = path.join(root, "prompt.md");
@@ -1175,7 +1284,7 @@ test("bypassPermissions requires live handoff, exact edit boundaries, and non-da
     cwd: root,
     promptFile,
     tools: ["Read", "Edit", "Write"],
-    mode: "bypassPermissions",
+    mode: "dontAsk",
     stdoutFile: path.join(evidenceRoot, "stdout.jsonl"),
     stderrFile: path.join(evidenceRoot, "stderr.log"),
     handoffRef: "acme/dialer#249",
@@ -1194,8 +1303,9 @@ test("bypassPermissions requires live handoff, exact edit boundaries, and non-da
   };
   await writeFile(promptFile, implementationPrompt(), "utf8");
   const accepted = await dispatchClaude(common, dependencies);
-  assert.equal(accepted.plan.mode, "bypassPermissions");
-  assert.equal(accepted.plan.argv[accepted.plan.argv.indexOf("--permission-mode") + 1], "bypassPermissions");
+  assert.equal(accepted.plan.mode, "dontAsk");
+  assert.equal(accepted.plan.profile, "bounded_implementation");
+  assert.equal(accepted.plan.argv[accepted.plan.argv.indexOf("--permission-mode") + 1], "dontAsk");
   assert.equal(accepted.plan.argv[accepted.plan.argv.indexOf("--tools") + 1], "Read,Edit,Write");
   assert.equal(accepted.plan.argv.includes("--settings"), true);
   const settingSourcesIndex = accepted.plan.argv.indexOf("--setting-sources");
@@ -1206,6 +1316,7 @@ test("bypassPermissions requires live handoff, exact edit boundaries, and non-da
   assert.equal(accepted.plan.argv.includes("--safe-mode"), false);
   assert.deepEqual(accepted.plan.implementationBoundary.readPaths, ["."]);
   assert.deepEqual(accepted.plan.implementationBoundary.editPaths, ["src/dispatcher.mjs", "src/dispatcher.test.mjs"]);
+  assert.deepEqual(accepted.plan.implementationBoundary.nativeEditAllowRules, ["Edit(/src/dispatcher.mjs)", "Edit(/src/dispatcher.test.mjs)"]);
   assert.deepEqual(observedDiffRequest, { purpose: "implementation", paths: ["src/dispatcher.mjs", "src/dispatcher.test.mjs"] });
   assert.deepEqual(accepted.plan.implementationBoundary.capabilityProbe, { tool: "Edit", path: "src/dispatcher.mjs" });
   assert.deepEqual(accepted.plan.boundaryCapability, ACCEPTED_BOUNDARY_PROBE());
@@ -1217,13 +1328,13 @@ test("bypassPermissions requires live handoff, exact edit boundaries, and non-da
   await writeFile(promptFile, implementationPrompt({ authority: { irreversible: false, billed: true, external_contact: false } }), "utf8");
   await assert.rejects(dispatchClaude(common, dependencies), /cannot authorize irreversible, billed, or external-contact/u);
   await writeFile(promptFile, implementationPrompt({ edit_paths: ["src/*.mjs"] }), "utf8");
-  await assert.rejects(dispatchClaude(common, dependencies), /must be an exact repo-relative path/u);
+  await assert.rejects(dispatchClaude(common, dependencies), /must be an exact permission-safe repo-relative path/u);
   for (const gitPath of [".git/hooks/pre-commit", ".GIT/config", "src/../.GiT/hooks/pre-commit"]) {
     await writeFile(promptFile, implementationPrompt({ edit_paths: [gitPath], capability_probe: { tool: "Write", path: gitPath } }), "utf8");
     await assert.rejects(dispatchClaude(common, dependencies), /must not target repository Git metadata/u);
   }
   for (const allowedPath of [".husky/pre-commit", ".claude/rules/local.md", "package.json"]) {
-    assert.doesNotThrow(() => validateBypassPermissionsBrief(implementationPrompt({ edit_paths: [allowedPath], capability_probe: { tool: "Write", path: allowedPath } }), root, ["Read", "Write"]));
+    assert.doesNotThrow(() => validateImplementationBrief(implementationPrompt({ edit_paths: [allowedPath], capability_probe: { tool: "Write", path: allowedPath } }), root, ["Read", "Write"]));
   }
   await writeFile(promptFile, implementationPrompt({ read_paths: undefined }), "utf8");
   await assert.rejects(dispatchClaude(common, dependencies), /unexpected or missing fields/u);
@@ -1234,8 +1345,8 @@ test("bypassPermissions requires live handoff, exact edit boundaries, and non-da
   await writeFile(promptFile, implementationPrompt({ capability_probe: { tool: "Edit", path: "src/not-allowed.mjs" } }), "utf8");
   await assert.rejects(dispatchClaude(common, dependencies), /capability_probe must name/u);
   await writeFile(promptFile, implementationPrompt(), "utf8");
-  await assert.rejects(dispatchClaude({ ...common, tools: ["Read", "Edit", "Bash"] }, dependencies), /exact bounded implementation tool allowlist/u);
-  await assert.rejects(dispatchClaude({ ...common, tools: ["Read"], handoffRef: undefined }, dependencies), /requires a live durable GitHub handoff/u);
+  await assert.rejects(dispatchClaude({ ...common, tools: ["Read", "Edit", "Bash"] }, dependencies), /tools do not match either exact dispatcher profile/u);
+  await assert.rejects(dispatchClaude({ ...common, tools: ["Read"], handoffRef: undefined }, dependencies), /tools do not match either exact dispatcher profile/u);
   let materializeCount = 0;
   await assert.rejects(dispatchClaude(common, {
     ...dependencies,
@@ -1261,16 +1372,20 @@ test("PreToolUse containment allows declared directory reads and exact edits whi
   const sibling = path.join(fixture, "sibling-repository");
   await mkdir(path.join(root, "docs"), { recursive: true });
   await mkdir(path.join(root, "src"), { recursive: true });
+  const copiedSkill = path.join(fixture, "outside-dispatch", "skills", "testing-strategy-and-tdd");
+  await mkdir(path.join(copiedSkill, "references"), { recursive: true });
   await mkdir(sibling, { recursive: true });
   await writeFile(path.join(root, "docs", "guide.md"), "guide", "utf8");
   await writeFile(path.join(root, "src", "exact-edit.mjs"), "export {};", "utf8");
   await writeFile(path.join(root, "src", "undeclared.mjs"), "export {};", "utf8");
+  await writeFile(path.join(copiedSkill, "references", "guide.md"), "trusted skill support", "utf8");
   await writeFile(path.join(sibling, "secret.txt"), "never read", "utf8");
   const manifest = createBoundaryManifest({
     projectRoot: root,
     readPaths: ["docs", "src/exact-edit.mjs"],
     editPaths: ["src/exact-edit.mjs", "src/new-file.mjs"],
-    skillNames: ["testing-strategy-and-tdd"],
+    skillNames: ["bounded-dispatch:testing-strategy-and-tdd"],
+    trustedReadPaths: [{ skill_name: "bounded-dispatch:testing-strategy-and-tdd", path: copiedSkill }],
   });
 
   assert.equal(evaluateBoundaryToolUse(preToolEvent(root, "Read", { file_path: "docs/guide.md" }), manifest).target, "docs/guide.md");
@@ -1279,7 +1394,11 @@ test("PreToolUse containment allows declared directory reads and exact edits whi
   assert.equal(evaluateBoundaryToolUse(preToolEvent(root, "Write", { file_path: "src/new-file.mjs", content: "new" }), manifest).tool, "Write");
   assert.equal(evaluateBoundaryToolUse(preToolEvent(root, "Glob", { path: "docs", pattern: "**/*.md" }), manifest).target, "docs");
   assert.equal(evaluateBoundaryToolUse(preToolEvent(root, "Grep", { path: "docs", pattern: "guide" }), manifest).target, "docs");
-  assert.equal(evaluateBoundaryToolUse(preToolEvent(root, "Skill", { skill: "testing-strategy-and-tdd" }), manifest).target, "testing-strategy-and-tdd");
+  assert.equal(evaluateBoundaryToolUse(preToolEvent(root, "Skill", { skill: "bounded-dispatch:testing-strategy-and-tdd" }), manifest).target, "bounded-dispatch:testing-strategy-and-tdd");
+  assert.equal(
+    evaluateBoundaryToolUse(preToolEvent(root, "Read", { file_path: path.join(copiedSkill, "references", "guide.md") }), manifest).target,
+    "trusted-skill:bounded-dispatch:testing-strategy-and-tdd:references/guide.md",
+  );
 
   const denied = [
     [preToolEvent(root, "Read", { file_path: "../sibling-repository/secret.txt" }), "Read tool_input.file_path escapes the repository root"],
@@ -1291,6 +1410,7 @@ test("PreToolUse containment allows declared directory reads and exact edits whi
     [preToolEvent(root, "Grep", { path: sibling, pattern: "secret" }), "Grep tool_input.path escapes the repository root"],
     [preToolEvent(root, "Edit", { file_path: "src/other.mjs", old_string: "x", new_string: "y" }), "Edit tool_input.file_path must name an existing path"],
     [preToolEvent(root, "Skill", { skill: "undeclared-skill" }), "Skill undeclared-skill is not exactly declared"],
+    [preToolEvent(root, "Edit", { file_path: path.join(copiedSkill, "references", "guide.md"), old_string: "x", new_string: "y" }), "Edit tool_input.file_path escapes the repository root"],
     [preToolEvent(root, "Bash", { command: "type secret.txt" }), "tool Bash is outside the exact bounded implementation allowlist"],
     [{ ...preToolEvent(root, "Read", { file_path: "docs/guide.md" }), tool_input: null }, "Read tool_input must be an object"],
   ];
@@ -1369,7 +1489,7 @@ test("SessionStart activation is idempotent only for the exact schema, nonce, an
   const secondRoot = path.join(fixture, "second");
   await mkdir(firstRoot, { recursive: true });
   await mkdir(secondRoot, { recursive: true });
-  const hookPath = path.resolve("skills/bootstrap-orchestrator/scripts/dispatch-boundary-hook.mjs");
+  const hookPath = BOUNDARY_HOOK_PATH;
   const manifestPath = path.join(fixture, "manifest.json");
   const secondManifestPath = path.join(fixture, "second-manifest.json");
   const activationPath = path.join(fixture, "activation.json");
@@ -1389,6 +1509,14 @@ test("SessionStart activation is idempotent only for the exact schema, nonce, an
   assert.match(activate(manifestPath, nonce, firstRoot).stderr, /does not exactly match/u);
 });
 
+test("dispatcher boundary fixture path remains import-meta rooted when tests launch from another cwd", async (t) => {
+  const otherCwd = await mkdtemp(path.join(tmpdir(), "dispatch-test-other-cwd-"));
+  t.after(() => rm(otherCwd, { recursive: true, force: true }));
+  const result = spawnSync(process.execPath, ["--check", BOUNDARY_HOOK_PATH], { cwd: otherCwd, encoding: "utf8", shell: false });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(path.dirname(BOUNDARY_HOOK_PATH), TEST_DIRECTORY);
+});
+
 test("Generated settings use one native catch-all hook, and ignored Claude settings fail the active allow/deny capability probe before dispatch", async (t) => {
   const root = await mkdtemp(path.join(tmpdir(), "dispatch-settings-probe-repo-"));
   const temp = await mkdtemp(path.join(tmpdir(), "dispatch-settings-probe-config-"));
@@ -1396,27 +1524,32 @@ test("Generated settings use one native catch-all hook, and ignored Claude setti
   t.after(() => rm(temp, { recursive: true, force: true }));
   await mkdir(path.join(root, "src"), { recursive: true });
   await writeFile(path.join(root, "src", "edit.mjs"), "probe", "utf8");
-  const hookPath = path.resolve("skills/bootstrap-orchestrator/scripts/dispatch-boundary-hook.mjs");
+  const hookPath = BOUNDARY_HOOK_PATH;
   const manifestPath = path.join(temp, "boundary.json");
   const activationPath = path.join(temp, "active.json");
   const activationNonce = "a".repeat(32);
   const settingsPath = path.join(temp, "settings.json");
+  const mcpConfigPath = path.join(temp, "mcp.json");
   const manifest = createBoundaryManifest({ projectRoot: root, readPaths: ["src"], editPaths: ["src/edit.mjs"], skillNames: [] });
-  const settings = buildBoundarySettings({ nodeExecutable: process.execPath, hookPath, manifestPath, activationPath, activationNonce });
+  const settings = buildBoundarySettings({ nodeExecutable: process.execPath, hookPath, manifestPath, activationPath, activationNonce, editPaths: manifest.edit_paths });
   await writeFile(manifestPath, JSON.stringify(manifest), "utf8");
   await writeFile(activationPath, JSON.stringify({ schema_version: BOUNDARY_SCHEMA_VERSION, nonce: activationNonce, project_root: manifest.project_root }), "utf8");
   await writeFile(settingsPath, JSON.stringify(settings), "utf8");
+  await writeFile(mcpConfigPath, '{"mcpServers":{}}\n', "utf8");
   assert.deepEqual(validateBoundarySettingsText(await readFile(settingsPath, "utf8"), settings), settings);
   assert.throws(() => validateBoundarySettingsText('{"hooks":{"PreToolUse":"ignored"}}', settings), /differ|exact hook/u);
 
+  const observedClaudeArgv = [];
   const spawnWithDoctor = (doctorOutput) => (executable, argv, options) => {
     if (executable === process.execPath) return spawnSync(executable, argv, options);
+    observedClaudeArgv.push(argv);
     return { status: 0, stdout: argv.includes("doctor") ? doctorOutput : "", stderr: "" };
   };
   assert.throws(
     () => probeDispatchBoundaryCapability({
       claudeExecutable: "claude-native",
       settingsPath,
+      mcpConfigPath,
       hookPath,
       manifestPath,
       activationPath,
@@ -1430,6 +1563,7 @@ test("Generated settings use one native catch-all hook, and ignored Claude setti
     probeDispatchBoundaryCapability({
       claudeExecutable: "claude-native",
       settingsPath,
+      mcpConfigPath,
       hookPath,
       manifestPath,
       activationPath,
@@ -1437,8 +1571,88 @@ test("Generated settings use one native catch-all hook, and ignored Claude setti
       manifest,
       capabilityProbe: { tool: "Edit", path: "src/edit.mjs" },
     }, { spawnSyncProcess: spawnWithDoctor("Claude Code doctor\nNo installation issues found.") }),
-    { claudeHookActivated: true, hookAllowProbe: true, hookDenyProbe: true, claudeSettingsAccepted: true },
+    ACCEPTED_BOUNDARY_PROBE(),
   );
+  const doctorArgv = observedClaudeArgv.find((argv) => argv.includes("doctor") && argv.includes("No installation issues found.") === false);
+  assert.deepEqual(doctorArgv?.slice(0, 5), ["--setting-sources", "", "--settings", settingsPath, "doctor"]);
+});
+
+test("Proves init-only plugin inventory and live init evidence exactly match runtime skills; mutations: wrong namespace, missing init skill, or unavailable tool attempt", async (t) => {
+  const root = await mkdtemp(path.join(tmpdir(), "dispatch-skill-probe-repo-"));
+  const temp = await mkdtemp(path.join(tmpdir(), "dispatch-skill-probe-config-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  t.after(() => rm(temp, { recursive: true, force: true }));
+  await writeFile(path.join(root, "edit.mjs"), "probe", "utf8");
+  const sourceRoot = path.join(temp, "trusted-skills");
+  await mkdir(path.join(sourceRoot, "declared", "references"), { recursive: true });
+  await writeFile(path.join(sourceRoot, "declared", "SKILL.md"), "---\nname: declared\ndescription: exact plugin proof\n---\nRead references/proof.md.\n", "utf8");
+  await writeFile(path.join(sourceRoot, "declared", "references", "proof.md"), "support", "utf8");
+  const skillPlugin = await materializeSkillPlugin({ skillNames: ["declared"], sourceRoots: [sourceRoot], destinationRoot: path.join(temp, "runtime") });
+  const manifest = createBoundaryManifest({
+    projectRoot: root,
+    readPaths: ["."],
+    editPaths: ["edit.mjs"],
+    skillNames: skillPlugin.runtimeSkillNames,
+    trustedReadPaths: skillPlugin.skillDirectories.map((entry) => ({ skill_name: entry.skillName, path: entry.path })),
+  });
+  const manifestPath = path.join(temp, "manifest.json");
+  const activationPath = path.join(temp, "activation.json");
+  const settingsPath = path.join(temp, "settings.json");
+  const mcpConfigPath = path.join(temp, "mcp.json");
+  const nonce = "a".repeat(32);
+  await writeFile(manifestPath, JSON.stringify(manifest), "utf8");
+  await writeFile(activationPath, JSON.stringify({ schema_version: BOUNDARY_SCHEMA_VERSION, nonce, project_root: manifest.project_root }), "utf8");
+  await writeFile(mcpConfigPath, '{"mcpServers":{}}\n', "utf8");
+  const initDebug = (loadedCount) => [
+    "Loaded inline plugin from path: bounded-dispatch",
+    "Loaded 1 session-only plugins from --plugin-dir",
+    "Found 1 plugins (1 enabled, 0 disabled)",
+    "Total plugin workflows loaded: 0",
+    "Registered 0 hooks from 1 plugins",
+    "Total plugin commands loaded: 0",
+    "Total plugin agents loaded: 0",
+    `Loaded ${loadedCount} skills from plugin bounded-dispatch default directory`,
+    `Total plugin skills loaded: ${loadedCount} (0 duplicate/user-owned entries skipped)`,
+    `getSkills returning: 0 skill dir commands, ${loadedCount} plugin skills, 32 bundled skills, 0 builtin plugin skills`,
+  ].join("\n");
+  const invoke = (loadedCount = 1) => (executable, argv, options) => {
+    if (executable === process.execPath) return spawnSync(executable, argv, options);
+    if (argv[0] === "plugin" && argv[1] === "validate") return { status: 0, stdout: "Validation passed", stderr: "" };
+    if (argv.includes("plugin") && argv.includes("details")) return { status: 0, stdout: "bounded-dispatch 1.0.0\n  Source: bounded-dispatch@inline\n\nComponent inventory\n  Skills (1)  declared\n  Agents (0)\n  Hooks (0)\n  MCP servers (0)\n  LSP servers (0)\n", stderr: "" };
+    if (argv.includes("doctor")) return { status: 0, stdout: "Claude Code doctor\nNo installation issues found.", stderr: "" };
+    const debugFile = argv[argv.indexOf("--debug-file") + 1];
+    writeFileSync(debugFile, initDebug(loadedCount), "utf8");
+    return { status: 0, stdout: "", stderr: "" };
+  };
+  const settings = buildBoundarySettings({
+    nodeExecutable: process.execPath,
+    hookPath: BOUNDARY_HOOK_PATH,
+    manifestPath,
+    activationPath,
+    activationNonce: nonce,
+    editPaths: ["edit.mjs"],
+    trustedReadPaths: skillPlugin.skillDirectories.map((entry) => entry.path),
+  });
+  const trustedReadRule = settings.permissions.allow.find((rule) => rule.startsWith("Read("));
+  assert.match(trustedReadRule, /^Read\(\/\/.+\/skills\/declared\/\*\*\)$/u);
+  assert.equal(settings.permissions.allow.some((rule) => rule.startsWith("Edit(") && rule.includes("skill-plugin")), false);
+  await writeFile(settingsPath, JSON.stringify(settings), "utf8");
+  const probeInput = { claudeExecutable: "claude-native", settingsPath, mcpConfigPath, hookPath: BOUNDARY_HOOK_PATH, manifestPath, activationPath, activationNonce: nonce, manifest, capabilityProbe: { tool: "Edit", path: "edit.mjs" }, skillPlugin };
+  const proof = probeDispatchBoundaryCapability(probeInput, { spawnSyncProcess: invoke() });
+  assert.deepEqual(proof.runtimeSkillNames, ["bounded-dispatch:declared"]);
+  assert.deepEqual(proof.skillInitEvidence, { pluginCount: 1, skillCount: 1, agents: 0, hooks: 0, commands: 0, workflows: 0, mcpConnections: 0 });
+  assert.throws(() => probeDispatchBoundaryCapability(probeInput, { spawnSyncProcess: invoke(0) }), /init did not prove.*declared skills|declared skills loaded/iu);
+  assert.throws(() => validateMaterializedSkillPlugin({ ...skillPlugin, pluginName: "wrong-namespace" }), /namespace must be exactly bounded-dispatch/iu);
+
+  const stream = successfulNoToolStream({ tools: ["Read", "Skill", "Edit"], skills: ["bounded-dispatch:declared"] });
+  assert.doesNotThrow(() => auditObservedTools(stream, ["Read", "Skill", "Edit"], { permissionMode: "dontAsk", expectedSkills: ["bounded-dispatch:declared"] }));
+  assert.throws(() => auditObservedTools(stream, ["Read", "Skill", "Edit"], { permissionMode: "dontAsk", expectedSkills: ["bounded-dispatch:other"] }), /init skills.*exact declared/iu);
+  const unavailable = auditObservedTools(
+    deniedUnavailableToolStream("Bash", { tools: ["Read", "Skill", "Edit"], skills: ["bounded-dispatch:declared"] }),
+    ["Read", "Skill", "Edit"],
+    { permissionMode: "dontAsk", expectedSkills: ["bounded-dispatch:declared"] },
+  );
+  assert.deepEqual(unavailable.deniedUnavailableToolAttempts.map((entry) => entry.name), ["Bash"]);
 });
 
 test("Prompt-side @file expansion is rejected before dispatch while untrusted handoff JSON escapes every at-sign", () => {
@@ -1513,13 +1727,13 @@ test("Skill is optional bounded context, while undeclared skills, Agent/Task, an
     /undeclared trusted skill unknown-skill/u,
   );
   assert.deepEqual(
-    validateBypassPermissionsBrief(implementationPrompt({ skill_names: ["frontend-design-director"] }), root, ["Read", "Skill", "Edit"]).skillNames,
+    validateImplementationBrief(implementationPrompt({ skill_names: ["frontend-design-director"] }), root, ["Read", "Skill", "Edit"]).skillNames,
     ["frontend-design-director"],
   );
   for (const denied of ["Agent", "Task", "Bash", "PowerShell"]) {
     assert.throws(
-      () => validateBypassPermissionsBrief(implementationPrompt({ skill_names: ["frontend-design-director"] }), root, ["Read", "Skill", "Edit", denied]),
-      /exact bounded implementation tool allowlist/u,
+      () => validateImplementationBrief(implementationPrompt({ skill_names: ["frontend-design-director"] }), root, ["Read", "Skill", "Edit", denied]),
+      /bounded implementation requires an exact tool allowlist/u,
     );
   }
 });
@@ -1558,7 +1772,7 @@ test("Repository-root proof compares canonical realpaths and folds Windows case 
   assert.throws(() => invoke(path.resolve("C:/Other/Repo")), /must canonically equal/u);
 });
 
-test("bypassPermissions wires clean-baseline capture to post-run rejection and preserves evidence without reverting", async (t) => {
+test("bounded dontAsk wires clean-baseline capture to post-run rejection and preserves evidence without reverting", async (t) => {
   const root = await mkdtemp(path.join(tmpdir(), "dispatch-postrun-boundary-"));
   const evidenceRoot = await mkdtemp(path.join(tmpdir(), "dispatch-postrun-evidence-"));
   t.after(() => rm(root, { recursive: true, force: true }));
@@ -1577,7 +1791,7 @@ test("bypassPermissions wires clean-baseline capture to post-run rejection and p
       id: "toolu_test_write",
       input: { file_path: "src/dispatcher.mjs" },
       tools: ["Read", "Edit", "Write"],
-      permissionMode: "bypassPermissions",
+      permissionMode: "dontAsk",
       includeHook: true,
     })}\n`);
     child.stderr.end();
@@ -1589,7 +1803,7 @@ test("bypassPermissions wires clean-baseline capture to post-run rejection and p
       cwd: root,
       promptFile,
       tools: ["Read", "Edit", "Write"],
-      mode: "bypassPermissions",
+      mode: "dontAsk",
       stdoutFile,
       stderrFile,
       handoffRef: "https://github.com/acme/dialer/issues/249",
@@ -1621,7 +1835,7 @@ test("A boundary probe that dirties the implementation tree is caught before han
     cwd: root,
     promptFile,
     tools: ["Read", "Edit", "Write"],
-    mode: "bypassPermissions",
+    mode: "dontAsk",
     stdoutFile: path.join(evidenceRoot, "stdout.jsonl"),
     stderrFile: path.join(evidenceRoot, "stderr.log"),
     handoffRef: "https://github.com/acme/dialer/issues/249",
@@ -1659,7 +1873,7 @@ test("stdin transport failure terminates Claude then still captures post-run con
     cwd: root,
     promptFile,
     tools: ["Read", "Edit", "Write"],
-    mode: "bypassPermissions",
+    mode: "dontAsk",
     stdoutFile,
     stderrFile,
     handoffRef: "https://github.com/acme/dialer/issues/249",
@@ -1702,7 +1916,7 @@ test("outside-evidence containment denies a symlink or junction alias back into 
     cwd: root,
     promptFile,
     tools: ["Read", "Edit", "Write"],
-    mode: "bypassPermissions",
+    mode: "dontAsk",
     stdoutFile: path.join(alias, "stdout.jsonl"),
     stderrFile: path.join(outside, "stderr.log"),
     handoffRef: "https://github.com/acme/dialer/issues/249",
@@ -1738,7 +1952,7 @@ test("Failure-path containment reports undeclared writes after timeout and repor
         cwd: root,
         promptFile,
         tools: ["Read", "Edit", "Write"],
-        mode: "bypassPermissions",
+        mode: "dontAsk",
         stdoutFile: path.join(evidenceRoot, "stdout.jsonl"),
         stderrFile: path.join(evidenceRoot, "stderr.log"),
         handoffRef: "https://github.com/acme/dialer/issues/249",
@@ -1978,7 +2192,7 @@ test("Proves safe argv includes strict MCP and stream-json verbose output", () =
   assert.ok(argv.includes("--verbose"));
 });
 
-test("Proves dontAsk rejects every subset, superset, reordered, shell, mutation, or delegation profile", () => {
+test("Proves dontAsk rejects every subset, superset, reordered, shell, or delegation profile without a bounded implementation contract", () => {
   for (const tools of [
     ["Read"],
     ["Read", "Glob", "Grep"],
@@ -1998,7 +2212,7 @@ test("Proves dontAsk rejects every subset, superset, reordered, shell, mutation,
           mode: "dontAsk",
           mcpConfigPath: CONFIG_PATH,
         }),
-      /exact read-only tool profile/iu,
+      /exact dispatcher profile|generated settings/iu,
     );
   }
 });

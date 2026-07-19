@@ -43,7 +43,10 @@ describe('agent control-plane gate', () => {
 
     mutate('issue', (source) => source.replace('id: output_contract', 'id: output_removed'));
     mutate('pullRequest', (source) => source.replace('- [ ] Human approves any merge that deploys or mutates production.', '- [x] Human approves any merge that deploys or mutates production.'));
-    mutate('capabilities', (source) => source.replace('"push_branch",', '').replace('"no_deploy_or_production_effect",', ''));
+    mutate('capabilities', (source) => source
+      .replace('"commit_in_scope_changes",', '"commit_in_scope_changes",\n    "push_branch",')
+      .replace('"no_preview_or_production_deploy",', '')
+      .replace('"no_deploy_or_production_effect",', ''));
     mutate('workflow', (source) => source.replace('readOnlyIntent: true', 'readOnly: true'));
     mutate('playbook', (source) => source.replace('Enter Claude plan mode first', 'Run it directly'));
     mutate('settings', (source) => source.replace('"Bash(npm run typecheck)"', '"mcp__figma__get_screenshot"'));
@@ -54,7 +57,7 @@ describe('agent control-plane gate', () => {
     const result = run();
     expect(result.status).toBe(1);
     const output = `${result.stdout}${result.stderr}`;
-    for (const fragment of ['output_contract', 'pre-checked', 'push_branch must be autonomous', 'conditional merge missing no_deploy_or_production_effect', 'readOnlyIntent: true', 'Enter Claude plan mode first', 'Figma', 'numbered step', 'hook events must be exactly', 'PostToolUse must be Edit|Write']) {
+    for (const fragment of ['output_contract', 'pre-checked', 'push_branch must be conditional', 'Conditional push_branch missing required predicate', 'readOnlyIntent: true', 'Enter Claude plan mode first', 'Figma', 'numbered step', 'hook events must be exactly', 'PostToolUse must be Edit|Write']) {
       expect(output).toContain(fragment);
     }
   });

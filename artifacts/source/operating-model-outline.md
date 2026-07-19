@@ -14,7 +14,7 @@ This is the maintainable content authority for the editable presentation `../Nuv
 10. **Hooks and gates** — Before/during/after lifecycle interception and proof.
 11. **Tests that bite** — Product behavior, killer mutation, and a risk-based proof ladder.
 12. **Action authority** — Autonomous, conditional, and human-required actions; uncertainty fails closed.
-13. **Git coordination** — Fetched base, isolated worktree, commit, independent audit, push/PR, policy-controlled merge.
+13. **Git coordination** — Fetched base, isolated worktree, commit, independent audit, policy-controlled push, PR, and merge; push-triggered deploy/build/publish integrations are inventoried before push.
 14. **Claude Design workflow** — Design brief, Claude Design, human approval, implementation, rendered proof.
 15. **AI-quality debugging** — Visible failure back to context authority, followed by class-wide repair and bounded retry.
 16. **Project overlays** — Central canonical repository generates safe Auxara and CoachAI orchestration without app source or secrets.

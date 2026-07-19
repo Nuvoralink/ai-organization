@@ -53,8 +53,9 @@
 
 ## Human-gated actions (agents must leave unchecked)
 
-`.ai-organization/policies/action-authority.v1.json` is canonical. Agents may branch, commit, push, and publish/update
-this PR within the authorized task. Agents may merge only when all conditional-merge criteria below are
+`.ai-organization/policies/action-authority.v1.json` is canonical. Agents may branch, commit, and create/update
+this PR within the authorized task. Push requires live proof of no preview/production deploy, publish or billed
+build, production write, or external contact; preview counts as deploy. Agents may merge only when all conditional-merge criteria below are
 independently proven; otherwise merge requires a human decision.
 
 - [ ] Human approves deploy or production mutation.
