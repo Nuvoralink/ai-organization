@@ -1148,7 +1148,15 @@ export function buildClaudeArgv({ tools, mode, mcpConfigPath, settingsPath = nul
     throw new Error("MCP config path must be absolute");
   }
 
-  const argv = [
+  const argv = ["--setting-sources", ""];
+  if (mode === "dontAsk") {
+    argv.push("--safe-mode", "--disable-slash-commands", "--no-session-persistence");
+  }
+  if (settingsPath !== null) {
+    if (!path.isAbsolute(settingsPath)) throw new Error("boundary settings path must be absolute");
+    argv.push("--settings", settingsPath, "--include-hook-events");
+  }
+  argv.push(
     "--print",
     "--output-format",
     "stream-json",
@@ -1160,11 +1168,7 @@ export function buildClaudeArgv({ tools, mode, mcpConfigPath, settingsPath = nul
     tools.join(","),
     "--permission-mode",
     mode,
-  ];
-  if (settingsPath !== null) {
-    if (!path.isAbsolute(settingsPath)) throw new Error("boundary settings path must be absolute");
-    argv.push("--setting-sources", "", "--settings", settingsPath, "--include-hook-events");
-  }
+  );
   return argv;
 }
 
@@ -1208,28 +1212,28 @@ export function resolveClaudeExecutable({
 }
 
 function collectToolUseEvents(value, events) {
-  if (Array.isArray(value)) {
-    for (const item of value) collectToolUseEvents(item, events);
-    return;
+  if (value?.type !== "assistant" || !Array.isArray(value?.message?.content)) return;
+  for (const item of value.message.content) {
+    if (item?.type === "tool_use" && typeof item.name === "string") {
+      events.push({ id: item.id, name: item.name, input: item.input });
+    }
   }
-  if (value === null || typeof value !== "object") return;
-
-  if (value.type === "tool_use" && typeof value.name === "string") {
-    events.push({ id: value.id, name: value.name, input: value.input });
-  }
-  for (const child of Object.values(value)) collectToolUseEvents(child, events);
 }
 
 function collectPreToolHookEvents(value, events) {
-  if (Array.isArray(value)) {
-    for (const item of value) collectPreToolHookEvents(item, events);
-    return;
+  const hook = value?.type === "hook_event" ? value.hook_event : null;
+  if (hook?.hook_event_name === "PreToolUse" && typeof hook.tool_name === "string" && typeof hook.tool_use_id === "string") {
+    events.push({ id: hook.tool_use_id, name: hook.tool_name });
   }
-  if (value === null || typeof value !== "object") return;
-  if (value.hook_event_name === "PreToolUse" && typeof value.tool_name === "string" && typeof value.tool_use_id === "string") {
-    events.push({ id: value.tool_use_id, name: value.tool_name });
+}
+
+function collectToolResultEvents(value, events) {
+  if (value?.type !== "user" || !Array.isArray(value?.message?.content)) return;
+  for (const item of value.message.content) {
+    if (item?.type === "tool_result") {
+      events.push({ id: item.tool_use_id, result: item });
+    }
   }
-  for (const child of Object.values(value)) collectPreToolHookEvents(child, events);
 }
 
 export function verifyPreToolHookCoverage(streamJson, toolEvents = observedToolEvents(streamJson)) {
@@ -1272,18 +1276,137 @@ export function observedToolUses(streamJson) {
   return observedToolEvents(streamJson).map((event) => event.name);
 }
 
-export function auditObservedTools(streamJson, allowedTools) {
-  const allowed = new Set(allowedTools);
-  const observed = observedToolUses(streamJson);
-  const unexpected = [
-    ...new Set(observed.filter((name) => !allowed.has(name))),
-  ];
-  if (unexpected.length > 0) {
-    throw new Error(
-      `observed tool_use outside exact allowlist: ${unexpected.join(", ")}`,
-    );
+function parsedStreamEnvelopes(streamJson) {
+  const envelopes = [];
+  for (const [index, rawLine] of streamJson.split(/\r?\n/u).entries()) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    try {
+      envelopes.push({ line: index + 1, value: JSON.parse(line) });
+    } catch (error) {
+      throw new Error(`stream-json line ${index + 1} is invalid JSON: ${error.message}`);
+    }
   }
-  return observed;
+  return envelopes;
+}
+
+function unavailableToolMessage(nestedMessage, topLevelMessage, toolName) {
+  if (typeof nestedMessage !== "string" || typeof topLevelMessage !== "string") return false;
+  const escaped = toolName.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  const nativeMessage = new RegExp(`^Error: No such tool available: ${escaped}\\. ${escaped} exists but is not enabled in this context\\. Use one of the available tools instead\\.$`, "u");
+  return nativeMessage.test(topLevelMessage)
+    && nestedMessage === `<tool_use_error>${topLevelMessage}</tool_use_error>`;
+}
+
+function exactUniqueToolSet(actual, expected) {
+  if (!Array.isArray(actual) || !Array.isArray(expected) || actual.length !== expected.length) return false;
+  if (!actual.every((tool) => typeof tool === "string") || !expected.every((tool) => typeof tool === "string")) return false;
+  const actualSet = new Set(actual);
+  const expectedSet = new Set(expected);
+  return actualSet.size === actual.length
+    && expectedSet.size === expected.length
+    && actualSet.size === expectedSet.size
+    && [...actualSet].every((tool) => expectedSet.has(tool));
+}
+
+export function auditObservedTools(streamJson, allowedTools, { permissionMode } = {}) {
+  const allowed = new Set(allowedTools);
+  const envelopes = parsedStreamEnvelopes(streamJson);
+  const events = [];
+  const toolResults = [];
+  for (const [envelopeIndex, envelope] of envelopes.entries()) {
+    const nested = [];
+    collectToolUseEvents(envelope.value, nested);
+    for (const event of nested) events.push({ ...event, envelopeIndex });
+    const results = [];
+    collectToolResultEvents(envelope.value, results);
+    for (const result of results) toolResults.push({ ...result, envelopeIndex });
+  }
+  const unexpected = events.filter((event) => !allowed.has(event.name));
+  if (typeof permissionMode !== "string" || permissionMode.length === 0) {
+    throw new Error("successful tool audit requires the exact dispatch permission mode");
+  }
+
+  const init = envelopes.filter((envelope) => envelope.value?.type === "system" && envelope.value?.subtype === "init");
+  if (init.length !== 1) throw new Error("successful tool audit requires exactly one stream init envelope");
+  if (envelopes[0] !== init[0]) throw new Error("successful tool audit init must be the first protocol envelope");
+  if (!exactUniqueToolSet(init[0].value.tools, allowedTools)) throw new Error("successful tool audit init tools do not match the exact allowed profile as a unique set");
+  if (init[0].value.permissionMode !== permissionMode) throw new Error("successful tool audit init permission mode does not match the dispatch profile");
+  if (!Array.isArray(init[0].value.mcp_servers) || init[0].value.mcp_servers.length !== 0) throw new Error("successful tool audit init MCP servers must be exactly empty");
+
+  const terminalResults = envelopes.filter((envelope) => envelope.value?.type === "result");
+  if (terminalResults.length !== 1 || terminalResults[0].value?.subtype !== "success" || envelopes.at(-1) !== terminalResults[0]) {
+    throw new Error("successful tool audit requires one final success result and a complete stream");
+  }
+
+  const ids = events.map((event) => event.id);
+  if (ids.some((id) => typeof id !== "string" || id.length === 0) || new Set(ids).size !== ids.length) {
+    throw new Error("successful tool audit tool identities must be present and unique");
+  }
+  const resultIds = toolResults.map((result) => result.id);
+  if (resultIds.some((id) => typeof id !== "string" || id.length === 0) || new Set(resultIds).size !== resultIds.length) {
+    throw new Error("successful tool audit tool-result identities must be present and unique");
+  }
+  const requestById = new Map(events.map((event) => [event.id, event]));
+  for (const result of toolResults) {
+    const request = requestById.get(result.id);
+    if (!request || result.envelopeIndex <= request.envelopeIndex) {
+      throw new Error(`tool result ${String(result.id)} has no earlier matching tool request`);
+    }
+  }
+  const sessionId = init[0].value.session_id;
+  if (typeof sessionId !== "string" || sessionId.length === 0) throw new Error("successful tool audit init requires one session identity");
+  const resultById = new Map(toolResults.map((result) => [result.id, result]));
+  for (const event of events) {
+    if (event.envelopeIndex <= 0 || envelopes[event.envelopeIndex].value?.session_id !== sessionId) {
+      throw new Error(`tool ${event.name}:${event.id} is outside the initialized session or order`);
+    }
+    if (!resultById.has(event.id)) {
+      throw new Error(`tool ${event.name}:${event.id} lacks exactly one later matching tool result`);
+    }
+  }
+  for (const result of toolResults) {
+    if (envelopes[result.envelopeIndex].value?.session_id !== sessionId) {
+      throw new Error(`tool result ${result.id} session identity does not match init`);
+    }
+  }
+  if (terminalResults[0].value.session_id !== sessionId) throw new Error("successful tool audit terminal session identity does not match init");
+
+  const alwaysForbidden = [...new Set(unexpected.filter((event) => ["Agent", "Task"].includes(event.name)).map((event) => event.name))];
+  if (alwaysForbidden.length > 0) {
+    throw new Error(`observed tool_use outside exact allowlist: ${alwaysForbidden.join(", ")}`);
+  }
+  if (unexpected.length === 0) return {
+    allowedToolUses: events.map((event) => ({ id: event.id, name: event.name })),
+    deniedUnavailableToolAttempts: [],
+    modelToolDiscipline: "compliant",
+    capabilityContainment: "maintained",
+  };
+
+  const deniedUnavailableToolAttempts = [];
+  for (const event of unexpected) {
+    const response = envelopes[event.envelopeIndex + 1]?.value;
+    const content = response?.type === "user" && Array.isArray(response?.message?.content)
+      ? response.message.content
+      : null;
+    const matches = content?.filter((item) => item?.type === "tool_result" && item?.tool_use_id === event.id) ?? [];
+    if (content?.length !== 1 || matches.length !== 1 || matches[0].is_error !== true) {
+      throw new Error(`unexpected tool ${event.name}:${event.id} lacks one immediately matching error denial`);
+    }
+    if (response.session_id !== sessionId) throw new Error(`unexpected tool ${event.name}:${event.id} denial session identity does not match init`);
+    const nestedMessage = matches[0].content;
+    const topLevelMessage = response.tool_use_result;
+    if (!unavailableToolMessage(nestedMessage, topLevelMessage, event.name)) {
+      throw new Error(`unexpected tool ${event.name}:${event.id} lacks the exact unavailable-tool denial in both result locations`);
+    }
+    deniedUnavailableToolAttempts.push({ id: event.id, name: event.name });
+  }
+  return {
+    allowedToolUses: events.filter((event) => allowed.has(event.name)).map((event) => ({ id: event.id, name: event.name })),
+    deniedUnavailableToolAttempts,
+    modelToolDiscipline: "attempted_unavailable_tool",
+    capabilityContainment: "maintained",
+  };
 }
 
 export function verifyImplementationChanges(streamJson, boundary, beforeState, afterState, { requireLiveness = true, allowIncompleteStream = false, platform = process.platform } = {}) {
@@ -1569,6 +1692,9 @@ export async function dispatchClaude(options, dependencies = {}) {
   const mcpConfigPath = path.join(tempRoot, "mcp.json");
   try {
     assertOutsideRepository(cwd, tempRoot, "dispatcher temporary settings, hooks, and manifests", dependencies);
+    for (const [label, outputPath] of [["stdout evidence", stdoutFile], ["stderr evidence", stderrFile]]) {
+      assertOutsideRepository(cwd, outputPath, `${mode} ${label}`, dependencies);
+    }
     await writeFile(mcpConfigPath, '{"mcpServers":{}}\n', "utf8");
     validateMcpConfigText(await readFile(mcpConfigPath, "utf8"));
     let implementationBoundary = null;
@@ -1585,9 +1711,6 @@ export async function dispatchClaude(options, dependencies = {}) {
         throw new Error(`CAPABILITY_BLOCKED: ${PR_DIFF_SCOPE_MARKER} is review-only; implementation patch scope is derived automatically from declared edit_paths`);
       }
       implementationBoundary = validateBypassPermissionsBrief(prompt, cwd, tools);
-      for (const [label, outputPath] of [["stdout evidence", stdoutFile], ["stderr evidence", stderrFile]]) {
-        assertOutsideRepository(cwd, outputPath, `bypassPermissions ${label}`, dependencies);
-      }
       const captureWorktree = dependencies.captureWorktreeState ?? captureGitWorktreeState;
       implementationBaseline = await captureWorktree(cwd, dependencies);
       if (implementationBaseline.changedPaths.length > 0) {
@@ -1709,8 +1832,16 @@ export async function dispatchClaude(options, dependencies = {}) {
       result = { code: null, signal: null, stdout: error.partialStdout ?? "", stderr: error.partialStderr ?? "" };
     }
     let observedTools = [];
+    let deniedUnavailableToolAttempts = [];
+    let toolAuditEvidence = null;
     let auditError = null;
-    try { observedTools = auditObservedTools(result.stdout, tools); } catch (error) { auditError = error; }
+    if (!runError && result.code === 0) {
+      try {
+        toolAuditEvidence = auditObservedTools(result.stdout, tools, { permissionMode: mode });
+        observedTools = toolAuditEvidence.allowedToolUses.map((event) => event.name);
+        deniedUnavailableToolAttempts = toolAuditEvidence.deniedUnavailableToolAttempts;
+      } catch (error) { auditError = error; }
+    }
     let implementationChanges = null;
     let implementationVerificationError = null;
     if (implementationBoundary) {
@@ -1743,7 +1874,16 @@ export async function dispatchClaude(options, dependencies = {}) {
         `Claude CLI exited ${result.code}${result.signal ? ` (signal ${result.signal})` : ""}; post-run implementation evidence=${JSON.stringify(implementationChanges)}`,
       );
     }
-    return { kind: "dispatch", plan, observedTools, implementationChanges, exitCode: result.code };
+    return {
+      kind: "dispatch",
+      plan,
+      observedTools,
+      deniedUnavailableToolAttempts,
+      modelToolDiscipline: toolAuditEvidence.modelToolDiscipline,
+      capabilityContainment: toolAuditEvidence.capabilityContainment,
+      implementationChanges,
+      exitCode: result.code,
+    };
   } finally {
     await rm(tempRoot, { recursive: true, force: true });
   }

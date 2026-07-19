@@ -11,18 +11,46 @@
 //   test files (any path)         -> check-test-intent --file <p> (test-intent header; ratchet-on-touch:
 //                                    touch a test, bring it up to the header standard — new tests must
 //                                    comply, untouched legacy stays grandfathered in the repo-wide run)
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { execSync, execFileSync } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { isTestFile } from './lib/test-file-match.mjs';
 
-let filePath = '';
-try {
-  const payload = JSON.parse(readFileSync(0, 'utf8'));
-  filePath = payload?.tool_input?.file_path ?? '';
-} catch {
-  process.exit(0); // unparseable payload — never block on hook plumbing
+function pathKey(value) {
+  const normalized = path.resolve(value);
+  return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
 }
-if (!filePath) process.exit(0);
+
+function configuredProjectRoot() {
+  const scriptRoot = realpathSync.native(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'));
+  const configured = String(process.env.CLAUDE_PROJECT_DIR ?? '').trim();
+  if (!configured) return scriptRoot;
+  const configuredRoot = realpathSync.native(path.resolve(configured));
+  if (pathKey(configuredRoot) !== pathKey(scriptRoot)) {
+    throw new Error('CLAUDE_PROJECT_DIR does not match the repository root containing this hook');
+  }
+  return configuredRoot;
+}
+
+function blockInvalidPayload(message) {
+  console.error(`[gate-hook] ${message}`);
+  process.exit(2);
+}
+
+let projectRoot;
+let payload;
+try {
+  projectRoot = configuredProjectRoot();
+  payload = JSON.parse(readFileSync(0, 'utf8'));
+} catch (error) {
+  blockInvalidPayload(`malformed or unrooted PostToolUse payload: ${error.message}`);
+}
+if (!['Edit', 'Write'].includes(payload?.tool_name)) process.exit(0);
+const filePath = payload?.tool_input?.file_path;
+if (typeof filePath !== 'string' || filePath.trim().length === 0) {
+  blockInvalidPayload('invalid Edit/Write PostToolUse payload: tool_input.file_path is required');
+}
 
 const p = filePath.replace(/\\/g, '/');
 const isTest = isTestFile(p); // single-sourced in scripts/lib/test-file-match.mjs
@@ -62,7 +90,7 @@ function reportFailure(label, err) {
 
 for (const gate of [...new Set(gates)]) {
   try {
-    execSync(`npm run ${gate}`, { stdio: ['ignore', 'pipe', 'pipe'], timeout: 90_000 });
+    execSync(`npm run ${gate}`, { cwd: projectRoot, stdio: ['ignore', 'pipe', 'pipe'], timeout: 90_000 });
   } catch (err) {
     reportFailure(`\`npm run ${gate}\``, err);
   }
@@ -72,6 +100,7 @@ if (isTest) {
   // passed as a single argv element without quoting hazards.
   try {
     execFileSync('node', ['scripts/check-test-intent.mjs', '--file', filePath], {
+      cwd: projectRoot,
       stdio: ['ignore', 'pipe', 'pipe'],
       timeout: 60_000,
     });
