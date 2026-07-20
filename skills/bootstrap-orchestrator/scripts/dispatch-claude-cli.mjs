@@ -1806,7 +1806,7 @@ export function auditObservedTools(streamJson, allowedTools, { permissionMode, e
   const undeclaredSkillUses = events.filter((event) => event.name === "Skill")
     .filter((event) => typeof event.input?.skill !== "string" || !expectedSkills.includes(event.input.skill));
   if (undeclaredSkillUses.length > 0) {
-    throw new Error(`observed Skill tool input is not exactly caller-declared: ${undeclaredSkillUses.map((event) => String(event.input?.skill)).join(", ")}`);
+    throw new Error("observed Skill tool input is not exactly caller-declared");
   }
 
   const terminalResults = envelopes.filter((envelope) => envelope.value?.type === "result");
