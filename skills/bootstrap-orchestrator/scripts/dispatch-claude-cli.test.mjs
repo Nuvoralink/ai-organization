@@ -1861,6 +1861,27 @@ test("Sanitized Claude 2.1.215 init tolerates ambient built-in listings while bo
     ["Read", "Skill", "Edit"],
     options,
   ));
+  const missingSkillsField = live.split("\n").map((line) => {
+    const envelope = JSON.parse(line);
+    if (envelope.type === "system" && envelope.subtype === "init") delete envelope.skills;
+    return JSON.stringify(envelope);
+  }).join("\n");
+  assert.throws(
+    () => auditObservedTools(missingSkillsField, ["Read", "Skill", "Edit"], options),
+    /init skills must be a string array/iu,
+  );
+  assert.throws(
+    () => auditObservedTools(
+      streamFor({ observedSkills: [`ambient-${"x".repeat(1024 * 1024)}`] }),
+      ["Read", "Skill", "Edit"],
+      options,
+    ),
+    (error) => {
+      assert.equal(error.message, "observed Skill tool input is not exactly caller-declared");
+      assert.ok(error.message.length < 256, "model-controlled skill input must not reach error output");
+      return true;
+    },
+  );
   assert.deepEqual(verifyPreToolHookCoverage(live), { observedHookEvents: 2, coveredToolEvents: 2 });
   assert.deepEqual(verifyImplementationChanges(
     live,
