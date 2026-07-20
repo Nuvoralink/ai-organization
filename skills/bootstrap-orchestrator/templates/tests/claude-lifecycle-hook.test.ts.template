@@ -4,10 +4,11 @@
  * Surface: scripts/claude-lifecycle-hook.mjs
  * Authority: six-part dispatch brief + content-free lifecycle telemetry contract
  *
- * Product proof: rendered GitHub issue briefs are accepted, placeholder/comment-only or sibling-section
- * bodies are rejected, and supplied prompt content never becomes retained telemetry.
+ * Product proof: rendered GitHub issue briefs are accepted, implementation briefs declare a bounded
+ * single-turn fit or coherent verified checkpoints, placeholder/comment-only or sibling-section bodies
+ * are rejected, and supplied prompt content never becomes retained telemetry.
  * Killer mutations: count headings without substantive bodies; scan beyond the current heading;
- * persist the raw hook payload.
+ * accept implementation work after removing Delivery fit; persist the raw hook payload.
  */
 import {
   mkdtempSync,
@@ -79,6 +80,16 @@ function fixture() {
         env_allowlist: [],
         commands: [{ id: 'documentation-proof', argv: ['npm', 'run', 'proof:documentation'], timeout_ms: 30000, parser: { kind: 'patterns', minimum_output_bytes: 1, minimum_executed: 1, required_patterns: ['DOC_PROOF_PASS'] } }]
       }
+    }, {
+      id: 'internal-read-only',
+      assurance: {
+        version: 1,
+        classification: 'internal_read_only',
+        safe_local_only: true,
+        capabilities: ['read_only_integrity'],
+        env_allowlist: [],
+        commands: [{ id: 'repository-binding', argv: ['internal', 'repository-binding'], timeout_ms: 30000, parser: { kind: 'internal_repository_binding' } }],
+      }
     }]
   }));
   git(root, ['add', '.']);
@@ -97,7 +108,7 @@ function run(root: string, payload: unknown, launchCwd = root) {
   });
 }
 
-function renderedBrief(taskId: string) {
+function renderedBrief(taskId: string, completionMode: 'implementation' | 'read-only' = 'implementation') {
   const contract = {
     schema_version: 2,
     id: taskId,
@@ -111,9 +122,11 @@ function renderedBrief(taskId: string) {
     blast_radius: { feeders: ['TaskCreated'], producers: ['proof runner'], transformers: ['Claude adapter'], persistence: ['attempt state'], validators: ['task governor'], consumers: ['TaskCompleted'], surfaces: ['lifecycle'], retirements: ['status booleans'] },
     procedure: ['Validate the accepted contract.'],
     acceptance: ['The accepted attempt is persisted.'],
-    proofs: [{ id: 'documentation-proof', profile_id: 'documentation', capability: 'documentation_contract', proves: 'The generated lifecycle is wired.', surface: 'task lifecycle', authority: 'shared controller', risk_classes: ['documentation'], mutation: { required: false, case_id: null, rationale: 'This bootstrap fixture validates wiring; the universal mutation suite validates evidence integrity.' }, required: true }],
-    action_authority: { allowed: ['read', 'test'], conditional: [], human_required: [] },
-    completion: { tier: 'implemented', honesty_clause: 'Name unreached surfaces.', unreached_surfaces: [], doctrine_loop: 'none' }
+    proofs: completionMode === 'read-only'
+      ? [{ id: 'read-only-binding', profile_id: 'internal-read-only', capability: 'read_only_integrity', proves: 'The repository binding remains unchanged.', surface: 'repository', authority: 'git binding', risk_classes: ['documentation'], mutation: { required: false, case_id: null, rationale: 'A read-only task cannot execute mutation.' }, required: true }]
+      : [{ id: 'documentation-proof', profile_id: 'documentation', capability: 'documentation_contract', proves: 'The generated lifecycle is wired.', surface: 'task lifecycle', authority: 'shared controller', risk_classes: ['documentation'], mutation: { required: false, case_id: null, rationale: 'This bootstrap fixture validates wiring; the universal mutation suite validates evidence integrity.' }, required: true }],
+    action_authority: { allowed: completionMode === 'read-only' ? ['read'] : ['read', 'test'], conditional: [], human_required: [] },
+    completion: { tier: completionMode === 'read-only' ? 'analysis' : 'implemented', honesty_clause: 'Name unreached surfaces.', unreached_surfaces: [], doctrine_loop: 'none' }
   };
   return [
     '### Context',
@@ -121,6 +134,9 @@ function renderedBrief(taskId: string) {
     '### Exact paths',
     'scripts/claude-lifecycle-hook.mjs',
     '### Numbered procedure',
+    '**Delivery fit**: single-turn',
+    '**Estimated scope**: 1 lifecycle hook, 1 regression test, and no product consumers.',
+    '**Coherence**: one agent can update and verify the adapter contract atomically.',
     '1. Inspect the real output.',
     '### Output contract',
     'Return command-owned proof.',
@@ -129,7 +145,7 @@ function renderedBrief(taskId: string) {
     '### Self-verifiable acceptance',
     'The hostile fixture is blocked.',
     '### Completion tier',
-    'implementation',
+    completionMode,
     `TASK_CONTRACT_JSON:${JSON.stringify(contract)}`,
   ].join('\n');
 }
@@ -165,6 +181,83 @@ describe('Claude lifecycle bootstrap contract', () => {
     });
     expect(siblingOnly.status).toBe(2);
     expect(siblingOnly.stderr).toContain('Context');
+
+    const noDeliveryFit = run(root, {
+      hook_event_name: 'TaskCreated',
+      session_id: 'session-no-delivery-fit',
+      task_id: 'TASK-NO-DELIVERY-FIT',
+      task_description: renderedBrief('TASK-NO-DELIVERY-FIT').replace(
+        '**Delivery fit**: single-turn\n**Estimated scope**: 1 lifecycle hook, 1 regression test, and no product consumers.\n**Coherence**: one agent can update and verify the adapter contract atomically.\n',
+        '',
+      ),
+    });
+    expect(noDeliveryFit.status).toBe(2);
+    expect(noDeliveryFit.stderr).toContain('Delivery fit');
+
+    const placeholderDeliveryFit = run(root, {
+      hook_event_name: 'TaskCreated',
+      session_id: 'session-placeholder-delivery-fit',
+      task_id: 'TASK-PLACEHOLDER-DELIVERY-FIT',
+      task_description: renderedBrief('TASK-PLACEHOLDER-DELIVERY-FIT').replace(
+        '**Estimated scope**: 1 lifecycle hook, 1 regression test, and no product consumers.\n**Coherence**: one agent can update and verify the adapter contract atomically.',
+        '**Estimated scope**: TBD\n**Coherence**: fill later',
+      ),
+    });
+    expect(placeholderDeliveryFit.status).toBe(2);
+    expect(placeholderDeliveryFit.stderr).toContain('single-turn needs Estimated scope and Coherence');
+
+    const ambiguousDeliveryFit = run(root, {
+      hook_event_name: 'TaskCreated',
+      session_id: 'session-ambiguous-delivery-fit',
+      task_id: 'TASK-AMBIGUOUS-DELIVERY-FIT',
+      task_description: `${renderedBrief('TASK-AMBIGUOUS-DELIVERY-FIT')}\n**Delivery fit**: checkpointed\n- Checkpoint 1: update parser | authority state: one parser | verification: unit test exit 0.\n- Checkpoint 2: update adapter | authority state: one adapter | verification: integration test exit 0.`,
+    });
+    expect(ambiguousDeliveryFit.status).toBe(2);
+    expect(ambiguousDeliveryFit.stderr).toContain('choose exactly one');
+
+    const malformedCheckpoint = run(root, {
+      hook_event_name: 'TaskCreated',
+      session_id: 'session-malformed-checkpoint',
+      task_id: 'TASK-MALFORMED-CHECKPOINT',
+      task_description: renderedBrief('TASK-MALFORMED-CHECKPOINT').replace(
+        '**Delivery fit**: single-turn\n**Estimated scope**: 1 lifecycle hook, 1 regression test, and no product consumers.\n**Coherence**: one agent can update and verify the adapter contract atomically.',
+        '**Delivery fit**: checkpointed\n- Checkpoint 1: update parser | authority state: one parser | verification: unit test exit 0.\n- Checkpoint 2: update adapter | authority state: one adapter.',
+      ),
+    });
+    expect(malformedCheckpoint.status).toBe(2);
+    expect(malformedCheckpoint.stderr).toContain('checkpointed needs ordered checkpoints');
+
+    const reorderedCheckpoint = run(root, {
+      hook_event_name: 'TaskCreated',
+      session_id: 'session-reordered-checkpoint',
+      task_id: 'TASK-REORDERED-CHECKPOINT',
+      task_description: renderedBrief('TASK-REORDERED-CHECKPOINT').replace(
+        '**Delivery fit**: single-turn\n**Estimated scope**: 1 lifecycle hook, 1 regression test, and no product consumers.\n**Coherence**: one agent can update and verify the adapter contract atomically.',
+        '**Delivery fit**: checkpointed\n- Checkpoint 2: update adapter | authority state: one adapter | verification: integration test exit 0.\n- Checkpoint 1: update parser | authority state: one parser | verification: unit test exit 0.',
+      ),
+    });
+    expect(reorderedCheckpoint.status).toBe(2);
+    expect(reorderedCheckpoint.stderr).toContain('checkpointed needs ordered checkpoints');
+
+    const checkpointed = run(root, {
+      hook_event_name: 'TaskCreated',
+      session_id: 'session-checkpointed',
+      task_id: 'TASK-CHECKPOINTED',
+      task_description: renderedBrief('TASK-CHECKPOINTED').replace(
+        '**Delivery fit**: single-turn\n**Estimated scope**: 1 lifecycle hook, 1 regression test, and no product consumers.\n**Coherence**: one agent can update and verify the adapter contract atomically.',
+        '**Delivery fit**: checkpointed\n- Checkpoint 1: update parser | authority state: one parser | verification: unit test exit 0.\n- Checkpoint 2: update adapter | authority state: one adapter | verification: integration test exit 0.',
+      ),
+    });
+    expect(checkpointed.status, checkpointed.stderr).toBe(0);
+
+    const readOnly = run(root, {
+      hook_event_name: 'TaskCreated',
+      session_id: 'session-read-only',
+      task_id: 'TASK-READ-ONLY',
+      task_description: renderedBrief('TASK-READ-ONLY', 'read-only')
+        .replace('**Delivery fit**: single-turn\n**Estimated scope**: 1 lifecycle hook, 1 regression test, and no product consumers.\n**Coherence**: one agent can update and verify the adapter contract atomically.\n', ''),
+    });
+    expect(readOnly.status, readOnly.stderr).toBe(0);
   });
 
   it('uses official SubagentStop report evidence and rejects an invented TaskCompleted report field', () => {

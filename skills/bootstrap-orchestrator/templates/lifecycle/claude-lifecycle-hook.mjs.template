@@ -166,6 +166,39 @@ function tierFrom(text) {
   return undefined;
 }
 
+function implementationDeliveryFitFailure(text) {
+  const lines = meaningfulLines(text);
+  const substantive = (value) => typeof value === 'string'
+    && value.trim().length > 0
+    && !/^(?:tbd|todo|placeholder|fill\s+later|unknown|n\/?a|none)(?:\b|$)/i.test(value.trim());
+  const fits = lines.flatMap((line, index) => {
+    const match = line.match(/^\s*(?:[-*+]\s+)?(?:\*\*)?Delivery fit(?:\*\*)?\s*:\s*(single-turn|checkpointed)\b/i);
+    return match ? [{ index, mode: match[1].toLowerCase() }] : [];
+  });
+  if (fits.length !== 1) return 'Delivery fit (choose exactly one of single-turn or checkpointed)';
+  const [{ index: fitIndex, mode }] = fits;
+  const nextHeading = lines.findIndex((line, index) => index > fitIndex && /^\s*#{1,6}\s+/.test(line));
+  const block = lines.slice(fitIndex, nextHeading < 0 ? lines.length : nextHeading);
+  if (mode === 'single-turn') {
+    const estimate = block.map((line) => line.match(/^\s*(?:[-*+]\s+)?(?:\*\*)?Estimated scope(?:\*\*)?\s*:\s*(.+)$/i)?.[1]).find((value) => value !== undefined);
+    const coherence = block.map((line) => line.match(/^\s*(?:[-*+]\s+)?(?:\*\*)?Coherence(?:\*\*)?\s*:\s*(.+)$/i)?.[1]).find((value) => value !== undefined);
+    const hasEstimate = substantive(estimate);
+    const hasCoherence = substantive(coherence);
+    return hasEstimate && hasCoherence ? undefined : 'Delivery fit (single-turn needs Estimated scope and Coherence)';
+  }
+  const checkpoints = block.flatMap((line) => {
+    const match = line.match(/^\s*(?:[-*+]\s+)?Checkpoint\s+(\d+)\s*:\s*(.+)$/i);
+    return match ? [{ number: Number(match[1]), body: match[2] }] : [];
+  });
+  const ordered = checkpoints.length >= 2 && checkpoints.every((checkpoint, index) => checkpoint.number === index + 1);
+  const safe = checkpoints.every((checkpoint) => {
+    const authorityState = checkpoint.body.match(/\bauthority state\s*:\s*([^|]+)/i)?.[1];
+    const verification = checkpoint.body.match(/\bverification\s*:\s*([^|]+)/i)?.[1];
+    return substantive(authorityState) && substantive(verification);
+  });
+  return ordered && safe ? undefined : 'Delivery fit (checkpointed needs ordered checkpoints with authority state and verification)';
+}
+
 function changedFiles(root) {
   const upstream = `origin/${INTEGRATION_BRANCH}`;
   const base = gitText(['merge-base', 'HEAD', upstream], root).trim();
@@ -250,11 +283,15 @@ function handle(payload, root) {
       const missing = missingSections(description, BRIEF_SECTIONS);
       const tier = tierFrom(description);
       if (!tier) missing.push('Completion tier');
+      if (tier === 'implementation') {
+        const deliveryFitFailure = implementationDeliveryFitFailure(description);
+        if (deliveryFitFailure) missing.push(deliveryFitFailure);
+      }
       const contract = structuredMarker(description, 'TASK_CONTRACT_JSON:');
       if (!contract) missing.push('TASK_CONTRACT_JSON');
       if (missing.length) {
         recordEvent(root, payload, { outcome: 'block', missingSectionCount: missing.length });
-        block(`[lifecycle] TaskCreated blocked. Add explicit, substantive sections for: ${missing.join(', ')}. Procedure needs a numbered step.`);
+        block(`[lifecycle] TaskCreated blocked. Add explicit, substantive sections for: ${missing.join(', ')}. Procedure needs a numbered step; implementation work also needs a valid Delivery fit declaration.`);
         return;
       }
       if (!taskKey) return block('[lifecycle] TaskCreated blocked: task_id missing.');

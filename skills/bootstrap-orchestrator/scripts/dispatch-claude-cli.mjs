@@ -1568,11 +1568,49 @@ function collectToolUseEvents(value, events) {
   }
 }
 
-function collectPreToolHookEvents(value, events) {
-  const hook = value?.type === "hook_event" ? value.hook_event : null;
-  if (hook?.hook_event_name === "PreToolUse" && typeof hook.tool_name === "string" && typeof hook.tool_use_id === "string") {
-    events.push({ id: hook.tool_use_id, name: hook.tool_name });
+function correlatedNativePreToolHookEvents(envelopes) {
+  const pendingTools = [];
+  const resultedToolIds = new Set();
+  const starts = new Map();
+  const completed = [];
+  for (const { line, value } of envelopes) {
+    const toolUses = [];
+    collectToolUseEvents(value, toolUses);
+    for (const toolUse of toolUses) pendingTools.push({ ...toolUse, sessionId: value.session_id, line, claimed: false });
+    const toolResults = [];
+    collectToolResultEvents(value, toolResults);
+    for (const toolResult of toolResults) resultedToolIds.add(toolResult.id);
+
+    if (value?.type !== "system" || !["hook_started", "hook_response"].includes(value?.subtype) || value?.hook_event !== "PreToolUse") continue;
+    const hookId = value.hook_id;
+    const toolName = typeof value.hook_name === "string" && value.hook_name.startsWith("PreToolUse:")
+      ? value.hook_name.slice("PreToolUse:".length)
+      : null;
+    if (typeof hookId !== "string" || hookId.length === 0 || !toolName || typeof value.session_id !== "string" || value.session_id.length === 0) {
+      throw new Error(`CAPABILITY_BLOCKED: malformed included PreToolUse ${value.subtype} envelope at stream-json line ${line}`);
+    }
+    if (value.subtype === "hook_started") {
+      if (starts.has(hookId)) throw new Error(`CAPABILITY_BLOCKED: duplicate included PreToolUse hook identity: ${hookId}`);
+      const toolUse = pendingTools.find((candidate) => !candidate.claimed && !resultedToolIds.has(candidate.id) && candidate.name === toolName && candidate.sessionId === value.session_id && candidate.line < line);
+      if (!toolUse) throw new Error(`CAPABILITY_BLOCKED: included PreToolUse hook has no earlier matching bounded tool_use: ${toolName}`);
+      toolUse.claimed = true;
+      starts.set(hookId, { id: toolUse.id, name: toolName, sessionId: value.session_id, line });
+      continue;
+    }
+    const start = starts.get(hookId);
+    if (!start || start.name !== toolName || start.sessionId !== value.session_id || start.line >= line) {
+      throw new Error(`CAPABILITY_BLOCKED: included PreToolUse hook_response lacks one earlier matching hook_started: ${hookId}`);
+    }
+    if (!Number.isInteger(value.exit_code) || !["success", "error"].includes(value.outcome)
+      || (value.outcome === "success" && value.exit_code !== 0) || (value.outcome === "error" && value.exit_code === 0)
+      || resultedToolIds.has(start.id)) {
+      throw new Error(`CAPABILITY_BLOCKED: included PreToolUse hook_response has invalid completion evidence: ${hookId}`);
+    }
+    completed.push({ id: start.id, name: start.name });
+    starts.delete(hookId);
   }
+  if (starts.size > 0) throw new Error(`CAPABILITY_BLOCKED: included PreToolUse hook_started lacks matching hook_response: ${[...starts.keys()].join(", ")}`);
+  return completed;
 }
 
 function collectToolResultEvents(value, events) {
@@ -1585,13 +1623,8 @@ function collectToolResultEvents(value, events) {
 }
 
 export function verifyPreToolHookCoverage(streamJson, toolEvents = observedToolEvents(streamJson)) {
-  const hookEvents = [];
-  for (const [index, line] of streamJson.split(/\r?\n/u).entries()) {
-    if (!line.trim()) continue;
-    let value;
-    try { value = JSON.parse(line); } catch (error) { throw new Error(`stream-json line ${index + 1} is invalid JSON: ${error.message}`); }
-    collectPreToolHookEvents(value, hookEvents);
-  }
+  const envelopes = parsedStreamEnvelopes(streamJson);
+  const hookEvents = correlatedNativePreToolHookEvents(envelopes);
   const hookKeys = new Set(hookEvents.map((event) => `${event.id}\0${event.name}`));
   const missing = toolEvents
     .filter((event) => IMPLEMENTATION_TOOLS.has(event.name))
@@ -1657,6 +1690,31 @@ function exactUniqueToolSet(actual, expected) {
     && [...actualSet].every((tool) => expectedSet.has(tool));
 }
 
+function validatePreInitEnvelopes(envelopes, initEnvelope) {
+  const initIndex = envelopes.indexOf(initEnvelope);
+  const pending = new Map();
+  for (const envelope of envelopes.slice(0, initIndex)) {
+    const value = envelope.value;
+    if (value?.type !== "system" || !["hook_started", "hook_response"].includes(value?.subtype)
+      || value?.hook_event !== "SessionStart" || typeof value?.hook_id !== "string" || value.hook_id.length === 0
+      || typeof value?.hook_name !== "string" || !value.hook_name.startsWith("SessionStart:")
+      || value.session_id !== initEnvelope.value.session_id) {
+      throw new Error("successful tool audit permits only correlated SessionStart hook envelopes before init");
+    }
+    if (value.subtype === "hook_started") {
+      if (pending.has(value.hook_id)) throw new Error("successful tool audit pre-init SessionStart hook identity must be unique");
+      pending.set(value.hook_id, { hookName: value.hook_name, line: envelope.line });
+      continue;
+    }
+    const start = pending.get(value.hook_id);
+    if (!start || start.hookName !== value.hook_name || start.line >= envelope.line || value.outcome !== "success" || value.exit_code !== 0) {
+      throw new Error("successful tool audit pre-init SessionStart hook_response lacks one successful matching hook_started");
+    }
+    pending.delete(value.hook_id);
+  }
+  if (pending.size > 0) throw new Error("successful tool audit pre-init SessionStart hook_started lacks matching hook_response");
+}
+
 export function auditObservedTools(streamJson, allowedTools, { permissionMode, expectedSkills = [] } = {}) {
   const allowed = new Set(allowedTools);
   const envelopes = parsedStreamEnvelopes(streamJson);
@@ -1677,7 +1735,7 @@ export function auditObservedTools(streamJson, allowedTools, { permissionMode, e
 
   const init = envelopes.filter((envelope) => envelope.value?.type === "system" && envelope.value?.subtype === "init");
   if (init.length !== 1) throw new Error("successful tool audit requires exactly one stream init envelope");
-  if (envelopes[0] !== init[0]) throw new Error("successful tool audit init must be the first protocol envelope");
+  validatePreInitEnvelopes(envelopes, init[0]);
   if (!exactUniqueToolSet(init[0].value.tools, allowedTools)) throw new Error("successful tool audit init tools do not match the exact allowed profile as a unique set");
   if (init[0].value.permissionMode !== permissionMode) throw new Error("successful tool audit init permission mode does not match the dispatch profile");
   if (!Array.isArray(init[0].value.mcp_servers) || init[0].value.mcp_servers.length !== 0) throw new Error("successful tool audit init MCP servers must be exactly empty");

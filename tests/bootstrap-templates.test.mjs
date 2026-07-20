@@ -144,29 +144,72 @@ test('Proves: ORG-AUTH-004; Test type: authority-retirement mutation; Surface: b
 
 test('Proves: ORG-PLAN-001; Test type: mutation; Surface: decision-log template; Authority: decision-sprint linkage schema; Killer mutation: restore the obsolete five-column header; Gated command: npm test', () => {
   const source = read('templates/docs/decision-log.md.template');
-  const validates = (text) => text.includes('| ID | Title | Area | Phase | Sprint | Status | Notes |');
-  assert.equal(validates(source), true);
-  assert.equal(validates(source.replace('| ID | Title | Area | Phase | Sprint | Status | Notes |', '| ID | Decision | Basis | Date | Reversal trigger |')), false);
+  const header = source.split(/\r?\n/u).find((line) => line.startsWith('| ID |'));
+  const columns = header.split('|').map((cell) => cell.trim()).filter(Boolean);
+  assert.deepEqual(columns, ['ID', 'Title', 'Area', 'Phase', 'Sprint', 'Status', 'Notes']);
+  assert.notDeepEqual(['ID', 'Decision', 'Basis', 'Date', 'Reversal trigger'], columns);
 });
 
-test('Proves: ORG-TEST-001; Test type: mutation; Surface: test-intent rule and gate templates; Authority: test-intent doctrine; Killer mutation: remove Killer mutation or Gated command enforcement; Gated command: npm test', () => {
-  const rule = read('templates/rules/test-intent.template.md');
-  const gate = read('templates/gates/check-test-intent.mjs.template');
-  const validates = (ruleText, gateText) => ruleText.includes('Killer mutation:')
-    && ruleText.includes('Gated command:')
-    && gateText.includes("extractLineValue(h, 'Killer mutation')")
-    && gateText.includes("extractLineValue(h, 'Gated command')");
-  assert.equal(validates(rule, gate), true);
-  assert.equal(validates(rule, gate.replace("if (!extractLineValue(h, 'Killer mutation'))", "if (false)")), false);
+test('Proves: ORG-TEST-001; Test type: executable gate mutation; Surface: generated check-test-intent.mjs; Authority: test-intent header contract; Killer mutation: remove Killer mutation or Gated command and keep the executable gate green; Gated command: npm test', (t) => {
+  const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'test-intent executable gate-'));
+  t.after(() => fs.rmSync(fixtureRoot, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(fixtureRoot, 'src'), { recursive: true });
+  fs.mkdirSync(path.join(fixtureRoot, 'scripts'), { recursive: true });
+  fs.writeFileSync(path.join(fixtureRoot, 'requirements.md'), '# ORG-TEST-001\n');
+  const gate = read('templates/gates/check-test-intent.mjs.template')
+    .replaceAll('{{SRC_DIRS}}', "'src'")
+    .replaceAll('{{ID_SOURCE_FILES}}', "'requirements.md'")
+    .replaceAll('{{PROJECT_TEST_TYPES}}', '')
+    .replaceAll('{{RULES_DIR}}', '.claude/rules')
+    .replaceAll('{{SCRIPTS_DIR}}', 'scripts')
+    .replaceAll('{{PLACEHOLDER}}', 'configured value');
+  const gatePath = path.join(fixtureRoot, 'scripts', 'check-test-intent.mjs');
+  const testPath = path.join(fixtureRoot, 'src', 'proof.test.ts');
+  const baseline = `/**
+ * Proves: ORG-TEST-001
+ * Test type: unit
+ * Surface: generated gate fixture
+ * Authority: test-intent header contract
+ * What this test proves about the product: Required proof metadata is executable policy.
+ * Killer mutation: remove one required header field
+ * Gated command: npm test
+ */
+export const proof = true;
+`;
+  fs.writeFileSync(gatePath, gate);
+  const runGate = () => spawnSync(process.execPath, [gatePath], { cwd: fixtureRoot, encoding: 'utf8' });
+  const assertPass = () => {
+    const result = runGate();
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /check-test-intent: OK/u);
+  };
+  fs.writeFileSync(testPath, baseline);
+  assertPass();
+  for (const field of ['Killer mutation', 'Gated command']) {
+    const mutated = baseline.replace(new RegExp(`^ \\* ${field}:.*\\r?\\n`, 'mu'), '');
+    fs.writeFileSync(testPath, mutated);
+    const failed = runGate();
+    assert.equal(failed.status, 1, `${field}: ${failed.stdout}`);
+    assert.match(failed.stderr, new RegExp(`missing "${field}:" line`, 'u'));
+    fs.writeFileSync(testPath, baseline);
+    assertPass();
+  }
+});
+
+test('Proves: ORG-FLEET-001; Test type: template sentinel mutation; Surface: implementer template; Authority: orchestrator delegation boundary; Killer mutation: remove the implementer no-delegation rule; Gated command: npm test', () => {
+  const implementer = read('templates/agents/implementer.template.md');
+  assert.match(implementer, /Do not spawn or delegate to other agents/u);
+  assert.match(implementer, /Delegation and fleet coordination are orchestrator authority/u);
 });
 
 test('Proves: ORG-FLEET-001; Test type: mutation; Surface: bootstrap roster; Authority: agent-role registry; Killer mutation: omit either kickoff or premise challenger; Gated command: npm test', () => {
   const skill = read('SKILL.md');
   const claude = read('templates/CLAUDE.md.template');
   const agents = read('templates/AGENTS.md.template');
-  const validates = (text) => text.includes('premise-and-architecture') && text.includes('sprint-kickoff');
-  for (const source of [skill, claude, agents]) assert.equal(validates(source), true);
-  assert.equal(validates(skill.replaceAll('sprint-kickoff', 'kickoff-removed')), false);
+  for (const source of [skill, claude, agents]) {
+    assert.match(source, /premise-and-architecture/u);
+    assert.match(source, /sprint-kickoff/u);
+  }
 });
 
 test('Proves: ORG-OVERLAY-001; Test type: mutation; Surface: existing-project bootstrap; Authority: overlay ownership manifest; Killer mutation: permit copy-all or overwrite a dirty managed target; Gated command: npm test', () => {
@@ -251,25 +294,15 @@ test('Proves: ORG-HOOK-002; Test type: telemetry-root mutation; Surface: lifecyc
     auxara: fs.readFileSync(path.join(root, 'overlays', 'auxara-dialer', 'project-files', 'scripts', 'claude-lifecycle-hook.mjs'), 'utf8'),
     coachai: fs.readFileSync(path.join(root, 'overlays', 'coachai', 'project-files', 'scripts', 'claude-lifecycle-hook.mjs'), 'utf8'),
   };
-  const validates = (name, source) => {
-    if (name === 'bootstrap') return source.includes('root = configuredProjectRoot();')
-      && source.includes('CLAUDE_PROJECT_DIR does not match the script-derived repository root')
-      && !source.includes('repoRoot(payload?.cwd ?? process.cwd())');
-    if (name === 'auxara') return source.includes('const telemetryDir = telemetryDirectory(projectRoot);') && !source.includes('telemetryDirectory(process.cwd())');
-    return source.includes("const scriptRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');")
-      && source.includes('fs.realpathSync.native(path.resolve(configuredProjectDir))')
-      && source.includes('CLAUDE_PROJECT_DIR does not match the script-derived repository root')
-      && !source.includes('const root = process.cwd();');
-  };
-  for (const [name, source] of Object.entries(sources)) {
-    assert.equal(validates(name, source), true, `${name} roots lifecycle telemetry outside cwd`);
-  }
-  assert.equal(validates('bootstrap', sources.bootstrap.replace('root = configuredProjectRoot();', 'root = repoRoot(payload?.cwd ?? process.cwd());')), false);
-  assert.equal(validates('auxara', sources.auxara.replace('const telemetryDir = telemetryDirectory(projectRoot);', 'const telemetryDir = telemetryDirectory(process.cwd());')), false);
-  assert.equal(validates('coachai', sources.coachai.replace(
-    "const scriptRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');",
-    'const scriptRoot = process.cwd();',
-  )), false);
+  assert.match(sources.bootstrap, /root = configuredProjectRoot\(\);/u);
+  assert.match(sources.bootstrap, /CLAUDE_PROJECT_DIR does not match the script-derived repository root/u);
+  assert.doesNotMatch(sources.bootstrap, /repoRoot\(payload\?\.cwd \?\? process\.cwd\(\)\)/u);
+  assert.match(sources.auxara, /const telemetryDir = telemetryDirectory\(projectRoot\);/u);
+  assert.doesNotMatch(sources.auxara, /telemetryDirectory\(process\.cwd\(\)\)/u);
+  assert.match(sources.coachai, /const scriptRoot = path\.resolve\(path\.dirname\(fileURLToPath\(import\.meta\.url\)\), '\.\.'\);/u);
+  assert.match(sources.coachai, /fs\.realpathSync\.native\(path\.resolve\(configuredProjectDir\)\)/u);
+  assert.match(sources.coachai, /CLAUDE_PROJECT_DIR does not match the script-derived repository root/u);
+  assert.doesNotMatch(sources.coachai, /const root = process\.cwd\(\);/u);
 });
 
 test('Proves: ORG-HOOK-003; Test type: runtime counterexample; Surface: Auxara and CoachAI lifecycle telemetry; Authority: configured project root; Killer mutation: derive telemetry from the nested launch cwd; Gated command: npm test', (t) => {
@@ -339,12 +372,90 @@ test('Proves: ORG-HOOK-003C; Test type: canonical-template runtime mutation; Sur
   fs.mkdirSync(path.join(fixtureRoot, 'scripts'), { recursive: true });
   fs.mkdirSync(path.join(fixtureRoot, '.ai-organization', 'runtime'), { recursive: true });
   fs.cpSync(path.join(root, 'core'), path.join(fixtureRoot, '.ai-organization', 'runtime', 'core'), { recursive: true });
+  fs.cpSync(path.join(root, 'policies'), path.join(fixtureRoot, '.ai-organization', 'runtime', 'policies'), { recursive: true });
+  fs.cpSync(path.join(root, 'schemas'), path.join(fixtureRoot, '.ai-organization', 'runtime', 'schemas'), { recursive: true });
   const adapter = read('templates/lifecycle/claude-lifecycle-hook.mjs.template')
     .replaceAll('{{INTEGRATION_BRANCH}}', 'main')
     .replaceAll('{{TASK_COMPLETION_GATE}}', 'verify');
   fs.writeFileSync(path.join(fixtureRoot, 'scripts', 'claude-lifecycle-hook.mjs'), adapter);
   assert.equal(spawnSync('git', ['init', '-b', 'root-proof'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);
+  assert.equal(spawnSync('git', ['config', 'user.email', 'lifecycle@example.invalid'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);
+  assert.equal(spawnSync('git', ['config', 'user.name', 'Lifecycle Test'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);
+  fs.writeFileSync(path.join(fixtureRoot, 'README.md'), 'base\n');
+  fs.writeFileSync(path.join(fixtureRoot, 'package.json'), JSON.stringify({ private: true, scripts: { verify: "node -e \"console.log('VERIFY_PASS')\"", 'proof:documentation': "node -e \"console.log('DOC_PROOF_PASS')\"" } }));
+  fs.writeFileSync(path.join(fixtureRoot, '.ai-organization', 'proof-profiles.json'), JSON.stringify({
+    version: 2,
+    integration_branch: 'main',
+    lifecycle_hook_timeout_ms: 1800000,
+    lifecycle_timeout_safety_margin_ms: 60000,
+    lifecycle_roles_by_completion_mode: { 'read-only': ['implementer', 'adversarial-reviewer'], implementation: ['implementer'] },
+    lifecycle_supported_risk_classes: ['documentation'],
+    profiles: [{
+      id: 'documentation',
+      assurance: {
+        version: 1,
+        classification: 'local_non_mutating',
+        safe_local_only: true,
+        capabilities: ['documentation_contract'],
+        env_allowlist: [],
+        commands: [{ id: 'documentation-proof', argv: ['npm', 'run', 'proof:documentation'], timeout_ms: 30000, parser: { kind: 'patterns', minimum_output_bytes: 1, minimum_executed: 1, required_patterns: ['DOC_PROOF_PASS'] } }],
+      },
+    }, {
+      id: 'internal-read-only',
+      assurance: {
+        version: 1,
+        classification: 'internal_read_only',
+        safe_local_only: true,
+        capabilities: ['read_only_integrity'],
+        env_allowlist: [],
+        commands: [{ id: 'repository-binding', argv: ['internal', 'repository-binding'], timeout_ms: 30000, parser: { kind: 'internal_repository_binding' } }],
+      },
+    }],
+  }));
+  assert.equal(spawnSync('git', ['add', '.'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);
+  assert.equal(spawnSync('git', ['commit', '-m', 'base'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);
+  assert.equal(spawnSync('git', ['update-ref', 'refs/remotes/origin/main', 'HEAD'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);
   const executable = path.join(fixtureRoot, 'scripts', 'claude-lifecycle-hook.mjs');
+  const runLifecycle = (payload) => spawnSync(process.execPath, [executable], {
+    cwd: fixtureRoot,
+    input: JSON.stringify(payload),
+    encoding: 'utf8',
+    env: { ...process.env, CLAUDE_PROJECT_DIR: fixtureRoot },
+  });
+  const contract = (taskId, tier = 'implementation') => ({
+    schema_version: 2,
+    id: taskId,
+    product_intent: 'Execute the generated lifecycle delivery-fit authority.',
+    settled_decisions: ['The generated lifecycle hook owns TaskCreated delivery-fit validation.'],
+    scope: { in: ['generated hook'], out: ['product code'], too_little: 'Presence checks.', too_much: 'Production actions.' },
+    execution: { implementer_role: 'implementer' },
+    paths: { read: ['README.md'], edit: ['README.md'], read_only: [], output: ['tmp/agent-assurance/**'] },
+    risk: { level: 'low', classes: ['documentation'], reasons: ['generated fixture'] },
+    authorities: ['core/lifecycle'],
+    blast_radius: { feeders: ['TaskCreated'], producers: ['hook'], transformers: ['adapter'], persistence: ['attempt'], validators: ['controller'], consumers: ['TaskCompleted'], surfaces: ['lifecycle'], retirements: ['presence-only validation'] },
+    procedure: ['Execute the real generated hook.'],
+    acceptance: ['TaskCreated accepts only a valid delivery fit.'],
+    proofs: tier === 'read-only'
+      ? [{ id: 'read-only-binding', profile_id: 'internal-read-only', capability: 'read_only_integrity', proves: 'The repository binding remains unchanged.', surface: 'repository', authority: 'git binding', risk_classes: ['documentation'], mutation: { required: false, case_id: null, rationale: 'A read-only task cannot execute mutation.' }, required: true }]
+      : [{ id: 'documentation-proof', profile_id: 'documentation', capability: 'documentation_contract', proves: 'Generated lifecycle behavior executes.', surface: 'TaskCreated', authority: 'lifecycle hook', risk_classes: ['documentation'], mutation: { required: false, case_id: null, rationale: 'This fixture tests adapter policy.' }, required: true }],
+    action_authority: { allowed: tier === 'read-only' ? ['read'] : ['read', 'test'], conditional: [], human_required: [] },
+    completion: { tier: tier === 'read-only' ? 'analysis' : 'implemented', honesty_clause: 'Name unreached surfaces.', unreached_surfaces: [], doctrine_loop: 'none' },
+  });
+  const brief = (taskId, { tier = 'implementation', delivery = [
+    '**Delivery fit**: single-turn',
+    '**Estimated scope**: 1 lifecycle adapter and its executable regression.',
+    '**Coherence**: one agent can change and verify the authority atomically.',
+  ].join('\n') } = {}) => [
+    '### Context', 'Settled authority.',
+    '### Exact paths', 'scripts/claude-lifecycle-hook.mjs',
+    '### Numbered procedure', delivery, '1. Execute the real hook.',
+    '### Output contract', 'Return command-owned evidence.',
+    '### Boundaries', 'Do not publish.',
+    '### Self-verifiable acceptance', 'The generated behavior decides the event.',
+    '### Completion tier', tier,
+    `TASK_CONTRACT_JSON:${JSON.stringify(contract(taskId, tier))}`,
+  ].filter((line) => line !== '').join('\n');
+  const taskCreated = (taskId, description) => runLifecycle({ hook_event_name: 'TaskCreated', session_id: `session-${taskId}`, agent_id: 'implementer', agent_type: 'implementer', task_id: taskId, task_description: description });
 
   for (const hostileInput of ['{not-json', 'null', '[]', '"scalar"', '42']) {
     const malformed = spawnSync(process.execPath, [executable], {
@@ -366,6 +477,41 @@ test('Proves: ORG-HOOK-003C; Test type: canonical-template runtime mutation; Sur
   assert.equal(spoofed.status, 2);
   assert.match(spoofed.stderr, /CLAUDE_PROJECT_DIR does not match/iu);
   assert.equal(fs.existsSync(path.join(siblingRoot, 'tmp', 'agent-telemetry')), false);
+
+  const singleTurn = taskCreated('FIT-SINGLE', brief('FIT-SINGLE'));
+  assert.equal(singleTurn.status, 0, singleTurn.stderr);
+  const checkpointedDelivery = [
+    '**Delivery fit**: checkpointed',
+    '- Checkpoint 1: parser | authority state: one parser | verification: focused test exit 0.',
+    '- Checkpoint 2: adapter | authority state: one adapter | verification: integration test exit 0.',
+  ].join('\n');
+  const checkpointed = taskCreated('FIT-CHECKPOINTED', brief('FIT-CHECKPOINTED', { delivery: checkpointedDelivery }));
+  assert.equal(checkpointed.status, 0, checkpointed.stderr);
+  const readOnly = taskCreated('FIT-READ-ONLY', brief('FIT-READ-ONLY', { tier: 'read-only', delivery: '' }));
+  assert.equal(readOnly.status, 0, readOnly.stderr);
+
+  const invalidDelivery = [
+    ['FIT-MISSING', ''],
+    ['FIT-AMBIGUOUS', `${brief('FIT-AMBIGUOUS')}\n**Delivery fit**: checkpointed\n- Checkpoint 1: parser | authority state: one parser | verification: test.\n- Checkpoint 2: adapter | authority state: one adapter | verification: test.`],
+    ['FIT-PLACEHOLDER', ['**Delivery fit**: single-turn', '**Estimated scope**: TBD', '**Coherence**: fill later'].join('\n')],
+    ['FIT-MALFORMED', ['**Delivery fit**: checkpointed', '- Checkpoint 1: parser | authority state: one parser | verification: test.', '- Checkpoint 2: adapter | authority state: one adapter'].join('\n')],
+    ['FIT-REORDERED', ['**Delivery fit**: checkpointed', '- Checkpoint 2: adapter | authority state: one adapter | verification: test.', '- Checkpoint 1: parser | authority state: one parser | verification: test.'].join('\n')],
+  ];
+  for (const [taskId, delivery] of invalidDelivery) {
+    const description = taskId === 'FIT-AMBIGUOUS' ? delivery : brief(taskId, { delivery });
+    const blocked = taskCreated(taskId, description);
+    assert.equal(blocked.status, 2, `${taskId}: ${blocked.stderr}`);
+    assert.match(blocked.stderr, /Delivery fit/u);
+  }
+
+  const deliveryGate = (taskId) => taskCreated(taskId, brief(taskId, { delivery: '' })).status === 2 ? 0 : 1;
+  assert.equal(deliveryGate('FIT-MUTATION-BASELINE'), 0);
+  const mutatedAdapter = adapter.replace("if (tier === 'implementation') {", "if (false && tier === 'implementation') {");
+  assert.notEqual(mutatedAdapter, adapter);
+  fs.writeFileSync(executable, mutatedAdapter);
+  assert.equal(deliveryGate('FIT-MUTATION-REMOVED'), 1, 'removing implementation delivery-fit enforcement must turn the executable behavior gate red');
+  fs.writeFileSync(executable, adapter);
+  assert.equal(deliveryGate('FIT-MUTATION-RESTORED'), 0);
 });
 
 test('Proves: ORG-HOOK-003B; Test type: spoofed-root runtime mutation; Surface: CoachAI lifecycle root; Authority: script-derived canonical repository root; Killer mutation: trust mismatched CLAUDE_PROJECT_DIR; Gated command: npm test', (t) => {
@@ -438,18 +584,14 @@ test('Proves: ORG-HOOK-005; Test type: malformed-input mutation and no-op counte
 
 test('Proves: ORG-REL-001; Test type: mutation; Surface: release-verifier template; Authority: deployed-verification truth table; Killer mutation: allow DEPLOY-VERIFIED with a skipped check or shell-only core flow; Gated command: npm test', () => {
   const source = read('templates/agents/release-verifier.template.md');
-  const validates = (text) => text.includes('There is no DEPLOY-VERIFIED-with-skips state')
-    && text.includes('A frontend 200/app shell is reachability evidence only')
-    && text.includes('If any required check is named here, the verdict cannot be DEPLOY-VERIFIED');
-  assert.equal(validates(source), true);
-  assert.equal(validates(source.replace('There is no DEPLOY-VERIFIED-with-skips state.', 'Skipped checks may be disclosed.')), false);
+  assert.match(source, /There is no DEPLOY-VERIFIED-with-skips state/u);
+  assert.match(source, /A frontend 200\/app shell is reachability evidence only/u);
+  assert.match(source, /If any required check is named here, the verdict cannot be DEPLOY-VERIFIED/u);
 });
 
 test('Proves: ORG-UPTIME-001; Test type: mutation; Surface: uptime probe template; Authority: readiness contract; Killer mutation: treat any 2xx as ready; Gated command: npm test', () => {
   const source = read('templates/ci/uptime-probe.mjs.template');
-  const validates = (text) => text.includes('{{READINESS_JSON_ASSERTION}}')
-    && text.includes('Never use a generic 2xx')
-    && !text.includes('const ready = readiness.ok');
-  assert.equal(validates(source), true);
-  assert.equal(validates(source.replace('const ready = readinessContract(readiness);', 'const ready = readiness.ok;')), false);
+  assert.match(source, /\{\{READINESS_JSON_ASSERTION\}\}/u);
+  assert.match(source, /Never use a generic 2xx/u);
+  assert.doesNotMatch(source, /const ready = readiness\.ok/u);
 });
