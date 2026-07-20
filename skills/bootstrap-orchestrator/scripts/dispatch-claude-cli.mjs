@@ -28,6 +28,8 @@ const GITHUB_OWNER = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/u;
 const GITHUB_REPOSITORY = /^[A-Za-z0-9_.-]{1,100}$/u;
 const IMPLEMENTATION_TOOLS = new Set(["Read", "Glob", "Grep", "Skill", "Edit", "Write"]);
 const SKILL_PLUGIN_NAME = "bounded-dispatch";
+const SKILL_PLUGIN_SOURCE = `${SKILL_PLUGIN_NAME}@inline`;
+const SKILL_PLUGIN_VERSION = "1.0.0";
 const MAX_SKILL_FILES = 1_000;
 const MAX_SKILL_BYTES = 10 * 1024 * 1024;
 const TRUSTED_SKILL_NAME = /^[a-z0-9][a-z0-9_-]{0,127}$/u;
@@ -1090,7 +1092,7 @@ export function validateMaterializedSkillPlugin(skillPlugin) {
   const expectedManifest = {
     name: SKILL_PLUGIN_NAME,
     description: "Exact trusted skills materialized for one bounded dispatcher run",
-    version: "1.0.0",
+    version: SKILL_PLUGIN_VERSION,
     author: { name: "AI Organization Control Plane" },
   };
   if (JSON.stringify(pluginManifest) !== JSON.stringify(expectedManifest)) throw new Error("generated skill plugin manifest drifted from the exact skill-only contract");
@@ -1141,7 +1143,7 @@ export async function materializeSkillPlugin({ skillNames, sourceRoots, destinat
   const manifest = {
     name: SKILL_PLUGIN_NAME,
     description: "Exact trusted skills materialized for one bounded dispatcher run",
-    version: "1.0.0",
+    version: SKILL_PLUGIN_VERSION,
     author: { name: "AI Organization Control Plane" },
   };
   await writeFile(path.join(pluginDir, ".claude-plugin", "plugin.json"), `${JSON.stringify(manifest)}\n`, "utf8");
@@ -1354,7 +1356,7 @@ function exactPluginDetailsInventory(text, skillPlugin) {
     const match = new RegExp(`^\\s*${label.replace(" ", "\\s+")} \\((\\d+)\\)\\s*$`, "mu").exec(text);
     return [label, match ? Number(match[1]) : null];
   }));
-  if (!text.startsWith(`${SKILL_PLUGIN_NAME} 1.0.0\n`) || !text.includes(`Source: ${SKILL_PLUGIN_NAME}@inline`)
+  if (!text.startsWith(`${SKILL_PLUGIN_NAME} ${SKILL_PLUGIN_VERSION}\n`) || !text.includes(`Source: ${SKILL_PLUGIN_SOURCE}`)
     || Number(skillMatch?.[1]) !== expectedSkills.length || JSON.stringify(skillNames) !== JSON.stringify(expectedSkills)
     || Object.values(counts).some((count) => count !== 0)) {
     throw new Error("CAPABILITY_BLOCKED: Claude plugin details do not prove the exact skill-only component inventory");
@@ -1690,6 +1692,61 @@ function exactUniqueToolSet(actual, expected) {
     && [...actualSet].every((tool) => expectedSet.has(tool));
 }
 
+function validateInitSkillContainment(actualSkills, expectedSkills) {
+  if (!Array.isArray(actualSkills) || actualSkills.some((skill) => typeof skill !== "string" || skill.length === 0)) {
+    throw new Error("successful tool audit init skills must be a string array");
+  }
+  if (!Array.isArray(expectedSkills) || expectedSkills.some((skill) => typeof skill !== "string" || !skill.startsWith(`${SKILL_PLUGIN_NAME}:`))
+    || new Set(expectedSkills).size !== expectedSkills.length) {
+    throw new Error("successful tool audit expected skills must be unique isolated bounded-dispatch runtime names");
+  }
+  const counts = new Map();
+  for (const skill of actualSkills) counts.set(skill, (counts.get(skill) ?? 0) + 1);
+  const duplicateIsolated = [...counts]
+    .filter(([skill, count]) => skill.startsWith(`${SKILL_PLUGIN_NAME}:`) && count !== 1)
+    .map(([skill]) => skill);
+  if (duplicateIsolated.length > 0) {
+    throw new Error(`successful tool audit init skills contain duplicate identities in the bounded-dispatch namespace: ${duplicateIsolated.join(", ")}`);
+  }
+  const missing = expectedSkills.filter((skill) => !counts.has(skill));
+  if (missing.length > 0) throw new Error(`successful tool audit init skills omit declared bounded runtime skills: ${missing.join(", ")}`);
+  const undeclaredIsolated = actualSkills.filter((skill) => skill.startsWith(`${SKILL_PLUGIN_NAME}:`) && !expectedSkills.includes(skill));
+  if (undeclaredIsolated.length > 0) {
+    throw new Error(`successful tool audit init skills expose undeclared bounded-dispatch runtime skills: ${undeclaredIsolated.join(", ")}`);
+  }
+}
+
+function validateInitPluginContainment(actualPlugins, expectedPlugin) {
+  if (!Array.isArray(actualPlugins)) throw new Error("successful tool audit init plugins must be an array");
+  if (expectedPlugin === null) {
+    if (actualPlugins.length !== 0) throw new Error("successful tool audit init plugins must be exactly empty without a declared skill plugin");
+    return;
+  }
+  const expected = {
+    name: SKILL_PLUGIN_NAME,
+    path: expectedPlugin?.path,
+    source: SKILL_PLUGIN_SOURCE,
+    version: SKILL_PLUGIN_VERSION,
+  };
+  if (expectedPlugin?.name !== expected.name || expectedPlugin?.source !== expected.source || expectedPlugin?.version !== expected.version
+    || typeof expected.path !== "string" || !path.isAbsolute(expected.path)) {
+    throw new Error("successful tool audit expected plugin identity is malformed");
+  }
+  if (actualPlugins.length !== 1 || actualPlugins[0] === null || typeof actualPlugins[0] !== "object" || Array.isArray(actualPlugins[0])) {
+    throw new Error("successful tool audit init plugins must contain exactly one isolated bounded-dispatch plugin");
+  }
+  const actual = actualPlugins[0];
+  const exactKeys = ["name", "path", "source", "version"];
+  if (JSON.stringify(Object.keys(actual).sort()) !== JSON.stringify(exactKeys)) {
+    throw new Error("successful tool audit init plugin must expose only exact name, path, source, and version identity");
+  }
+  const samePath = typeof actual.path === "string" && path.isAbsolute(actual.path)
+    && repositoryPathKey(path.resolve(actual.path)) === repositoryPathKey(path.resolve(expected.path));
+  if (actual.name !== expected.name || actual.source !== expected.source || actual.version !== expected.version || !samePath) {
+    throw new Error("successful tool audit init plugin does not match the exact generated bounded-dispatch identity");
+  }
+}
+
 function validatePreInitEnvelopes(envelopes, initEnvelope) {
   const initIndex = envelopes.indexOf(initEnvelope);
   const pending = new Map();
@@ -1715,7 +1772,11 @@ function validatePreInitEnvelopes(envelopes, initEnvelope) {
   if (pending.size > 0) throw new Error("successful tool audit pre-init SessionStart hook_started lacks matching hook_response");
 }
 
-export function auditObservedTools(streamJson, allowedTools, { permissionMode, expectedSkills = [] } = {}) {
+export function auditObservedTools(streamJson, allowedTools, { permissionMode, expectedSkills = [], expectedPlugin = null } = {}) {
+  if (!Array.isArray(expectedSkills)) throw new Error("successful tool audit expected skills must be an array");
+  if ((expectedSkills.length > 0) !== (expectedPlugin !== null)) {
+    throw new Error("successful tool audit declared runtime skills and isolated plugin identity must be supplied together");
+  }
   const allowed = new Set(allowedTools);
   const envelopes = parsedStreamEnvelopes(streamJson);
   const events = [];
@@ -1739,7 +1800,14 @@ export function auditObservedTools(streamJson, allowedTools, { permissionMode, e
   if (!exactUniqueToolSet(init[0].value.tools, allowedTools)) throw new Error("successful tool audit init tools do not match the exact allowed profile as a unique set");
   if (init[0].value.permissionMode !== permissionMode) throw new Error("successful tool audit init permission mode does not match the dispatch profile");
   if (!Array.isArray(init[0].value.mcp_servers) || init[0].value.mcp_servers.length !== 0) throw new Error("successful tool audit init MCP servers must be exactly empty");
-  if (!exactUniqueToolSet(init[0].value.skills ?? [], expectedSkills)) throw new Error("successful tool audit init skills do not match the exact declared runtime skill set");
+  validateInitSkillContainment(init[0].value.skills, expectedSkills);
+  validateInitPluginContainment(init[0].value.plugins, expectedPlugin);
+
+  const undeclaredSkillUses = events.filter((event) => event.name === "Skill")
+    .filter((event) => typeof event.input?.skill !== "string" || !expectedSkills.includes(event.input.skill));
+  if (undeclaredSkillUses.length > 0) {
+    throw new Error(`observed Skill tool input is not exactly caller-declared: ${undeclaredSkillUses.map((event) => String(event.input?.skill)).join(", ")}`);
+  }
 
   const terminalResults = envelopes.filter((envelope) => envelope.value?.type === "result");
   if (terminalResults.length !== 1 || terminalResults[0].value?.subtype !== "success" || envelopes.at(-1) !== terminalResults[0]) {
@@ -2340,7 +2408,16 @@ export async function dispatchClaude(options, dependencies = {}) {
     let auditError = null;
     if (!runError && result.code === 0) {
       try {
-        toolAuditEvidence = auditObservedTools(result.stdout, tools, { permissionMode: mode, expectedSkills: skillPlugin?.runtimeSkillNames ?? [] });
+        toolAuditEvidence = auditObservedTools(result.stdout, tools, {
+          permissionMode: mode,
+          expectedSkills: skillPlugin?.runtimeSkillNames ?? [],
+          expectedPlugin: skillPlugin ? {
+            name: skillPlugin.pluginName,
+            path: skillPlugin.pluginDir,
+            source: SKILL_PLUGIN_SOURCE,
+            version: SKILL_PLUGIN_VERSION,
+          } : null,
+        });
         observedTools = toolAuditEvidence.allowedToolUses.map((event) => event.name);
         deniedUnavailableToolAttempts = toolAuditEvidence.deniedUnavailableToolAttempts;
       } catch (error) { auditError = error; }

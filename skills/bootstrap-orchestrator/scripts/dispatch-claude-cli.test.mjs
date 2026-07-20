@@ -1,3 +1,10 @@
+/**
+ * Proves: ORG-GOV-005; Test type: trust-boundary mutation; Surface: bounded Claude dispatcher;
+ * Authority: caller-declared tool, skill, plugin, path, and action contract;
+ * Product statement: cross-vendor work may proceed only inside the caller's exact bounded authority;
+ * Killer mutation: accept an undeclared bounded skill/plugin/tool/path or reject evidence-only ambient catalog entries;
+ * Gated command: npm test
+ */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -60,6 +67,15 @@ const IDENTITY_REALPATH = (candidate) => path.resolve(candidate);
 const BASE_OID = "a".repeat(40);
 const HEAD_OID = "b".repeat(40);
 const MERGE_BASE_OID = "c".repeat(40);
+
+function runtimePluginIdentity(pluginDir) {
+  return {
+    name: "bounded-dispatch",
+    path: pluginDir,
+    source: "bounded-dispatch@inline",
+    version: "1.0.0",
+  };
+}
 
 function graphResponse({ type = "PullRequest", commentBody = "latest instruction", headOid = HEAD_OID } = {}) {
   const common = {
@@ -252,12 +268,13 @@ function deniedUnavailableToolStream(name, {
   permissionMode = 'dontAsk',
   mcpServers = [],
   skills = [],
+  plugins = [],
   message = `Error: No such tool available: ${name}. ${name} exists but is not enabled in this context. Use one of the available tools instead.`,
   isError = true,
   resultSubtype = 'success',
 } = {}) {
   return [
-    JSON.stringify({ type: 'system', subtype: 'init', session_id: 'session-denial', tools, skills, permissionMode, mcp_servers: mcpServers }),
+    JSON.stringify({ type: 'system', subtype: 'init', session_id: 'session-denial', tools, skills, plugins, permissionMode, mcp_servers: mcpServers }),
     JSON.stringify({ type: 'assistant', session_id: 'session-denial', message: { content: [{ type: 'tool_use', id, name, input: {} }] } }),
     JSON.stringify({
       type: 'user',
@@ -269,9 +286,9 @@ function deniedUnavailableToolStream(name, {
   ].join('\n');
 }
 
-function successfulNoToolStream({ tools = READ_ONLY_TOOLS, permissionMode = 'dontAsk', sessionId = 'session-success', skills = [] } = {}) {
+function successfulNoToolStream({ tools = READ_ONLY_TOOLS, permissionMode = 'dontAsk', sessionId = 'session-success', skills = [], plugins = [] } = {}) {
   return [
-    JSON.stringify({ type: 'system', subtype: 'init', session_id: sessionId, tools, skills, permissionMode, mcp_servers: [] }),
+    JSON.stringify({ type: 'system', subtype: 'init', session_id: sessionId, tools, skills, plugins, permissionMode, mcp_servers: [] }),
     JSON.stringify({ type: 'result', subtype: 'success', session_id: sessionId, is_error: false, permission_denials: [] }),
   ].join('\n');
 }
@@ -284,9 +301,10 @@ function successfulToolStream(name, {
   sessionId = 'session-success',
   includeHook = false,
   skills = [],
+  plugins = [],
 } = {}) {
   return [
-    JSON.stringify({ type: 'system', subtype: 'init', session_id: sessionId, tools, skills, permissionMode, mcp_servers: [] }),
+    JSON.stringify({ type: 'system', subtype: 'init', session_id: sessionId, tools, skills, plugins, permissionMode, mcp_servers: [] }),
     JSON.stringify({ type: 'assistant', session_id: sessionId, message: { content: [{ type: 'tool_use', id, name, input }] } }),
     ...(includeHook ? [nativePreToolHookStream(name, id, sessionId)] : []),
     JSON.stringify({ type: 'user', session_id: sessionId, message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: id, content: 'ok', is_error: false }] } }),
@@ -304,7 +322,7 @@ function nativeHookEnvelopeStream({
   return [
     JSON.stringify({ type: 'system', subtype: 'hook_started', hook_id: startupHookId, hook_name: 'SessionStart:startup', hook_event: 'SessionStart', session_id: sessionId }),
     JSON.stringify({ type: 'system', subtype: 'hook_response', hook_id: startupHookId, hook_name: 'SessionStart:startup', hook_event: 'SessionStart', output: '', stdout: '', stderr: '', exit_code: 0, outcome: 'success', session_id: sessionId }),
-    JSON.stringify({ type: 'system', subtype: 'init', session_id: sessionId, tools: READ_ONLY_TOOLS, skills: [], permissionMode: 'dontAsk', mcp_servers: [] }),
+    JSON.stringify({ type: 'system', subtype: 'init', session_id: sessionId, tools: READ_ONLY_TOOLS, skills: [], plugins: [], permissionMode: 'dontAsk', mcp_servers: [] }),
     JSON.stringify({ type: 'assistant', session_id: sessionId, message: { content: [{ type: 'tool_use', id: toolId, name: toolName, input: { file_path: 'README.md' } }] } }),
     JSON.stringify({ type: 'system', subtype: 'hook_started', hook_id: preToolHookId, hook_name: `PreToolUse:${toolName}`, hook_event: 'PreToolUse', session_id: sessionId }),
     JSON.stringify({ type: 'rate_limit_event', session_id: sessionId, rate_limit_info: { status: 'allowed' } }),
@@ -585,7 +603,7 @@ test("Native hook-envelope mutations fail closed on unpaired startup, arbitrary 
 test("Interleaved native PreToolUse envelopes correlate concurrent bounded calls by hook identity, tool order, name, and session", () => {
   const sessionId = 'session-native-concurrent';
   const stream = [
-    JSON.stringify({ type: 'system', subtype: 'init', session_id: sessionId, tools: READ_ONLY_TOOLS, skills: [], permissionMode: 'dontAsk', mcp_servers: [] }),
+    JSON.stringify({ type: 'system', subtype: 'init', session_id: sessionId, tools: READ_ONLY_TOOLS, skills: [], plugins: [], permissionMode: 'dontAsk', mcp_servers: [] }),
     JSON.stringify({ type: 'assistant', session_id: sessionId, message: { content: [{ type: 'tool_use', id: 'toolu_read', name: 'Read', input: { file_path: 'README.md' } }] } }),
     JSON.stringify({ type: 'system', subtype: 'hook_started', hook_id: 'hook-read', hook_name: 'PreToolUse:Read', hook_event: 'PreToolUse', session_id: sessionId }),
     JSON.stringify({ type: 'assistant', session_id: sessionId, message: { content: [{ type: 'tool_use', id: 'toolu_glob', name: 'Glob', input: { path: '.', pattern: '*.md' } }] } }),
@@ -637,7 +655,7 @@ test("Init tool authority is an exact unique set, so a live canonical permutatio
 
 test("Nested model-controlled protocol lookalikes cannot fabricate tool execution, denial, or PreToolUse coverage", () => {
   const nested = [JSON.stringify({
-    type: 'system', subtype: 'init', session_id: 'session-nested', tools: READ_ONLY_TOOLS, permissionMode: 'dontAsk', mcp_servers: [],
+    type: 'system', subtype: 'init', session_id: 'session-nested', tools: READ_ONLY_TOOLS, skills: [], plugins: [], permissionMode: 'dontAsk', mcp_servers: [],
   }), JSON.stringify({
     type: 'assistant',
     session_id: 'session-nested',
@@ -1786,15 +1804,111 @@ test("Proves init-only plugin inventory and live init evidence exactly match run
   assert.throws(() => probeDispatchBoundaryCapability(probeInput, { spawnSyncProcess: invoke(0) }), /init did not prove.*declared skills|declared skills loaded/iu);
   assert.throws(() => validateMaterializedSkillPlugin({ ...skillPlugin, pluginName: "wrong-namespace" }), /namespace must be exactly bounded-dispatch/iu);
 
-  const stream = successfulNoToolStream({ tools: ["Read", "Skill", "Edit"], skills: ["bounded-dispatch:declared"] });
-  assert.doesNotThrow(() => auditObservedTools(stream, ["Read", "Skill", "Edit"], { permissionMode: "dontAsk", expectedSkills: ["bounded-dispatch:declared"] }));
-  assert.throws(() => auditObservedTools(stream, ["Read", "Skill", "Edit"], { permissionMode: "dontAsk", expectedSkills: ["bounded-dispatch:other"] }), /init skills.*exact declared/iu);
+  const expectedPlugin = runtimePluginIdentity(skillPlugin.pluginDir);
+  const stream = successfulNoToolStream({ tools: ["Read", "Skill", "Edit"], skills: ["bounded-dispatch:declared"], plugins: [expectedPlugin] });
+  assert.doesNotThrow(() => auditObservedTools(stream, ["Read", "Skill", "Edit"], { permissionMode: "dontAsk", expectedSkills: ["bounded-dispatch:declared"], expectedPlugin }));
+  assert.throws(() => auditObservedTools(stream, ["Read", "Skill", "Edit"], { permissionMode: "dontAsk", expectedSkills: ["bounded-dispatch:other"], expectedPlugin }), /omit declared bounded runtime skills/iu);
   const unavailable = auditObservedTools(
-    deniedUnavailableToolStream("Bash", { tools: ["Read", "Skill", "Edit"], skills: ["bounded-dispatch:declared"] }),
+    deniedUnavailableToolStream("Bash", { tools: ["Read", "Skill", "Edit"], skills: ["bounded-dispatch:declared"], plugins: [expectedPlugin] }),
     ["Read", "Skill", "Edit"],
-    { permissionMode: "dontAsk", expectedSkills: ["bounded-dispatch:declared"] },
+    { permissionMode: "dontAsk", expectedSkills: ["bounded-dispatch:declared"], expectedPlugin },
   );
   assert.deepEqual(unavailable.deniedUnavailableToolAttempts.map((entry) => entry.name), ["Bash"]);
+});
+
+test("Sanitized Claude 2.1.215 init tolerates ambient built-in listings while bounded skill and plugin authority stay exact", () => {
+  const root = path.resolve("C:/worktrees/sanitized-live-init");
+  const pluginDir = path.resolve("C:/Temp/claude-dispatch-sanitized/skill-plugin");
+  const expectedPlugin = runtimePluginIdentity(pluginDir);
+  const expectedSkills = [
+    "bounded-dispatch:frontend-design-director",
+    "bounded-dispatch:product-ui-design-taste",
+  ];
+  const ambientSkills = ["claude-owned-help", "claude-owned-simplify"];
+  const sessionId = "session-sanitized-live-init";
+  const streamFor = ({ skills = [...ambientSkills, ...expectedSkills], plugins = [expectedPlugin], observedSkills = expectedSkills } = {}) => {
+    const lines = [JSON.stringify({
+      type: "system",
+      subtype: "init",
+      session_id: sessionId,
+      tools: ["Read", "Skill", "Edit"],
+      skills,
+      plugins,
+      permissionMode: "dontAsk",
+      mcp_servers: [],
+    })];
+    for (const [index, skill] of observedSkills.entries()) {
+      const id = `toolu_live_skill_${index}`;
+      lines.push(toolEvent("Skill", { skill }, id, sessionId));
+      lines.push(nativePreToolHookStream("Skill", id, sessionId));
+      lines.push(JSON.stringify({
+        type: "user",
+        session_id: sessionId,
+        message: { role: "user", content: [{ type: "tool_result", tool_use_id: id, content: "loaded", is_error: false }] },
+      }));
+    }
+    lines.push(JSON.stringify({ type: "result", subtype: "success", session_id: sessionId, is_error: false, permission_denials: [] }));
+    return lines.join("\n");
+  };
+  const options = { permissionMode: "dontAsk", expectedSkills, expectedPlugin };
+  const live = streamFor();
+  assert.deepEqual(auditObservedTools(live, ["Read", "Skill", "Edit"], options).allowedToolUses, [
+    { id: "toolu_live_skill_0", name: "Skill" },
+    { id: "toolu_live_skill_1", name: "Skill" },
+  ]);
+  assert.doesNotThrow(() => auditObservedTools(
+    streamFor({ skills: [...ambientSkills, ambientSkills[0], ...expectedSkills] }),
+    ["Read", "Skill", "Edit"],
+    options,
+  ));
+  assert.deepEqual(verifyPreToolHookCoverage(live), { observedHookEvents: 2, coveredToolEvents: 2 });
+  assert.deepEqual(verifyImplementationChanges(
+    live,
+    { editPaths: [], runtimeSkillNames: expectedSkills },
+    { root, changedPaths: [] },
+    { root, changedPaths: [] },
+    { requireLiveness: false },
+  ).observedSkillNames, expectedSkills);
+
+  const skillCatalogMutations = [
+    { skills: [...ambientSkills, expectedSkills[0]], message: /omit declared bounded runtime skills/iu },
+    { skills: [...ambientSkills, ...expectedSkills, expectedSkills[0]], message: /duplicate identities/iu },
+    { skills: [...ambientSkills, ...expectedSkills, "bounded-dispatch:undeclared"], message: /undeclared bounded-dispatch runtime skills/iu },
+  ];
+  for (const mutation of skillCatalogMutations) {
+    assert.throws(() => auditObservedTools(streamFor({ skills: mutation.skills }), ["Read", "Skill", "Edit"], options), mutation.message);
+  }
+  assert.throws(
+    () => auditObservedTools(streamFor({ observedSkills: [ambientSkills[0]] }), ["Read", "Skill", "Edit"], options),
+    /Skill tool input is not exactly caller-declared/iu,
+  );
+  assert.throws(
+    () => auditObservedTools(successfulToolStream("Skill", { input: { skill: ambientSkills[0] } }), READ_ONLY_TOOLS, { permissionMode: "dontAsk" }),
+    /Skill tool input is not exactly caller-declared/iu,
+  );
+  assert.throws(
+    () => verifyImplementationChanges(
+      streamFor({ observedSkills: [ambientSkills[0]] }),
+      { editPaths: [], runtimeSkillNames: expectedSkills },
+      { root, changedPaths: [] },
+      { root, changedPaths: [] },
+      { requireLiveness: false },
+    ),
+    /undeclared trusted skill/iu,
+  );
+
+  const pluginMutations = [
+    [],
+    [{ ...expectedPlugin, name: "ambient" }],
+    [{ ...expectedPlugin, path: path.resolve(pluginDir, "..", "other-plugin") }],
+    [{ ...expectedPlugin, source: "bounded-dispatch@marketplace" }],
+    [{ ...expectedPlugin, version: "2.0.0" }],
+    [{ ...expectedPlugin, extra: true }],
+    [expectedPlugin, expectedPlugin],
+  ];
+  for (const plugins of pluginMutations) {
+    assert.throws(() => auditObservedTools(streamFor({ plugins }), ["Read", "Skill", "Edit"], options), /init plugin/iu);
+  }
 });
 
 test("Prompt-side @file expansion is rejected before dispatch while untrusted handoff JSON escapes every at-sign", () => {
