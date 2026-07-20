@@ -25,6 +25,18 @@ CLAUDE_PR_DIFF_SCOPE_JSON:{"paths":["path/to/exact-changed-file"],"base_oid":"<o
 -->
 
 ## 3. NUMBERED PROCEDURE (execution order)
+**Delivery fit (required for implementation briefs; choose exactly one):**
+- **Single-turn form**
+  - **Delivery fit**: single-turn
+  - **Estimated scope**: <observable units such as files, consumers, tests, and docs; no arbitrary LOC quota>.
+  - **Coherence**: <why one agent can complete and verify the authority replacement end-to-end in one turn>.
+- **Checkpointed form**
+  - **Delivery fit**: checkpointed
+  - Checkpoint 1: <finished outcome> | authority state: <the one-authority state left behind; never mid-migration or parallel producers> | verification: <command/artifact proving compilable or explicitly verified state>.
+  - Checkpoint 2: <next finished outcome> | authority state: <the one-authority state left behind> | verification: <command/artifact proving compilable or explicitly verified state>.
+
+If the work is materially multi-turn but no coherent checkpoints are present, the implementer must STOP before editing and escalate. Do not manufacture checkpoints at layer boundaries that leave a shared contract broken, an authority half-migrated, or required tests knowingly red. A broad slice may remain single-turn when one agent can finish it coherently; breadth alone is not a reason to split it.
+
 0. **Capability preflight before expensive grounding:**
    - Implementation: read only what the declared `capability_probe` needs, attempt that narrowest intended Edit/Write first, and immediately return `CAPABILITY_BLOCKED` with the denied tool/path if it cannot run. Do not spend a grounding pass before proving mutation capability.
    - Review/audit: use the dispatcher-materialized repository-bound PR evidence; prove every required read-only tool opens before substantive reading. A fitting full patch is whole-PR evidence. An oversized patch fails closed unless this brief contains the one exact scope marker above; then report `partial_review_scope:true`, the unreviewed file count, and every surface not reviewed. Any denial, stale/missing ref or object, origin mismatch, dirty-state ambiguity, invalid/non-ancestor/empty scope, or oversized/truncated scoped patch returns `CAPABILITY_BLOCKED`; never silently narrow or make a whole-PR clean claim.
@@ -49,6 +61,7 @@ The agent's final report must contain: <the exact fields — for an implementer:
 ## 5. BOUNDARIES + escalation
 - <concrete boundaries: read-only means read-only; no tree-mutating git for reviewer/auditor lenses; the forbidden-files list>.
 - **Escalation path:** if blocked / a brief gap / an unsettled decision surfaces → STOP and report to the orchestrator; do not guess past the gap.
+- For implementation work, a materially multi-turn brief without ordered, coherent, verified checkpoints is a brief gap: STOP before editing.
 
 ## 6. ACCEPTANCE CRITERIA (the agent can self-verify from its own seat)
 - <the specific, checkable conditions that mean the slice is done — a passing gate with its real exit, a rendered surface measured correct, a test that bites named>.

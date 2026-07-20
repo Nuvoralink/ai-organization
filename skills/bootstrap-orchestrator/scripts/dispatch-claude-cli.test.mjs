@@ -226,27 +226,24 @@ function preToolEvent(root, toolName, toolInput) {
   };
 }
 
-function toolEvent(name, input = {}, id = `toolu_test_${name.toLowerCase()}`) {
+function toolEvent(name, input = {}, id = `toolu_test_${name.toLowerCase()}`, sessionId = 'session-test') {
   return JSON.stringify({
     type: "assistant",
+    session_id: sessionId,
     message: { content: [{ type: "tool_use", id, name, input }] },
   });
 }
 
-function preToolHookStreamEvent(name, input = {}, id = `toolu_test_${name.toLowerCase()}`) {
-  return JSON.stringify({
-    type: "hook_event",
-    hook_event: {
-      hook_event_name: "PreToolUse",
-      tool_name: name,
-      tool_input: input,
-      tool_use_id: id,
-    },
-  });
+function nativePreToolHookStream(name, id = `toolu_test_${name.toLowerCase()}`, sessionId = 'session-test') {
+  const hookId = `hook_${id}`;
+  return [
+    JSON.stringify({ type: 'system', subtype: 'hook_started', hook_id: hookId, hook_name: `PreToolUse:${name}`, hook_event: 'PreToolUse', session_id: sessionId }),
+    JSON.stringify({ type: 'system', subtype: 'hook_response', hook_id: hookId, hook_name: `PreToolUse:${name}`, hook_event: 'PreToolUse', output: '{}\n', stdout: '{}\n', stderr: '', exit_code: 0, outcome: 'success', session_id: sessionId }),
+  ].join('\n');
 }
 
 function boundedToolEvent(name, input = {}, id = `toolu_test_${name.toLowerCase()}`) {
-  return `${preToolHookStreamEvent(name, input, id)}\n${toolEvent(name, input, id)}`;
+  return `${toolEvent(name, input, id)}\n${nativePreToolHookStream(name, id)}`;
 }
 
 function deniedUnavailableToolStream(name, {
@@ -290,9 +287,29 @@ function successfulToolStream(name, {
 } = {}) {
   return [
     JSON.stringify({ type: 'system', subtype: 'init', session_id: sessionId, tools, skills, permissionMode, mcp_servers: [] }),
-    ...(includeHook ? [preToolHookStreamEvent(name, input, id)] : []),
     JSON.stringify({ type: 'assistant', session_id: sessionId, message: { content: [{ type: 'tool_use', id, name, input }] } }),
+    ...(includeHook ? [nativePreToolHookStream(name, id, sessionId)] : []),
     JSON.stringify({ type: 'user', session_id: sessionId, message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: id, content: 'ok', is_error: false }] } }),
+    JSON.stringify({ type: 'result', subtype: 'success', session_id: sessionId, is_error: false, permission_denials: [] }),
+  ].join('\n');
+}
+
+function nativeHookEnvelopeStream({
+  sessionId = 'session-native-hooks',
+  toolName = 'Read',
+  toolId = 'toolu_native_read',
+  startupHookId = 'hook-startup',
+  preToolHookId = 'hook-pretool-read',
+} = {}) {
+  return [
+    JSON.stringify({ type: 'system', subtype: 'hook_started', hook_id: startupHookId, hook_name: 'SessionStart:startup', hook_event: 'SessionStart', session_id: sessionId }),
+    JSON.stringify({ type: 'system', subtype: 'hook_response', hook_id: startupHookId, hook_name: 'SessionStart:startup', hook_event: 'SessionStart', output: '', stdout: '', stderr: '', exit_code: 0, outcome: 'success', session_id: sessionId }),
+    JSON.stringify({ type: 'system', subtype: 'init', session_id: sessionId, tools: READ_ONLY_TOOLS, skills: [], permissionMode: 'dontAsk', mcp_servers: [] }),
+    JSON.stringify({ type: 'assistant', session_id: sessionId, message: { content: [{ type: 'tool_use', id: toolId, name: toolName, input: { file_path: 'README.md' } }] } }),
+    JSON.stringify({ type: 'system', subtype: 'hook_started', hook_id: preToolHookId, hook_name: `PreToolUse:${toolName}`, hook_event: 'PreToolUse', session_id: sessionId }),
+    JSON.stringify({ type: 'rate_limit_event', session_id: sessionId, rate_limit_info: { status: 'allowed' } }),
+    JSON.stringify({ type: 'system', subtype: 'hook_response', hook_id: preToolHookId, hook_name: `PreToolUse:${toolName}`, hook_event: 'PreToolUse', output: '{}\n', stdout: '{}\n', stderr: '', exit_code: 0, outcome: 'success', session_id: sessionId }),
+    JSON.stringify({ type: 'user', session_id: sessionId, message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: toolId, content: 'ok', is_error: false }] } }),
     JSON.stringify({ type: 'result', subtype: 'success', session_id: sessionId, is_error: false, permission_denials: [] }),
   ].join('\n');
 }
@@ -535,6 +552,58 @@ test("Proves observed-tool audit accepts only an event listed by its already-val
     modelToolDiscipline: 'compliant',
     capabilityContainment: 'maintained',
   });
+});
+
+test("Sanitized Claude native stream accepts correlated startup envelopes before exactly one init and included PreToolUse evidence", () => {
+  const stream = nativeHookEnvelopeStream();
+  assert.deepEqual(auditObservedTools(stream, READ_ONLY_TOOLS, { permissionMode: 'dontAsk' }).allowedToolUses, [
+    { id: 'toolu_native_read', name: 'Read' },
+  ]);
+  assert.deepEqual(verifyPreToolHookCoverage(stream), { observedHookEvents: 1, coveredToolEvents: 1 });
+});
+
+test("Native hook-envelope mutations fail closed on unpaired startup, arbitrary pre-init data, or missing and mismatched PreToolUse correlation", () => {
+  const exact = nativeHookEnvelopeStream();
+  const lines = exact.split('\n');
+  assert.throws(() => auditObservedTools(lines.filter((_, index) => index !== 1).join('\n'), READ_ONLY_TOOLS, { permissionMode: 'dontAsk' }), /SessionStart hook_started lacks matching hook_response/iu);
+  assert.throws(() => auditObservedTools([lines[0], JSON.stringify({ type: 'rate_limit_event', session_id: 'session-native-hooks' }), ...lines.slice(1)].join('\n'), READ_ONLY_TOOLS, { permissionMode: 'dontAsk' }), /only correlated SessionStart hook envelopes/iu);
+  assert.throws(() => auditObservedTools(exact.replace('"outcome":"success","session_id":"session-native-hooks"', '"outcome":"error","session_id":"session-native-hooks"'), READ_ONLY_TOOLS, { permissionMode: 'dontAsk' }), /successful matching hook_started/iu);
+  assert.throws(() => verifyPreToolHookCoverage(lines.filter((_, index) => index !== 6).join('\n')), /hook_started lacks matching hook_response/iu);
+  assert.throws(() => verifyPreToolHookCoverage(exact.replace('"hook_id":"hook-pretool-read","hook_name":"PreToolUse:Read","hook_event":"PreToolUse","output"', '"hook_id":"hook-pretool-other","hook_name":"PreToolUse:Read","hook_event":"PreToolUse","output"')), /hook_response lacks one earlier matching hook_started/iu);
+  const responseAfterResult = [...lines.slice(0, 6), lines[7], lines[6], lines[8]].join('\n');
+  assert.throws(() => verifyPreToolHookCoverage(responseAfterResult), /invalid completion evidence/iu);
+  assert.throws(() => verifyPreToolHookCoverage([...lines.slice(0, 5), lines[4], ...lines.slice(5)].join('\n')), /duplicate included PreToolUse hook identity/iu);
+  const crossSessionStart = JSON.stringify({ ...JSON.parse(lines[4]), session_id: 'session-other' });
+  assert.throws(() => verifyPreToolHookCoverage([...lines.slice(0, 4), crossSessionStart, ...lines.slice(5)].join('\n')), /no earlier matching bounded tool_use/iu);
+  const legacy = [
+    JSON.stringify({ type: 'hook_event', hook_event: { hook_event_name: 'PreToolUse', tool_name: 'Read', tool_use_id: 'toolu_legacy' } }),
+    toolEvent('Read', { file_path: 'README.md' }, 'toolu_legacy'),
+  ].join('\n');
+  assert.throws(() => verifyPreToolHookCoverage(legacy), /lacks matching included PreToolUse hook evidence/iu);
+});
+
+test("Interleaved native PreToolUse envelopes correlate concurrent bounded calls by hook identity, tool order, name, and session", () => {
+  const sessionId = 'session-native-concurrent';
+  const stream = [
+    JSON.stringify({ type: 'system', subtype: 'init', session_id: sessionId, tools: READ_ONLY_TOOLS, skills: [], permissionMode: 'dontAsk', mcp_servers: [] }),
+    JSON.stringify({ type: 'assistant', session_id: sessionId, message: { content: [{ type: 'tool_use', id: 'toolu_read', name: 'Read', input: { file_path: 'README.md' } }] } }),
+    JSON.stringify({ type: 'system', subtype: 'hook_started', hook_id: 'hook-read', hook_name: 'PreToolUse:Read', hook_event: 'PreToolUse', session_id: sessionId }),
+    JSON.stringify({ type: 'assistant', session_id: sessionId, message: { content: [{ type: 'tool_use', id: 'toolu_glob', name: 'Glob', input: { path: '.', pattern: '*.md' } }] } }),
+    JSON.stringify({ type: 'system', subtype: 'hook_started', hook_id: 'hook-glob', hook_name: 'PreToolUse:Glob', hook_event: 'PreToolUse', session_id: sessionId }),
+    JSON.stringify({ type: 'system', subtype: 'hook_response', hook_id: 'hook-read', hook_name: 'PreToolUse:Read', hook_event: 'PreToolUse', output: '{}\n', stdout: '{}\n', stderr: '', exit_code: 0, outcome: 'success', session_id: sessionId }),
+    JSON.stringify({ type: 'system', subtype: 'hook_response', hook_id: 'hook-glob', hook_name: 'PreToolUse:Glob', hook_event: 'PreToolUse', output: 'CAPABILITY_BLOCKED', stdout: '', stderr: 'blocked', exit_code: 2, outcome: 'error', session_id: sessionId }),
+    JSON.stringify({ type: 'user', session_id: sessionId, message: { role: 'user', content: [
+      { type: 'tool_result', tool_use_id: 'toolu_read', content: 'ok', is_error: false },
+      { type: 'tool_result', tool_use_id: 'toolu_glob', content: 'blocked', is_error: true },
+    ] } }),
+    JSON.stringify({ type: 'result', subtype: 'success', session_id: sessionId, is_error: false, permission_denials: [] }),
+  ].join('\n');
+  assert.deepEqual(verifyPreToolHookCoverage(stream), { observedHookEvents: 2, coveredToolEvents: 2 });
+  assert.deepEqual(auditObservedTools(stream, READ_ONLY_TOOLS, { permissionMode: 'dontAsk' }).allowedToolUses, [
+    { id: 'toolu_read', name: 'Read' },
+    { id: 'toolu_glob', name: 'Glob' },
+  ]);
+  assert.throws(() => verifyPreToolHookCoverage(stream.replace('"hook_name":"PreToolUse:Glob","hook_event":"PreToolUse","output"', '"hook_name":"PreToolUse:Read","hook_event":"PreToolUse","output"')), /matching hook_started/iu);
 });
 
 test("Claude 2.1.215 native unavailable envelopes for Bash and Write record behavioral noncompliance without calling it executed", () => {

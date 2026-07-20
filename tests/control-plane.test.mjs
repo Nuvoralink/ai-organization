@@ -5,13 +5,17 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import {
+  computeInstalledTreeDigest,
+  parseControlPlaneArgs,
   runCapture,
   runCheck,
+  runDigest,
   runInstall,
   runRollback,
   validateCanonical,
   validateManifest
 } from '../scripts/lib/control-plane.mjs';
+import { runControlPlaneCli } from '../scripts/control-plane.mjs';
 import { reconcileTrackedScope } from '../scripts/refresh-tracked-scope.mjs';
 
 function fixture() {
@@ -43,6 +47,16 @@ function fixture() {
     }]
   };
   return { root, repoRoot, home, roots: { HOME: home }, manifest };
+}
+
+function cliContext(f) {
+  const stdout = [];
+  const stderr = [];
+  return {
+    context: { ...f, stdout: (line) => stdout.push(line), stderr: (line) => stderr.push(line) },
+    stdout,
+    stderr,
+  };
 }
 
 test('Proves: capture and install are deterministic; Test type: mutation; Surface: portable control plane; Authority: manifest; Killer mutation: local-only file must fail check', () => {
@@ -262,8 +276,9 @@ test('Proves: raw absolute destinations and duplicate destinations cannot enter 
   const f = fixture();
   f.manifest.mappings[0].destinations = [["C:", "Users", "example", ".claude", "rules"].join('/'), '${HOME}/.claude/rules', '${HOME}/.claude/rules'];
   const errors = validateManifest(f.manifest, f.repoRoot, f.roots);
-  assert.ok(errors.some((message) => message.includes('Path must start with a registered token')));
+  assert.ok(errors.some((message) => message.includes('Invalid destination path for mapping')));
   assert.ok(errors.some((message) => message.includes('Duplicate destination')));
+  assert.doesNotMatch(JSON.stringify(errors), /C:\/Users\/example/u);
 });
 
 test('Proves: line-ending-only differences remain portable; Test type: counterexample; Surface: parity; Authority: normalized hash; Killer mutation: CRLF versus LF is not drift', () => {
@@ -304,6 +319,30 @@ test('Proves: forbidden canonical files fail instead of hiding; Test type: secur
   fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', '.env'), 'DO_NOT_READ=secret\n');
   const findings = validateCanonical({ repoRoot: f.repoRoot, manifest: f.manifest });
   assert.ok(findings.some((finding) => finding.type === 'source' && /denied filename prefix/u.test(finding.message)));
+  assert.doesNotMatch(JSON.stringify(findings), new RegExp(f.repoRoot.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+});
+
+test('Proves: every canonical deny class reports only mapping-relative inventory paths; Test type: disclosure matrix; Surface: runCheck canonical inventory; Authority: portable inventory errors; Killer mutation: interpolate the resolved canonical entry path for any deny reason; Gated command: npm test', () => {
+  const cases = [
+    ['.credentials.json', 'file', 'denied filename'],
+    ['.env.local', 'file', 'denied filename prefix'],
+    ['private.key', 'file', 'denied extension'],
+    ['logs', 'directory', 'denied path segment'],
+  ];
+  for (const [relative, kind, reason] of cases) {
+    const f = fixture();
+    const canonicalRoot = path.join(f.repoRoot, 'canonical', 'rules');
+    fs.writeFileSync(path.join(canonicalRoot, 'base.md'), '# Canonical\n');
+    if (kind === 'directory') fs.mkdirSync(path.join(canonicalRoot, relative));
+    else fs.writeFileSync(path.join(canonicalRoot, relative), 'DO_NOT_EMIT');
+
+    const findings = runCheck(f);
+    assert.ok(findings.some((finding) => finding.type === 'source' && finding.message === `Canonical source contains ${reason}: ${relative}`));
+    const serialized = JSON.stringify(findings);
+    assert.doesNotMatch(serialized, new RegExp(f.repoRoot.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+    assert.doesNotMatch(serialized, new RegExp(f.home.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+    assert.doesNotMatch(serialized, /DO_NOT_EMIT/u);
+  }
 });
 
 test('Proves: tracked files outside mapped trees cannot hide secrets, machine paths, or app-source classes; Test type: repository-boundary mutation; Surface: canonical repository; Authority: exact tracked-scope registry; Killer mutation: force-add unsafe docs plus app source at top level and beneath otherwise allowed roots; Gated command: npm test', () => {
@@ -372,7 +411,7 @@ test('Proves: non-allowlisted local files inside a dedicated managed root are vi
   fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Safe\n');
   runInstall({ ...f, dryRun: false });
   fs.writeFileSync(path.join(f.home, '.claude', 'rules', 'helper.exe'), Buffer.from([0, 1]));
-  assert.ok(runCheck(f).some((finding) => finding.type === 'unclassified-local-only'));
+  assert.ok(runCheck(f).some((finding) => finding.type === 'unsafe-installed-entry' && finding.reason === 'extension not allowlisted'));
 });
 
 test('Proves: registered path tokens render on install and still pass parity; Test type: portability; Surface: generated copy; Authority: local root registry; Killer mutation: leave a registered HOME token literal in installed output', () => {
@@ -464,4 +503,805 @@ test('Proves: a mid-install failure restores every prior byte; Test type: failur
     { type: 'drift', relative: 'a.md', mapping: 'claude-rules', destination: '${HOME}/.claude/rules' },
     { type: 'drift', relative: 'b.md', mapping: 'claude-rules', destination: '${HOME}/.claude/rules' }
   ]);
+});
+
+test('Proves: a reviewed divergent installed tree can reconcile and return to ordinary parity; Test type: migration and liveness; Surface: selected installer mapping; Authority: reviewed whole-tree digest; Killer mutation: require adoptExisting or leave the lock dependent on reconciliation mode; Gated command: npm test', () => {
+  const f = fixture();
+  const canonical = path.join(f.repoRoot, 'canonical', 'rules', 'base.md');
+  const installed = path.join(f.home, '.claude', 'rules', 'base.md');
+  fs.writeFileSync(canonical, '# Canonical merged authority\n');
+  fs.writeFileSync(installed, '# Reviewed installed authority\n');
+  const reviewed = computeInstalledTreeDigest({ root: path.dirname(installed), manifest: f.manifest, mapping: f.manifest.mappings[0] });
+
+  const operations = runInstall({
+    ...f,
+    mappingIds: ['claude-rules'],
+    reconcileInstalled: new Map([['claude-rules', reviewed.sha256]]),
+  });
+  assert.ok(operations.some((operation) => operation.type === 'reconcile-update'));
+  assert.equal(fs.readFileSync(installed, 'utf8'), '# Canonical merged authority\n');
+  assert.deepEqual(runCheck({ ...f, mappingIds: ['claude-rules'] }), []);
+  assert.equal(runInstall({ ...f, mappingIds: ['claude-rules'] }).filter((operation) => !['refresh-lock', 'retain-legacy-link'].includes(operation.type)).length, 0);
+});
+
+test('Proves: reviewed tree identity binds raw bytes; Test type: digest mutation; Surface: reconciliation preflight; Authority: reviewed whole-tree digest; Killer mutation: change one byte without changing the digest; Gated command: npm test', () => {
+  const f = fixture();
+  const canonical = path.join(f.repoRoot, 'canonical', 'rules', 'base.md');
+  const installed = path.join(f.home, '.claude', 'rules', 'base.md');
+  fs.writeFileSync(canonical, '# Canonical\n');
+  fs.writeFileSync(installed, '# Reviewed\n');
+  const reviewed = computeInstalledTreeDigest({ root: path.dirname(installed), manifest: f.manifest, mapping: f.manifest.mappings[0] });
+  assert.equal(reviewed.fileCount, 1);
+  fs.appendFileSync(installed, '!');
+
+  assert.throws(() => runInstall({
+    ...f,
+    mappingIds: ['claude-rules'],
+    reconcileInstalled: new Map([['claude-rules', reviewed.sha256]]),
+  }), /reviewed tree digest mismatch/u);
+  assert.equal(fs.readFileSync(installed, 'utf8'), '# Reviewed\n!');
+});
+
+test('Proves: reviewed tree identity binds normalized relative paths independently of bytes and count; Test type: path-only digest mutation; Surface: reconciliation preflight; Authority: reviewed whole-tree digest; Killer mutation: rename a reviewed file while preserving bytes and count without invalidating reconciliation; Gated command: npm test', () => {
+  const f = fixture();
+  const installedRoot = path.join(f.home, '.claude', 'rules');
+  const reviewedPath = path.join(installedRoot, 'base.md');
+  const renamedPath = path.join(installedRoot, 'renamed.md');
+  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  fs.writeFileSync(reviewedPath, '# Identical bytes\n');
+  const reviewed = computeInstalledTreeDigest({ root: installedRoot, manifest: f.manifest, mapping: f.manifest.mappings[0] });
+  fs.renameSync(reviewedPath, renamedPath);
+
+  assert.throws(() => runInstall({ ...f, mappingIds: ['claude-rules'], reconcileInstalled: new Map([['claude-rules', reviewed.sha256]]) }), /reviewed tree digest mismatch/u);
+  assert.equal(fs.existsSync(reviewedPath), false);
+  assert.equal(fs.readFileSync(renamedPath, 'utf8'), '# Identical bytes\n');
+});
+
+test('Proves: reviewed local-only files retire only as part of the reviewed whole tree; Test type: retirement migration; Surface: reconciliation planner; Authority: reviewed whole-tree digest; Killer mutation: retain a reviewed obsolete file or require a prior lock entry; Gated command: npm test', () => {
+  const f = fixture();
+  const installedRoot = path.join(f.home, '.claude', 'rules');
+  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  fs.writeFileSync(path.join(installedRoot, 'base.md'), '# Old\n');
+  fs.writeFileSync(path.join(installedRoot, 'installed-only.md'), '# Reviewed retirement\n');
+  const reviewed = computeInstalledTreeDigest({ root: installedRoot, manifest: f.manifest, mapping: f.manifest.mappings[0] });
+
+  const operations = runInstall({
+    ...f,
+    mappingIds: ['claude-rules'],
+    reconcileInstalled: new Map([['claude-rules', reviewed.sha256]]),
+  });
+  assert.ok(operations.some((operation) => operation.type === 'retire' && operation.relative === 'installed-only.md'));
+  assert.equal(fs.existsSync(path.join(installedRoot, 'installed-only.md')), false);
+});
+
+test('Proves: an unreviewed local-only addition invalidates reconciliation before any write; Test type: local-only mutation; Surface: reconciliation preflight; Authority: reviewed whole-tree digest; Killer mutation: digest only canonical-overlapping files and silently retire the surprise file; Gated command: npm test', () => {
+  const f = fixture();
+  const installedRoot = path.join(f.home, '.claude', 'rules');
+  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  fs.writeFileSync(path.join(installedRoot, 'base.md'), '# Reviewed old\n');
+  const reviewed = computeInstalledTreeDigest({ root: installedRoot, manifest: f.manifest, mapping: f.manifest.mappings[0] });
+  fs.writeFileSync(path.join(installedRoot, 'surprise.md'), '# Not reviewed\n');
+
+  assert.throws(() => runInstall({
+    ...f,
+    mappingIds: ['claude-rules'],
+    reconcileInstalled: new Map([['claude-rules', reviewed.sha256]]),
+  }), /reviewed tree digest mismatch/u);
+  assert.equal(fs.readFileSync(path.join(installedRoot, 'base.md'), 'utf8'), '# Reviewed old\n');
+  assert.equal(fs.existsSync(path.join(installedRoot, 'surprise.md')), true);
+});
+
+test('Proves: reconciliation input and mapping selection are exact and fail before mutation; Test type: input-boundary mutation; Surface: install API; Authority: selected mapping plus reviewed digest pair; Killer mutation: accept malformed, empty, unknown, unselected, or duplicate selections; Gated command: npm test', () => {
+  const f = fixture();
+  const installed = path.join(f.home, '.claude', 'rules', 'base.md');
+  const secondarySource = path.join(f.repoRoot, 'canonical', 'secondary');
+  const secondaryInstalled = path.join(f.home, '.claude', 'secondary');
+  fs.mkdirSync(secondarySource, { recursive: true });
+  fs.mkdirSync(secondaryInstalled, { recursive: true });
+  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  fs.writeFileSync(installed, '# Old\n');
+  fs.writeFileSync(path.join(secondarySource, 'secondary.md'), '# Secondary canonical\n');
+  fs.writeFileSync(path.join(secondaryInstalled, 'secondary.md'), '# Secondary old\n');
+  f.manifest.mappings.push({
+    ...structuredClone(f.manifest.mappings[0]),
+    id: 'secondary-rules',
+    source: 'canonical/secondary',
+    captureFrom: '${HOME}/.claude/secondary',
+    destinations: ['${HOME}/.claude/secondary'],
+  });
+  const old = fs.readFileSync(installed, 'utf8');
+  const digest = computeInstalledTreeDigest({ root: path.dirname(installed), manifest: f.manifest, mapping: f.manifest.mappings[0] }).sha256;
+  const secondaryDigest = computeInstalledTreeDigest({ root: secondaryInstalled, manifest: f.manifest, mapping: f.manifest.mappings[1] }).sha256;
+  assert.throws(() => runInstall({ ...f, mappingIds: ['claude-rules'], reconcileInstalled: new Map() }), /at least one mapping digest/u);
+  assert.throws(() => runInstall({ ...f, mappingIds: ['claude-rules'], reconcileInstalled: new Map([['claude-rules', 'bad']]) }), /Invalid reviewed installed-tree digest/u);
+  assert.throws(() => runInstall({ ...f, mappingIds: ['claude-rules'], reconcileInstalled: new Map([['unknown-mapping', digest]]) }), /Unknown reconciliation mapping/u);
+  assert.throws(() => runInstall({ ...f, mappingIds: ['claude-rules'], reconcileInstalled: new Map([['secondary-rules', secondaryDigest]]) }), /must exactly match selected mappings/u);
+  assert.throws(() => runInstall({ ...f, reconcileInstalled: new Map([['claude-rules', digest]]) }), /explicit --mapping/u);
+  assert.throws(() => runInstall({ ...f, mappingIds: ['claude-rules', 'claude-rules'], reconcileInstalled: new Map([['claude-rules', digest]]) }), /Duplicate --mapping/u);
+  assert.equal(fs.readFileSync(installed, 'utf8'), old);
+});
+
+test('Proves: reconciliation is incompatible with baseline adoption; Test type: authority-boundary mutation; Surface: installer modes; Authority: distinct adoption and reviewed-tree contracts; Killer mutation: let adoptExisting bypass a reviewed digest mismatch; Gated command: npm test', () => {
+  const f = fixture();
+  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  fs.writeFileSync(path.join(f.home, '.claude', 'rules', 'base.md'), '# Old\n');
+  const digest = computeInstalledTreeDigest({ root: path.join(f.home, '.claude', 'rules'), manifest: f.manifest, mapping: f.manifest.mappings[0] }).sha256;
+  assert.throws(() => runInstall({
+    ...f,
+    mappingIds: ['claude-rules'],
+    adoptExisting: true,
+    reconcileInstalled: new Map([['claude-rules', digest]]),
+  }), /cannot be combined/u);
+});
+
+test('Proves: approved installed junctions remain links while each physical destination is digest-checked; Test type: link counterexample; Surface: reconciliation planner; Authority: manifest link policy plus reviewed physical tree; Killer mutation: traverse or replace the junction, or skip the physical digest; Gated command: npm test', () => {
+  const f = fixture();
+  const physical = path.join(f.home, '.claude', 'rules');
+  const link = path.join(f.home, '.claude', 'rules-link');
+  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  fs.writeFileSync(path.join(physical, 'base.md'), '# Reviewed old\n');
+  fs.symlinkSync(physical, link, 'junction');
+  f.manifest.mappings[0].destinations.push('${HOME}/.claude/rules-link');
+  f.manifest.mappings[0].allowInstalledRootLink = true;
+  const digest = computeInstalledTreeDigest({ root: physical, manifest: f.manifest, mapping: f.manifest.mappings[0] }).sha256;
+
+  const operations = runInstall({
+    ...f,
+    mappingIds: ['claude-rules'],
+    reconcileInstalled: new Map([['claude-rules', digest]]),
+  });
+  assert.ok(operations.some((operation) => operation.type === 'retain-legacy-link'));
+  assert.equal(fs.lstatSync(link).isSymbolicLink(), true);
+  assert.equal(fs.readFileSync(path.join(link, 'base.md'), 'utf8'), '# Canonical\n');
+});
+
+test('Proves: reconciliation dry-run plans without touching installed bytes or locks; Test type: no-write mutation; Surface: reconciliation dry-run; Authority: dry-run contract; Killer mutation: write the canonical bytes or lock during planning; Gated command: npm test', () => {
+  const f = fixture();
+  const installed = path.join(f.home, '.claude', 'rules', 'base.md');
+  const lock = path.join(f.home, '.nuvoralink-control-plane', 'lock.json');
+  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  fs.writeFileSync(installed, '# Reviewed old\n');
+  const digest = computeInstalledTreeDigest({ root: path.dirname(installed), manifest: f.manifest, mapping: f.manifest.mappings[0] }).sha256;
+
+  const operations = runInstall({
+    ...f,
+    dryRun: true,
+    mappingIds: ['claude-rules'],
+    reconcileInstalled: new Map([['claude-rules', digest]]),
+  });
+  assert.ok(operations.some((operation) => operation.type === 'reconcile-update'));
+  assert.equal(fs.readFileSync(installed, 'utf8'), '# Reviewed old\n');
+  assert.equal(fs.existsSync(lock), false);
+});
+
+test('Proves: reconciliation writes use the existing transaction and roll back every changed byte; Test type: failure injection; Surface: reconciliation transaction; Authority: snapshot journal; Killer mutation: bypass applyInstallTransaction for reviewed dirty overwrites; Gated command: npm test', () => {
+  const f = fixture();
+  const canonicalRoot = path.join(f.repoRoot, 'canonical', 'rules');
+  const installedRoot = path.join(f.home, '.claude', 'rules');
+  fs.writeFileSync(path.join(canonicalRoot, 'a.md'), 'new-a\n');
+  fs.writeFileSync(path.join(canonicalRoot, 'b.md'), 'new-b\n');
+  fs.writeFileSync(path.join(installedRoot, 'a.md'), 'old-a\n');
+  fs.writeFileSync(path.join(installedRoot, 'b.md'), 'old-b\n');
+  const digest = computeInstalledTreeDigest({ root: installedRoot, manifest: f.manifest, mapping: f.manifest.mappings[0] }).sha256;
+
+  assert.throws(() => runInstall({
+    ...f,
+    mappingIds: ['claude-rules'],
+    reconcileInstalled: new Map([['claude-rules', digest]]),
+    failAfter: 1,
+  }), /Injected install failure/u);
+  assert.equal(fs.readFileSync(path.join(installedRoot, 'a.md'), 'utf8'), 'old-a\n');
+  assert.equal(fs.readFileSync(path.join(installedRoot, 'b.md'), 'utf8'), 'old-b\n');
+});
+
+test('Proves: install reconciliation preserves exact mapping selections; Test type: parser liveness; Surface: control-plane install argument parser; Authority: argv-to-options contract; Killer mutation: omit or alter the selected mapping in parsed options; Gated command: npm test', () => {
+  const digest = 'a'.repeat(64);
+  const parsed = parseControlPlaneArgs(['install', '--dry-run', '--mapping', 'claude-rules', '--reconcile-installed', `claude-rules:${digest}`]);
+  assert.equal(parsed.command, 'install');
+  assert.equal(parsed.dryRun, true);
+  assert.deepEqual(parsed.mappingIds, ['claude-rules']);
+  assert.deepEqual(parsed.reconcileInstalled, new Map([['claude-rules', digest]]));
+});
+
+test('Proves: install reconciliation defaults adoption off; Test type: parser mode liveness; Surface: control-plane install argument parser; Authority: migration-mode contract; Killer mutation: force adoptExisting true when only reconciliation is requested; Gated command: npm test', () => {
+  const digest = 'a'.repeat(64);
+  assert.equal(parseControlPlaneArgs(['install', '--mapping', 'claude-rules', '--reconcile-installed', `claude-rules:${digest}`]).adoptExisting, false);
+});
+
+test('Proves: unqualified install preserves undefined all-mapping selection; Test type: parser counterexample; Surface: control-plane install argument parser; Authority: selection contract; Killer mutation: collapse absent mapping selection to an empty array; Gated command: npm test', () => {
+  assert.equal(parseControlPlaneArgs(['install']).mappingIds, undefined);
+});
+
+test('Proves: reconciliation is install-command-only at the public parser boundary; Test type: parser command mutation; Surface: control-plane argument parser; Authority: command compatibility contract; Killer mutation: accept --reconcile-installed on check; Gated command: npm test', () => {
+  const digest = 'a'.repeat(64);
+  assert.throws(() => parseControlPlaneArgs(['check', '--reconcile-installed', `claude-rules:${digest}`]), /not valid for check/u);
+});
+
+test('Proves: reconciliation cannot silently become baseline adoption; Test type: parser mode mutation; Surface: control-plane install argument parser; Authority: mutually exclusive migration modes; Killer mutation: accept --adopt-existing with --reconcile-installed; Gated command: npm test', () => {
+  const digest = 'a'.repeat(64);
+  assert.throws(() => parseControlPlaneArgs(['install', '--mapping', 'claude-rules', '--adopt-existing', '--reconcile-installed', `claude-rules:${digest}`]), /accepts only/u);
+});
+
+test('Proves: reconciliation arguments obey the exact mapping-to-lowercase-SHA256 grammar; Test type: parser grammar mutation; Surface: control-plane install argument parser; Authority: reconciliation argument grammar; Killer mutation: accept missing, uppercase, inline-equals, near-prefix, or duplicate values; Gated command: npm test', () => {
+  const digest = 'a'.repeat(64);
+  assert.throws(() => parseControlPlaneArgs(['install', '--reconcile-installed']), /Missing value/u);
+  assert.throws(() => parseControlPlaneArgs(['install', '--reconcile-installed', 'claude-rules:ABC']), /Invalid/u);
+  assert.throws(() => parseControlPlaneArgs(['install', `--reconcile-installed=claude-rules:${digest}`]), /not valid for install/u);
+  assert.throws(() => parseControlPlaneArgs(['install', '--reconcile-installedX', `claude-rules:${digest}`]), /not valid for install/u);
+  assert.throws(() => parseControlPlaneArgs(['install', '--reconcile-installed', `claude-rules:${digest}`, '--reconcile-installed', `claude-rules:${digest}`]), /Duplicate/u);
+});
+
+test('Proves: every control-plane argument is consumed once by its command grammar; Test type: parser boundary mutation; Surface: scripts/lib/control-plane.mjs parseControlPlaneArgs; Authority: command-specific option grammar; Killer mutation: ignore a stray token, incompatible flag, or duplicate option; Gated command: npm test', () => {
+  const digest = 'a'.repeat(64);
+  const invalid = [
+    [],
+    ['unknown'],
+    ['validate', '--dry-run'],
+    ['validate', 'stray'],
+    ['check', '--dry-run'],
+    ['check', '--mapping'],
+    ['check', '--mapping', 'claude-rules', 'stray'],
+    ['capture', '--adopt-existing'],
+    ['capture', '--install-id', 'id'],
+    ['capture', '--dry-run', '--dry-run'],
+    ['capture', '--file', 'claude-rules:base.md', '--file', 'claude-rules:base.md'],
+    ['install', '--file', 'claude-rules:base.md'],
+    ['install', '--update-existing'],
+    ['install', '--install-id', 'id'],
+    ['install', '--dry-run', '--dry-run'],
+    ['install', '--mapping', 'claude-rules', '--mapping', 'claude-rules'],
+    ['install', '--mapping', 'claude-rules', 'stray'],
+    ['inventory', '--mapping', 'claude-rules'],
+    ['rollback', '--dry-run'],
+    ['rollback', '--install-id', 'one', '--install-id', 'two'],
+    ['install', '--mapping', 'claude-rules', '--reconcile-installed', `claude-rules:${digest}`, '--adopt-existing'],
+    ['install', '--mapping', 'claude-rules', '--reconcile-installed', `claude-rules:${digest}`, '--file', 'claude-rules:base.md'],
+    ['install', '--mapping', 'claude-rules', '--reconcile-installed', `claude-rules:${digest}`, '--update-existing'],
+    ['install', '--mapping', 'claude-rules', '--reconcile-installed', `claude-rules:${digest}`, '--install-id', 'id'],
+    ['install', '--mapping', 'claude-rules', '--reconcile-installed', `other-rules:${digest}`],
+  ];
+  for (const argv of invalid) assert.throws(() => parseControlPlaneArgs(argv), undefined, argv.join(' '));
+
+  const parsed = parseControlPlaneArgs([
+    'install', '--dry-run',
+    '--mapping', 'claude-rules', '--reconcile-installed', `claude-rules:${digest}`,
+    '--mapping', 'other-rules', '--reconcile-installed', `other-rules:${'b'.repeat(64)}`,
+  ]);
+  assert.deepEqual(parsed.mappingIds, ['claude-rules', 'other-rules']);
+  assert.deepEqual(parsed.reconcileInstalled, new Map([['claude-rules', digest], ['other-rules', 'b'.repeat(64)]]));
+  assert.equal(parsed.dryRun, true);
+});
+
+test('Proves: executable reconciliation rejects incompatible or stray argv before changing bytes; Test type: entrypoint boundary mutation; Surface: scripts/control-plane.mjs runControlPlaneCli; Authority: consuming reconciliation grammar; Killer mutation: silently ignore one incompatible or stray CLI token; Gated command: npm test', () => {
+  const forbiddenTails = [
+    ['--file', 'claude-rules:base.md'],
+    ['--update-existing'],
+    ['--adopt-existing'],
+    ['--install-id', 'id'],
+    ['--unknown'],
+    ['stray'],
+    ['--dry-run', '--dry-run'],
+  ];
+  for (const tail of forbiddenTails) {
+    const f = fixture();
+    const installed = path.join(f.home, '.claude', 'rules', 'base.md');
+    const lock = path.join(f.home, '.nuvoralink-control-plane', 'lock.json');
+    fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+    fs.writeFileSync(installed, '# Reviewed old\n');
+    const digest = computeInstalledTreeDigest({ root: path.dirname(installed), manifest: f.manifest, mapping: f.manifest.mappings[0] }).sha256;
+    const io = cliContext(f);
+    const argv = ['install', '--mapping', 'claude-rules', '--reconcile-installed', `claude-rules:${digest}`, ...tail];
+    assert.equal(runControlPlaneCli(argv, io.context), 1, argv.join(' '));
+    assert.equal(fs.readFileSync(installed, 'utf8'), '# Reviewed old\n');
+    assert.equal(fs.existsSync(lock), false);
+    assert.equal(io.stdout.length, 0);
+  }
+});
+
+test('Proves: the executable install entrypoint preserves dry-run through reconciliation planning; Test type: entrypoint mutation; Surface: scripts/control-plane.mjs runControlPlaneCli; Authority: argv-to-install wiring; Killer mutation: wire dryRun false into runInstall; Gated command: npm test', () => {
+  const f = fixture();
+  const installed = path.join(f.home, '.claude', 'rules', 'base.md');
+  const lock = path.join(f.home, '.nuvoralink-control-plane', 'lock.json');
+  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  fs.writeFileSync(installed, '# Reviewed old\n');
+  const digest = computeInstalledTreeDigest({ root: path.dirname(installed), manifest: f.manifest, mapping: f.manifest.mappings[0] }).sha256;
+  const io = cliContext(f);
+
+  assert.equal(runControlPlaneCli(['install', '--dry-run', '--mapping', 'claude-rules', '--reconcile-installed', `claude-rules:${digest}`], io.context), 0);
+  assert.equal(fs.readFileSync(installed, 'utf8'), '# Reviewed old\n');
+  assert.equal(fs.existsSync(lock), false);
+  assert.ok(io.stdout.some((line) => line === 'operations=1 dryRun=true'));
+});
+
+test('Proves: the executable install entrypoint forwards the exact mapping and reconciliation pair; Test type: entrypoint selection mutation; Surface: scripts/control-plane.mjs runControlPlaneCli; Authority: selected reviewed-tree migration; Killer mutation: omit mappingIds or reconcileInstalled when invoking runInstall; Gated command: npm test', () => {
+  const f = fixture();
+  const installed = path.join(f.home, '.claude', 'rules', 'base.md');
+  const secondarySource = path.join(f.repoRoot, 'canonical', 'secondary');
+  const secondaryInstalled = path.join(f.home, '.claude', 'secondary');
+  fs.mkdirSync(secondarySource, { recursive: true });
+  fs.mkdirSync(secondaryInstalled, { recursive: true });
+  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  fs.writeFileSync(installed, '# Reviewed old\n');
+  fs.writeFileSync(path.join(secondarySource, 'secondary.md'), '# Secondary canonical\n');
+  fs.writeFileSync(path.join(secondaryInstalled, 'secondary.md'), '# Secondary untouched\n');
+  f.manifest.mappings.push({ ...structuredClone(f.manifest.mappings[0]), id: 'secondary-rules', source: 'canonical/secondary', captureFrom: '${HOME}/.claude/secondary', destinations: ['${HOME}/.claude/secondary'] });
+  const digest = computeInstalledTreeDigest({ root: path.dirname(installed), manifest: f.manifest, mapping: f.manifest.mappings[0] }).sha256;
+  const io = cliContext(f);
+
+  assert.equal(runControlPlaneCli(['install', '--dry-run', '--mapping', 'claude-rules', '--reconcile-installed', `claude-rules:${digest}`], io.context), 0);
+  assert.ok(io.stdout.some((line) => line.startsWith('reconcile-update\tclaude-rules\t')));
+  assert.equal(io.stdout.some((line) => line.includes('secondary-rules')), false);
+  assert.equal(fs.readFileSync(path.join(secondaryInstalled, 'secondary.md'), 'utf8'), '# Secondary untouched\n');
+});
+
+test('Proves: the executable inventory entrypoint renders the injected fixture manifest; Test type: entrypoint liveness; Surface: scripts/control-plane.mjs runControlPlaneCli inventory; Authority: manifest inventory command; Killer mutation: bypass the injected manifest and read the repository manifest instead; Gated command: npm test', () => {
+  const f = fixture();
+  const io = cliContext(f);
+
+  assert.equal(runControlPlaneCli(['inventory'], io.context), 0);
+  assert.deepEqual(JSON.parse(io.stdout.join('\n')), {
+    mappings: [{ id: 'claude-rules', source: 'canonical/rules', destinations: ['${HOME}/.claude/rules'], ownership: 'canonical' }],
+  });
+});
+
+test('Proves: digest CLI emits stable JSON for one physical destination; Test type: entrypoint liveness; Surface: scripts/control-plane.mjs runControlPlaneCli digest; Authority: installed-tree digest command; Killer mutation: omit a contract field or produce a different digest for unchanged bytes; Gated command: npm test', () => {
+  const f = fixture();
+  const installedRoot = path.join(f.home, '.claude', 'rules');
+  const installed = path.join(installedRoot, 'base.md');
+  fs.writeFileSync(installed, '# Installed\n');
+  const io = cliContext(f);
+
+  assert.equal(runControlPlaneCli(['digest', '--mapping', 'claude-rules'], io.context), 0);
+  assert.equal(io.stdout.length, 1);
+  const result = JSON.parse(io.stdout[0]);
+  assert.deepEqual(Object.keys(result), ['mapping', 'physicalDestination', 'sha256', 'fileCount']);
+  assert.equal(result.mapping, 'claude-rules');
+  assert.equal(result.physicalDestination, '${HOME}/.claude/rules');
+  assert.match(result.sha256, /^[a-f0-9]{64}$/u);
+  assert.equal(result.fileCount, 1);
+  const repeated = cliContext(f);
+  assert.equal(runControlPlaneCli(['digest', '--mapping', 'claude-rules'], repeated.context), 0);
+  assert.equal(repeated.stdout[0], io.stdout[0]);
+});
+
+test('Proves: digest CLI never writes installed bytes or lock state; Test type: no-write mutation; Surface: scripts/control-plane.mjs runControlPlaneCli digest; Authority: read-only digest command; Killer mutation: write, normalize, or lock the installed tree while hashing it; Gated command: npm test', () => {
+  const f = fixture();
+  const installed = path.join(f.home, '.claude', 'rules', 'base.md');
+  const content = '# Preserve exact bytes\r\n';
+  fs.writeFileSync(installed, content);
+  const io = cliContext(f);
+
+  assert.equal(runControlPlaneCli(['digest', '--mapping', 'claude-rules'], io.context), 0);
+  assert.equal(fs.readFileSync(installed, 'utf8'), content);
+  assert.equal(fs.existsSync(path.join(f.home, '.nuvoralink-control-plane', 'lock.json')), false);
+});
+
+test('Proves: digest CLI output contains neither installed content nor absolute machine paths; Test type: disclosure mutation; Surface: scripts/control-plane.mjs runControlPlaneCli digest; Authority: portable metadata-only output contract; Killer mutation: emit the resolved destination or a file-content preview; Gated command: npm test', () => {
+  const f = fixture();
+  fs.writeFileSync(path.join(f.home, '.claude', 'rules', 'base.md'), '# PRIVATE_BUT_ALLOWED_CONTENT\n');
+  const io = cliContext(f);
+
+  assert.equal(runControlPlaneCli(['digest', '--mapping', 'claude-rules'], io.context), 0);
+  assert.doesNotMatch(io.stdout[0], new RegExp(f.home.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+  assert.doesNotMatch(io.stdout[0], /PRIVATE_BUT_ALLOWED_CONTENT/u);
+});
+
+test('Proves: digest CLI skips an approved root junction and identifies the physical destination token; Test type: link counterexample; Surface: scripts/control-plane.mjs runControlPlaneCli digest; Authority: physical installed-tree identity; Killer mutation: traverse, hash, replace, or emit the approved junction as the physical destination; Gated command: npm test', () => {
+  const f = fixture();
+  const physical = path.join(f.home, '.claude', 'rules');
+  const link = path.join(f.home, '.claude', 'rules-link');
+  fs.writeFileSync(path.join(physical, 'base.md'), '# Installed\n');
+  fs.symlinkSync(physical, link, 'junction');
+  f.manifest.mappings[0].destinations.push('${HOME}/.claude/rules-link');
+  f.manifest.mappings[0].allowInstalledRootLink = true;
+  const io = cliContext(f);
+
+  assert.equal(runControlPlaneCli(['digest', '--mapping', 'claude-rules'], io.context), 0);
+  assert.equal(JSON.parse(io.stdout[0]).physicalDestination, '${HOME}/.claude/rules');
+  assert.equal(fs.lstatSync(link).isSymbolicLink(), true);
+});
+
+test('Proves: digest CLI requires one valid explicit mapping and rejects every unrelated mode option; Test type: argument-boundary mutation; Surface: scripts/control-plane.mjs runControlPlaneCli digest; Authority: read-only digest grammar; Killer mutation: accept absent, duplicate, unknown, adoption, reconciliation, file-selector, dry-run, or unknown options; Gated command: npm test', () => {
+  const f = fixture();
+  const digest = 'a'.repeat(64);
+  const invalidArgv = [
+    ['digest'],
+    ['digest', '--mapping', 'claude-rules', '--mapping', 'claude-rules'],
+    ['digest', '--mapping', 'unknown'],
+    ['digest', '--mapping', 'claude-rules', '--adopt-existing'],
+    ['digest', '--mapping', 'claude-rules', '--reconcile-installed', `claude-rules:${digest}`],
+    ['digest', '--mapping', 'claude-rules', '--file', 'claude-rules:base.md'],
+    ['digest', '--mapping', 'claude-rules', '--dry-run'],
+    ['digest', '--mapping', 'claude-rules', '--unknown'],
+  ];
+  for (const argv of invalidArgv) {
+    const io = cliContext(f);
+    assert.equal(runControlPlaneCli(argv, io.context), 1, argv.join(' '));
+    assert.equal(io.stdout.length, 0);
+  }
+});
+
+test('Proves: digest CLI rejects unsafe installed entries with relative metadata and no bytes or machine path; Test type: unsafe-tree mutation; Surface: scripts/control-plane.mjs runControlPlaneCli digest; Authority: installed inventory deny boundary; Killer mutation: hash, read, or disclose a denied installed file; Gated command: npm test', () => {
+  const f = fixture();
+  const sentinel = 'SECRET_CONTENT_MUST_NOT_APPEAR';
+  fs.writeFileSync(path.join(f.home, '.claude', 'rules', '.credentials.json'), sentinel);
+  const io = cliContext(f);
+
+  assert.equal(runControlPlaneCli(['digest', '--mapping', 'claude-rules'], io.context), 1);
+  assert.deepEqual(io.stdout, []);
+  assert.match(io.stderr.join('\n'), /Managed tree contains denied filename: \.credentials\.json/u);
+  assert.doesNotMatch(io.stderr.join('\n'), new RegExp(f.home.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+  assert.doesNotMatch(io.stderr.join('\n'), new RegExp(sentinel, 'u'));
+});
+
+test('Proves: reconciliation refuses every denied or unclassified installed entry before reading or mutating managed bytes; Test type: unsafe-tree mutation; Surface: reviewed-tree digest and install preflight; Authority: manifest deny and extension boundaries; Killer mutation: add an unallowlisted file, denied filename, or denied extension without changing the reviewed digest; Gated command: npm test', () => {
+  const hostileCases = [
+    ['helper.exe', Buffer.from([0, 1, 2])],
+    ['.credentials.json', Buffer.from('content must never be emitted')],
+    ['private.key', Buffer.from('content must never be emitted')],
+  ];
+  for (const [relative, bytes] of hostileCases) {
+    const f = fixture();
+    const canonical = path.join(f.repoRoot, 'canonical', 'rules', 'base.md');
+    const installedRoot = path.join(f.home, '.claude', 'rules');
+    const installed = path.join(installedRoot, 'base.md');
+    fs.writeFileSync(canonical, '# Canonical\n');
+    fs.writeFileSync(installed, '# Reviewed old\n');
+    const reviewed = computeInstalledTreeDigest({ root: installedRoot, manifest: f.manifest, mapping: f.manifest.mappings[0] });
+    fs.writeFileSync(path.join(installedRoot, relative), bytes);
+
+    assert.throws(
+      () => computeInstalledTreeDigest({ root: installedRoot, manifest: f.manifest, mapping: f.manifest.mappings[0] }),
+      /Managed tree contains (?:extension not allowlisted|denied filename|denied extension)/u,
+    );
+    assert.throws(() => runInstall({
+      ...f,
+      mappingIds: ['claude-rules'],
+      reconcileInstalled: new Map([['claude-rules', reviewed.sha256]]),
+    }), /Managed tree contains (?:extension not allowlisted|denied filename|denied extension)/u);
+    assert.equal(fs.readFileSync(installed, 'utf8'), '# Reviewed old\n');
+    assert.equal(fs.existsSync(path.join(installedRoot, relative)), true);
+  }
+});
+
+test('Proves: explicit mapping exclusions remain unmanaged counterexamples during strict reconciliation; Test type: exclusion counterexample; Surface: reviewed-tree digest and install preflight; Authority: mapping.exclude; Killer mutation: reject or retire an explicitly excluded subtree because it contains an unallowlisted file; Gated command: npm test', () => {
+  const f = fixture();
+  const installedRoot = path.join(f.home, '.claude', 'rules');
+  const excludedRoot = path.join(installedRoot, 'declared-unmanaged');
+  fs.mkdirSync(excludedRoot, { recursive: true });
+  f.manifest.mappings[0].exclude = ['declared-unmanaged'];
+  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  fs.writeFileSync(path.join(installedRoot, 'base.md'), '# Reviewed old\n');
+  fs.writeFileSync(path.join(excludedRoot, 'ignored.exe'), Buffer.from([0, 1, 2]));
+  const reviewed = computeInstalledTreeDigest({ root: installedRoot, manifest: f.manifest, mapping: f.manifest.mappings[0] });
+
+  runInstall({
+    ...f,
+    mappingIds: ['claude-rules'],
+    reconcileInstalled: new Map([['claude-rules', reviewed.sha256]]),
+  });
+  assert.equal(fs.readFileSync(path.join(installedRoot, 'base.md'), 'utf8'), '# Canonical\n');
+  assert.equal(fs.existsSync(path.join(excludedRoot, 'ignored.exe')), true);
+  assert.deepEqual(runCheck({ ...f, mappingIds: ['claude-rules'] }), []);
+});
+
+test('Proves: ordinary parity reports every unsafe installed entry without reading or emitting its content; Test type: unsafe-inventory mutation; Surface: installed-tree check; Authority: manifest deny and extension boundaries; Killer mutation: silently skip a denied filename, extension, prefix, or directory segment; Gated command: npm test', () => {
+  const f = fixture();
+  const installedRoot = path.join(f.home, '.claude', 'rules');
+  const sentinel = 'SECRET_CONTENT_MUST_NOT_APPEAR';
+  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  fs.writeFileSync(path.join(installedRoot, 'base.md'), '# Canonical\n');
+  fs.writeFileSync(path.join(installedRoot, '.credentials.json'), sentinel);
+  fs.writeFileSync(path.join(installedRoot, 'private.key'), sentinel);
+  fs.writeFileSync(path.join(installedRoot, '.env.local'), sentinel);
+  fs.mkdirSync(path.join(installedRoot, 'logs'), { recursive: true });
+  fs.writeFileSync(path.join(installedRoot, 'logs', 'nested.md'), sentinel);
+
+  const findings = runCheck(f);
+  assert.deepEqual(
+    findings.filter((finding) => finding.type === 'unsafe-installed-entry').map(({ relative, reason }) => ({ relative, reason })),
+    [
+      { relative: '.credentials.json', reason: 'denied filename' },
+      { relative: '.env.local', reason: 'denied filename prefix' },
+      { relative: 'logs', reason: 'denied path segment' },
+      { relative: 'private.key', reason: 'denied extension' },
+    ],
+  );
+  assert.doesNotMatch(JSON.stringify(findings), new RegExp(sentinel, 'u'));
+  assert.equal(findings.some((finding) => finding.relative === 'logs/nested.md'), false);
+});
+
+test('Proves: default and adoption installs refuse unsafe installed entries before any mutation; Test type: no-write security mutation; Surface: ordinary installer preflight; Authority: managed-root deny boundary; Killer mutation: let ordinary or adoptExisting mode overwrite managed bytes while a denied file persists; Gated command: npm test', () => {
+  for (const adoptExisting of [false, true]) {
+    const f = fixture();
+    const installedRoot = path.join(f.home, '.claude', 'rules');
+    const installed = path.join(installedRoot, 'base.md');
+    fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+    fs.writeFileSync(installed, '# Old\n');
+    fs.writeFileSync(path.join(installedRoot, '.credentials.json'), 'SECRET_CONTENT_MUST_NOT_APPEAR');
+
+    assert.throws(() => runInstall({ ...f, adoptExisting }), /Managed tree contains denied filename: \.credentials\.json/u);
+    assert.equal(fs.readFileSync(installed, 'utf8'), '# Old\n');
+    assert.equal(fs.existsSync(path.join(f.home, '.nuvoralink-control-plane', 'lock.json')), false);
+  }
+});
+
+test('Proves: denied filename, prefix, extension, and segment rules prune directories before descendants are read and block every install mode; Test type: directory-boundary mutation; Surface: installed inventory traversal; Authority: manifest deny policy; Killer mutation: apply filename, prefix, or extension rules only to files; Gated command: npm test', () => {
+  const hostileDirectories = [
+    ['.credentials.json', 'denied filename'],
+    ['.env.local', 'denied filename prefix'],
+    ['private.key', 'denied extension'],
+    ['logs', 'denied path segment'],
+  ];
+  for (const [relative, reason] of hostileDirectories) {
+    const f = fixture();
+    const installedRoot = path.join(f.home, '.claude', 'rules');
+    const installed = path.join(installedRoot, 'base.md');
+    const hostile = path.join(installedRoot, relative);
+    fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+    fs.writeFileSync(installed, '# Old\n');
+    const reviewed = computeInstalledTreeDigest({ root: installedRoot, manifest: f.manifest, mapping: f.manifest.mappings[0] });
+    fs.mkdirSync(hostile);
+    fs.writeFileSync(path.join(hostile, 'SECRET_DESCENDANT.md'), 'SECRET_DESCENDANT');
+
+    const findings = runCheck(f);
+    assert.ok(findings.some((finding) => finding.type === 'unsafe-installed-entry' && finding.relative === relative && finding.reason === reason));
+    assert.equal(findings.some((finding) => String(finding.relative).includes('SECRET_DESCENDANT')), false);
+    for (const options of [{}, { adoptExisting: true }, { mappingIds: ['claude-rules'], reconcileInstalled: new Map([['claude-rules', reviewed.sha256]]) }]) {
+      assert.throws(() => runInstall({ ...f, ...options }), new RegExp(`Managed tree contains ${reason.replace('/', '\\/')}`, 'u'));
+      assert.equal(fs.readFileSync(installed, 'utf8'), '# Old\n');
+    }
+  }
+});
+
+test('Proves: nested installed links are reported path-relatively, pruned, and never hide independent parity drift; Test type: link traversal mutation; Surface: check and install inventory; Authority: physical managed-tree boundary; Killer mutation: throw from check, traverse the link, or stop before reporting ordinary drift; Gated command: npm test', () => {
+  const f = fixture();
+  const installedRoot = path.join(f.home, '.claude', 'rules');
+  const outside = path.join(f.home, 'outside');
+  fs.mkdirSync(outside);
+  fs.writeFileSync(path.join(outside, 'secret.md'), 'DO_NOT_READ');
+  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  fs.writeFileSync(path.join(installedRoot, 'base.md'), '# Drift\n');
+  fs.symlinkSync(outside, path.join(installedRoot, 'nested-link'), 'junction');
+
+  const findings = runCheck(f);
+  assert.ok(findings.some((finding) => finding.type === 'unsafe-installed-entry' && finding.relative === 'nested-link' && finding.reason === 'link/junction'));
+  assert.ok(findings.some((finding) => finding.type === 'drift' && finding.relative === 'base.md'));
+  assert.equal(findings.some((finding) => String(finding.relative).includes('secret.md')), false);
+  let thrown;
+  try { runInstall(f); } catch (error) { thrown = error; }
+  assert.match(thrown?.message ?? '', /Managed tree contains link\/junction: nested-link/u);
+  assert.doesNotMatch(thrown?.message ?? '', new RegExp(installedRoot.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+  assert.equal(fs.readFileSync(path.join(installedRoot, 'base.md'), 'utf8'), '# Drift\n');
+});
+
+test('Proves: destination and approved-link capture resolution failures are findings scoped to one destination; Test type: resolution failure; Surface: runCheck destination loop; Authority: per-destination parity reporting; Killer mutation: resolve tokens or capture realpaths outside the per-destination error boundary; Gated command: npm test', () => {
+  const unresolved = fixture();
+  fs.writeFileSync(path.join(unresolved.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  unresolved.manifest.mappings[0].destinations = ['${MISSING}/rules'];
+  assert.ok(runCheck(unresolved).some((finding) => finding.type === 'installed-path' && finding.destination === '${MISSING}/rules'));
+
+  const missingCapture = fixture();
+  const physical = path.join(missingCapture.home, '.claude', 'rules');
+  const link = path.join(missingCapture.home, '.claude', 'rules-link');
+  fs.writeFileSync(path.join(missingCapture.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  fs.writeFileSync(path.join(physical, 'base.md'), '# Canonical\n');
+  fs.symlinkSync(physical, link, 'junction');
+  missingCapture.manifest.mappings[0].destinations = ['${HOME}/.claude/rules-link'];
+  missingCapture.manifest.mappings[0].captureFrom = '${HOME}/missing-capture';
+  missingCapture.manifest.mappings[0].allowInstalledRootLink = true;
+  assert.ok(runCheck(missingCapture).some((finding) => finding.type === 'installed-path' && finding.destination === '${HOME}/.claude/rules-link'));
+});
+
+test('Proves: a non-link destination does not depend on captureFrom resolution; Test type: lazy-resolution counterexample; Surface: runCheck destination loop; Authority: root-link validation boundary; Killer mutation: resolve captureFrom before checking rootIsLink; Gated command: npm test', () => {
+  const f = fixture();
+  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  fs.writeFileSync(path.join(f.home, '.claude', 'rules', 'base.md'), '# Canonical\n');
+  f.manifest.mappings[0].captureFrom = '${UNREGISTERED}/capture';
+
+  const findings = runCheck(f);
+  assert.equal(findings.some((finding) => finding.type === 'installed-path'), false);
+});
+
+test('Proves: installed destination type mismatches use only the destination template; Test type: disclosure mutation; Surface: runCheck installed inventory; Authority: portable inventory errors; Killer mutation: expose rootInput from the expected-tree failure; Gated command: npm test', () => {
+  const f = fixture();
+  const installedRoot = path.join(f.home, '.claude', 'rules');
+  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  fs.rmSync(installedRoot, { recursive: true });
+  fs.writeFileSync(installedRoot, 'wrong node type');
+
+  const findings = runCheck(f);
+  assert.ok(findings.some((finding) => finding.type === 'installed-path'
+    && finding.destination === '${HOME}/.claude/rules'
+    && finding.message === 'Expected tree mapping inventory: ${HOME}/.claude/rules'));
+  const serialized = JSON.stringify(findings);
+  assert.doesNotMatch(serialized, new RegExp(f.home.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+  assert.doesNotMatch(serialized, new RegExp(f.repoRoot.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+});
+
+test('Proves: malformed canonical source resolution remains mapping-scoped and does not suppress unrelated drift; Test type: continuation mutation; Surface: runCheck mapping loop; Authority: per-mapping canonical resolution; Killer mutation: resolve source outside the mapping try; Gated command: npm test', () => {
+  const f = fixture();
+  const secondarySource = path.join(f.repoRoot, 'canonical', 'secondary');
+  const secondaryInstalled = path.join(f.home, '.claude', 'secondary');
+  fs.mkdirSync(secondarySource, { recursive: true });
+  fs.mkdirSync(secondaryInstalled, { recursive: true });
+  fs.writeFileSync(path.join(secondarySource, 'secondary.md'), '# Canonical\n');
+  fs.writeFileSync(path.join(secondaryInstalled, 'secondary.md'), '# Drift\n');
+  f.manifest.mappings[0].source = '../outside-repo';
+  f.manifest.mappings.push({ ...structuredClone(f.manifest.mappings[0]), id: 'secondary-rules', source: 'canonical/secondary', captureFrom: '${HOME}/.claude/secondary', destinations: ['${HOME}/.claude/secondary'] });
+
+  const findings = runCheck(f);
+  assert.ok(findings.some((finding) => finding.type === 'manifest' && finding.mapping === 'claude-rules' && finding.message === 'Canonical source resolution failed'));
+  assert.ok(findings.some((finding) => finding.type === 'drift' && finding.mapping === 'secondary-rules' && finding.relative === 'secondary.md'));
+  assert.doesNotMatch(JSON.stringify(findings), new RegExp(f.repoRoot.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+});
+
+test('Proves: a valid mapping with no destinations is an empty destination set rather than a check-wide exception; Test type: absent-list counterexample; Surface: runCheck mapping loop; Authority: optional destination inventory; Killer mutation: iterate mapping.destinations without the empty-array fallback; Gated command: npm test', () => {
+  const f = fixture();
+  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  delete f.manifest.mappings[0].destinations;
+
+  assert.doesNotThrow(() => runCheck(f));
+});
+
+test('Proves: digest refuses multiple physical destinations with a portable observed count; Test type: layout-precondition mutation; Surface: scripts/control-plane.mjs runControlPlaneCli digest; Authority: single-physical reconciliation contract; Killer mutation: omit the count or emit resolved physical destination paths; Gated command: npm test', () => {
+  const f = fixture();
+  const second = path.join(f.home, '.claude', 'rules-second');
+  fs.mkdirSync(second, { recursive: true });
+  f.manifest.mappings[0].destinations.push('${HOME}/.claude/rules-second');
+  const io = cliContext(f);
+
+  assert.equal(runControlPlaneCli(['digest', '--mapping', 'claude-rules'], io.context), 1);
+  assert.deepEqual(io.stdout, []);
+  assert.deepEqual(io.stderr, ['digest requires exactly one physical destination for claude-rules; found 2']);
+  assert.doesNotMatch(io.stderr[0], new RegExp(f.home.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+});
+
+test('Proves: digest and reconciliation share one pre-write layout classifier and reject duplicate physical aliases; Test type: layout authority mutation; Surface: installed destination layout; Authority: single physical reviewed tree; Killer mutation: classify only digest or deduplicate two declared physical aliases before counting; Gated command: npm test', () => {
+  const f = fixture();
+  const installedRoot = path.join(f.home, '.claude', 'rules');
+  const installed = path.join(installedRoot, 'base.md');
+  const lock = path.join(f.home, '.nuvoralink-control-plane', 'lock.json');
+  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  fs.writeFileSync(installed, '# Reviewed old\n');
+  f.roots.ALIAS = f.home;
+  f.manifest.mappings[0].destinations.push('${ALIAS}/.claude/rules');
+  const digest = computeInstalledTreeDigest({ root: installedRoot, manifest: f.manifest, mapping: f.manifest.mappings[0] }).sha256;
+
+  assert.throws(() => runDigest({ manifest: f.manifest, roots: f.roots, mappingIds: ['claude-rules'] }), /exactly one physical destination.*found 2/u);
+  assert.throws(() => runInstall({
+    ...f,
+    mappingIds: ['claude-rules'],
+    reconcileInstalled: new Map([['claude-rules', digest]]),
+  }), /Installed-tree reconciliation requires exactly one physical destination for claude-rules; found 2/u);
+  assert.equal(fs.readFileSync(installed, 'utf8'), '# Reviewed old\n');
+  assert.equal(fs.existsSync(lock), false);
+});
+
+test('Proves: a nested canonical link yields one relative source finding while checks continue through other mappings; Test type: source traversal mutation; Surface: runCheck mapping loop; Authority: canonical physical-tree boundary; Killer mutation: throw, disclose the canonical absolute path, duplicate the source finding, or stop before another mapping drift; Gated command: npm test', () => {
+  const f = fixture();
+  const outside = path.join(f.root, 'outside-source');
+  const secondarySource = path.join(f.repoRoot, 'canonical', 'secondary');
+  const secondaryInstalled = path.join(f.home, '.claude', 'secondary');
+  fs.mkdirSync(outside);
+  fs.mkdirSync(secondarySource, { recursive: true });
+  fs.mkdirSync(secondaryInstalled, { recursive: true });
+  fs.writeFileSync(path.join(outside, 'outside.md'), '# Outside\n');
+  fs.symlinkSync(outside, path.join(f.repoRoot, 'canonical', 'rules', 'nested-link'), 'junction');
+  fs.writeFileSync(path.join(secondarySource, 'secondary.md'), '# Canonical\n');
+  fs.writeFileSync(path.join(secondaryInstalled, 'secondary.md'), '# Drift\n');
+  f.manifest.mappings.push({ ...structuredClone(f.manifest.mappings[0]), id: 'secondary-rules', source: 'canonical/secondary', captureFrom: '${HOME}/.claude/secondary', destinations: ['${HOME}/.claude/secondary'] });
+
+  const findings = runCheck(f);
+  const sources = findings.filter((finding) => finding.type === 'source' && finding.mapping === 'claude-rules');
+  assert.deepEqual(sources, [{ type: 'source', mapping: 'claude-rules', message: 'Canonical source contains link/junction: nested-link' }]);
+  assert.doesNotMatch(JSON.stringify(findings), new RegExp(f.repoRoot.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+  assert.ok(findings.some((finding) => finding.type === 'drift' && finding.mapping === 'secondary-rules' && finding.relative === 'secondary.md'));
+  assert.throws(
+    () => runCapture({ ...f, dryRun: true, mappingIds: ['claude-rules'] }),
+    (error) => {
+      assert.match(error.message, /Canonical source contains link\/junction: nested-link/u);
+      assert.doesNotMatch(error.message, new RegExp(f.repoRoot.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+      return true;
+    },
+  );
+});
+
+test('Proves: a junction cannot approve itself when captureFrom and destination resolve to the same path; Test type: authority mutation; Surface: junction approval; Authority: independent physical capture root; Killer mutation: compare realpath of one lexical path to itself; Gated command: npm test', () => {
+  const f = fixture();
+  const installedRoot = path.join(f.home, '.claude', 'rules');
+  const unrelatedRoot = path.join(f.root, 'unrelated-rules');
+  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  fs.mkdirSync(unrelatedRoot);
+  fs.writeFileSync(path.join(unrelatedRoot, 'base.md'), '# Unrelated\n');
+  fs.rmSync(installedRoot, { recursive: true });
+  fs.symlinkSync(unrelatedRoot, installedRoot, 'junction');
+  f.manifest.mappings[0].allowInstalledRootLink = true;
+
+  assert.throws(() => runInstall(f), (error) => {
+    assert.equal(error.message, 'Install refused unexpected installed link/junction: ${HOME}/.claude/rules');
+    assert.doesNotMatch(error.message, new RegExp(f.home.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+    return true;
+  });
+});
+
+test('Proves: canonical mapping exclusions are intentionally unmanaged across validation and install; Test type: exclusion counterexample; Surface: canonical inventory; Authority: mapping.exclude; Killer mutation: reject mapping exclusion under rejectDenied; Gated command: npm test', () => {
+  const f = fixture();
+  const excluded = path.join(f.repoRoot, 'canonical', 'rules', 'excluded');
+  fs.mkdirSync(excluded);
+  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  fs.writeFileSync(path.join(excluded, 'ignored.md'), '# Unmanaged\n');
+  f.manifest.mappings[0].exclude = ['excluded'];
+
+  assert.deepEqual(validateManifest(f.manifest, f.repoRoot, f.roots), []);
+  runInstall(f);
+  assert.equal(fs.existsSync(path.join(f.home, '.claude', 'rules', 'base.md')), true);
+  assert.equal(fs.existsSync(path.join(f.home, '.claude', 'rules', 'excluded', 'ignored.md')), false);
+});
+
+test('Proves: install resolves captureFrom only when a destination is a link; Test type: feeder-laziness mutation; Surface: installer destination loop; Authority: junction approval feeder; Killer mutation: resolve captureFrom before rootIsLink; Gated command: npm test', () => {
+  const f = fixture();
+  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  let captureReads = 0;
+  f.manifest.mappings[0].captureFrom = '${CAPTURE}/rules';
+  const roots = {
+    HOME: f.home,
+    get CAPTURE() {
+      captureReads += 1;
+      return path.join(f.root, 'capture');
+    },
+  };
+
+  runInstall({ ...f, roots });
+  assert.equal(captureReads, 1, 'validateManifest is the sole non-link captureFrom resolution');
+});
+
+test('Proves: digest treats an absent destinations list as zero physical destinations and refuses portably; Test type: absent-list mutation; Surface: installed-tree digest; Authority: counted physical-destination precondition; Killer mutation: iterate undefined destinations; Gated command: npm test', () => {
+  const f = fixture();
+  delete f.manifest.mappings[0].destinations;
+  assert.throws(() => runDigest({ manifest: f.manifest, roots: f.roots, mappingIds: ['claude-rules'] }), /found 0/u);
+});
+
+test('Proves: dirty install and rollback refusals disclose only portable managed labels; Test type: disclosure mutation; Surface: install and rollback errors; Authority: tokenized destination identity; Killer mutation: interpolate target or lockPath; Gated command: npm test', () => {
+  const dirtyInstall = fixture();
+  fs.writeFileSync(path.join(dirtyInstall.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  fs.writeFileSync(path.join(dirtyInstall.home, '.claude', 'rules', 'base.md'), '# Local\n');
+  assert.throws(() => runInstall(dirtyInstall), (error) => {
+    assert.match(error.message, /Dirty managed target: claude-rules\/base\.md/u);
+    assert.doesNotMatch(error.message, new RegExp(dirtyInstall.home.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+    return true;
+  });
+
+  const dirtyRollback = fixture();
+  const installed = path.join(dirtyRollback.home, '.claude', 'rules', 'base.md');
+  fs.writeFileSync(path.join(dirtyRollback.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  const installedOperations = runInstall(dirtyRollback);
+  fs.writeFileSync(installed, '# Changed after install\n');
+  assert.throws(() => runRollback({ manifest: dirtyRollback.manifest, roots: dirtyRollback.roots, installId: installedOperations.installId }), (error) => {
+    assert.equal(error.message, 'Rollback refused; installed target is dirty: ${HOME}/.claude/rules/base.md');
+    assert.doesNotMatch(error.message, new RegExp(dirtyRollback.home.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+    return true;
+  });
+
+  const missing = fixture();
+  assert.throws(() => runRollback({ manifest: missing.manifest, roots: missing.roots }), (error) => {
+    assert.equal(error.message, 'No install snapshots found for ${HOME}/.nuvoralink-control-plane/lock.json');
+    assert.doesNotMatch(error.message, new RegExp(missing.home.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+    return true;
+  });
+});
+
+test('Proves: the executable reconciliation install writes reviewed bytes and lock state; Test type: entrypoint write liveness; Surface: scripts/control-plane.mjs runControlPlaneCli; Authority: reviewed-tree CLI contract; Killer mutation: force dryRun or drop reconciliation at the executable boundary; Gated command: npm test', () => {
+  const f = fixture();
+  const installed = path.join(f.home, '.claude', 'rules', 'base.md');
+  const lock = path.join(f.home, '.nuvoralink-control-plane', 'lock.json');
+  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+  fs.writeFileSync(installed, '# Reviewed old\n');
+  const digest = computeInstalledTreeDigest({ root: path.dirname(installed), manifest: f.manifest, mapping: f.manifest.mappings[0] }).sha256;
+  const io = cliContext(f);
+
+  assert.equal(runControlPlaneCli(['install', '--mapping', 'claude-rules', '--reconcile-installed', `claude-rules:${digest}`], io.context), 0);
+  assert.equal(fs.readFileSync(installed, 'utf8'), '# Canonical\n');
+  assert.equal(fs.existsSync(lock), true);
+  assert.ok(io.stdout.some((line) => line === 'operations=1 dryRun=false'));
 });

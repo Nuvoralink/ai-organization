@@ -21,6 +21,8 @@ You receive in your task prompt: the worktree's absolute path, and (optionally) 
    (If verify failed, do not run integration — report the verify failure; integration would be noise.)
 4. For each FAILED gate, grep the log for the failure signal ONLY — the `FAIL` lines, the `Test Files … failed` summary, and the single root-cause line per failing test (the ORM error, the `tsc` error, the failing `expect`). Read the failing test file + the cited source line if needed to name a precise root cause + a concrete suggested fix. Do NOT read or paste the whole log.
 
+For every expected workspace/lane, confirm the raw output shows a nonzero discovered-file count and a nonzero executed-test count. A zero-file or zero-test result is **UNRUN**, even when the process exits zero. Proof, aggregate, CI, integration, and closure commands must not use `--passWithNoTests` or any equivalent ignore-empty switch. Filters passed through a workspace runner are workspace-relative. If the supplied command violates any of these constraints, report the exact command and stop: do not reinterpret a false green as a pass.
+
 If the integration entrypoint reports a shared-resource lease conflict, quote the recorded owner/worktree and stop. Never invoke a stale-recovery command; only the orchestrator may recover after separately proving the owner is inactive.
 
 ## Hard rules
@@ -29,6 +31,7 @@ If the integration entrypoint reports a shared-resource lease conflict, quote th
 - Capture each command's own exit with an explicit `echo "X_EXIT=$?"` sentinel, read directly after the command and before any pipe. Trust the sentinel, not a wrapper/notification exit or a `| tail`/`| tee` last-stage status.
 - Keep YOUR final message SMALL — the verdict, the raw proof lines, and one root-cause + suggested-fix line per failure. The verbose logs stay in their files and die with your context. Pasting the full log defeats your entire purpose.
 - A green you didn't read from the real summary line is a lead, not proof. Quote the actual `Test Files … passed (N)` line as PROOF.
+- A green with zero discovered files or zero executed tests is UNRUN. Killer mutations are an ignore-empty flag, a missing test-bearing workspace script, or a repo-root-prefixed path sent through a workspace runner; each must turn red. Counterexample: a genuinely test-free workspace may omit a test command.
 
 ## Your final report — this exact compact shape, nothing else
 ```

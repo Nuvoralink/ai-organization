@@ -47,8 +47,9 @@ export function resolveTokenPath(template, roots) {
   const match = /^\$\{([^}]+)\}(?:\/(.*))?$/.exec(template);
   invariant(match, `Path must start with a registered token: ${template}`);
   const [, token, suffix = ''] = match;
-  invariant(typeof roots[token] === 'string' && roots[token].length > 0, `Unresolved path token: ${token}`);
-  const root = path.resolve(roots[token]);
+  const rootValue = roots[token];
+  invariant(typeof rootValue === 'string' && rootValue.length > 0, `Unresolved path token: ${token}`);
+  const root = path.resolve(rootValue);
   const resolved = path.resolve(root, ...suffix.split('/').filter(Boolean));
   invariant(isWithin(root, resolved), `Path escapes registered root ${token}: ${template}`);
   return resolved;
@@ -134,24 +135,27 @@ function denyReason(relative, manifest, mapping, isDirectory = false) {
   const segments = normalized.toLowerCase().split('/');
   const base = segments.at(-1) ?? '';
   const deny = manifest.deny;
+  if ((mapping.exclude ?? []).some((entry) => normalized === entry || normalized.startsWith(`${entry}/`))) return 'mapping exclusion';
   if (segments.some((segment) => deny.segments.map((x) => x.toLowerCase()).includes(segment))) return 'denied path segment';
-  if (isDirectory) {
-    if ((mapping.exclude ?? []).some((entry) => normalized === entry || normalized.startsWith(`${entry}/`))) return 'mapping exclusion';
-    return undefined;
-  }
   if (deny.filenames.map((x) => x.toLowerCase()).includes(base)) return 'denied filename';
   if (deny.prefixes.some((prefix) => base.startsWith(prefix.toLowerCase()))) return 'denied filename prefix';
   if (deny.extensions.map((x) => x.toLowerCase()).includes(path.extname(base).toLowerCase())) return 'denied extension';
-  if ((mapping.exclude ?? []).some((entry) => normalized === entry || normalized.startsWith(`${entry}/`))) return 'mapping exclusion';
+  if (isDirectory) return undefined;
   if (mapping.allowedExtensions.length > 0 && !mapping.allowedExtensions.map((x) => x.toLowerCase()).includes(path.extname(base).toLowerCase())) return 'extension not allowlisted';
   return undefined;
 }
 
-function inspectRoot(root, allowRootLink) {
+class PortableInventoryError extends Error {}
+
+function inventoryFailure(message) {
+  throw new PortableInventoryError(message);
+}
+
+function inspectRoot(root, allowRootLink, label = '.') {
   if (!fs.existsSync(root)) return root;
   const stat = fs.lstatSync(root);
   if (!stat.isSymbolicLink()) return root;
-  invariant(allowRootLink, `Root link/junction is not allowed: ${root}`);
+  if (!allowRootLink) inventoryFailure(`Root link/junction is not allowed: ${label}`);
   return fs.realpathSync(root);
 }
 
@@ -161,42 +165,220 @@ function rootIsLink(root) {
 
 function legacyLinkMatches(destinationRoot, captureRoot) {
   if (!rootIsLink(destinationRoot)) return false;
+  if (path.resolve(destinationRoot).toLowerCase() === path.resolve(captureRoot).toLowerCase()) return false;
   return path.resolve(fs.realpathSync(destinationRoot)).toLowerCase() === path.resolve(fs.realpathSync(captureRoot)).toLowerCase();
 }
 
-export function collectFiles(rootInput, manifest, mapping, options = {}) {
-  if (!fs.existsSync(rootInput)) return new Map();
-  const root = inspectRoot(rootInput, mapping.allowRootLink === true);
-  const output = new Map();
-
-  if (mapping.mode === 'file') {
-    const stat = fs.lstatSync(root);
-    invariant(stat.isFile(), `Expected file mapping source: ${rootInput}`);
-    const relative = path.basename(rootInput);
-    invariant(!denyReason(relative, manifest, mapping), `Unsafe mapped file: ${rootInput}`);
-    output.set('', root);
-    return output;
-  }
-
-  invariant(fs.statSync(root).isDirectory(), `Expected tree mapping source: ${rootInput}`);
-  const visit = (directory, relativeBase = '') => {
-    const entries = fs.readdirSync(directory, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name));
-    for (const entry of entries) {
-      const relative = normalizeRelative(path.join(relativeBase, entry.name));
-      const absolute = path.join(directory, entry.name);
-      const reason = denyReason(relative, manifest, mapping, entry.isDirectory());
-      if (reason) {
-        if (options.rejectDenied) throw new Error(`Canonical source contains ${reason}: ${absolute}`);
-        continue;
-      }
-      const lstat = fs.lstatSync(absolute);
-      invariant(!lstat.isSymbolicLink(), `Nested link/junction traversal refused: ${absolute}`);
-      if (entry.isDirectory()) visit(absolute, relative);
-      else if (entry.isFile()) output.set(relative, absolute);
+function classifyInstalledLayout(mapping, roots, operation) {
+  const entries = [];
+  for (const destinationTemplate of mapping.destinations ?? []) {
+    let destinationRoot;
+    try { destinationRoot = resolveTokenPath(destinationTemplate, roots); }
+    catch { throw new Error(`${operation} destination resolution failed: ${destinationTemplate}`); }
+    if (!rootIsLink(destinationRoot)) {
+      entries.push({ kind: 'physical', destinationTemplate, destinationRoot });
+      continue;
     }
+    let approved = false;
+    try {
+      const captureRoot = resolveTokenPath(mapping.captureFrom, roots);
+      approved = mapping.allowInstalledRootLink && legacyLinkMatches(destinationRoot, captureRoot);
+    } catch { approved = false; }
+    invariant(approved, `${operation} refused unexpected installed link/junction: ${destinationTemplate}`);
+    entries.push({ kind: 'junction', destinationTemplate, destinationRoot });
+  }
+  return {
+    entries,
+    physical: entries.filter((entry) => entry.kind === 'physical'),
+    junctions: entries.filter((entry) => entry.kind === 'junction'),
   };
-  visit(root);
-  return output;
+}
+
+export function collectFiles(rootInput, manifest, mapping, options = {}) {
+  const label = options.inventoryLabel ?? '.';
+  try {
+    if (!fs.existsSync(rootInput)) return new Map();
+    const root = inspectRoot(rootInput, mapping.allowRootLink === true, label);
+    const output = new Map();
+
+    if (mapping.mode === 'file') {
+      const stat = fs.lstatSync(root);
+      if (!stat.isFile()) inventoryFailure(`Expected file mapping inventory: ${label}`);
+      const relative = path.basename(rootInput);
+      const reason = denyReason(relative, manifest, mapping);
+      if (options.installedInventory && reason === 'mapping exclusion') return output;
+      if (options.installedInventory && reason) {
+        options.unsafeEntries?.push({ relative, reason });
+        if (options.rejectUnsafe) inventoryFailure(`Managed tree contains ${reason}: ${relative}`);
+        return output;
+      }
+      if (reason) inventoryFailure(`Unsafe mapped file: ${relative}`);
+      output.set('', root);
+      return output;
+    }
+
+    if (!fs.statSync(root).isDirectory()) inventoryFailure(`Expected tree mapping inventory: ${label}`);
+    const visit = (directory, relativeBase = '') => {
+      const entries = fs.readdirSync(directory, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name));
+      for (const entry of entries) {
+        const relative = normalizeRelative(path.join(relativeBase, entry.name));
+        const absolute = path.join(directory, entry.name);
+        const lstat = fs.lstatSync(absolute);
+        if (lstat.isSymbolicLink()) {
+          if (options.installedInventory) {
+            options.unsafeEntries?.push({ relative, reason: 'link/junction' });
+            if (options.rejectUnsafe) inventoryFailure(`Managed tree contains link/junction: ${relative}`);
+            continue;
+          }
+          if (options.rejectDenied) inventoryFailure(`Canonical source contains link/junction: ${relative}`);
+          inventoryFailure(`Nested link/junction traversal refused: ${relative}`);
+        }
+        const reason = denyReason(relative, manifest, mapping, lstat.isDirectory());
+        if (reason) {
+          if (options.installedInventory && reason !== 'mapping exclusion') options.unsafeEntries?.push({ relative, reason });
+          if (options.rejectUnsafe && reason !== 'mapping exclusion') inventoryFailure(`Managed tree contains ${reason}: ${relative}`);
+          if (options.rejectDenied && reason !== 'mapping exclusion') inventoryFailure(`Canonical source contains ${reason}: ${relative}`);
+          continue;
+        }
+        if (lstat.isDirectory()) visit(absolute, relative);
+        else if (lstat.isFile()) output.set(relative, absolute);
+      }
+    };
+    visit(root);
+    return output;
+  } catch (error) {
+    if (error instanceof PortableInventoryError) throw error;
+    const scope = options.installedInventory ? 'Installed destination' : options.rejectDenied ? 'Canonical source' : 'Mapped';
+    inventoryFailure(`${scope} inventory failed: ${label}`);
+  }
+}
+
+function uint64Bytes(value) {
+  const bytes = Buffer.alloc(8);
+  bytes.writeBigUInt64BE(BigInt(value));
+  return bytes;
+}
+
+function digestCollectedTree(files) {
+  const entries = [...files.entries()]
+    .map(([relative, file]) => [normalizeRelative(relative), file])
+    .sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0);
+  const digest = crypto.createHash('sha256');
+  digest.update(Buffer.from('nuvoralink-installed-tree-v1\0', 'utf8'));
+  digest.update(uint64Bytes(entries.length));
+  for (const [relative, file] of entries) {
+    const relativeBytes = Buffer.from(relative, 'utf8');
+    const rawBytes = fs.readFileSync(file);
+    digest.update(uint64Bytes(relativeBytes.length));
+    digest.update(relativeBytes);
+    digest.update(uint64Bytes(rawBytes.length));
+    digest.update(rawBytes);
+  }
+  return { sha256: digest.digest('hex'), fileCount: entries.length };
+}
+
+export function computeInstalledTreeDigest({ root, manifest, mapping, destinationTemplate = '.' }) {
+  invariant(!rootIsLink(root), `Installed tree digest requires a physical destination: ${destinationTemplate}`);
+  return digestCollectedTree(collectFiles(root, manifest, { ...mapping, allowRootLink: false }, {
+    installedInventory: true,
+    rejectUnsafe: true,
+    inventoryLabel: destinationTemplate,
+  }));
+}
+
+export function parseControlPlaneArgs(argv) {
+  invariant(Array.isArray(argv), 'Control-plane arguments must be an array');
+  const [command, ...args] = argv;
+  const grammars = {
+    validate: new Set(),
+    check: new Set(['--mapping']),
+    capture: new Set(['--dry-run', '--update-existing', '--mapping', '--file']),
+    install: new Set(['--dry-run', '--adopt-existing', '--mapping', '--reconcile-installed']),
+    digest: new Set(['--mapping']),
+    inventory: new Set(),
+    rollback: new Set(['--install-id']),
+  };
+  invariant(Object.hasOwn(grammars, command), `Unknown control-plane command: ${String(command)}`);
+  const mappingIds = [];
+  const fileSelectors = [];
+  const reconciliations = new Map();
+  let dryRun = false;
+  let adoptExisting = false;
+  let updateExisting = false;
+  let installId;
+  const seenBoolean = new Set();
+  const consumeValue = (flag, index) => {
+    const value = args[index + 1];
+    invariant(typeof value === 'string' && value.length > 0 && !value.startsWith('--'), `Missing value for ${flag}`);
+    return value;
+  };
+  for (let index = 0; index < args.length; index += 1) {
+    const flag = args[index];
+    invariant(grammars[command].has(flag), `Option ${String(flag)} is not valid for ${command}`);
+    if (['--dry-run', '--adopt-existing', '--update-existing'].includes(flag)) {
+      invariant(!seenBoolean.has(flag), `Duplicate option for ${command}: ${flag}`);
+      seenBoolean.add(flag);
+      if (flag === '--dry-run') dryRun = true;
+      else if (flag === '--adopt-existing') adoptExisting = true;
+      else updateExisting = true;
+      continue;
+    }
+    const value = consumeValue(flag, index);
+    index += 1;
+    if (flag === '--mapping') {
+      invariant(/^[a-z0-9][a-z0-9-]+$/u.test(value), `Invalid --mapping value: ${value}`);
+      invariant(!mappingIds.includes(value), `Duplicate --mapping selection: ${value}`);
+      mappingIds.push(value);
+    } else if (flag === '--file') {
+      invariant(!fileSelectors.includes(value), `Duplicate --file selector: ${value}`);
+      fileSelectors.push(value);
+    } else if (flag === '--install-id') {
+      invariant(installId === undefined, 'Duplicate --install-id option');
+      installId = value;
+    } else if (flag === '--reconcile-installed') {
+      const match = /^([a-z0-9][a-z0-9-]+):([a-f0-9]{64})$/u.exec(value);
+      invariant(match, `Invalid --reconcile-installed value: ${value}`);
+      const [, mappingId, expectedDigest] = match;
+      invariant(!reconciliations.has(mappingId), `Duplicate --reconcile-installed mapping: ${mappingId}`);
+      reconciliations.set(mappingId, expectedDigest);
+    }
+  }
+  if (command === 'digest') invariant(mappingIds.length === 1 && args.length === 2, 'digest requires exactly one --mapping ID and accepts no other options');
+  const reconcileInstalled = reconciliations.size > 0 ? reconciliations : undefined;
+  if (reconcileInstalled) {
+    invariant(!adoptExisting && !updateExisting && fileSelectors.length === 0 && installId === undefined,
+      'Installed-tree reconciliation accepts only --mapping, --reconcile-installed, and optional --dry-run');
+    invariant(mappingIds.length > 0, 'Installed-tree reconciliation requires explicit --mapping selections');
+    const missing = mappingIds.filter((id) => !reconciliations.has(id));
+    const unselected = [...reconciliations.keys()].filter((id) => !mappingIds.includes(id));
+    invariant(missing.length === 0 && unselected.length === 0,
+      `Reconciliation mappings must exactly match selected mappings; missing: ${missing.join(', ') || 'none'}; unselected: ${unselected.join(', ') || 'none'}`);
+  }
+  return {
+    command,
+    dryRun,
+    adoptExisting,
+    updateExisting,
+    mappingIds: mappingIds.length > 0 ? mappingIds : undefined,
+    fileSelectors: fileSelectors.length > 0 ? fileSelectors : undefined,
+    reconcileInstalled,
+    installId,
+  };
+}
+
+export function runDigest({ manifest, roots, mappingIds }) {
+  invariant(Array.isArray(mappingIds) && mappingIds.length === 1, 'digest requires exactly one explicit mapping selection');
+  const [mapping] = selectedMappings(manifest, mappingIds, 'digest');
+  const { physical } = classifyInstalledLayout(mapping, roots, 'Digest');
+  invariant(physical.length === 1, `digest requires exactly one physical destination for ${mapping.id}; found ${physical.length}`);
+  const [{ destinationTemplate, destinationRoot }] = physical;
+  let digest;
+  try { digest = computeInstalledTreeDigest({ root: destinationRoot, manifest, mapping, destinationTemplate }); }
+  catch (error) {
+    if (/^Managed tree contains /u.test(error.message)) throw error;
+    throw new Error(`Digest could not inventory physical destination: ${destinationTemplate}`);
+  }
+  return { mapping: mapping.id, physicalDestination: destinationTemplate, sha256: digest.sha256, fileCount: digest.fileCount };
 }
 
 function secretFinding(file) {
@@ -223,7 +405,7 @@ export function validateManifest(manifest, repoRoot, roots) {
     if (!/^[a-z0-9][a-z0-9-]+$/.test(mapping.id ?? '')) errors.push(`Invalid mapping id: ${mapping.id}`);
     if (ids.has(mapping.id)) errors.push(`Duplicate mapping id: ${mapping.id}`);
     ids.add(mapping.id);
-    try { resolveSource(repoRoot, mapping.source); } catch (error) { errors.push(error.message); }
+    try { resolveSource(repoRoot, mapping.source); } catch { errors.push(`Invalid source path for mapping: ${mapping.id}`); }
     for (const template of mapping.destinations ?? []) {
       try {
         const destination = resolveTokenPath(template, roots);
@@ -238,7 +420,7 @@ export function validateManifest(manifest, repoRoot, roots) {
         destinationRoots.push({ template, path: destination });
         destinations.add(key);
         try {
-          const sourceFiles = collectFiles(resolveSource(repoRoot, mapping.source), manifest, mapping, { rejectDenied: true });
+          const sourceFiles = collectFiles(resolveSource(repoRoot, mapping.source), manifest, mapping, { rejectDenied: true, inventoryLabel: mapping.source });
           for (const relative of sourceFiles.keys()) {
             const target = mapping.mode === 'file' ? destination : path.join(destination, relative);
             const targetKey = path.normalize(target).toLowerCase();
@@ -247,12 +429,12 @@ export function validateManifest(manifest, repoRoot, roots) {
             else physicalTargets.set(targetKey, `${mapping.id}/${relative || '.'}`);
           }
         } catch (error) {
-          errors.push(error.message);
+          errors.push(error instanceof PortableInventoryError ? error.message : `Canonical source inventory failed for mapping: ${mapping.id}`);
         }
-      } catch (error) { errors.push(error.message); }
+      } catch { errors.push(`Invalid destination path for mapping: ${mapping.id}`); }
     }
-    try { resolveTokenPath(mapping.captureFrom, roots); } catch (error) { errors.push(error.message); }
-    try { resolveTokenPath(mapping.lock, roots); } catch (error) { errors.push(error.message); }
+    try { resolveTokenPath(mapping.captureFrom, roots); } catch { errors.push(`Invalid capture path for mapping: ${mapping.id}`); }
+    try { resolveTokenPath(mapping.lock, roots); } catch { errors.push(`Invalid lock path for mapping: ${mapping.id}`); }
   }
   return errors;
 }
@@ -267,16 +449,16 @@ export function validateCanonical({ repoRoot, manifest }) {
     ids.add(mapping.id);
     let sourceRoot;
     try { sourceRoot = resolveSource(repoRoot, mapping.source); }
-    catch (error) { problems.push({ type: 'manifest', message: error.message }); continue; }
+    catch { problems.push({ type: 'manifest', mapping: mapping.id, message: 'Canonical source resolution failed' }); continue; }
     for (const template of [...(mapping.destinations ?? []), mapping.captureFrom, mapping.lock]) {
-      if (!/^\$\{[^}]+\}(?:\/.*)?$/.test(template ?? '')) problems.push({ type: 'manifest', message: `Path must start with a registered token: ${template}` });
+      if (!/^\$\{[^}]+\}(?:\/.*)?$/.test(template ?? '')) problems.push({ type: 'manifest', mapping: mapping.id, message: 'Path must start with a registered token' });
     }
     for (const template of mapping.destinations ?? []) {
       if (destinationTemplates.has(template)) problems.push({ type: 'manifest', message: `Duplicate destination template: ${template}` });
       destinationTemplates.add(template);
     }
     let sourceFiles;
-    try { sourceFiles = collectFiles(sourceRoot, manifest, mapping, { rejectDenied: true }); }
+    try { sourceFiles = collectFiles(sourceRoot, manifest, mapping, { rejectDenied: true, inventoryLabel: mapping.source }); }
     catch (error) { problems.push({ type: 'source', mapping: mapping.id, message: error.message }); continue; }
     if (sourceFiles.size === 0) problems.push({ type: 'empty-source', mapping: mapping.id });
     for (const [relative, source] of sourceFiles) {
@@ -290,7 +472,7 @@ export function validateCanonical({ repoRoot, manifest }) {
     const scopeRegistryPath = path.join(repoRoot, 'registries', 'tracked-scope.v1.json');
     let scopeEntries = [];
     try { scopeEntries = JSON.parse(fs.readFileSync(scopeRegistryPath, 'utf8')).files ?? []; }
-    catch (error) { problems.push({ type: 'tracked-scope-registry', message: `Missing or invalid tracked scope registry: ${error.message}` }); }
+    catch { problems.push({ type: 'tracked-scope-registry', message: 'Missing or invalid tracked scope registry' }); }
     const scopeByPath = new Map();
     for (const entry of scopeEntries) {
       const normalized = normalizeRelative(entry?.path ?? '');
@@ -400,6 +582,9 @@ function applyInstallTransaction({ operations, locks, repoRoot, failAfter = unde
     if (existed) fs.writeFileSync(path.join(snapshot.directory, backup), fs.readFileSync(operation.target));
     snapshot.data.entries.push({
       target: operation.target,
+      targetLabel: `${operation.destinationTemplate}/${operation.relative || '.'}`,
+      destinationTemplate: operation.destinationTemplate,
+      relative: operation.relative,
       existed,
       backup: existed ? backup : null,
       postExists: operation.type !== 'retire',
@@ -452,27 +637,29 @@ function applyInstallTransaction({ operations, locks, repoRoot, failAfter = unde
 }
 
 export function runRollback({ manifest, roots, installId: requestedId = undefined }) {
-  const lockPaths = [...new Set(manifest.mappings.map((mapping) => resolveTokenPath(mapping.lock, roots)))];
+  const lockTargets = [...new Map(manifest.mappings.map((mapping) => [resolveTokenPath(mapping.lock, roots), mapping.lock])).entries()]
+    .map(([lockPath, lockLabel]) => ({ lockPath, lockLabel }));
   const selected = [];
-  for (const lockPath of lockPaths) {
+  for (const { lockPath, lockLabel } of lockTargets) {
     const base = path.join(path.dirname(lockPath), 'snapshots');
-    invariant(fs.existsSync(base), `No install snapshots found for ${lockPath}`);
+    invariant(fs.existsSync(base), `No install snapshots found for ${lockLabel}`);
     const id = requestedId ?? fs.readdirSync(base).sort().at(-1);
-    invariant(id, `No install snapshots found for ${lockPath}`);
+    invariant(id, `No install snapshots found for ${lockLabel}`);
     const directory = path.join(base, id);
     const snapshotFile = path.join(directory, 'snapshot.json');
     invariant(fs.existsSync(snapshotFile), `Snapshot not found: ${id}`);
     const snapshot = readJson(snapshotFile);
     invariant(snapshot.status === 'applied', `Snapshot is not rollback-eligible: ${id}/${snapshot.status}`);
     for (const entry of snapshot.entries) {
+      const targetLabel = entry.targetLabel ?? `${entry.destinationTemplate ?? '<managed-destination>'}/${entry.relative || '.'}`;
       if (entry.postExists === false) {
-        invariant(!fs.existsSync(entry.target), `Rollback refused; retired target was recreated: ${entry.target}`);
+        invariant(!fs.existsSync(entry.target), `Rollback refused; retired target was recreated: ${targetLabel}`);
       } else {
-        invariant(fs.existsSync(entry.target), `Rollback refused; installed target is missing: ${entry.target}`);
+        invariant(fs.existsSync(entry.target), `Rollback refused; installed target is missing: ${targetLabel}`);
         const targetMatchesSnapshot = entry.postRawHash
           ? hashRawFile(entry.target) === entry.postRawHash
           : hashFile(entry.target) === entry.postHash;
-        invariant(targetMatchesSnapshot, `Rollback refused; installed target is dirty: ${entry.target}`);
+        invariant(targetMatchesSnapshot, `Rollback refused; installed target is dirty: ${targetLabel}`);
       }
     }
     selected.push({ directory, snapshotFile, snapshot });
@@ -495,36 +682,90 @@ function selectedMappings(manifest, mappingIds, operation) {
   return manifest.mappings.filter((mapping) => selectedIds.has(mapping.id));
 }
 
+function validatedReconciliation({ manifest, mappingIds, adoptExisting, reconcileInstalled }) {
+  if (reconcileInstalled === undefined) return undefined;
+  invariant(reconcileInstalled instanceof Map && reconcileInstalled.size > 0, 'Installed-tree reconciliation requires at least one mapping digest');
+  invariant(!adoptExisting, '--reconcile-installed cannot be combined with --adopt-existing');
+  invariant(Array.isArray(mappingIds) && mappingIds.length > 0, 'Installed-tree reconciliation requires explicit --mapping selections');
+  const selectedIds = new Set(mappingIds);
+  invariant(selectedIds.size === mappingIds.length, 'Duplicate --mapping selection is not allowed during installed-tree reconciliation');
+  const knownIds = new Set(manifest.mappings.map((mapping) => mapping.id));
+  const unknownIds = [...reconcileInstalled.keys()].filter((id) => !knownIds.has(id));
+  invariant(unknownIds.length === 0, `Unknown reconciliation mapping(s): ${unknownIds.join(', ')}`);
+  for (const [mappingId, expectedDigest] of reconcileInstalled) {
+    invariant(/^[a-z0-9][a-z0-9-]+$/u.test(mappingId), `Invalid reconciliation mapping id: ${mappingId}`);
+    invariant(/^[a-f0-9]{64}$/u.test(expectedDigest), `Invalid reviewed installed-tree digest for ${mappingId}`);
+  }
+  const missing = [...selectedIds].filter((id) => !reconcileInstalled.has(id));
+  const unselected = [...reconcileInstalled.keys()].filter((id) => !selectedIds.has(id));
+  invariant(missing.length === 0 && unselected.length === 0,
+    `Reconciliation mappings must exactly match selected mappings; missing: ${missing.join(', ') || 'none'}; unselected: ${unselected.join(', ') || 'none'}`);
+  return reconcileInstalled;
+}
+
 export function runCheck({ repoRoot, manifest, roots, mappingIds = undefined }) {
-  const problems = [...validateCanonical({ repoRoot, manifest }), ...validateManifest(manifest, repoRoot, roots).map((message) => ({ type: 'manifest', message }))];
+  const canonicalProblems = validateCanonical({ repoRoot, manifest });
+  const invalidSources = new Set(canonicalProblems
+    .filter((problem) => problem.type === 'source' || problem.message === 'Canonical source resolution failed')
+    .map((problem) => problem.mapping));
+  const canonicalSourceMessages = new Set(canonicalProblems.filter((problem) => problem.type === 'source').map((problem) => problem.message));
+  const manifestProblems = validateManifest(manifest, repoRoot, roots)
+    .filter((message) => !canonicalSourceMessages.has(message)
+      && ![...invalidSources].some((mappingId) => message === `Invalid source path for mapping: ${mappingId}`))
+    .map((message) => ({ type: 'manifest', message }));
+  const problems = [...canonicalProblems, ...manifestProblems];
   for (const mapping of selectedMappings(manifest, mappingIds, 'check')) {
-    const sourceRoot = resolveSource(repoRoot, mapping.source);
-    const sourceFiles = collectFiles(sourceRoot, manifest, mapping);
-    for (const destinationTemplate of mapping.destinations) {
-      const destinationRoot = resolveTokenPath(destinationTemplate, roots);
-      const captureRoot = resolveTokenPath(mapping.captureFrom, roots);
-      if (rootIsLink(destinationRoot) && (!mapping.allowInstalledRootLink || !legacyLinkMatches(destinationRoot, captureRoot))) {
-        problems.push({ type: 'unexpected-link-target', mapping: mapping.id, destination: destinationTemplate });
+    if (invalidSources.has(mapping.id)) continue;
+    let sourceRoot;
+    let sourceFiles;
+    try {
+      sourceRoot = resolveSource(repoRoot, mapping.source);
+      sourceFiles = collectFiles(sourceRoot, manifest, mapping, { rejectDenied: true, inventoryLabel: mapping.source });
+    }
+    catch {
+      problems.push({ type: 'source', mapping: mapping.id, message: 'Canonical source inventory failed' });
+      continue;
+    }
+    for (const destinationTemplate of mapping.destinations ?? []) {
+      let destinationRoot;
+      try {
+        destinationRoot = resolveTokenPath(destinationTemplate, roots);
+        if (rootIsLink(destinationRoot)) {
+          const captureRoot = resolveTokenPath(mapping.captureFrom, roots);
+          if (!mapping.allowInstalledRootLink || !legacyLinkMatches(destinationRoot, captureRoot)) {
+            problems.push({ type: 'unexpected-link-target', mapping: mapping.id, destination: destinationTemplate });
+            continue;
+          }
+        }
+      } catch (error) {
+        problems.push({ type: 'installed-path', mapping: mapping.id, destination: destinationTemplate, message: 'Installed destination resolution failed' });
         continue;
       }
       let destinationFiles;
-      try { destinationFiles = collectFiles(destinationRoot, manifest, { ...mapping, allowRootLink: mapping.allowInstalledRootLink === true }); }
-      catch (error) { problems.push({ type: 'installed-path', mapping: mapping.id, destination: destinationTemplate, message: error.message }); continue; }
+      const unsafeEntries = [];
+      try {
+        destinationFiles = collectFiles(
+          destinationRoot,
+          manifest,
+          { ...mapping, allowRootLink: mapping.allowInstalledRootLink === true },
+          { installedInventory: true, unsafeEntries, inventoryLabel: destinationTemplate },
+        );
+      }
+      catch (error) {
+        problems.push({ type: 'installed-path', mapping: mapping.id, destination: destinationTemplate, message: error.message });
+        continue;
+      }
+      for (const unsafe of unsafeEntries) {
+        problems.push({
+          type: 'unsafe-installed-entry',
+          mapping: mapping.id,
+          destination: destinationTemplate,
+          relative: unsafe.relative,
+          reason: unsafe.reason,
+        });
+      }
       for (const problem of compareTrees(sourceFiles, destinationFiles, mapping.detectLocalOnly, roots, mapping.renderContentTokens !== false)) {
         problems.push({ ...problem, mapping: mapping.id, destination: destinationTemplate });
-      }
-      if (mapping.mode === 'tree' && fs.existsSync(destinationRoot) && !rootIsLink(destinationRoot)) {
-        const visitUnexpected = (directory, relativeBase = '') => {
-          for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
-            const relative = normalizeRelative(path.join(relativeBase, entry.name));
-            const absolute = path.join(directory, entry.name);
-            if (entry.isDirectory()) visitUnexpected(absolute, relative);
-            else if (entry.isFile() && denyReason(relative, manifest, mapping) === 'extension not allowlisted') {
-              problems.push({ type: 'unclassified-local-only', mapping: mapping.id, destination: destinationTemplate, relative });
-            }
-          }
-        };
-        visitUnexpected(destinationRoot);
       }
     }
   }
@@ -557,8 +798,8 @@ export function runCapture({ repoRoot, manifest, roots, dryRun = false, updateEx
     if (selectedFiles.size > 0 && !selectedFiles.has(mapping.id)) continue;
     const captureRoot = resolveTokenPath(mapping.captureFrom, roots);
     const sourceRoot = resolveSource(repoRoot, mapping.source);
-    const captured = collectFiles(captureRoot, manifest, mapping);
-    const canonical = collectFiles(sourceRoot, manifest, mapping);
+    const captured = collectFiles(captureRoot, manifest, mapping, { inventoryLabel: mapping.captureFrom });
+    const canonical = collectFiles(sourceRoot, manifest, mapping, { inventoryLabel: mapping.source });
     if (captured.size === 0 && canonical.size > 0) continue;
     invariant(captured.size > 0, `Capture source is empty: ${mapping.id}`);
     for (const [relative, input] of captured) {
@@ -584,35 +825,55 @@ export function runCapture({ repoRoot, manifest, roots, dryRun = false, updateEx
   return operations;
 }
 
-export function runInstall({ repoRoot, manifest, roots, dryRun = false, adoptExisting = false, failAfter = undefined, mappingIds = undefined }) {
+export function runInstall({ repoRoot, manifest, roots, dryRun = false, adoptExisting = false, failAfter = undefined, mappingIds = undefined, reconcileInstalled = undefined }) {
+  const mappings = selectedMappings(manifest, mappingIds, 'install');
+  const reconciliation = validatedReconciliation({ manifest, mappingIds, adoptExisting, reconcileInstalled });
+  const reviewedLayouts = new Map();
+  if (reconciliation) {
+    for (const mapping of mappings) {
+      const layout = classifyInstalledLayout(mapping, roots, 'Installed-tree reconciliation');
+      invariant(layout.physical.length === 1,
+        `Installed-tree reconciliation requires exactly one physical destination for ${mapping.id}; found ${layout.physical.length}`);
+      reviewedLayouts.set(mapping.id, layout);
+    }
+  }
   const errors = validateManifest(manifest, repoRoot, roots);
   invariant(errors.length === 0, `Manifest invalid:\n${errors.join('\n')}`);
   const operations = [];
   const conflicts = [];
   const locks = new Map();
 
-  for (const mapping of selectedMappings(manifest, mappingIds, 'install')) {
+  for (const mapping of mappings) {
     const sourceRoot = resolveSource(repoRoot, mapping.source);
-    const sourceFiles = collectFiles(sourceRoot, manifest, mapping);
+    const sourceFiles = collectFiles(sourceRoot, manifest, mapping, { inventoryLabel: mapping.source });
     invariant(sourceFiles.size > 0, `Canonical source is empty: ${mapping.id}`);
+    const reviewedDigest = reconciliation?.get(mapping.id);
     const lockPath = resolveTokenPath(mapping.lock, roots);
     if (!locks.has(lockPath)) locks.set(lockPath, loadLock(lockPath));
     const lock = locks.get(lockPath);
-    for (const destinationTemplate of mapping.destinations) {
-      const destinationRoot = resolveTokenPath(destinationTemplate, roots);
-      const captureRoot = resolveTokenPath(mapping.captureFrom, roots);
-      if (rootIsLink(destinationRoot)) {
-        invariant(mapping.allowInstalledRootLink && legacyLinkMatches(destinationRoot, captureRoot), `Unexpected installed link/junction target: ${destinationRoot}`);
+    const layout = reviewedLayouts.get(mapping.id) ?? classifyInstalledLayout(mapping, roots, 'Install');
+    for (const { kind, destinationTemplate, destinationRoot } of layout.entries) {
+      if (kind === 'junction') {
         operations.push({ type: 'retain-legacy-link', mapping: mapping.id, relative: '', target: destinationRoot });
         continue;
       }
-      const destinationFiles = collectFiles(destinationRoot, manifest, { ...mapping, allowRootLink: false });
+      const destinationFiles = collectFiles(
+        destinationRoot,
+        manifest,
+        { ...mapping, allowRootLink: false },
+        { installedInventory: true, rejectUnsafe: true, inventoryLabel: destinationTemplate },
+      );
+      if (reviewedDigest) {
+        const currentTree = digestCollectedTree(destinationFiles);
+        invariant(currentTree.sha256 === reviewedDigest,
+          `Installed-tree reconciliation refused: reviewed tree digest mismatch for ${mapping.id}/${destinationTemplate}`);
+      }
       if (mapping.detectLocalOnly) {
         for (const [relative, current] of destinationFiles) {
           if (sourceFiles.has(relative)) continue;
           const key = lockKey(mapping, destinationTemplate, relative);
           const installedRawHash = lock.files[key]?.rawHash;
-          if (installedRawHash && hashRawFile(current) === installedRawHash) {
+          if (reviewedDigest || (installedRawHash && hashRawFile(current) === installedRawHash)) {
             operations.push({
               type: 'retire',
               mapping: mapping.id,
@@ -646,13 +907,17 @@ export function runInstall({ repoRoot, manifest, roots, dryRun = false, adoptExi
         }
         if (current) {
           const installedHash = lock.files[key]?.hash;
-          if ((!installedHash || hashFile(current) !== installedHash) && !adoptExisting) {
-            conflicts.push(`Dirty managed target: ${target}`);
+          if ((!installedHash || hashFile(current) !== installedHash) && !adoptExisting && !reviewedDigest) {
+            conflicts.push(`Dirty managed target: ${mapping.id}/${relative || '.'}`);
             continue;
           }
         }
         operations.push({
-          type: current ? (adoptExisting && !lock.files[key] ? 'adopt-update' : 'update') : 'create',
+          type: current
+            ? (reviewedDigest && (!lock.files[key] || hashFile(current) !== lock.files[key].hash)
+              ? 'reconcile-update'
+              : adoptExisting && !lock.files[key] ? 'adopt-update' : 'update')
+            : 'create',
           mapping: mapping.id,
           relative,
           source,
