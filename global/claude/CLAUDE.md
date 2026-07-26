@@ -555,3 +555,10 @@ Dialer builds; the dialer keeps its own self-contained copies under `.claude/rul
   fire. Favor an explicit, repeated, enforceable rule over a terse one that gets ignored. Still cut
   anything genuinely dead or wrong. If I keep having to repeat a rule, it isn't worded as a hard enough
   gate — sharpen it, don't just restate it.
+
+## Memory self-bootstrap on a fresh machine
+Memory is machine-local by design; never assume a predecessor's memory exists.
+On the first session in a project on a fresh machine, seed memory from durable project records:
+the decision log, journey/lessons docs, bug backlog, sprint statuses, and synced curated memory under
+`global/claude/project-memory/` when present. Record only reusable authored knowledge; never seed from
+transcripts, jobs, or history. *Fail-state:* first-session decisions rely on absent predecessor memory.

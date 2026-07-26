@@ -45,3 +45,9 @@ The portable subset includes `MEMORY.md`, `memory_summary.md`, authored `extensi
 The portable subset includes Claude plugin installation/marketplace/blocklist manifests, authored Claude plans, and the agent skill-lock provenance registry. Plugin caches and marketplace working copies remain upstream/runtime state; the existing `local-desktop-app-uploads/visualforge` copy is redundant with the canonical VisualForge dependency mirror but is intentionally not deleted.
 
 Claude `settings.json` remains deny-listed and unmanaged because it contains machine-local secret values. `global/claude/settings.template.json` records only its portable shape, with every MCP environment value replaced by `<SET-LOCALLY>`; it has no install mapping.
+
+## Curated Claude project memory
+
+Claude project session transcripts, jobs, and history under `~/.claude/projects/` are machine-local and excluded. Only authored Markdown under an explicit project `memory/` directory is portable; current project directories each have a dedicated mapping into `global/claude/project-memory/<project-dir-name>/`. Add a new project by reviewing its `memory/*.md` content, then adding an equally narrow mapping and artifact-registry row—never broaden capture to the projects root.
+
+Also excluded are `~/.codex/config.toml`, `~/.codex/rules/default.rules`, every credential/auth/cache/log/session surface, and the LLM-Councel `.env`. These remain machine-local deny-listed state and are never captured.

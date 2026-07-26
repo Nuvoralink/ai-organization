@@ -1,0 +1,19 @@
+---
+name: browser-preview-verification
+description: How to run a browser preview / source-to-screen verification in the Auxara Dialer repo (port + npm-indirection + screenshot + auth-gated-login gotchas)
+metadata: 
+  node_type: memory
+  type: reference
+  originSessionId: 484e8cda-3ce8-4153-9cf9-209150be80fc
+---
+
+Verifying a frontend change in a live browser preview here has three recurring snags (hit 2026-06-10 on the password-strength feature):
+
+1. **Port 5173 is usually already taken** by a running `vite` dev server (the user keeps one open). `preview_start("frontend")` refuses on the in-use port. Don't kill it — start a *separate* preview instance on another port instead.
+2. **`dev:frontend` is double-npm-indirected** (`dev:frontend` → `npm run dev --workspace=frontend` → `vite`), so `-- --port N` passed to `dev:frontend` stops one npm level short and never reaches Vite. Use a launch config that calls the workspace `dev` script directly: `runtimeArgs: ["run","dev","--workspace=frontend","--","--port","5180","--strictPort"]`, `port: 5180`. That reaches Vite (one npm level). Confirm with `curl -s -o /dev/null -w "%{http_code}" http://localhost:5180/` → expect 200 before navigating.
+3. **`preview_screenshot` hangs (30s timeout) in this environment** even with no console errors — a renderer quirk, not a code bug. Use `preview_eval` DOM reads as the primary proof instead (query `data-testid` / classes / `aria-*` / `textContent`) — that's conclusive source-to-screen evidence here.
+4. **Auth-gated pages** (`/lists`, the cockpit, most app routes) redirect to `/login` with no session — so VISUAL fidelity of authed pages went unverified and a sharp-card / flat-card bug reached prod (2026-06-24). Fix: log in first. `TEST_USERNAME` / `TEST_PASSWORD` are in the env (Amin added them 2026-06-24 for exactly this — check `backend/.env`). Fill the login form via `preview_fill` / `preview_eval`, then navigate to the route and read computed styles (`getComputedStyle` for `border-radius` / `box-shadow` / `background`) + structure. Do NOT echo or log the credential values (security-rules §6) — read at use-time, use, don't print. This is what lets me verify a frontend change LOOKS right (not just that the gates pass) before the user sees it on prod.
+
+5. **Don't background-start `npm run dev:backend` for verification — it locks Prisma + breaks `verify`.** It spawns an orphaned node chain (npm → npm → `tsx watch src/index.ts`) that SURVIVES `TaskStop` (task-stop kills the bash/tail wrapper, not the spawned node children) and holds `backend/src/generated/prisma/query_engine-windows.dll.node` LOCKED. Then `npm run verify`'s FIRST step (`prisma:generate`) fails with `EPERM: ... rename ...query_engine-windows.dll.node.tmpNNNN` → verify goes RED at prisma:generate, NOT your code (build/lint/test never run). The bg `… | tail` output also stays EMPTY (tail buffers a long-running stream), so you can't tell it's stuck from the log — check `curl -m6 localhost:3001/api/health` (000 = down) + `netstat | grep :3001`. Fix: kill the orphaned backend node — `Get-CimInstance Win32_Process -Filter "Name='node.exe'" | Select ProcessId, CommandLine` (PowerShell), then `Stop-Process -Id <pids> -Force` the ones whose CommandLine references the backend / `tsx watch` (NOT the frontend vite servers, NOT the user's :5173/:5219 dev server) — then re-verify. Better: don't run a local backend at all for a frontend-only change (verify doesn't recompile the backend; the live cockpit is auth-gated anyway). Cost ~4 turns of EPERM debugging 2026-06-24.
+
+Navigate with `window.location.href = 'http://localhost:5180/<route>'`, then poll the DOM via `preview_eval` (the SPA + AuthProvider take a beat to mount; first read may show a blank `#root` mid-reload). Remember to `preview_stop` and revert any temporary `.claude/launch.json` entry (it's git-tracked) when done. Related: [[design-system-locked]].

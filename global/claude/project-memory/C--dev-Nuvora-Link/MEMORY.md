@@ -1,0 +1,2 @@
+- [Engineering philosophy](feedback_engineering_philosophy.md) — Product-first, root-cause fixes, no workaround patches, architecture audits on pushback
+- [Codex config reference](reference_codex_config.md) — Codex plugins, MCP servers, and skills for cross-tool parity

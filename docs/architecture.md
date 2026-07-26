@@ -34,3 +34,11 @@ Symlinks and Windows junctions are fragile across privilege modes, worktrees, CI
 ## Alternative rejected
 
 Copying complete `.claude` or `.codex` directories would seem simpler, but it would capture credentials, caches, sessions, plugin internals, and machine state. It also makes clean-machine behavior depend on accidental files. Explicit allowlisted mappings are more work initially and remove an entire class of secret leaks and invisible drift.
+
+## Planned capability: unified agent memory
+
+Founder decision 2026-07-26: use curated-file capture now; later add one memory MCP server backed by the founder's Neon Postgres.
+That server will be the shared memory authority for Claude and Codex across machines.
+Its server code and agent-registration contract will be canonical in this repository.
+Only the database credential will remain machine-local and unmanaged.
+This section records a schedulable capability decision only; no server, schema, registration, or migration is implemented yet.

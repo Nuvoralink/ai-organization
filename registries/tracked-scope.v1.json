@@ -2351,6 +2351,374 @@
       "class": "global-orchestration"
     },
     {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/MEMORY.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/brand-architecture-two-hats.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/browser-preview-verification.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/call-detail-rehome.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/ci-not-gated-on-main.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/coachai-coaching-quality-improvement.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/coachai-mono-role-attribution-rootfix.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/coachai-no-outcome-analytics.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/codex-claude-division-of-labor.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/codex-dispatch-windows-form.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/commit-before-adversarial-review.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/comms-surfaces-architecture.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/companion-comms-backend-phaseb.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/companion-teardown-gate-slice.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/decision-defaults.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/deployment-topology.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/design-system-direction-and-workflow.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/design-system-locked.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/dialer-not-crm-design-boundary.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/dialer-workspace-ux-research.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/doctrine-upgrade-2026-07-02.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/explicit-subagent-briefs.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/fleet-auditor-universal-homes.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/functionality-user-auditors.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/gh-pr-checks-watch-gotchas.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/git-bash-git-show-pathconv.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/master-plan-retired-gap-audit.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/mightycall-cti-overlay-insight.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/migrate-on-deploy-live.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/mockup-quality-bar.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/no-internal-narrative-in-ui.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/no-plumbing-in-ui.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/no-widget-mockups.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/number-reputation-and-lifecycle.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/orchestrator-mode-setup.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/parallel-swarm-coordination-research.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/periodic-branch-sync.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/pr255-shift-left-remediation.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/pr39-numbers-frontend-review-loop.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/prettier-blast-radius-lesson.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/push-rebase-before-dispatching-into-worktree.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/responsive-build-process-fixes.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/responsive-doctrine.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/settings-hub-ia.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/sprint-1-2-paused.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/sprint-1-3-active.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/subtle-scrollbars.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/telegram-ops-channel.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/telnyx-provisioned.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/universal-backflow-rule.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/user-profile-and-operating-mode.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/voice-agent-phase5-strategy.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/MEMORY.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/agent-fleet-setup.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/amin-perfectionism-ship.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/analysis-failure-observability.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/audit-bugs-are-decision-residue.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/backend-db-regression-sandbox.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/ci-gates-doc-drift.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/coachai-worktree-setup.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/coaching-surface-altitude.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/coachplus-seat-audit-findings.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/design-system-vs-actual-gap.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/dialer-integration-direction.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/dialer-popup-sso-issuer-state.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/git-ff-main-sync.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/gtm-readiness-threshold.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/haiku-coaching-eval-verdict.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/local-frontend-smoke-setup.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/merge-model-local-ci-gate.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/offscript-callreview-deferred.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/openai-model-deprecation-exposure.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/overlay-parity-append-only.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/project_linkedin_agent.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/quality-bar-exceed-baseline.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/railway-topology.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/tier-pricing-packaging-direction.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/user_decision_framing.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/ux-ui-redesign-audit.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-CoachAi/worktree-stale-shared-dist-falsered.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-Link/MEMORY.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-Link/feedback_engineering_philosophy.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvora-Link/reference_codex_config.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Skills-LLM-Councel/MEMORY.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Skills-LLM-Councel/ail-leadgen-venture.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Skills-LLM-Councel/llm-council-guardrails.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Skills-LLM-Councel/llm-council-project.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Skills-LLM-Councel/llm-council-provider-quirks.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Skills-LLM-Councel/studio-tool.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Voice-Agents/MEMORY.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Voice-Agents/live-council-hackathon.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Voice-Agents/specforge-claude-install.md",
+      "class": "global-orchestration"
+    },
+    {
       "path": "global/claude/rules/authority-boundary.md",
       "class": "global-orchestration"
     },

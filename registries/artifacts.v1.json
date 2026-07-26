@@ -122,6 +122,66 @@
       "sensitivity": "orchestration-only"
     },
     {
+      "id": "claude-project-memory-nuvo-dialer",
+      "family": "curated-project-memory",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "global/claude/project-memory/C--dev-Nuvo-Dialer",
+      "destinations": [
+        "${HOME}/.claude/projects/C--dev-Nuvo-Dialer/memory"
+      ],
+      "provenance": "user-authored-claude-project-memory",
+      "sensitivity": "orchestration-only"
+    },
+    {
+      "id": "claude-project-memory-coachai",
+      "family": "curated-project-memory",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "global/claude/project-memory/C--dev-Nuvora-CoachAi",
+      "destinations": [
+        "${HOME}/.claude/projects/C--dev-Nuvora-CoachAi/memory"
+      ],
+      "provenance": "user-authored-claude-project-memory",
+      "sensitivity": "orchestration-only"
+    },
+    {
+      "id": "claude-project-memory-nuvora-link",
+      "family": "curated-project-memory",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "global/claude/project-memory/C--dev-Nuvora-Link",
+      "destinations": [
+        "${HOME}/.claude/projects/C--dev-Nuvora-Link/memory"
+      ],
+      "provenance": "user-authored-claude-project-memory",
+      "sensitivity": "orchestration-only"
+    },
+    {
+      "id": "claude-project-memory-llm-councel",
+      "family": "curated-project-memory",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "global/claude/project-memory/C--dev-Skills-LLM-Councel",
+      "destinations": [
+        "${HOME}/.claude/projects/C--dev-Skills-LLM-Councel/memory"
+      ],
+      "provenance": "user-authored-claude-project-memory",
+      "sensitivity": "orchestration-only"
+    },
+    {
+      "id": "claude-project-memory-voice-agents",
+      "family": "curated-project-memory",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "global/claude/project-memory/C--dev-Voice-Agents",
+      "destinations": [
+        "${HOME}/.claude/projects/C--dev-Voice-Agents/memory"
+      ],
+      "provenance": "user-authored-claude-project-memory",
+      "sensitivity": "orchestration-only"
+    },
+    {
       "id": "skill-ai-decision-contract-builder",
       "family": "skill",
       "lifecycle": "active",
