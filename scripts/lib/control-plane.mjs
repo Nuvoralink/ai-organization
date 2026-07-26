@@ -106,6 +106,7 @@ export function classifyTrackedScope(relativeInput) {
     const hasOrchestrationShape = parts.length >= 3 && (allowedRootFiles.has(overlayRelative) || allowedSubtrees.some((prefix) => overlayRelative.startsWith(prefix)));
     return hasOrchestrationShape && ['.md', '.mdc', '.json', '.mjs', '.js', '.yaml', '.yml', ''].includes(extension) ? 'project-orchestration-overlay' : undefined;
   }
+  if (relative.startsWith('automations/instances/')) return ['.toml', '.md'].includes(extension) ? 'automation-instance' : undefined;
   if (relative.startsWith('automations/')) return extension === '.json' ? 'automation-specification' : undefined;
   if (relative.startsWith('policies/')) return extension === '.json' ? 'policy' : undefined;
   if (relative.startsWith('registries/')) return extension === '.json' ? 'registry' : undefined;
@@ -115,6 +116,7 @@ export function classifyTrackedScope(relativeInput) {
   if (relative.startsWith('core/')) return ['.mjs', '.md'].includes(extension) ? 'shared-control-plane-runtime' : undefined;
   if (relative.startsWith('global/')) return ['.md', '.json', '.mjs', '.yaml', '.yml'].includes(extension) ? 'global-orchestration' : undefined;
   if (relative.startsWith('skills/')) return ['.md', '.json', '.mjs', '.js', '.ts', '.tsx', '.py', '.ps1', '.csv', '.yaml', '.yml', '.template'].includes(extension) ? 'reusable-skill' : undefined;
+  if (relative.startsWith('skills-retired/')) return ['.md', '.json', '.mjs', '.js', '.ts', '.tsx', '.py', '.ps1', '.csv', '.yaml', '.yml', '.template'].includes(extension) ? 'retired-skill' : undefined;
   if (relative.startsWith('dependencies/')) {
     return ORCHESTRATION_DEPENDENCY_EXTENSIONS.has(extension) || ORCHESTRATION_DEPENDENCY_EXACT_ASSETS.has(relative)
       ? 'orchestration-dependency'

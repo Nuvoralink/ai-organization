@@ -417,6 +417,23 @@ test('Proves: ORG-BOUNDARY-DEPENDENCY-001; Test type: source-shape boundary; Sur
   }
 });
 
+test('Proves: ORG-BOUNDARY-CODEX-STATE-001; Test type: source-shape boundary; Surface: curated Codex state; Authority: tracked-scope classifier; Killer mutation: omit TOML automation instances, omit retired Markdown skills, or admit arbitrary automation/retired binaries; Gated command: npm test', () => {
+  const expected = new Map([
+    ['automations/instances/daily/automation.toml', 'automation-instance'],
+    ['automations/instances/daily/memory.md', 'automation-instance'],
+    ['skills-retired/ai-build-lessons-capture/SKILL.md', 'retired-skill'],
+  ]);
+  for (const [relative, classification] of expected) {
+    assert.equal(classifyTrackedScope(relative), classification, relative);
+  }
+  for (const relative of [
+    'automations/instances/daily/payload.json',
+    'skills-retired/archive.exe',
+  ]) {
+    assert.equal(classifyTrackedScope(relative), undefined, relative);
+  }
+});
+
 test('Proves: capture rejects machine-specific paths before writes; Test type: portability mutation; Surface: capture; Authority: tokenized roots; Killer mutation: import a C drive path; Gated command: npm test', () => {
   const f = fixture();
   fs.writeFileSync(path.join(f.home, '.claude', 'rules', 'unsafe.md'), `Tool: ${['C:', 'dev', 'Some Tool'].join('\\')}\n`);

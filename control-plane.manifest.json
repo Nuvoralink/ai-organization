@@ -115,6 +115,76 @@
       "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json"
     },
     {
+      "id": "global-codex-memories",
+      "source": "global/codex/memories",
+      "captureFrom": "${HOME}/.codex/memories",
+      "destinations": [
+        "${HOME}/.codex/memories"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        ".md"
+      ],
+      "exclude": [
+        "raw_memories.md",
+        "rollout_summaries",
+        "skills"
+      ],
+      "installedIgnore": [
+        ".git"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "renderContentTokens": true,
+      "tokenizeRegisteredPathsOnCapture": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json"
+    },
+    {
+      "id": "codex-automation-instances",
+      "source": "automations/instances",
+      "captureFrom": "${HOME}/.codex/automations",
+      "destinations": [
+        "${HOME}/.codex/automations"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        ".toml",
+        ".md"
+      ],
+      "exclude": [
+        ".run-jitter-salt"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "renderContentTokens": true,
+      "tokenizeRegisteredPathsOnCapture": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json"
+    },
+    {
+      "id": "codex-retired-skills",
+      "source": "skills-retired",
+      "captureFrom": "${HOME}/.codex/skills/_retired",
+      "destinations": [
+        "${HOME}/.codex/skills/_retired"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        ".md"
+      ],
+      "exclude": [],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "renderContentTokens": true,
+      "tokenizeRegisteredPathsOnCapture": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json"
+    },
+    {
       "id": "skill-ai-decision-contract-builder",
       "source": "skills/ai-decision-contract-builder",
       "captureFrom": "${HOME}/.codex/skills/ai-decision-contract-builder",

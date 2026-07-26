@@ -35,3 +35,7 @@ Project product authorities remain in their project repositories. Overlay rules 
 Capture is fail-closed. A path is eligible only when an explicit manifest mapping includes it and no deny rule matches it. There is no recursive "copy my home directory" mode.
 
 An `installedIgnore` entry is a narrowly reviewed, exact mapping-relative path for denied state that legitimately exists only in an installed dependency tree. Installed inventory skips that named entry before statting or reading it and reports the skip; the entry is never hashed, copied, retired, or admitted into canonical capture. The same name in a canonical source remains forbidden by the repository-side deny policy.
+
+## Curated Codex state
+
+The portable subset includes `MEMORY.md`, `memory_summary.md`, authored `extensions/`, automation definitions plus their authored memory, and explicitly retired user-authored skills. Raw memory aggregation, rollout summaries, imported vendor caches, and `skills-curated-cache.json` remain unmanaged machine/runtime state and are not capture sources.
