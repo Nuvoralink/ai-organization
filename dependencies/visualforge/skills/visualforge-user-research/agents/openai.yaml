@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — User Research"
+  short_description: "Personas, usage contexts, device contexts, accessibility needs, mental models."
+  default_prompt: "Use $visualforge-user-research for this product:"
+policy:
+  allow_implicit_invocation: true

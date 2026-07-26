@@ -1,0 +1,4 @@
+version: 1
+agents:
+  - name: openai
+    default_prompt: "Use $specforge-implementation-task-plan to generate or update its app documentation."

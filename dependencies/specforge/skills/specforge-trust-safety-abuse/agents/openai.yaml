@@ -1,0 +1,4 @@
+version: 1
+name: specforge-trust-safety-abuse
+invocation:
+  default_prompt: "Use $specforge-trust-safety-abuse to create or update its docs/app-plan document."

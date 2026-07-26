@@ -1,0 +1,12 @@
+{
+  "business_model": "B2B SaaS PLG",
+  "gates": {
+    "customer_interviews": {"count": 35, "recent_months": 6, "methodology": "Moesta", "pass": true},
+    "retention_curve": {"d30_retention_percent": 88, "monthly_churn_percent": 3, "pass": true},
+    "icp_articulable": {"pass": true, "notes": "ICP defined for 50-150 engineer SaaS"},
+    "unit_economics": {"ltv_cac_ratio": 3.5, "ltv_basis": "contribution_margin", "pass": true},
+    "paying_revenue": {"customers": 120, "pass": true},
+    "capacity": {"founder_hours_per_week": 4, "process_documented": false, "pass": false},
+    "conversion_path": {"signup_completion_percent": 45, "activation_measured": false, "pass": false}
+  }
+}

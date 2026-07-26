@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Design Trends Research"
+  short_description: "Research current design movements (Liquid Glass, Material 3 Expressive, bento, AI-native, spatial, etc.) and decide which fit."
+  default_prompt: "Use $visualforge-design-trends-research for this product:"
+policy:
+  allow_implicit_invocation: true

@@ -11,7 +11,7 @@ Connect a clean machine to this private repository and begin safe, consistent Cl
 3. `install --dry-run` computes a deterministic plan and performs no writes.
 4. `install` snapshots every managed target, creates or updates only declared destinations, records hashes, and never deletes unmanaged files unless a future separately approved migration says so. A partial failure restores the pre-install snapshot.
 5. `check` compares canonical and installed bytes, detects missing/drifted/local-only managed assets, validates schemas and role/skill identities, and rejects unsafe, overlapping, or unresolved paths. A validated `installedIgnore` entry is skipped by name before metadata/content access and is reported as expected installed-local state; canonical validation never consults that list.
-6. `capture` is an explicit migration tool. It imports only manifest-declared orchestration paths after all deny rules pass; it is never an open-ended home-directory copier.
+6. `capture` is an explicit migration tool. It imports only manifest-declared orchestration paths after all deny rules pass; it is never an open-ended home-directory copier. A mapping may explicitly inverse-tokenize registered root literals only when install rendering is enabled; separator-style modifiers preserve exact round-trip bytes, while unregistered machine paths still fail closed.
 7. Project overlays install the same universal contracts plus project-specific routers, agents, hooks, gates, and automation specifications into a registered product repository without copying its application tree.
 8. The task governor and action evaluator turn task scope, risk, proof, mutation, review, and action permissions into machine-checked decisions shared by Claude and Codex.
 

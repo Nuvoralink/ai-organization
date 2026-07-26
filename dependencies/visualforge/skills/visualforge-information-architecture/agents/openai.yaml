@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Information Architecture"
+  short_description: "Site map, navigation model, content hierarchy, taxonomy, URL structure, mental-model mapping."
+  default_prompt: "Use $visualforge-information-architecture for this product:"
+policy:
+  allow_implicit_invocation: true

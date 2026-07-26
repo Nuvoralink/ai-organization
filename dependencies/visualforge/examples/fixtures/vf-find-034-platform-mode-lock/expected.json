@@ -1,0 +1,10 @@
+{
+  "description": "VF-FIND-034: mobile-and-responsive.md exists but lacks Platform mode lock (Section 0). The check must fire.",
+  "mode": "mid-run",
+  "errors_include": [],
+  "warnings_include": [
+    "VF-FIND-034: mobile-and-responsive.md missing Platform mode lock"
+  ],
+  "warnings_exclude": [],
+  "verdict_must_be": "PASS"
+}

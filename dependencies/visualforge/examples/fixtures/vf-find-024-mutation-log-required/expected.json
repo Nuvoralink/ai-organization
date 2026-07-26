@@ -1,0 +1,11 @@
+{
+  "description": "VF-FIND-024: when src/components/ui/ exists, validator must WARN if implementation-mutation-log.md is missing. Paired-condition: also asserts the warning vanishes when log is present (sister fixture handles the negative). Liveness signal: the .visualforge.lock from _base/ produces at least one warning regardless, so a no-op validator would FAIL the verdict_must_be assertion.",
+  "mode": "mid-run",
+  "errors_include": [],
+  "warnings_include": [
+    "Implementation directory exists",
+    "auditability/implementation-mutation-log.md"
+  ],
+  "warnings_exclude": [],
+  "verdict_must_be": "PASS"
+}

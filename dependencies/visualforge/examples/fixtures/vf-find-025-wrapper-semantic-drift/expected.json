@@ -1,0 +1,11 @@
+{
+  "description": "VF-FIND-025: validator must warn when (a) <CardTitle> is used without `as` AND no raw <h1> in file, and (b) <Button> inside <form action> has no `type=` attribute. Both warnings come from the same `check_wrapper_semantic_drift` function. If the check is sabotaged, both warnings disappear and this fixture fails.",
+  "mode": "mid-run",
+  "errors_include": [],
+  "warnings_include": [
+    "uses <CardTitle> without `as` prop",
+    "<Button> inside form-action block has no explicit `type=` attribute"
+  ],
+  "warnings_exclude": [],
+  "verdict_must_be": "PASS"
+}

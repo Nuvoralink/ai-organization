@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge"
+  short_description: "Forge a detail-obsessed design system: tokens, components, motion, micro-interactions, Figma artifacts, and agent rules."
+  default_prompt: "Use $visualforge for this product:"
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — System Pages"
+  short_description: "404, 500, 503/maintenance, offline, account-suspended, rate-limited, browser-deprecated."
+  default_prompt: "Use $visualforge-system-pages for this product:"
+policy:
+  allow_implicit_invocation: true

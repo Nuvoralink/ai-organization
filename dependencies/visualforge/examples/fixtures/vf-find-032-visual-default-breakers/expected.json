@@ -1,0 +1,16 @@
+{
+  "description": "VF-FIND-032: brand-identity.md missing Hero Scale + Composition Anchor + Narrative; layout-system.md missing anchor inventory + variety rule; surface-treatments.md missing banned-gradient enumeration. All five warnings must fire. Sabotage-resistant: each missing piece produces its own warning, so a no-op of check_visual_default_breakers fails ALL five include-substring assertions.",
+  "mode": "mid-run",
+  "errors_include": [],
+  "errors_exclude": [],
+  "warnings_include": [
+    "VF-FIND-032: brand-identity.md missing Hero Scale",
+    "VF-FIND-032: brand-identity.md missing default Hero Composition Anchor",
+    "VF-FIND-032: brand-identity.md missing Narrative",
+    "VF-FIND-032: layout-system.md missing Composition anchor inventory",
+    "VF-FIND-032: layout-system.md missing Cross-section variety rule",
+    "VF-FIND-032: surface-treatments.md does not enumerate banned gradient"
+  ],
+  "warnings_exclude": [],
+  "verdict_must_be": "PASS"
+}

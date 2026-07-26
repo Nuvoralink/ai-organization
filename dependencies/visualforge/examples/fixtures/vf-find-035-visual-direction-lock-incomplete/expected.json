@@ -1,0 +1,12 @@
+{
+  "description": "VF-FIND-035: visual-direction-lock.md is missing the 'Second-read moment' commitment AND contains an unresolved `**Chosen:** [...]` placeholder. Both warnings must fire.",
+  "mode": "mid-run",
+  "errors_include": [],
+  "warnings_include": [
+    "VF-FIND-035: visual-direction-lock.md missing commitment sections",
+    "Second-read moment",
+    "VF-FIND-035: visual-direction-lock.md contains unresolved"
+  ],
+  "warnings_exclude": [],
+  "verdict_must_be": "PASS"
+}

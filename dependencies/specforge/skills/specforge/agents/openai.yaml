@@ -1,0 +1,6 @@
+interface:
+  display_name: "SpecForge"
+  short_description: "Forge app ideas and repos into evidence-backed specs, docs, and AI guardrails."
+  default_prompt: "Use $specforge for this app idea:"
+policy:
+  allow_implicit_invocation: true

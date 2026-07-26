@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Auth Flows"
+  short_description: "Sign in, sign up, forgot password, MFA, SSO, magic link, session expiry, account recovery design."
+  default_prompt: "Use $visualforge-auth-flows for this product:"
+policy:
+  allow_implicit_invocation: true

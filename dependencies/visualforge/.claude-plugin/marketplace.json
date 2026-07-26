@@ -1,0 +1,23 @@
+{
+  "name": "visualforge-local-marketplace",
+  "description": "Local directory marketplace exposing the VisualForge design-system plugin.",
+  "owner": {
+    "name": "VisualForge contributors"
+  },
+  "plugins": [
+    {
+      "name": "visualforge",
+      "source": ".",
+      "description": "Detail-obsessed design system generator with Figma MCP integration and drift prevention.",
+      "version": "1.8.0",
+      "category": "design",
+      "keywords": [
+        "design-system",
+        "ui-ux",
+        "frontend",
+        "figma",
+        "design-tokens"
+      ]
+    }
+  ]
+}

@@ -91,6 +91,202 @@
       "class": "shared-control-plane-runtime"
     },
     {
+      "path": "dependencies/hormozi/.claude-plugin/marketplace.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/.claude-plugin/plugin.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/CHANGELOG.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/README.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/docs/BUILD_PLAN.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/examples/auxara-ai-system-architect-offer.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/examples/coachai-offer.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/_hormozi-shared/references/core-four.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/_hormozi-shared/references/decision-and-fidelity-rubric.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/_hormozi-shared/references/glossary.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/_hormozi-shared/references/guarantee-taxonomy.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/_hormozi-shared/references/lead-getters.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/_hormozi-shared/references/lead-magnet-7-step.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/_hormozi-shared/references/magic-naming.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/_hormozi-shared/references/market-selection.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/_hormozi-shared/references/more-better-new.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/_hormozi-shared/references/offer-creation-5-step.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/_hormozi-shared/references/offer-enhancers.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/_hormozi-shared/references/orchestration-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/_hormozi-shared/references/pricing.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/_hormozi-shared/references/rule-of-100-and-roadmap.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/_hormozi-shared/references/value-equation.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/_hormozi-shared/templates/lead-gen-roadmap.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/_hormozi-shared/templates/lead-magnet-brief.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/_hormozi-shared/templates/offer-brief.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-fidelity-audit/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-lead-affiliates/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-lead-agencies/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-lead-cold/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-lead-content/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-lead-employees/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-lead-magnet/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-lead-more-better-new/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-lead-paid/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-lead-referrals/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-lead-roadmap/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-lead-warm/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-leads/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-offer-builder/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-offer-enhancers/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-offer-grader/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-offer-guarantees/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-offer-market/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-offer-naming/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-offer-pricing/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-offer-value-equation/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-offers/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi-self-test/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/hormozi/skills/hormozi/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
       "path": "dependencies/llm-council/.claude/agents/council-integrity-auditor.md",
       "class": "orchestration-dependency"
     },
@@ -200,6 +396,1878 @@
     },
     {
       "path": "dependencies/llm-council/uv.lock",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/CHANGELOG.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/CONTRIBUTING.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/Marketing Guide V3.pdf",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/README.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/USAGE_GUIDE.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/agents/AGENTS.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/docs/ARCHITECTURE.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/docs/MARKETING_GUIDE_V3.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/examples/agentic-mode/approval-queue-template.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/examples/agentic-mode/daily-journal-template.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/examples/agentic-mode/mcp-wiring-example.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/examples/channel-scoring-sample.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/examples/marketing-plan-bad-fixture/slop-output.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/examples/marketing-plan-golden/01-foundations/awareness-stages.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/examples/marketing-plan-golden/01-foundations/icp-and-personas/icp-001.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/examples/marketing-plan-golden/01-foundations/icp-and-personas/icp-002.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/examples/marketing-plan-golden/01-foundations/marketing-brief.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/examples/marketing-plan-golden/01-foundations/positioning.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/examples/marketing-plan-golden/01-foundations/readiness-check.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/examples/marketing-plan-golden/02-strategy/brand-vs-performance.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/examples/marketing-plan-golden/02-strategy/portfolio-construction.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/examples/marketing-plan-golden/03-brand/messaging-architecture.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/examples/marketing-plan-golden/04-website-content/website-copy/homepage.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/examples/marketing-plan-golden/05-paid/paid-search.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/examples/marketing-plan-golden/auditability/decision-log.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/examples/marketing-plan-good-fixture/01-foundations/marketing-brief.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/examples/marketing-plan-good-fixture/01-foundations/readiness-check.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/examples/marketing-plan-good-fixture/auditability/decision-log.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/examples/readiness-sample.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/scripts/channel_scorer.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/scripts/evidence_grader.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/scripts/readiness_check.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/scripts/validate_marketing_docs.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/agentic-operations-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/ai-saturation-watch.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/anti-slop-marketing-rubric.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/attribution-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/banana-bridge.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/business-model-channel-fit.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/channel-scoring-matrix.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/commercial-bias-map.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/evidence-grading-rubric.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/glossary.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/guided-marketing-interview.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/implementation-review-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/kill-criteria-by-channel.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/marketing-decision-quality-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/marketing-skills-bridge.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/mode-detection-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/opinionated-marketing-decision-template.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/plan-pressure-test-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/portfolio-construction.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/producer-reconciliation-matrix.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/readiness-check-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/scope-modes-and-budget-tiers.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/skill-detection-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/specforge-bridge.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/testing-strategy-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/trust-harness-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/references/visualforge-bridge.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/templates/icp-template.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/templates/jtbd-template.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/templates/message-stage-matrix-template.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/_marketforge-shared/templates/persona-template.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-ab-testing-discipline/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-ad-creative-brief/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-ad-creative-production/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-affiliate-program/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-agent-rules-update/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-analytics-stack/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-attribution-stack/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-awareness-stages/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-bias-audit/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-brand-strategy/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-brand-vs-performance/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-budget-planning/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-channel-strategy/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-cold-calling/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-cold-email/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-cold-linkedin-outreach/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-community-led-growth/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-competitive-intel/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-content-calendar/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-content-strategy/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-customer-marketing/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-direct-mail-abm/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-discovery/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-distinctive-assets/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-email-lifecycle/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-engineering-as-marketing/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-execution-calendar/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-founder-content/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-geo-llmo/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-icp-persona/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-in-app-messaging/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-influencer-program/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-jtbd-interviews/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-landing-cro/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-landing-pages/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-launch-plan/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-linkedin-organic/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-loyalty-program/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-marketing-qa/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-messaging-architecture/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-mmm-incrementality/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-naming-and-tagline/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-narrative-and-story/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-newsletter-sponsorships/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-okr-quarterly-planning/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-onboarding-activation/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-paid-mobile/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-paid-search/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-paid-social/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-podcast-strategy/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-portfolio-construction/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-positioning/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-pr-earned-media/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-pressure-test/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-pricing-strategy/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-push-notifications/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-readiness-check/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-reddit-strategy/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-referral-program/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-retention-churn/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-self-test/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-seo-strategy/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-sms-program/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-social-imagery/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-tiktok-organic/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-trust-harness/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-video-scripts/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-visual-direction/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-voice-of-customer/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-website-copy/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-website-imagery/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-x-twitter-organic/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge-youtube-strategy/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/skills/marketforge/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/tests/README.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/tests/VERIFICATION_EVIDENCE.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/tests/boundary/test_readiness_check.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/tests/conftest.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/tests/integration/test_validator_integration.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/tests/mutation/test_marketing_plan_mutations.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/tests/mutation/test_validator_catches_mutations.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/tests/unit/test_channel_scorer.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/tests/unit/test_meta_block_awareness.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/marketforge/tests/unit/test_validate_marketing_docs.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/skills-root/CONSOLIDATION_CHANGELOG.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/skills-root/README.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/.agents/plugins/marketplace.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/.codex-plugin/plugin.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/AGENTS.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/CHANGELOG.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/CODE_OF_CONDUCT.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/CONTRIBUTING.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/LICENSE",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/NOTICE",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/PROMPT_LIBRARY.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/PUBLISHING_CHECKLIST.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/README.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/SECURITY.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/USAGE_GUIDE.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/docs/ASSURANCE_GENERALIZATION_AUDIT.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/docs/LESSONS_APPLIED.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/docs/MONETIZATION.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/existing-repo-audit-prompt.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/fixtures/bad/implementation-artifacts/README.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/fixtures/bad/implementation-artifacts/docs/app-plan/implementation/README.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/fixtures/bad/implementation-artifacts/docs/app-plan/implementation/vertical-slice-specs.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/fixtures/bad/surface-level-docs/README.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/fixtures/bad/surface-level-docs/docs/app-plan/02-prd.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/fixtures/bad/surface-level-docs/docs/app-plan/17-document-quality-review.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/fixtures/bad/surface-level-docs/docs/app-plan/29-ai-implementation-task-plan.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/existing-repo-repair/README.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/existing-repo-repair/docs/app-plan/README.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/existing-repo-repair/docs/app-plan/assurance/source-of-truth-map.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/existing-repo-repair/docs/app-plan/assurance/surface-authority-map.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/existing-repo-repair/docs/app-plan/auditability/decision-log.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/existing-repo-repair/docs/app-plan/auditability/documentation-audit.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/existing-repo-repair/docs/app-plan/auditability/documentation-lifecycle.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/existing-repo-repair/docs/app-plan/auditability/documentation-quality-review.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/existing-repo-repair/docs/app-plan/auditability/research-ledger.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/greenfield-focused/README.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/greenfield-focused/docs/app-plan/README.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/greenfield-focused/docs/app-plan/architecture/06-architecture.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/greenfield-focused/docs/app-plan/auditability/decision-log.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/greenfield-focused/docs/app-plan/auditability/documentation-quality-review.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/greenfield-focused/docs/app-plan/auditability/research-ledger.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/greenfield-focused/docs/app-plan/implementation/29-ai-implementation-task-plan.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/greenfield-focused/docs/app-plan/product/02-prd.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/implementation-artifacts/README.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/implementation-artifacts/docs/app-plan/implementation/README.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/implementation-artifacts/docs/app-plan/implementation/api-and-contract-implementation.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/implementation-artifacts/docs/app-plan/implementation/codex-implementation-prompts.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/implementation-artifacts/docs/app-plan/implementation/data-migration-and-backfill-plan.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/implementation-artifacts/docs/app-plan/implementation/implementation-risk-register.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/implementation-artifacts/docs/app-plan/implementation/implementation-roadmap.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/implementation-artifacts/docs/app-plan/implementation/release-rollout-runbook.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/implementation-artifacts/docs/app-plan/implementation/repo-change-map.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/implementation-artifacts/docs/app-plan/implementation/security-privacy-implementation-controls.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/implementation-artifacts/docs/app-plan/implementation/state-jobs-and-runtime-flow.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/implementation-artifacts/docs/app-plan/implementation/ui-implementation-contract.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/implementation-artifacts/docs/app-plan/implementation/verification-and-test-harness.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/golden/implementation-artifacts/docs/app-plan/implementation/vertical-slice-specs.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/examples/student-revision-app-prompt.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/scripts/install_manual.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/scripts/quality_selftest.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/scripts/verify_package.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/assets/templates/AGENTS.template.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/anti-slop-quality-rubric.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/assurance-source-of-truth-patterns.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/best-practice-source-map.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/bounded-remediation-and-validation-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/decision-depth-and-interview-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/decision-matrix-template.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/decision-quality-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/docs-authority-lifecycle.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/document-quality-acceptance-tests.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/document-quality-rubric.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/document-specification.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/evolutionary-architecture-doctrine.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/first-viewport-acceptance-template.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/golden-fixture-catalog-template.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/guided-interview-and-recommendation-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/interview-and-recommendation-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/interview-question-bank.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/no-shortcuts-decision-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/prompt-decision-matrix-template.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/repo-audit-rubric.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/research-and-evidence-rules.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/root-cause-review-checklist.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/source-of-truth-layer-template.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/source-register-template.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/surface-authority-map-template.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/references/visualforge-bridge.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/scripts/check_repo_doc_quality.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/scripts/validate_app_docs.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/_specforge-shared/scripts/validate_implementation_artifacts.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-ai-guardrails/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-ai-guardrails/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-analytics-metrics/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-analytics-metrics/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-architecture/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-architecture/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-assurance-architecture/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-assurance-architecture/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-blast-radius-change-risk/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-blast-radius-change-risk/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-business-gtm-monetization/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-business-gtm-monetization/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-compliance-policy/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-compliance-policy/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-cost-capacity-performance/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-cost-capacity-performance/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-data-contracts/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-data-contracts/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-decision-advisor/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-decision-advisor/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-dependency-supply-chain/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-dependency-supply-chain/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-discovery-interview/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-discovery-interview/references/question-repository.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-engineering-rules/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-engineering-rules/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-environment-config-secrets/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-environment-config-secrets/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-glossary-taxonomy/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-glossary-taxonomy/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-implementation-artifacts/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-implementation-task-plan/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-implementation-task-plan/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-operations-runbooks/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-operations-runbooks/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-platform-feature-contracts/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-platform-feature-contracts/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-privacy-compliance/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-privacy-compliance/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-product-scope/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-product-scope/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-quality-release-observability/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-quality-release-observability/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-repo-audit/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-repo-audit/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-reviewer/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-reviewer/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-security-threat-model/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-security-threat-model/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-trust-safety-abuse/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-trust-safety-abuse/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-ux-ui-content/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge-ux-ui-content/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/specforge/skills/specforge/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/.agents/plugins/marketplace.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/.claude-plugin/marketplace.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/.claude-plugin/plugin.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/.codex-plugin/plugin.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/LICENSE",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/NOTICE",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/PLUGIN-FINDINGS.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/README.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/existing-repo-retrofit-prompt.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/FINDING-CATALOG.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/README.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/_base/.visualforge.lock",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/_base/01-foundations/personas/persona-alex-primary.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/_base/auditability/decision-log.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-001-cross-tree-dupe/02-visual-language/design-tokens.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-001-cross-tree-dupe/03-structure/layout-system.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-001-cross-tree-dupe/expected.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-005-malformed-dec-id/02-visual-language/design-tokens.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-005-malformed-dec-id/expected.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-010-dangling-cite/03-structure/information-architecture.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-010-dangling-cite/expected.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-011-sub-decision-allowed/02-visual-language/design-tokens.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-011-sub-decision-allowed/03-structure/layout-system.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-011-sub-decision-allowed/expected.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-015-persona-dec-paren/01-foundations/personas/anti-persona-mallory-bad-actor.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-015-persona-dec-paren/03-structure/information-architecture.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-015-persona-dec-paren/expected.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-019-typo-near-miss/03-structure/information-architecture.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-019-typo-near-miss/expected.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-020-theme-normalization/03-structure/information-architecture.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-020-theme-normalization/expected.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-021-persona-heading-prefix/01-foundations/personas/anti-persona-mallory-bad-actor.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-021-persona-heading-prefix/expected.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-024-mutation-log-required/05-components/primitives/Button.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-024-mutation-log-required/expected.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-024-mutation-log-required/src/components/ui/.keep",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-025-wrapper-semantic-drift/app/sign-in/page.tsx",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-025-wrapper-semantic-drift/expected.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-032-visual-default-breakers/02-visual-language/brand-identity.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-032-visual-default-breakers/02-visual-language/surface-treatments.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-032-visual-default-breakers/03-structure/layout-system.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-032-visual-default-breakers/expected.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-033-image-art-direction/04-interaction/imagery-illustration.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-033-image-art-direction/expected.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-034-platform-mode-lock/03-structure/mobile-and-responsive.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-034-platform-mode-lock/expected.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-035-visual-direction-lock-incomplete/auditability/visual-direction-lock.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-035-visual-direction-lock-incomplete/expected.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-036-react-quality-missing/07-quality/frontend-implementation-contract.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-036-react-quality-missing/expected.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-037-assumption-persona-no-method/01-foundations/personas/persona-zara-assumption.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-037-assumption-persona-no-method/expected.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-038-pressure-test-reviewer-missing/07-quality/design-pressure-test-report.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-038-pressure-test-reviewer-missing/expected.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-039-timing-token-drift/04-interaction/micro-interactions.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-039-timing-token-drift/04-interaction/motion-design.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-039-timing-token-drift/expected.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-040-state-page-not-cited/04-interaction/auth-flows.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-040-state-page-not-cited/expected.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-046-slop-scan-coverage/02-visual-language/brand-identity.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-046-slop-scan-coverage/expected.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-047-color-decision-basis/02-visual-language/design-tokens.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/fixtures/vf-find-047-color-decision-basis/expected.json",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/greenfield-saas-app-prompt.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/specforge-enhanced-app-prompt.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/templates/content-map-template.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/examples/templates/visual-direction-lock-template.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/scripts/_split_validators.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/scripts/scaffold_component.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/scripts/validate_design_docs.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/scripts/validators/__init__.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/scripts/validators/_common.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/scripts/validators/claim_discipline.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/scripts/validators/color.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/scripts/validators/dec_integrity.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/scripts/validators/harness.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/scripts/validators/plugin_contracts.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/scripts/validators/semantic_drift.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/scripts/validators/slop.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/scripts/validators/state_pages.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/scripts/validators/structural.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/scripts/validators/tokens.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/scripts/validators/visual_defaults.py",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/anti-slop-design-rubric.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/color-theory-and-decision-matrix.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/current-design-source-map.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/data-inventory-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/decision-id-allocation.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/design-decision-quality-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/design-research-rules.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/drift-and-retrofit-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/failure-isolation-by-layer.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/figma-mcp-integration-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/glossary.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/guided-design-interview-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/how-to-read-this-design-system.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/ia-restructuring-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/implementation-safety-contract.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/index-and-template-formats.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/mcp-recommendations-and-detection.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/mode-detection-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/opinionated-decision-template.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/regeneration-and-cascade-lifecycle.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/resilience-and-recovery.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/rules-update-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/scope-modes-and-ergonomics.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/shared-contracts-and-blast-radius.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/specforge-bridge.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/state-page-patterns.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/test-discipline-and-mutation-protocol.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/token-artifact-export-spec.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/_visualforge-shared/references/visual-default-breakers.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-accessibility/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-accessibility/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-agent-rules-update/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-agent-rules-update/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-auth-flows/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-auth-flows/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-brand-identity/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-brand-identity/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-competitive-audit/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-competitive-audit/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-component-system/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-component-system/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-content-design/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-content-design/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-data-visualization/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-data-visualization/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-design-ops/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-design-ops/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-design-pressure-test/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-design-pressure-test/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-design-qa/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-design-qa/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-design-tokens/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-design-tokens/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-design-trends-research/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-design-trends-research/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-discovery/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-discovery/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-figma-build/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-figma-build/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-frontend-contract/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-frontend-contract/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-i18n-rtl/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-i18n-rtl/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-iconography/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-iconography/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-imagery-illustration/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-imagery-illustration/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-information-architecture/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-information-architecture/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-layout-system/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-layout-system/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-micro-interactions/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-micro-interactions/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-mobile-and-responsive/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-mobile-and-responsive/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-motion-design/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-motion-design/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-notifications-and-lifecycle/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-notifications-and-lifecycle/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-scroll-and-gesture/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-scroll-and-gesture/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-surface-treatments/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-surface-treatments/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-system-pages/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-system-pages/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-user-research/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-user-research/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-ux-flows/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge-ux-flows/agents/openai.yaml",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge/SKILL.md",
+      "class": "orchestration-dependency"
+    },
+    {
+      "path": "dependencies/visualforge/skills/visualforge/agents/openai.yaml",
       "class": "orchestration-dependency"
     },
     {

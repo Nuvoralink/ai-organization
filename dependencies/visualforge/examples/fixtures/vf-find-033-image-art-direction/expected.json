@@ -1,0 +1,10 @@
+{
+  "description": "VF-FIND-033: imagery-illustration.md exists but lacks Section 0 (image art-direction with background-mode inventory). The check must fire.",
+  "mode": "mid-run",
+  "errors_include": [],
+  "warnings_include": [
+    "VF-FIND-033: imagery-illustration.md missing Section 0"
+  ],
+  "warnings_exclude": [],
+  "verdict_must_be": "PASS"
+}

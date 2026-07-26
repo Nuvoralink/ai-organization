@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Layout System"
+  short_description: "Grid, breakpoints, responsive strategy, container queries, layout patterns, density modes."
+  default_prompt: "Use $visualforge-layout-system for this product:"
+policy:
+  allow_implicit_invocation: true

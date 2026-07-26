@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Content Design"
+  short_description: "Voice and tone, full microcopy library, error messages, empty-state copy, destructive-action copy, onboarding copy."
+  default_prompt: "Use $visualforge-content-design for this product:"
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,6 @@
+interface:
+  display_name: "SpecForge Decision Advisor"
+  short_description: "Minimal interview, researched defaults, pros/cons recommendations, and no-shortcuts decision records."
+  default_prompt: "Use $specforge-decision-advisor to decide this app documentation question:"
+policy:
+  allow_implicit_invocation: true

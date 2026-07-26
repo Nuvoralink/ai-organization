@@ -1,0 +1,4 @@
+version: 1
+name: specforge-cost-capacity-performance
+invocation:
+  default_prompt: "Use $specforge-cost-capacity-performance to create or update its docs/app-plan document."

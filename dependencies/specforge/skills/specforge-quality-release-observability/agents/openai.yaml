@@ -1,0 +1,6 @@
+interface:
+  display_name: "Quality Release Observability"
+  short_description: "Generate or update quality release observability documentation."
+  default_prompt: "Use $specforge-quality-release-observability for this documentation task."
+policy:
+  allow_implicit_invocation: true

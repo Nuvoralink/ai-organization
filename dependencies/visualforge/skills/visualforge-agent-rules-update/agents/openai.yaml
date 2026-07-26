@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Agent Rules Update"
+  short_description: "Update AGENTS.md, CLAUDE.md, .cursorrules, RULES.md so future agents and humans use the design system as source of truth."
+  default_prompt: "Use $visualforge-agent-rules-update for this product:"
+policy:
+  allow_implicit_invocation: true

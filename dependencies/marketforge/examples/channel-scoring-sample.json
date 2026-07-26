@@ -1,0 +1,66 @@
+{
+  "business_model": "B2B SaaS PLG",
+  "budget_tier": "T2",
+  "channels": [
+    {
+      "name": "Bottom-funnel SEO (comparison pages)",
+      "buyer_channel_match": 5,
+      "economics": 5,
+      "skill_fit": 4,
+      "time_to_result": 2,
+      "compounding": 5,
+      "competitive_density": 4,
+      "channel_product_fit": 5
+    },
+    {
+      "name": "Paid search competitor terms",
+      "buyer_channel_match": 4,
+      "economics": 4,
+      "skill_fit": 3,
+      "time_to_result": 5,
+      "compounding": 1,
+      "competitive_density": 3,
+      "channel_product_fit": 5
+    },
+    {
+      "name": "Founder X/Twitter",
+      "buyer_channel_match": 5,
+      "economics": 4,
+      "skill_fit": 4,
+      "time_to_result": 2,
+      "compounding": 5,
+      "competitive_density": 4,
+      "channel_product_fit": 5
+    },
+    {
+      "name": "LinkedIn Ads (Single Image)",
+      "buyer_channel_match": 3,
+      "economics": 1,
+      "skill_fit": 3,
+      "time_to_result": 5,
+      "compounding": 1,
+      "competitive_density": 2,
+      "channel_product_fit": 2
+    },
+    {
+      "name": "TikTok organic (dev-tool wildcard)",
+      "buyer_channel_match": 2,
+      "economics": 3,
+      "skill_fit": 2,
+      "time_to_result": 3,
+      "compounding": 4,
+      "competitive_density": 4,
+      "channel_product_fit": 2
+    },
+    {
+      "name": "Free tool / engineering-as-marketing",
+      "buyer_channel_match": 5,
+      "economics": 5,
+      "skill_fit": 3,
+      "time_to_result": 2,
+      "compounding": 5,
+      "competitive_density": 4,
+      "channel_product_fit": 5
+    }
+  ]
+}

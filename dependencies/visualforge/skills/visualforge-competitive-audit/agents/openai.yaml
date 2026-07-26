@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Competitive Audit"
+  short_description: "Direct competitors + design-forward reference products with extracted patterns and differentiation map."
+  default_prompt: "Use $visualforge-competitive-audit for this product:"
+policy:
+  allow_implicit_invocation: true

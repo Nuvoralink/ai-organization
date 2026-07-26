@@ -1,0 +1,6 @@
+interface:
+  display_name: "Architecture"
+  short_description: "Generate or update architecture documentation."
+  default_prompt: "Use $specforge-architecture for this documentation task."
+policy:
+  allow_implicit_invocation: true

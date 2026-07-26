@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Data Visualization"
+  short_description: "Charts, dashboards, KPI cards, sparklines, accessible data viz with color-blind-safe palettes."
+  default_prompt: "Use $visualforge-data-visualization for this product:"
+policy:
+  allow_implicit_invocation: true

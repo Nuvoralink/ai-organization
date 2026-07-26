@@ -1,0 +1,10 @@
+{
+  "description": "VF-FIND-036: frontend-implementation-contract.md exists but lacks the React-quality discipline section (§17). The check must fire.",
+  "mode": "mid-run",
+  "errors_include": [],
+  "warnings_include": [
+    "VF-FIND-036: frontend-implementation-contract.md missing React quality discipline"
+  ],
+  "warnings_exclude": [],
+  "verdict_must_be": "PASS"
+}

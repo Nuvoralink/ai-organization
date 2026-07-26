@@ -1,0 +1,4 @@
+version: 1
+name: specforge-business-gtm-monetization
+invocation:
+  default_prompt: "Use $specforge-business-gtm-monetization to create or update its docs/app-plan document."

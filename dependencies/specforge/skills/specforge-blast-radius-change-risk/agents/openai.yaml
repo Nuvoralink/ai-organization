@@ -1,0 +1,6 @@
+interface:
+  display_name: "Blast Radius Docs"
+  short_description: "Map change risk, blast radius, controls, tests, rollback, and doc impact."
+  default_prompt: "Use $specforge-blast-radius-change-risk to create the blast radius and change risk document."
+policy:
+  allow_implicit_invocation: true

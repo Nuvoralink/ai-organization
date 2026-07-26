@@ -1,0 +1,14 @@
+{
+  "description": "VF-FIND-021: heading-prefix match accepts parenthetical clarifications. Fixture has 5 parenthetical headings (should all be ACCEPTED) and omits `## Decision card` (which SHOULD fire). This way: if heading-prefix match is broken, errors_exclude triggers; if check_persona_files is sabotaged, errors_include misses.",
+  "mode": "full",
+  "errors_include": [
+    "missing required Template-B sections: ['## Decision card']"
+  ],
+  "errors_exclude": [
+    "missing required Template-B sections: ['## Identity",
+    "missing required Template-B sections: ['## Context",
+    "missing required Template-B sections: ['## Anti-persona is binding",
+    "missing required Template-B sections: ['## What we are intentionally not building"
+  ],
+  "warnings_include": []
+}

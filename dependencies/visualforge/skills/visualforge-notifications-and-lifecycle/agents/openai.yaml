@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Notifications & Lifecycle"
+  short_description: "Email, push, in-app, SMS notification design + lifecycle messaging coordination."
+  default_prompt: "Use $visualforge-notifications-and-lifecycle for this product:"
+policy:
+  allow_implicit_invocation: true

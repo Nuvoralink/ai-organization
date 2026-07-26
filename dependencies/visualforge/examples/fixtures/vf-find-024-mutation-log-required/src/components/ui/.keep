@@ -1,0 +1,11 @@
+Fixture marker: simulates a shipped component directory. The validator's
+`check_implementation_mutation_log` should detect this and require a sibling
+`auditability/implementation-mutation-log.md`. This fixture intentionally
+OMITS the log file — the trigger is "directory exists without log".
+
+Paired-condition design (per VF-FIND-023 lesson):
+- Trigger: `src/components/ui/` exists.
+- Spec'd component: `05-components/primitives/Button.md` defines DEC-440.
+- Expected: WARN about missing mutation log AND missing per-component entry.
+- Liveness check: base fixture has `.visualforge.lock` so at least one other
+  finding fires, proving the validator actually ran.

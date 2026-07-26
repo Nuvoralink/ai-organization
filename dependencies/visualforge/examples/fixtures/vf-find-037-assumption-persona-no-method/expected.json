@@ -1,0 +1,10 @@
+{
+  "description": "VF-FIND-037: persona file with `Source basis: Assumption` has a Validation plan section but the plan does not name a method from the research-method ladder. The check must fire.",
+  "mode": "mid-run",
+  "errors_include": [],
+  "warnings_include": [
+    "VF-FIND-037: persona 'persona-zara-assumption.md' Validation plan does not name a method"
+  ],
+  "warnings_exclude": [],
+  "verdict_must_be": "PASS"
+}

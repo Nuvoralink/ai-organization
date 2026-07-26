@@ -1,0 +1,21 @@
+{
+  "name": "hormozi",
+  "version": "0.1.0",
+  "description": "Turn any product into Alex Hormozi's method from $100M Offers + $100M Leads — Grand Slam Offers, lead magnets, guarantees, M-A-G-I-C naming, Core Four lead generation, and Lead Getters. An orchestrated engine of 24 sub-skills, each a chapter/task from the books.",
+  "author": {
+    "name": "Amin Sharifkhani"
+  },
+  "license": "MIT",
+  "keywords": [
+    "marketing",
+    "offers",
+    "grand-slam-offer",
+    "lead-generation",
+    "lead-magnet",
+    "hormozi",
+    "pricing",
+    "copywriting",
+    "sales",
+    "go-to-market"
+  ]
+}

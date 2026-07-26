@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Micro-Interactions"
+  short_description: "Hover physics, focus rings, press feedback, drag affordances, cursor design, tooltip behavior — every interaction down to ms timing."
+  default_prompt: "Use $visualforge-micro-interactions for this product:"
+policy:
+  allow_implicit_invocation: true

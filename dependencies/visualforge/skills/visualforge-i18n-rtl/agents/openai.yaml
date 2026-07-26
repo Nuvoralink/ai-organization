@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — i18n & RTL"
+  short_description: "Internationalization depth — RTL mirroring, text expansion, locale formatting, bidirectional text, script fallbacks, cultural sensitivity."
+  default_prompt: "Use $visualforge-i18n-rtl for this product:"
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,6 @@
+interface:
+  display_name: "SpecForge Quality Reviewer"
+  short_description: "Detect and fix AI slop, weak evidence, contradictions, and missing doc sections."
+  default_prompt: "Use $specforge-reviewer to review and tighten docs/app-plan."
+policy:
+  allow_implicit_invocation: true
