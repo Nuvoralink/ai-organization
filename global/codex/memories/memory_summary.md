@@ -61,7 +61,7 @@ The user uses Codex across Nuvo Dialer, Nuvora Link, Nuvora CoachAi, Auxara, and
   - desc: Newest CoachAI evidence-only state audit; search before any cleanup or claim that orchestration docs or local gates reflect current live repo state.
   - learnings: Classify retain/PR/retire; PR #221 was UNSTABLE with failed `dialer-db-regressions` and `gates`, `.claude/settings.json` still exposed only `PostToolUse`, and `docs/agent-prompts/README.md` remained stale versus live state.
 
-### ${PROJECT:control-plane|backslash}
+### ${PROJECT:control-plane|backslash} Control Plane
 
 #### 2026-07-20
 
@@ -76,7 +76,7 @@ The user uses Codex across Nuvo Dialer, Nuvora Link, Nuvora CoachAi, Auxara, and
 - Sprint 1.4 rebase, deployment parity, and orchestrator handoff: kickoff-goal.md, git range-diff, service-env-contract.json, deployment-config-parity:live, terminalizeNoProviderEffect
   - desc: Authority reconciliation, Railway API/worker env parity, and B01 continuation; cwd=${PROJECT:auxara-dialer|backslash}.
 - AI capability audit and portable orchestration control plane: AGENTS.md, CLAUDE.md, TaskCreated, TaskCompleted, mutation receipt, overlay checks
-  - desc: Actual Claude/Codex operating-model and controller-owned completion-evidence audit; cwd=${PROJECT:auxara-dialer|backslash} and ${PROJECT:control-plane|backslash}.
+  - desc: Actual Claude/Codex operating-model and controller-owned completion-evidence audit; cwd=${PROJECT:auxara-dialer|backslash} and ${PROJECT:control-plane|backslash} Control Plane.
 - Orchestration drift, consolidation, and main sync: agent:state, git worktree list --porcelain, PR 244, npm run gates:all, wip/local-main-pre-sync-20260715
   - desc: Read-only audit, safe residue cleanup, and local-main sync procedures; cwd=${PROJECT:auxara-dialer|backslash}.
 - Worktree cleanup and stale-branch hygiene: git worktree prune, git cherry -v, decision-sprint-linkage, unique commit

@@ -152,7 +152,7 @@ applies_to: cwd=${PROJECT:auxara-dialer|backslash}; reuse_rule=reuse for current
 
 # Task Group: Nuvo Dialer AI capability audit and portable orchestration control plane
 scope: auditing the user's actual Claude/Codex operating model and designing or validating portable controller-owned completion evidence; separates verified local proof from installation, activation, billing, and trust-boundary gaps
-applies_to: cwd=${PROJECT:auxara-dialer|backslash} and ${PROJECT:control-plane|backslash}; reuse_rule=reuse for AI workflow/capability audits or portable orchestration-control-plane work, but re-check live repo, CI, installation, and automation activation state before claiming rollout or deployment completeness
+applies_to: cwd=${PROJECT:auxara-dialer|backslash} and ${PROJECT:control-plane|backslash} Control Plane; reuse_rule=reuse for AI workflow/capability audits or portable orchestration-control-plane work, but re-check live repo, CI, installation, and automation activation state before claiming rollout or deployment completeness
 
 ## Task 1: Audit the actual Claude/Codex operating model, outcome partial
 
@@ -168,7 +168,7 @@ applies_to: cwd=${PROJECT:auxara-dialer|backslash} and ${PROJECT:control-plane|b
 
 ### rollout_summary_files
 
-- rollout_summaries/2026-07-14T14-55-44-q5RU-ai_capability_audit_and_portable_orchestration_control_plane.md (cwd=${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\14\rollout-2026-07-14T18-55-49-019f6120-744c-7563-9b0c-2f457d6f7e32.jsonl, updated_at=2026-07-17T16:44:39+00:00, thread_id=019f6120-744c-7563-9b0c-2f457d6f7e32, portable repo=${PROJECT:control-plane|backslash}; local proof passed; installation and external CI remain unresolved)
+- rollout_summaries/2026-07-14T14-55-44-q5RU-ai_capability_audit_and_portable_orchestration_control_plane.md (cwd=${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\14\rollout-2026-07-14T18-55-49-019f6120-744c-7563-9b0c-2f457d6f7e32.jsonl, updated_at=2026-07-17T16:44:39+00:00, thread_id=019f6120-744c-7563-9b0c-2f457d6f7e32, portable repo=${PROJECT:control-plane|backslash} Control Plane; local proof passed; installation and external CI remain unresolved)
 
 ### keywords
 
@@ -178,7 +178,7 @@ applies_to: cwd=${PROJECT:auxara-dialer|backslash} and ${PROJECT:control-plane|b
 
 ### rollout_summary_files
 
-- rollout_summaries/2026-07-20T05-26-28-4IV8-weekly_fleet_doctrine_review_control_plane_drift.md (cwd=${PROJECT:control-plane|backslash}, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\20\rollout-2026-07-20T09-26-33-019f7dfd-6e5e-7061-a2fc-8f4ef6ac7fe6.jsonl, updated_at=2026-07-20T05:33:04+00:00, thread_id=019f7dfd-6e5e-7061-a2fc-8f4ef6ac7fe6, read-only parity finding; no remediation)
+- rollout_summaries/2026-07-20T05-26-28-4IV8-weekly_fleet_doctrine_review_control_plane_drift.md (cwd=${PROJECT:control-plane|backslash} Control Plane, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\20\rollout-2026-07-20T09-26-33-019f7dfd-6e5e-7061-a2fc-8f4ef6ac7fe6.jsonl, updated_at=2026-07-20T05:33:04+00:00, thread_id=019f7dfd-6e5e-7061-a2fc-8f4ef6ac7fe6, read-only parity finding; no remediation)
 
 ### keywords
 
@@ -198,7 +198,7 @@ applies_to: cwd=${PROJECT:auxara-dialer|backslash} and ${PROJECT:control-plane|b
 - The portable control plane binds completion evidence to task, repository, commit, attempt, contract, profile, role, lifecycle events, and parsed proof artifacts. Completion is controller/platform evidence (`TaskCreated -> SubagentStop -> TaskCompleted`), not agent-authored booleans. [Task 2]
 - Mutation proof is a verifier trust test: clean baseline pass -> registered mutant fails with expected diagnostic -> exact byte restoration -> clean post-restore pass. Local evidence reported universal 69/69, CoachAI 22/22, Auxara lifecycle 7/7 and control 10/10, plus mutation receipts, syntax/diff checks, gitleaks, and independent audits. [Task 2]
 - Automation specifications and portable repository commits/PRs are not activation or installed-overlay proof. Verify desktop activation and current project overlay parity separately. [Task 1][Task 2]
-- `npm run control:check` in `${PROJECT:control-plane|backslash}` is a parity sentinel: a red result means installed doctrine is stale until parity is restored. Keep canonical sources, installed copies, and project overlays distinct. [Task 3]
+- `npm run control:check` in `${PROJECT:control-plane|backslash} Control Plane` is a parity sentinel: a red result means installed doctrine is stale until parity is restored. Keep canonical sources, installed copies, and project overlays distinct. [Task 3]
 - The canonical bootstrap contract requires rooted exec-form `node` hooks using `${CLAUDE_PROJECT_DIR}/scripts/...`; malformed JSON or missing `tool_input.file_path` in `PostToolUse` must fail closed with exit 2. Query actual GitHub review objects when independent review evidence matters; comments alone are not reviews. [Task 3]
 
 ## Failures and how to do differently
