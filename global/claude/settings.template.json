@@ -1,0 +1,39 @@
+{
+  "enabledPlugins": {
+    "visualforge@local-desktop-app-uploads": true,
+    "marketing-skills@marketingskills": true,
+    "banana-claude@banana-claude-marketplace": true
+  },
+  "extraKnownMarketplaces": {
+    "marketingskills": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/coreyhaines31/marketingskills.git"
+      }
+    },
+    "banana-claude-marketplace": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/AgriciDaniel/banana-claude.git"
+      }
+    }
+  },
+  "skipWorkflowUsageWarning": true,
+  "theme": "dark",
+  "inputNeededNotifEnabled": true,
+  "agentPushNotifEnabled": true,
+  "mcpServers": {
+    "nanobanana-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@ycse/nanobanana-mcp"
+      ],
+      "env": {
+        "GOOGLE_AI_API_KEY": "<SET-LOCALLY>",
+        "NANOBANANA_MODEL": "<SET-LOCALLY>"
+      }
+    }
+  },
+  "tui": "fullscreen"
+}

@@ -434,6 +434,21 @@ test('Proves: ORG-BOUNDARY-CODEX-STATE-001; Test type: source-shape boundary; Su
   }
 });
 
+test('Proves: ORG-BOUNDARY-CLAUDE-SETTINGS-001; Test type: secret-boundary liveness and mutation; Surface: Claude settings template; Authority: unmanaged local settings plus placeholder-only canonical shape; Killer mutation: copy any live MCP environment value into canonical or add an install/capture mapping for settings.json; Gated command: npm test', () => {
+  const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const template = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'global', 'claude', 'settings.template.json'), 'utf8'));
+  const manifest = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'control-plane.manifest.json'), 'utf8'));
+  const environmentValues = Object.values(template.mcpServers ?? {})
+    .flatMap((server) => Object.values(server?.env ?? {}));
+
+  assert.ok(environmentValues.length > 0, 'template must exercise the secret-bearing MCP environment shape');
+  assert.ok(environmentValues.every((value) => value === '<SET-LOCALLY>'));
+  assert.ok(manifest.mappings.every((mapping) =>
+    mapping.source !== 'global/claude/settings.template.json'
+      && mapping.captureFrom !== '${HOME}/.claude/settings.json'
+      && !(mapping.destinations ?? []).includes('${HOME}/.claude/settings.json')));
+});
+
 test('Proves: capture rejects machine-specific paths before writes; Test type: portability mutation; Surface: capture; Authority: tokenized roots; Killer mutation: import a C drive path; Gated command: npm test', () => {
   const f = fixture();
   fs.writeFileSync(path.join(f.home, '.claude', 'rules', 'unsafe.md'), `Tool: ${['C:', 'dev', 'Some Tool'].join('\\')}\n`);

@@ -39,3 +39,9 @@ An `installedIgnore` entry is a narrowly reviewed, exact mapping-relative path f
 ## Curated Codex state
 
 The portable subset includes `MEMORY.md`, `memory_summary.md`, authored `extensions/`, automation definitions plus their authored memory, and explicitly retired user-authored skills. Raw memory aggregation, rollout summaries, imported vendor caches, and `skills-curated-cache.json` remain unmanaged machine/runtime state and are not capture sources.
+
+## Claude and agent provenance
+
+The portable subset includes Claude plugin installation/marketplace/blocklist manifests, authored Claude plans, and the agent skill-lock provenance registry. Plugin caches and marketplace working copies remain upstream/runtime state; the existing `local-desktop-app-uploads/visualforge` copy is redundant with the canonical VisualForge dependency mirror but is intentionally not deleted.
+
+Claude `settings.json` remains deny-listed and unmanaged because it contains machine-local secret values. `global/claude/settings.template.json` records only its portable shape, with every MCP environment value replaced by `<SET-LOCALLY>`; it has no install mapping.

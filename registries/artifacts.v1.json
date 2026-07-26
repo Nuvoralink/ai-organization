@@ -86,6 +86,42 @@
       "sensitivity": "orchestration-only"
     },
     {
+      "id": "global-claude-plugin-manifests",
+      "family": "plugin-provenance",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "global/claude/plugins",
+      "destinations": [
+        "${HOME}/.claude/plugins"
+      ],
+      "provenance": "user-authored-claude-home",
+      "sensitivity": "orchestration-only"
+    },
+    {
+      "id": "global-claude-plans",
+      "family": "planning-artifact",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "global/claude/plans",
+      "destinations": [
+        "${HOME}/.claude/plans"
+      ],
+      "provenance": "user-authored-claude-home",
+      "sensitivity": "orchestration-only"
+    },
+    {
+      "id": "agent-skill-lock-provenance",
+      "family": "skill-provenance",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "registries/skill-lock.provenance.json",
+      "destinations": [
+        "${HOME}/.agents/.skill-lock.json"
+      ],
+      "provenance": "user-authored-agent-home",
+      "sensitivity": "orchestration-only"
+    },
+    {
       "id": "skill-ai-decision-contract-builder",
       "family": "skill",
       "lifecycle": "active",

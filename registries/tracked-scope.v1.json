@@ -2323,6 +2323,34 @@
       "class": "global-orchestration"
     },
     {
+      "path": "global/claude/plans/read-only-independent-adversarial-review-effervescent-cookie.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/plans/repository-c-dev-nuvo-dialer-s14-integra-witty-crayon.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/plans/you-are-the-independent-purrfect-dongarra.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/plans/you-are-the-independent-sharded-hennessy.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/plugins/blocklist.json",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/plugins/installed_plugins.json",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/plugins/known_marketplaces.json",
+      "class": "global-orchestration"
+    },
+    {
       "path": "global/claude/rules/authority-boundary.md",
       "class": "global-orchestration"
     },
@@ -2348,6 +2376,10 @@
     },
     {
       "path": "global/claude/rules/test-intent.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/settings.template.json",
       "class": "global-orchestration"
     },
     {
@@ -3064,6 +3096,10 @@
     },
     {
       "path": "registries/project-roots.example.json",
+      "class": "registry"
+    },
+    {
+      "path": "registries/skill-lock.provenance.json",
       "class": "registry"
     },
     {
