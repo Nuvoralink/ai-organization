@@ -77,6 +77,20 @@ When behavior is described as idempotent, test both:
 
 Prefer integration tests around the real persistence boundary. The implementation should rely on a durable guard such as a unique key, row lock, claim step, provider event ID, or persisted state transition, not only UI-disabled controls or pre-read status checks.
 
+### Post-claim external-effect exclusion
+
+A committed database claim is not a provider-handoff fence when revocation, release, or replacement can race between that claim and external I/O. For any post-claim provider effect, test the shared temporal-exclusion boundary with deterministic interleavings:
+
+- release/revocation first: the release is acknowledged and the provider observes zero effects;
+- exact claim/effect lease first: release or replacement is not acknowledged while the handoff is vulnerable, the claimed path produces exactly one provider effect, and retry/finalization observes the settled state; and
+- lease expiry or loss before provider handoff: the provider mock remains untouched and durable evidence states a definite no-effect outcome rather than an ambiguous status.
+
+The claim/effect lease and every competing writer must participate in the same exclusion authority. Provider I/O stays outside the database transaction, and the tests must include a mutation that removes each participant's fence so the corresponding race turns red.
+
+*Fail-state:* treating a committed database authorization/claim as if it fenced the later provider call, leaving a post-claim/pre-effect window where release is acknowledged but the stale effect still executes.
+
+*Counterexample:* provider work completed wholly inside one atomic local boundary with no external I/O does not need a separate post-claim effect lease; its transaction/lock is already the handoff boundary.
+
 ## Shared Harness For A Heavily-Mounted Surface (kill the provider/context cascade)
 
 When many test files mount the SAME surface (a page, an app shell, a screen), the provider/context stack they wrap it in gets duplicated per file — and the day that surface gains a new PAGE-LEVEL context dependency, EVERY one of those files breaks at once and takes the identical patch. Centralize the mount in ONE shared render helper (`renderX(opts?)` + an `XProviders` component) that owns the provider stack; each suite routes its render through it and keeps only its own per-case overrides.
@@ -86,6 +100,14 @@ When many test files mount the SAME surface (a page, an app shell, a screen), th
 - Keep the helper OUT of the test-file glob (name it `renderX.tsx`, not `*.test.tsx`) so the runner and the intent gate don't treat it as a test.
 
 *Fail-state:* a new test for a heavily-mounted surface hand-rolls the provider tree (or a `vi.mock` of a page-level context) inline instead of routing through the shared helper — so the next page-level provider dependency breaks it along with every file that copied the pattern.
+
+## Multi-operation Mocks And Exact-input Shapes
+
+When one mock can receive more than one query or operation, dispatch on observable operation identity (such as an operation name, tagged statement, stable query marker, or distinguishing arguments). Return the contract-correct payload for every expected branch, throw on every unknown branch, and assert liveness for each branch the scenario expects. Do not use one catch-all response for distinct contracts or let call order stand in for identity. When an authority-bound input has an exact key set, apply `satisfies` or an explicit annotation at construction rather than relying on object-literal excess-property checking at a later call; add an exact-key assertion when runtime shape is part of the contract.
+
+*Fail-state:* a multi-operation mock feeds the same payload to incompatible operations, so inserting or reordering an upstream call silently changes which contract consumes it; or an intermediate variable hides a stale extra input key from static checking.
+
+*Killer mutation:* replace the dispatcher with a catch-all response, or add an unhandled operation; the test must turn red through a contract mismatch or the unknown-branch throw. *Counterexample:* a mock with exactly one possible operation does not need artificial dispatch; it still asserts that operation's liveness and payload.
 
 ## Verifying The Tests
 

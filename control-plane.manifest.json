@@ -1762,6 +1762,10 @@
         ".venv",
         "data"
       ],
+      "installedIgnore": [
+        ".env",
+        ".env.example"
+      ],
       "detectLocalOnly": true,
       "ownership": "canonical",
       "allowRootLink": false,

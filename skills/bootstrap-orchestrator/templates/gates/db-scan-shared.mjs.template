@@ -1,0 +1,74 @@
+// TEMPLATE (bootstrap-orchestrator): Postgres-RLS project gate — copy into scripts/ and adjust the
+// project knobs: none — shared substrate for the two scanners (place at scripts/lib/db-scan-shared.mjs).
+// Origin: Auxara Dialer 2026-07-21 (DB-LANE-INVISIBLE-COVERAGE-001 / RLS-DELETE-DEAD-PATH-GATE-001).
+
+/**
+ * Shared substrate for the two DB-invariant scanners (gate:rls-delete-path and
+ * gate:db-mutation-coverage): Prisma model→table→client-accessor mapping, the backend/src
+ * production-file walk, and the escape-annotation scan (same contiguous-comment-block-above
+ * semantics as gate:tx-rollback, so authors learn ONE annotation convention).
+ */
+
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+
+/** Parse schema.prisma into [{ model, table, accessor }] — table = @@map ?? model name. */
+export function parsePrismaModels(schemaText) {
+  const models = [];
+  const modelRe = /^model\s+(\w+)\s+\{([\s\S]*?)^\}/gm;
+  let m;
+  while ((m = modelRe.exec(schemaText)) !== null) {
+    const model = m[1];
+    const body = m[2];
+    const mapMatch = /@@map\("([^"]+)"\)/.exec(body);
+    models.push({
+      model,
+      table: (mapMatch ? mapMatch[1] : model).toLowerCase(),
+      accessor: model[0].toLowerCase() + model.slice(1),
+    });
+  }
+  return models;
+}
+
+/** Recursively list .ts files under root; skip node_modules and generated dirs. */
+export function walkTsFiles(root) {
+  const out = [];
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir)) {
+      if (entry === 'node_modules' || entry === 'dist' || entry === 'generated') continue;
+      const full = join(dir, entry);
+      const st = statSync(full);
+      if (st.isDirectory()) walk(full);
+      else if (entry.endsWith('.ts')) out.push(full);
+    }
+  };
+  walk(root);
+  return out;
+}
+
+export const isTestPath = (p) => /\.test\.ts$/.test(p) || /[\\/]__tests__[\\/]/.test(p);
+
+/**
+ * Is line `idx` (0-based) annotated with `token` — on the line itself, or anywhere in the
+ * CONTIGUOUS comment block immediately above it? (Mirrors gate:tx-rollback's block-above scan:
+ * the walk stops at the first non-comment line so a token can never suppress across real code.)
+ */
+export function hasEscapeAnnotation(lines, idx, tokenRe) {
+  if (tokenRe.test(lines[idx])) return true;
+  for (let i = idx - 1; i >= 0; i -= 1) {
+    const trimmed = lines[i].trim();
+    const isComment =
+      trimmed.startsWith('//') ||
+      trimmed.startsWith('*') ||
+      trimmed.startsWith('/*') ||
+      trimmed === '*/';
+    if (!isComment) return false;
+    if (tokenRe.test(trimmed)) return true;
+  }
+  return false;
+}
+
+/** Read a file as lines, tolerating CRLF. */
+export function readLines(file) {
+  return readFileSync(file, 'utf8').split(/\r?\n/);
+}

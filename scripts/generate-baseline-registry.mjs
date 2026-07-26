@@ -121,7 +121,8 @@ addMapping({
   destinations: ['${DEPENDENCY:council-studio}'], provenance: 'user-authored-development-repository', sensitivity: 'orchestration-only', license: 'review-required'
 }, {
   id: 'dependency-council-studio', source: 'dependencies/llm-council', captureFrom: '${DEPENDENCY:council-studio}', destinations: ['${DEPENDENCY:council-studio}'],
-  mode: 'tree', allowedExtensions: ['', '.md', '.py', '.toml', '.lock'], exclude: ['.claude/settings.json', '.venv', 'data'], detectLocalOnly: true
+  mode: 'tree', allowedExtensions: ['', '.md', '.py', '.toml', '.lock'], exclude: ['.claude/settings.json', '.venv', 'data'],
+  installedIgnore: ['.env', '.env.example'], detectLocalOnly: true
 });
 
 for (const directory of ['council', 'studio']) {

@@ -53,6 +53,8 @@ Do not invoke a specialist merely because it is installed. If a specialist requi
 
 ### 1. Ground the problem
 
+**Reuse before create — check the design-artifact registry FIRST.** Before creating any new mock, concept, or Claude Design brief, read the project's design-artifact registry for an existing mock of this surface/element/state (the approved/locked-surface registry AND the pending-mock/handoffs registry, wherever the project keeps them). A mock that already exists — approved *or* pending approval — is reused: an approved mock is the acceptance reference to build against; a pending mock is brought for approval, not re-created. Never conflate "not built in code" with "not mocked": a surface can be fully mocked and simply not yet coded. Producing a second mock for a surface that already has one is a parallel-system violation that burns an approval round and risks contradicting the locked design; if an existing mock is stale versus a newer decision, reconcile it in place (update + re-approve), never silently recreate it.
+
 Read the product intent, user stories, current screenshots, relevant pages, shared shell, components, tokens, and two or three analogous in-product surfaces. Inspect both the visible surface and the data/actions that make it truthful.
 
 For greenfield work, obtain equivalent brand, audience, content, and task evidence. If essential product choices remain open, surface them as product decisions rather than hiding them in visual styling.

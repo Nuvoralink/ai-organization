@@ -33,3 +33,5 @@ Project product authorities remain in their project repositories. Overlay rules 
 ## Safety invariant
 
 Capture is fail-closed. A path is eligible only when an explicit manifest mapping includes it and no deny rule matches it. There is no recursive "copy my home directory" mode.
+
+An `installedIgnore` entry is a narrowly reviewed, exact mapping-relative path for denied state that legitimately exists only in an installed dependency tree. Installed inventory skips that named entry before statting or reading it and reports the skip; the entry is never hashed, copied, retired, or admitted into canonical capture. The same name in a canonical source remains forbidden by the repository-side deny policy.

@@ -46,6 +46,7 @@ For a project overlay, use `node scripts/project-overlay.mjs rollback <project> 
 - `drift`: inspect the diff; either promote a legitimate change through canonical capture or restore from canonical install.
 - `local-only`: classify it. Add an explicit safe mapping only when it is orchestration; otherwise move/remove it from the managed root.
 - `unclassified-local-only`: a non-allowlisted file exists in a dedicated managed root. Investigate without opening a secret-bearing file.
+- `skipped-installed-entry`: an exact per-mapping `installedIgnore` path names denied machine-local dependency state. Verify the manifest entry is still necessary; never open or promote the installed content, and never use this exception for an ordinary local-only orchestration file.
 - `absolute-path`, `secret-shaped-content`, or `forbidden-tracked-path`: stop publication and remove the unsafe canonical content.
 - `unexpected-link-target`: do not follow or replace the link automatically. Verify ownership and use an explicitly approved retirement migration.
 
@@ -56,3 +57,5 @@ Local validation, branches, commits, and PR creation/update are agent-authorized
 ## Sensitive-state boundary
 
 Never point capture at a home directory or product tree. The manifests select individual orchestration files and safe directories. Secrets, environment files, histories, logs, telemetry, caches, credentials, customer/provider data, recordings, transcripts, and application source remain outside this repository and its automation reports.
+
+Installed-tree exceptions do not weaken that boundary: they are exact, non-glob names that must already match a global deny class, apply only during installed inventory, and remain invalid anywhere under the canonical repository source.
