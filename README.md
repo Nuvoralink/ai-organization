@@ -22,8 +22,8 @@ A clean machine can clone this repository, register its project locations, run o
 Prerequisites: Git and Node.js 20 or newer.
 
 ```powershell
-git clone https://github.com/Nuvoralink/ai-organization-control-plane.git
-cd ai-organization-control-plane
+git clone https://github.com/Nuvoralink/ai-organization.git
+cd ai-organization
 Copy-Item registries/project-roots.example.json registries/project-roots.local.json
 # Edit only the project paths in the untracked local file.
 npm test
@@ -45,5 +45,5 @@ The presentation is [Nuvoralink AI Organization Operating System](artifacts/Nuvo
 
 ## Work tracking
 
-- [Master implementation issue](https://github.com/Nuvoralink/ai-organization-control-plane/issues/1)
+- [Master implementation issue](https://github.com/Nuvoralink/ai-organization/issues/1)
 - [Private project board](https://github.com/users/Nuvoralink/projects/8)

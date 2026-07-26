@@ -6,7 +6,7 @@ You are bootstrapping this machine's entire AI-agent operating system from our p
 
 ## CONTEXT (what this is)
 
-`https://github.com/Nuvoralink/ai-organization-control-plane.git` is the portable source of truth for how our Claude and Codex agents work: universal rules/doctrine, agent + auditor definitions, ~160 skills (including five in-house skill marketplaces), the orchestration bootstrap, control-plane schemas/policies/registries, automations, and per-project orchestration overlays.
+`https://github.com/Nuvoralink/ai-organization.git` is the portable source of truth for how our Claude and Codex agents work: universal rules/doctrine, agent + auditor definitions, ~160 skills (including five in-house skill marketplaces), the orchestration bootstrap, control-plane schemas/policies/registries, automations, and per-project orchestration overlays.
 
 Its operating promise: **a clean machine clones it, registers its project locations, runs one install, and receives the same managed operating system.** Files under `~/.claude`, `~/.codex`, `~/.agents`, and inside each project are GENERATED COPIES — the repo is canonical. `control:check` fails when a managed artifact is missing, changed on only one machine, present only locally, or duplicated under a conflicting name.
 
@@ -22,8 +22,8 @@ Its operating promise: **a clean machine clones it, registers its project locati
 
 ### 1 — Clone and install
 ```
-git clone https://github.com/Nuvoralink/ai-organization-control-plane.git
-cd ai-organization-control-plane
+git clone https://github.com/Nuvoralink/ai-organization.git
+cd ai-organization
 npm install
 ```
 
