@@ -3,7 +3,7 @@
      This is not instantiated into the repo; it's the shape the orchestrator writes each time. Keep as a reference in the repo's agent-prompts dir if useful. -->
 # Dispatch brief — <slice/task name>
 
-> A brief that would only work for an agent already sharing the orchestrator's context is a defective brief. Carry all six parts. Spec MUST/MUST-NOTs are quoted VERBATIM, never paraphrased.
+> A brief that would only work for an agent already sharing the orchestrator's context is a defective brief. Carry all six parts. Spec MUST/MUST-NOTs are quoted VERBATIM, never paraphrased. Every implementer brief additionally carries the recipient's start-of-work + pre-report self-audit contract: a Claude-side agent inherits it from its agent file (name the file); a codex exec — or any recipient loading NO agent file — gets the compact contract restated verbatim (premise re-verification with STOP on unverifiable; full-source reads with every stacked guard enumerated at its CURRENT definition; lens self-audit against the auditors' design-in contracts; a paired negative test for any admission-widening, killer mutation: widen further → RED; the authored-not-run DB-test flag).
 
 ## 1. CONTEXT (what the agent can't infer)
 - The product/slice goal in plain terms.

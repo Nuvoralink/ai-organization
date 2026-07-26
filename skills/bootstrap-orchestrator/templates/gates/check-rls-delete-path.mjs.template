@@ -1,0 +1,182 @@
+// TEMPLATE (bootstrap-orchestrator): Postgres-RLS project gate — copy into scripts/ and adjust the
+// project knobs: schema/migrations/src paths and the escape token if your annotation convention differs.
+// Origin: Auxara Dialer 2026-07-21 (DB-LANE-INVISIBLE-COVERAGE-001 / RLS-DELETE-DEAD-PATH-GATE-001).
+
+#!/usr/bin/env node
+/**
+ * gate:rls-delete-path — a Prisma `delete`/`deleteMany` against a table whose row-level security
+ *   permits NO delete (RLS enabled/forced, and no policy FOR DELETE / FOR ALL) is a SILENT NO-OP
+ *   under the app role: `deleteMany` resolves `count: 0`, `delete` throws not-found, and any
+ *   fail-closed `if (count !== 1) throw` fence never fires. FAILS the build on any UNANNOTATED site.
+ *
+ * WHY THIS EXISTS (2026-07-21, RLS-DELETE-DEAD-PATH-GATE-001): `mediaArtifactUploadCleanup` shipped
+ *   `tx.mediaArtifact.deleteMany(...)` + `tx.mediaArtifactDerivative.deleteMany(...)` against
+ *   FORCE-RLS no-DELETE tables — the whole cleanup arm was dead-on-arrival against a real database,
+ *   leaking expired reserved rows forever. It stayed green for its whole life because the only test
+ *   exercising it was `skipIf(!HAS_TEST_DB)` and every static gate reads the SOURCE, not the DB's
+ *   policy set. (Fixed via soft-delete + migration 0073; this gate is the missing control.)
+ *
+ * HOW IT DECIDES:
+ *   1. Fold the migration set (scripts/db-guards.mjs: last-wins statement semantics) into per-table
+ *      RLS state + policies — including the dialer's dynamic idiom (0043's FOREACH-inline-ARRAY DO
+ *      loops, resolved by resolveDynamicGuards). A policy with no FOR clause is FOR ALL (Postgres
+ *      default) and therefore delete-permitting.
+ *   2. Set = every PRISMA-MAPPED table with RLS enabled/forced and no policy FOR DELETE / FOR ALL.
+ *   3. Scan backend/src production files for `.<clientAccessor>.delete(` / `.deleteMany(` where the
+ *      accessor's table is in that set. Each hit must carry `// rls-delete-ok: <reason>` on the
+ *      line or in the contiguous comment block above (same convention as tx-rollback-ok).
+ *
+ * ESCAPE HATCH: `// rls-delete-ok: <reason>` — for a delete that is genuinely executed under an
+ *   elevated/BYPASSRLS role or a SECURITY DEFINER seam the scanner cannot see. The reason is
+ *   required so the bypass is reviewable.
+ *
+ * KNOWN GAPS (honest limits — the reviewer rule + the DB lane merge gate are the backstop):
+ *   - Dynamic DDL with COMPUTED table names (0007's partition children) is not resolvable; those
+ *     children are not Prisma-addressable, so they cannot appear in the scanned call-site set. The
+ *     gate prints each unresolved shape as a WARNING so the blindness is visible, not silent.
+ *   - Raw SQL deletes ($executeRaw`DELETE …`) are not scanned — the accessor join has no model.
+ *   - Role privileges (REVOKE/GRANT, e.g. provider_event_inbox) are a different mechanism than RLS
+ *     policies and are out of this gate's scope.
+ *
+ * Exit code: 1 on any unannotated site or on a missing tree (fail-closed), else 0.
+ * Run: `npm run gate:rls-delete-path` (optionally `-- --root <dir>` for scaffolds/meta-tests).
+ */
+
+import { existsSync, readFileSync } from 'node:fs';
+import { join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import {
+  buildGuardState,
+  loadMigrations,
+  policyCommand,
+  resolveDynamicGuards,
+} from './db-guards.mjs';
+import {
+  hasEscapeAnnotation,
+  isTestPath,
+  parsePrismaModels,
+  readLines,
+  walkTsFiles,
+} from './lib/db-scan-shared.mjs';
+
+const ESCAPE = /rls-delete-ok:\s*\S/;
+
+/** Derive the set of tables (lowercased) whose RLS permits no DELETE. Exported for the meta-test. */
+export function deriveNoDeleteRlsTables(migrations) {
+  const state = buildGuardState(migrations);
+  const dyn = resolveDynamicGuards(state.doBlocks);
+
+  const tables = new Set([...state.rls.keys(), ...dyn.rls.keys()]);
+  const noDelete = new Set();
+  for (const table of tables) {
+    const s = state.rls.get(table);
+    const d = dyn.rls.get(table);
+    const rlsOn =
+      (s?.enabled ?? false) ||
+      (s?.forced ?? false) ||
+      (d?.enabled ?? false) ||
+      (d?.forced ?? false);
+    if (!rlsOn) continue;
+    const staticCommands = [...(state.policies.get(table) ?? new Map()).values()].map((p) =>
+      policyCommand(p.text),
+    );
+    const dynCommands = (dyn.policies.get(table) ?? []).map((p) => p.command);
+    const deletePermitted = [...staticCommands, ...dynCommands].some(
+      (c) => c === 'ALL' || c === 'DELETE',
+    );
+    if (!deletePermitted) noDelete.add(table);
+  }
+  return { noDelete, unresolved: dyn.unresolved };
+}
+
+export function scanRlsDeletePaths(root) {
+  const migrationsDir = join(root, 'backend', 'prisma', 'migrations');
+  const schemaPath = join(root, 'backend', 'prisma', 'schema.prisma');
+  const srcDir = join(root, 'backend', 'src');
+  for (const [what, p] of [
+    ['migrations directory', migrationsDir],
+    ['schema.prisma', schemaPath],
+    ['backend/src', srcDir],
+  ]) {
+    if (!existsSync(p))
+      return {
+        fatal: `${what} not found at ${p} — refusing to report a pass over a tree this gate cannot see`,
+      };
+  }
+
+  const migrations = loadMigrations(migrationsDir);
+  const { noDelete, unresolved } = deriveNoDeleteRlsTables(migrations);
+  const models = parsePrismaModels(readFileSync(schemaPath, 'utf8'));
+  const guardedAccessors = models.filter((m) => noDelete.has(m.table));
+
+  const files = walkTsFiles(srcDir).filter((f) => !isTestPath(f));
+  const violations = [];
+  if (guardedAccessors.length > 0) {
+    const callRe = new RegExp(
+      `\\.(${guardedAccessors.map((m) => m.accessor).join('|')})\\.(delete|deleteMany)\\s*\\(`,
+    );
+    for (const file of files) {
+      const lines = readLines(file);
+      for (let i = 0; i < lines.length; i += 1) {
+        const m = callRe.exec(lines[i]);
+        if (!m) continue;
+        if (hasEscapeAnnotation(lines, i, ESCAPE)) continue;
+        const model = guardedAccessors.find((g) => g.accessor === m[1]);
+        violations.push({
+          file: relative(root, file),
+          line: i + 1,
+          accessor: m[1],
+          method: m[2],
+          table: model.table,
+        });
+      }
+    }
+  }
+  return {
+    violations,
+    unresolved,
+    scannedFiles: files.length,
+    guardedTableCount: noDelete.size,
+    guardedPrismaTables: guardedAccessors.map((m) => m.table).sort(),
+    migrationCount: migrations.length,
+  };
+}
+
+function main() {
+  const args = process.argv.slice(2);
+  const rootFlag = args.indexOf('--root');
+  const root =
+    rootFlag !== -1
+      ? resolve(args[rootFlag + 1])
+      : resolve(fileURLToPath(import.meta.url), '..', '..');
+
+  const result = scanRlsDeletePaths(root);
+  if (result.fatal) {
+    console.error(`check-rls-delete-path: FAILED — ${result.fatal}`);
+    process.exit(1);
+  }
+  for (const u of result.unresolved) {
+    console.warn(
+      `check-rls-delete-path: WARN — unresolvable dynamic DDL in ${u.migration} ("${u.snippet}…"); computed table names are outside this gate's set derivation (partition children are not Prisma-addressable — see KNOWN GAPS)`,
+    );
+  }
+  if (result.violations.length > 0) {
+    console.error(
+      `check-rls-delete-path: FAILED — ${result.violations.length} delete path(s) against RLS-no-DELETE tables (scanned ${result.scannedFiles} file(s), ${result.migrationCount} migrations; ${result.guardedTableCount} tables permit no delete):`,
+    );
+    for (const v of result.violations) {
+      console.error(
+        `  - ${v.file}:${v.line} — .${v.accessor}.${v.method}( targets "${v.table}", which has RLS and NO policy FOR DELETE/ALL: this delete is a silent no-op (deleteMany count:0) or a guaranteed not-found under the app role. Fix the design (soft-delete/state transition per migration 0073's precedent) or, if it truly runs under an elevated seam, annotate \`// rls-delete-ok: <reason>\`.`,
+      );
+    }
+    process.exit(1);
+  }
+  console.log(
+    `check-rls-delete-path: OK — scanned ${result.scannedFiles} production file(s) against ${result.guardedTableCount} RLS-no-DELETE table(s) (${result.migrationCount} migrations folded, last-wins); no unannotated delete/deleteMany paths.`,
+  );
+}
+
+const invokedDirectly =
+  process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (invokedDirectly) main();

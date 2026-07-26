@@ -145,6 +145,52 @@ function denyReason(relative, manifest, mapping, isDirectory = false) {
   return undefined;
 }
 
+function isGlobalDenyReason(reason) {
+  return typeof reason === 'string' && reason.startsWith('denied ');
+}
+
+function isExactRelativePath(value) {
+  if (typeof value !== 'string' || value.length === 0) return false;
+  if (value !== normalizeRelative(value) || path.isAbsolute(value) || path.win32.isAbsolute(value)) return false;
+  if (/[\\:*?[\]{}]/u.test(value)) return false;
+  const segments = value.split('/');
+  return segments.every((segment) => segment.length > 0 && segment !== '.' && segment !== '..');
+}
+
+function installedIgnoreErrors(mapping, manifest) {
+  if (mapping.installedIgnore === undefined) return [];
+  if (mapping.mode !== 'tree') return [`installedIgnore is valid only for tree mappings: ${mapping.id}`];
+  if (!Array.isArray(mapping.installedIgnore)) return [`installedIgnore must be an array: ${mapping.id}`];
+  const errors = [];
+  const seen = new Set();
+  for (const entry of mapping.installedIgnore) {
+    if (!isExactRelativePath(entry)) {
+      errors.push(`Invalid installedIgnore path for mapping: ${mapping.id}`);
+      continue;
+    }
+    const normalized = normalizeRelative(entry);
+    if (seen.has(normalized)) errors.push(`Duplicate installedIgnore path for mapping: ${mapping.id}/${normalized}`);
+    seen.add(normalized);
+    const reason = denyReason(normalized, manifest, { ...mapping, exclude: [] });
+    if (!isGlobalDenyReason(reason)) errors.push(`installedIgnore path must match a global deny rule: ${mapping.id}/${normalized}`);
+  }
+  return errors;
+}
+
+function installedIgnoreReason(relative, manifest, mapping, isDirectory = false) {
+  if (mapping.mode !== 'tree' || !Array.isArray(mapping.installedIgnore)) return undefined;
+  const normalized = normalizeRelative(relative);
+  for (const entry of mapping.installedIgnore) {
+    if (!isExactRelativePath(entry)) continue;
+    const declaredReason = denyReason(entry, manifest, { ...mapping, exclude: [] });
+    if (!isGlobalDenyReason(declaredReason)) continue;
+    if (normalized !== entry && !normalized.startsWith(`${entry}/`)) continue;
+    const reason = denyReason(normalized, manifest, { ...mapping, exclude: [] }, isDirectory);
+    if (isGlobalDenyReason(reason)) return reason;
+  }
+  return undefined;
+}
+
 class PortableInventoryError extends Error {}
 
 function inventoryFailure(message) {
@@ -223,6 +269,13 @@ export function collectFiles(rootInput, manifest, mapping, options = {}) {
       for (const entry of entries) {
         const relative = normalizeRelative(path.join(relativeBase, entry.name));
         const absolute = path.join(directory, entry.name);
+        const installedIgnore = options.installedInventory
+          ? installedIgnoreReason(relative, manifest, mapping, entry.isDirectory())
+          : undefined;
+        if (installedIgnore) {
+          options.skippedEntries?.push({ relative, reason: installedIgnore });
+          continue;
+        }
         const lstat = fs.lstatSync(absolute);
         if (lstat.isSymbolicLink()) {
           if (options.installedInventory) {
@@ -402,6 +455,7 @@ export function validateManifest(manifest, repoRoot, roots) {
   const destinationRoots = [];
   const physicalTargets = new Map();
   for (const mapping of manifest.mappings) {
+    errors.push(...installedIgnoreErrors(mapping, manifest));
     if (!/^[a-z0-9][a-z0-9-]+$/.test(mapping.id ?? '')) errors.push(`Invalid mapping id: ${mapping.id}`);
     if (ids.has(mapping.id)) errors.push(`Duplicate mapping id: ${mapping.id}`);
     ids.add(mapping.id);
@@ -444,6 +498,7 @@ export function validateCanonical({ repoRoot, manifest }) {
   const ids = new Set();
   const destinationTemplates = new Set();
   for (const mapping of manifest.mappings) {
+    for (const message of installedIgnoreErrors(mapping, manifest)) problems.push({ type: 'manifest', mapping: mapping.id, message });
     if (!/^[a-z0-9][a-z0-9-]+$/.test(mapping.id ?? '')) problems.push({ type: 'manifest', message: `Invalid mapping id: ${mapping.id}` });
     if (ids.has(mapping.id)) problems.push({ type: 'manifest', message: `Duplicate mapping id: ${mapping.id}` });
     ids.add(mapping.id);
@@ -703,14 +758,16 @@ function validatedReconciliation({ manifest, mappingIds, adoptExisting, reconcil
   return reconcileInstalled;
 }
 
-export function runCheck({ repoRoot, manifest, roots, mappingIds = undefined }) {
+export function runCheck({ repoRoot, manifest, roots, mappingIds = undefined, skippedInstalledEntries = undefined }) {
   const canonicalProblems = validateCanonical({ repoRoot, manifest });
   const invalidSources = new Set(canonicalProblems
     .filter((problem) => problem.type === 'source' || problem.message === 'Canonical source resolution failed')
     .map((problem) => problem.mapping));
   const canonicalSourceMessages = new Set(canonicalProblems.filter((problem) => problem.type === 'source').map((problem) => problem.message));
+  const canonicalManifestMessages = new Set(canonicalProblems.filter((problem) => problem.type === 'manifest').map((problem) => problem.message));
   const manifestProblems = validateManifest(manifest, repoRoot, roots)
     .filter((message) => !canonicalSourceMessages.has(message)
+      && !canonicalManifestMessages.has(message)
       && ![...invalidSources].some((mappingId) => message === `Invalid source path for mapping: ${mappingId}`))
     .map((message) => ({ type: 'manifest', message }));
   const problems = [...canonicalProblems, ...manifestProblems];
@@ -743,12 +800,13 @@ export function runCheck({ repoRoot, manifest, roots, mappingIds = undefined }) 
       }
       let destinationFiles;
       const unsafeEntries = [];
+      const skippedEntries = [];
       try {
         destinationFiles = collectFiles(
           destinationRoot,
           manifest,
           { ...mapping, allowRootLink: mapping.allowInstalledRootLink === true },
-          { installedInventory: true, unsafeEntries, inventoryLabel: destinationTemplate },
+          { installedInventory: true, unsafeEntries, skippedEntries, inventoryLabel: destinationTemplate },
         );
       }
       catch (error) {
@@ -762,6 +820,15 @@ export function runCheck({ repoRoot, manifest, roots, mappingIds = undefined }) 
           destination: destinationTemplate,
           relative: unsafe.relative,
           reason: unsafe.reason,
+        });
+      }
+      for (const skipped of skippedEntries) {
+        skippedInstalledEntries?.push({
+          type: 'skipped-installed-entry',
+          mapping: mapping.id,
+          destination: destinationTemplate,
+          relative: skipped.relative,
+          reason: skipped.reason,
         });
       }
       for (const problem of compareTrees(sourceFiles, destinationFiles, mapping.detectLocalOnly, roots, mapping.renderContentTokens !== false)) {

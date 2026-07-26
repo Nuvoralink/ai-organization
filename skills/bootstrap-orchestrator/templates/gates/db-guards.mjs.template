@@ -1,0 +1,607 @@
+// TEMPLATE (bootstrap-orchestrator): Postgres-RLS project gate — copy into scripts/ and adjust the
+// project knobs: migrations dir layout (backend/prisma/migrations) and the dynamic-DDL idiom in resolveDynamicGuards (extend for your repo's DO-block shapes).
+// Origin: Auxara Dialer 2026-07-21 (DB-LANE-INVISIBLE-COVERAGE-001 / RLS-DELETE-DEAD-PATH-GATE-001).
+
+#!/usr/bin/env node
+/**
+ * db:guards — static, last-wins inventory of every guard currently governing a table.
+ *
+ * `npm run db:guards -- <table>` walks backend/prisma/migrations in order and prints the
+ * table's CURRENT triggers (with each trigger function's full current body), CHECK
+ * constraints, policies, and row-level-security state, each with its defining migration.
+ *
+ * Why this exists (DB-LANE-INVISIBLE-COVERAGE-001 control 4, 2026-07-21): a table routinely
+ * carries several triggers/constraints/policies, one trigger function routinely owns several
+ * invariants, and a hand-walked grep of the migrations returns SUPERSEDED definitions next to
+ * current ones. Reconciling a write against one guard — or against an outdated copy of a
+ * guard — is how the 0073 soft-delete shipped incomplete. This tool is the enumeration:
+ * every guard, resolved to the LAST definition that creates/replaces/alters it.
+ *
+ * Static by design: implementers are forbidden from running the DB, so the inventory is
+ * derived from the migration set alone (lexicographic directory order — the order
+ * `prisma migrate deploy` applies). It cannot see out-of-band DDL; production applies
+ * migrations only (migrate-on-deploy), so the migration set IS the schema authority.
+ *
+ * Exit codes: 0 = inventory printed; 1 = usage error or table not found in any migration
+ * (a guessed table name is exactly the unverified-premise class this tool exists to catch).
+ */
+
+import fs from 'node:fs';
+import path from 'node:path';
+import process from 'node:process';
+import { fileURLToPath } from 'node:url';
+
+const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
+const DEFAULT_MIGRATIONS_DIR = path.join(SCRIPT_DIR, '..', 'backend', 'prisma', 'migrations');
+
+/** Strip quotes and a leading schema qualifier so `public."Foo"` and foo compare equal. */
+export function normalizeIdentifier(raw) {
+  if (!raw) return '';
+  let name = raw.trim().replace(/;$/, '');
+  const dot = name.lastIndexOf('.');
+  if (dot !== -1) name = name.slice(dot + 1);
+  return name.replace(/^"|"$/g, '').toLowerCase();
+}
+
+/**
+ * Split SQL into statements on `;`, honoring line/block comments, single-quoted strings
+ * (with '' escapes), and dollar-quoted bodies ($tag$ ... $tag$) so PL/pgSQL function
+ * bodies never split mid-statement.
+ */
+export function splitSqlStatements(sql) {
+  const statements = [];
+  let current = '';
+  let i = 0;
+  let dollarTag = null;
+  let inSingle = false;
+  let inLineComment = false;
+  let inBlockComment = false;
+  while (i < sql.length) {
+    const ch = sql[i];
+    const two = sql.slice(i, i + 2);
+    if (inLineComment) {
+      current += ch;
+      if (ch === '\n') inLineComment = false;
+      i += 1;
+      continue;
+    }
+    if (inBlockComment) {
+      current += ch;
+      if (two === '*/') {
+        current += sql[i + 1];
+        i += 2;
+        inBlockComment = false;
+        continue;
+      }
+      i += 1;
+      continue;
+    }
+    if (dollarTag) {
+      if (sql.startsWith(dollarTag, i)) {
+        current += dollarTag;
+        i += dollarTag.length;
+        dollarTag = null;
+        continue;
+      }
+      current += ch;
+      i += 1;
+      continue;
+    }
+    if (inSingle) {
+      current += ch;
+      if (ch === "'") {
+        if (sql[i + 1] === "'") {
+          current += "'";
+          i += 1;
+        } else {
+          inSingle = false;
+        }
+      }
+      i += 1;
+      continue;
+    }
+    if (two === '--') {
+      inLineComment = true;
+      current += ch;
+      i += 1;
+      continue;
+    }
+    if (two === '/*') {
+      inBlockComment = true;
+      current += ch;
+      i += 1;
+      continue;
+    }
+    if (ch === "'") {
+      inSingle = true;
+      current += ch;
+      i += 1;
+      continue;
+    }
+    if (ch === '$') {
+      const tagMatch = /^\$[A-Za-z_][A-Za-z0-9_]*\$|^\$\$/.exec(sql.slice(i));
+      if (tagMatch) {
+        dollarTag = tagMatch[0];
+        current += dollarTag;
+        i += dollarTag.length;
+        continue;
+      }
+    }
+    if (ch === ';') {
+      const trimmed = current.trim();
+      if (trimmed) statements.push(trimmed);
+      current = '';
+      i += 1;
+      continue;
+    }
+    current += ch;
+    i += 1;
+  }
+  const tail = current.trim();
+  if (tail) statements.push(tail);
+  return statements;
+}
+
+/**
+ * Remove `--` and block comments (outside strings/dollar bodies) so statement CLASSIFICATION
+ * anchors on real SQL — migration files routinely open a statement with a long comment banner,
+ * and a comment's prose ("... ON every write") must never feed the ON/EXECUTE regexes.
+ */
+export function stripSqlComments(sql) {
+  let out = '';
+  let i = 0;
+  let dollarTag = null;
+  let inSingle = false;
+  while (i < sql.length) {
+    const ch = sql[i];
+    const two = sql.slice(i, i + 2);
+    if (dollarTag) {
+      if (sql.startsWith(dollarTag, i)) {
+        out += dollarTag;
+        i += dollarTag.length;
+        dollarTag = null;
+        continue;
+      }
+      out += ch;
+      i += 1;
+      continue;
+    }
+    if (inSingle) {
+      out += ch;
+      if (ch === "'") {
+        if (sql[i + 1] === "'") {
+          out += "'";
+          i += 1;
+        } else {
+          inSingle = false;
+        }
+      }
+      i += 1;
+      continue;
+    }
+    if (two === '--') {
+      while (i < sql.length && sql[i] !== '\n') i += 1;
+      continue;
+    }
+    if (two === '/*') {
+      const end = sql.indexOf('*/', i + 2);
+      i = end === -1 ? sql.length : end + 2;
+      continue;
+    }
+    if (ch === "'") {
+      inSingle = true;
+      out += ch;
+      i += 1;
+      continue;
+    }
+    if (ch === '$') {
+      const tagMatch = /^\$[A-Za-z_][A-Za-z0-9_]*\$|^\$\$/.exec(sql.slice(i));
+      if (tagMatch) {
+        dollarTag = tagMatch[0];
+        out += dollarTag;
+        i += dollarTag.length;
+        continue;
+      }
+    }
+    out += ch;
+    i += 1;
+  }
+  return out;
+}
+
+/** Extract the balanced-paren body starting at the first `(` at/after `from`. */
+function balancedParenBody(text, from) {
+  const open = text.indexOf('(', from);
+  if (open === -1) return null;
+  let depth = 0;
+  let inSingle = false;
+  for (let i = open; i < text.length; i += 1) {
+    const ch = text[i];
+    if (inSingle) {
+      if (ch === "'") {
+        if (text[i + 1] === "'") {
+          i += 1;
+        } else {
+          inSingle = false;
+        }
+      }
+      continue;
+    }
+    if (ch === "'") {
+      inSingle = true;
+      continue;
+    }
+    if (ch === '(') depth += 1;
+    if (ch === ')') {
+      depth -= 1;
+      if (depth === 0) return { body: text.slice(open + 1, i), end: i };
+    }
+  }
+  return null;
+}
+
+/**
+ * Fold the ordered migration statements into the CURRENT guard state (last definition wins;
+ * DROP removes). Returns { tablesSeen, functions, triggers, policies, checks, rls }.
+ */
+export function buildGuardState(migrations) {
+  const tablesSeen = new Set();
+  const functions = new Map(); // fn -> { text, migration }
+  const triggers = new Map(); // table -> Map(trigger -> { text, fn, migration })
+  const policies = new Map(); // table -> Map(policy -> { text, migration, alters: [] })
+  const checks = new Map(); // table -> Map(constraint -> { text, migration })
+  const rls = new Map(); // table -> { enabled, forced, migration }
+  const doBlocks = []; // { migration, text } — dynamic DDL this static parser cannot evaluate
+
+  const tableMap = (store, table) => {
+    if (!store.has(table)) store.set(table, new Map());
+    return store.get(table);
+  };
+
+  for (const { name: migration, sql } of migrations) {
+    for (const stmt of splitSqlStatements(sql)) {
+      const stripped = stripSqlComments(stmt);
+      const flat = stripped.replace(/\s+/g, ' ').trim();
+
+      if (/^DO\b/i.test(flat)) {
+        doBlocks.push({ migration, text: flat });
+        continue;
+      }
+
+      let m = /^CREATE (?:OR REPLACE )?FUNCTION ([^\s(]+)\s*\(/i.exec(flat);
+      if (m) {
+        functions.set(normalizeIdentifier(m[1]), { text: stmt, migration });
+        continue;
+      }
+      m = /^DROP FUNCTION (?:IF EXISTS )?([^\s(;]+)/i.exec(flat);
+      if (m) {
+        functions.delete(normalizeIdentifier(m[1]));
+        continue;
+      }
+
+      m = /^CREATE (?:OR REPLACE )?(?:CONSTRAINT )?TRIGGER (\S+)/i.exec(flat);
+      if (m) {
+        const trigger = normalizeIdentifier(m[1]);
+        const onMatch = /\b(?:BEFORE|AFTER|INSTEAD OF)\b.*?\bON ([^\s(]+)/i.exec(flat);
+        const fnMatch = /\bEXECUTE (?:FUNCTION|PROCEDURE) ([^\s(]+)/i.exec(flat);
+        const table = normalizeIdentifier(onMatch ? onMatch[1] : '');
+        if (table) {
+          tablesSeen.add(table);
+          tableMap(triggers, table).set(trigger, {
+            text: stmt,
+            fn: fnMatch ? normalizeIdentifier(fnMatch[1]) : null,
+            migration,
+          });
+        }
+        continue;
+      }
+      m = /^DROP TRIGGER (?:IF EXISTS )?(\S+) ON ([^\s;]+)/i.exec(flat);
+      if (m) {
+        tableMap(triggers, normalizeIdentifier(m[2])).delete(normalizeIdentifier(m[1]));
+        continue;
+      }
+
+      m = /^CREATE POLICY (\S+) ON ([^\s;]+)/i.exec(flat);
+      if (m) {
+        const table = normalizeIdentifier(m[2]);
+        tablesSeen.add(table);
+        tableMap(policies, table).set(normalizeIdentifier(m[1]), {
+          text: stmt,
+          migration,
+          alters: [],
+        });
+        continue;
+      }
+      m = /^ALTER POLICY (\S+) ON ([^\s;]+)/i.exec(flat);
+      if (m) {
+        const entry = tableMap(policies, normalizeIdentifier(m[2])).get(normalizeIdentifier(m[1]));
+        if (entry) entry.alters.push({ text: stmt, migration });
+        continue;
+      }
+      m = /^DROP POLICY (?:IF EXISTS )?(\S+) ON ([^\s;]+)/i.exec(flat);
+      if (m) {
+        tableMap(policies, normalizeIdentifier(m[2])).delete(normalizeIdentifier(m[1]));
+        continue;
+      }
+
+      m = /^CREATE TABLE (?:IF NOT EXISTS )?([^\s(]+)/i.exec(flat);
+      if (m) {
+        const table = normalizeIdentifier(m[1]);
+        tablesSeen.add(table);
+        const paren = balancedParenBody(stripped, 0);
+        if (paren) {
+          const checkRe = /(?:CONSTRAINT\s+("[^"]+"|[A-Za-z_][\w$]*)\s+)?CHECK\s*\(/gi;
+          let ck;
+          let unnamed = 0;
+          while ((ck = checkRe.exec(paren.body)) !== null) {
+            const expr = balancedParenBody(paren.body, ck.index + ck[0].length - 1);
+            const name = ck[1]
+              ? normalizeIdentifier(ck[1])
+              : `(unnamed inline check #${(unnamed += 1)} on ${table})`;
+            tableMap(checks, table).set(name, {
+              text: `CHECK (${expr ? expr.body.trim() : '…'})`,
+              migration,
+            });
+          }
+        }
+        continue;
+      }
+
+      m = /^ALTER TABLE (?:ONLY )?(?:IF EXISTS )?([^\s(;]+)\s+(.*)$/i.exec(flat);
+      if (m) {
+        const table = normalizeIdentifier(m[1]);
+        const rest = m[2];
+        tablesSeen.add(table);
+        const add = /ADD CONSTRAINT (\S+) CHECK/i.exec(rest);
+        if (add)
+          tableMap(checks, table).set(normalizeIdentifier(add[1]), { text: stmt, migration });
+        const drop = /DROP CONSTRAINT (?:IF EXISTS )?([^\s,;]+)/i.exec(rest);
+        if (drop) tableMap(checks, table).delete(normalizeIdentifier(drop[1]));
+        const state = rls.get(table) ?? { enabled: false, forced: false, migration };
+        if (/NO FORCE ROW LEVEL SECURITY/i.test(rest)) {
+          rls.set(table, { ...state, forced: false, migration });
+        } else if (/FORCE ROW LEVEL SECURITY/i.test(rest)) {
+          rls.set(table, { ...state, forced: true, migration });
+        }
+        if (/DISABLE ROW LEVEL SECURITY/i.test(rest)) {
+          rls.set(table, { ...rls.get(table), enabled: false, migration });
+        } else if (/ENABLE ROW LEVEL SECURITY/i.test(rest)) {
+          rls.set(table, { ...(rls.get(table) ?? state), enabled: true, migration });
+        }
+        continue;
+      }
+    }
+  }
+  return { tablesSeen, functions, triggers, policies, checks, rls, doBlocks };
+}
+
+/** The command a policy applies to: explicit `FOR <cmd>`, else Postgres defaults to ALL. */
+export function policyCommand(policyText) {
+  const m = /\bFOR\s+(ALL|SELECT|INSERT|UPDATE|DELETE)\b/i.exec(policyText);
+  return m ? m[1].toUpperCase() : 'ALL';
+}
+
+/**
+ * Resolve the dialer's extractable dynamic-DDL idiom: a DO block that FOREACH-loops an INLINE
+ * ARRAY['t1','t2',…] of table names and EXECUTEs format('ALTER TABLE %I …RLS…') /
+ * format('CREATE POLICY %I ON %I FOR <cmd> …') templates (migration 0043's shape). Anything
+ * RLS/policy-relevant whose table operand is COMPUTED (0007's partition names) is returned as
+ * `unresolved` — callers must surface it, never silently treat it as absent.
+ */
+export function resolveDynamicGuards(doBlocks) {
+  const rls = new Map(); // table -> { enabled, forced, migration }
+  const policies = new Map(); // table -> [{ name, command, migration }]
+  const unresolved = []; // { migration, snippet }
+  const RLS_RELEVANT = /ROW LEVEL SECURITY|CREATE POLICY/i;
+
+  for (const { migration, text } of doBlocks) {
+    if (!RLS_RELEVANT.test(text)) continue;
+    // Split into FOREACH segments; segment 0 is the pre-FOREACH remainder.
+    const segments = text.split(/\bFOREACH\s+\w+\s+IN\s+ARRAY\b/i);
+    for (let s = 0; s < segments.length; s += 1) {
+      const seg = segments[s];
+      if (!RLS_RELEVANT.test(seg)) continue;
+      const arrayMatch = s === 0 ? null : /^\s*ARRAY\s*\[((?:\s*'[^']*'\s*,?)+)\]/i.exec(seg);
+      const tables = arrayMatch
+        ? [...arrayMatch[1].matchAll(/'([^']*)'/g)].map((t) => normalizeIdentifier(t[1]))
+        : [];
+      const templates = [...seg.matchAll(/format\(\s*'((?:[^']|'')*)'/gi)].map((t) =>
+        t[1].replace(/''/g, "'"),
+      );
+      for (const tpl of templates) {
+        if (!RLS_RELEVANT.test(tpl)) continue;
+        if (tables.length === 0) {
+          unresolved.push({ migration, snippet: tpl.slice(0, 80) });
+          continue;
+        }
+        const rlsAlter =
+          /ALTER TABLE %I\s+(NO FORCE|FORCE|ENABLE|DISABLE)\s+ROW LEVEL SECURITY/i.exec(tpl);
+        const policyCreate = /CREATE POLICY %I ON %I\b/i.test(tpl);
+        for (const table of tables) {
+          if (rlsAlter) {
+            const verb = rlsAlter[1].toUpperCase();
+            const state = rls.get(table) ?? { enabled: false, forced: false, migration };
+            if (verb === 'ENABLE') state.enabled = true;
+            if (verb === 'DISABLE') state.enabled = false;
+            if (verb === 'FORCE') state.forced = true;
+            if (verb === 'NO FORCE') state.forced = false;
+            rls.set(table, { ...state, migration });
+          }
+          if (policyCreate) {
+            const list = policies.get(table) ?? [];
+            list.push({
+              name: `(dynamic policy from ${migration})`,
+              command: policyCommand(tpl),
+              migration,
+            });
+            policies.set(table, list);
+          }
+        }
+      }
+      // A non-format EXECUTE '<literal DDL>' that is RLS-relevant is also beyond static resolution
+      // unless it names a literal table; treat as unresolved to stay honest.
+      for (const ex of seg.matchAll(/EXECUTE\s+'((?:[^']|'')*)'/gi)) {
+        const lit = ex[1].replace(/''/g, "'");
+        if (RLS_RELEVANT.test(lit)) unresolved.push({ migration, snippet: lit.slice(0, 80) });
+      }
+    }
+  }
+  return { rls, policies, unresolved };
+}
+
+export function loadMigrations(migrationsDir) {
+  const dirs = fs
+    .readdirSync(migrationsDir, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name)
+    .sort();
+  const migrations = [];
+  for (const dir of dirs) {
+    const file = path.join(migrationsDir, dir, 'migration.sql');
+    if (fs.existsSync(file)) migrations.push({ name: dir, sql: fs.readFileSync(file, 'utf8') });
+  }
+  return migrations;
+}
+
+export function renderInventory(table, state, migrationCount) {
+  const t = normalizeIdentifier(table);
+  const lines = [];
+  const push = (s = '') => lines.push(s);
+  push(`== db:guards — current guard inventory for table "${t}" ==`);
+  push(
+    `(derived statically from the migration set, last definition wins; ${migrationCount} migrations scanned)`,
+  );
+  push();
+  const doBlocks = state.doBlocks ?? [];
+  const dyn = resolveDynamicGuards(doBlocks);
+  const staticRls = state.rls.get(t);
+  const dynRls = dyn.rls.get(t);
+  const dynPolicies = dyn.policies.get(t) ?? [];
+  if (staticRls || dynRls) {
+    const enabled = (staticRls?.enabled ?? false) || (dynRls?.enabled ?? false);
+    const forced = (staticRls?.forced ?? false) || (dynRls?.forced ?? false);
+    const provenance = [
+      staticRls ? `static, ${staticRls.migration}` : null,
+      dynRls ? `resolved from DO block, ${dynRls.migration}` : null,
+    ]
+      .filter(Boolean)
+      .join(' + ');
+    push(
+      `ROW LEVEL SECURITY: ${enabled ? 'ENABLED' : 'DISABLED'}${forced ? ', FORCED' : ''}  [${provenance}]`,
+    );
+  } else if (dyn.unresolved.length) {
+    push(
+      `ROW LEVEL SECURITY: no static or resolvable-dynamic statement found — BUT unresolvable dynamic DDL exists (${[
+        ...new Set(dyn.unresolved.map((u) => u.migration)),
+      ].join(', ')}); verify by hand before concluding "no RLS" (see WARNINGS)`,
+    );
+  } else {
+    push('ROW LEVEL SECURITY: never configured in the migration set');
+  }
+  const policyMap = state.policies.get(t) ?? new Map();
+  push();
+  push(`POLICIES (${policyMap.size} static + ${dynPolicies.length} dynamic):`);
+  for (const p of dynPolicies) {
+    push(`-- ${p.name}  [FOR ${p.command}]`);
+  }
+  if (dynPolicies.length) push();
+  for (const [name, p] of policyMap) {
+    const altered = p.alters.length
+      ? `, altered in ${p.alters.map((a) => a.migration).join(', ')}`
+      : '';
+    push(`-- policy ${name}  [defined in ${p.migration}${altered}]`);
+    push(p.text);
+    for (const a of p.alters) push(a.text);
+    push();
+  }
+  const triggerMap = state.triggers.get(t) ?? new Map();
+  push(`TRIGGERS (${triggerMap.size}):`);
+  const warnings = [];
+  for (const [name, trg] of triggerMap) {
+    push(`-- trigger ${name}  [defined in ${trg.migration}]`);
+    push(trg.text);
+    if (trg.fn) {
+      const fn = state.functions.get(trg.fn);
+      if (fn) {
+        push(`   ↳ function ${trg.fn}  [current body from ${fn.migration}]`);
+        push(fn.text);
+      } else {
+        warnings.push(
+          `trigger ${name} references function ${trg.fn}, which is not defined in the migration set (extension or out-of-band DDL) — verify it by hand`,
+        );
+      }
+    }
+    push();
+  }
+  const checkMap = state.checks.get(t) ?? new Map();
+  push(`CHECK CONSTRAINTS (${checkMap.size}):`);
+  for (const [name, c] of checkMap) {
+    push(`-- constraint ${name}  [defined in ${c.migration}]`);
+    push(c.text);
+    push();
+  }
+  for (const u of dyn.unresolved) {
+    warnings.push(
+      `unresolvable dynamic DDL in ${u.migration} ("${u.snippet}…") — an RLS/policy statement with a COMPUTED table name cannot be resolved statically; if this table could be affected, read that DO block by hand (the RLS/POLICIES sections above may be incomplete)`,
+    );
+  }
+  if (warnings.length) {
+    push('WARNINGS:');
+    for (const w of warnings) push(`- ${w}`);
+  }
+  return lines.join('\n');
+}
+
+/** Parse CLI args in any order: <table> [--migrations <dir>]. Exported for the self-test. */
+export function parseArgs(args, defaultMigrationsDir = DEFAULT_MIGRATIONS_DIR) {
+  let migrationsDir = defaultMigrationsDir;
+  const positional = [];
+  for (let i = 0; i < args.length; i += 1) {
+    if (args[i] === '--migrations') {
+      migrationsDir = args[i + 1];
+      i += 1;
+      continue;
+    }
+    positional.push(args[i]);
+  }
+  return { table: positional[0], migrationsDir };
+}
+
+function main() {
+  const { table, migrationsDir } = parseArgs(process.argv.slice(2));
+  if (!table) {
+    console.error('Usage: npm run db:guards -- <table> [--migrations <dir>]');
+    process.exit(1);
+  }
+  if (!fs.existsSync(migrationsDir)) {
+    console.error(`Migrations directory not found: ${migrationsDir}`);
+    process.exit(1);
+  }
+  const migrations = loadMigrations(migrationsDir);
+  const state = buildGuardState(migrations);
+  const t = normalizeIdentifier(table);
+  if (!state.tablesSeen.has(t)) {
+    const commonPrefixLen = (a, b) => {
+      let n = 0;
+      while (n < a.length && n < b.length && a[n] === b[n]) n += 1;
+      return n;
+    };
+    const near = [...state.tablesSeen]
+      .filter((x) => {
+        if (x.includes(t) || t.includes(x)) return true;
+        return commonPrefixLen(x, t) >= Math.max(3, Math.min(x.length, t.length) - 3);
+      })
+      .slice(0, 5);
+    console.error(
+      `Table "${t}" not found in any migration statement (${migrations.length} migrations scanned). ` +
+        `A guessed identifier is exactly the unverified-premise class this tool exists to catch.` +
+        (near.length ? ` Near matches: ${near.join(', ')}` : ''),
+    );
+    process.exit(1);
+  }
+  console.log(renderInventory(t, state, migrations.length));
+}
+
+const invokedDirectly =
+  process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (invokedDirectly) main();

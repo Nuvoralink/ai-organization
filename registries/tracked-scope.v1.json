@@ -1195,7 +1195,15 @@
       "class": "reusable-skill"
     },
     {
+      "path": "skills/bootstrap-orchestrator/templates/gates/check-db-mutation-coverage.mjs.template",
+      "class": "reusable-skill"
+    },
+    {
       "path": "skills/bootstrap-orchestrator/templates/gates/check-decision-sprint-linkage.mjs.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/gates/check-rls-delete-path.mjs.template",
       "class": "reusable-skill"
     },
     {
@@ -1208,6 +1216,14 @@
     },
     {
       "path": "skills/bootstrap-orchestrator/templates/gates/check-test-intent.mjs.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/gates/db-guards.mjs.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/gates/db-scan-shared.mjs.template",
       "class": "reusable-skill"
     },
     {

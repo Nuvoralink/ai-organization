@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import {
   computeInstalledTreeDigest,
   parseControlPlaneArgs,
@@ -1009,6 +1010,93 @@ test('Proves: ordinary parity reports every unsafe installed entry without readi
   );
   assert.doesNotMatch(JSON.stringify(findings), new RegExp(sentinel, 'u'));
   assert.equal(findings.some((finding) => finding.relative === 'logs/nested.md'), false);
+});
+
+test('Proves: exact installed-only deny exceptions stay local while canonical deny protection remains fail-closed; Test type: security boundary and liveness; Surface: installed parity plus canonical inventory; Authority: mapping.installedIgnore and repository deny policy; Killer mutation: apply installedIgnore to canonical inventory or stop applying it to installed inventory; Gated command: npm test', () => {
+  const f = fixture();
+  const canonicalRoot = path.join(f.repoRoot, 'canonical', 'rules');
+  const installedRoot = path.join(f.home, '.claude', 'rules');
+  const installedEnvironment = path.join(installedRoot, '.env');
+  const localOnlyBytes = 'LOCAL_ONLY_VALUE=fixture\n';
+  f.manifest.mappings[0].installedIgnore = ['.env'];
+  fs.writeFileSync(path.join(canonicalRoot, 'base.md'), '# Canonical\n');
+  fs.writeFileSync(path.join(installedRoot, 'base.md'), '# Canonical\n');
+  fs.writeFileSync(installedEnvironment, localOnlyBytes);
+
+  const skippedInstalledEntries = [];
+  assert.deepEqual(runCheck({ ...f, skippedInstalledEntries }), []);
+  assert.deepEqual(skippedInstalledEntries, [{
+    type: 'skipped-installed-entry',
+    mapping: 'claude-rules',
+    destination: '${HOME}/.claude/rules',
+    relative: '.env',
+    reason: 'denied filename prefix',
+  }]);
+  assert.doesNotThrow(() => runInstall({ ...f, dryRun: true }));
+  assert.equal(fs.readFileSync(installedEnvironment, 'utf8'), localOnlyBytes);
+
+  fs.writeFileSync(path.join(installedRoot, '.env.local'), 'UNLISTED_VALUE=fixture\n');
+  assert.ok(runCheck(f).some((finding) =>
+    finding.type === 'unsafe-installed-entry'
+      && finding.relative === '.env.local'
+      && finding.reason === 'denied filename prefix'));
+  fs.unlinkSync(path.join(installedRoot, '.env.local'));
+
+  fs.writeFileSync(path.join(canonicalRoot, '.env'), 'CANONICAL_VALUE=forbidden\n');
+  const canonicalFindings = validateCanonical({ repoRoot: f.repoRoot, manifest: f.manifest });
+  assert.ok(canonicalFindings.some((finding) =>
+    finding.type === 'source' && finding.message === 'Canonical source contains denied filename prefix: .env'));
+});
+
+test('Proves: the check CLI reports an installed-only skip without disclosing content and still exits green; Test type: executable-boundary liveness; Surface: scripts/control-plane.mjs check output; Authority: skippedInstalledEntries collector; Killer mutation: remove the CLI skipped-entry emission loop; Gated command: npm test', () => {
+  const f = fixture();
+  const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const canonicalRoot = path.join(repoRoot, 'docs');
+  const installedRoot = path.join(f.home, '.claude', 'rules');
+  const sentinel = 'LOCAL_ONLY_VALUE_MUST_NOT_APPEAR';
+  fs.cpSync(canonicalRoot, installedRoot, { recursive: true });
+  fs.writeFileSync(path.join(installedRoot, '.env'), `${sentinel}=fixture\n`);
+  f.manifest.mappings[0].source = 'docs';
+  f.manifest.mappings[0].installedIgnore = ['.env'];
+  const io = cliContext({ ...f, repoRoot });
+
+  assert.equal(runControlPlaneCli(['check'], io.context), 0);
+  assert.deepEqual(JSON.parse(io.stdout[0]), {
+    type: 'skipped-installed-entry',
+    mapping: 'claude-rules',
+    destination: '${HOME}/.claude/rules',
+    relative: '.env',
+    reason: 'denied filename prefix',
+  });
+  assert.equal(io.stdout[1], 'control-plane check passed');
+  assert.deepEqual(io.stderr, []);
+  assert.doesNotMatch(io.stdout.join('\n'), new RegExp(sentinel, 'u'));
+});
+
+test('Proves: installed-only deny exceptions are exact denied tree paths, never globs or ordinary local-only bypasses; Test type: manifest boundary mutation; Surface: mapping.installedIgnore; Authority: exact installed inventory exception contract; Killer mutation: accept helper.md, traversal, glob syntax, or a file mapping; Gated command: npm test', () => {
+  const cases = [
+    { value: ['helper.md'], message: /must match a global deny rule/u },
+    { value: ['../.env'], message: /Invalid installedIgnore path/u },
+    { value: ['*.env'], message: /Invalid installedIgnore path/u },
+  ];
+  for (const { value, message } of cases) {
+    const f = fixture();
+    fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
+    f.manifest.mappings[0].installedIgnore = value;
+    assert.ok(validateManifest(f.manifest, f.repoRoot, f.roots).some((failure) => message.test(failure)));
+  }
+
+  const fileMapping = fixture();
+  const canonicalFile = path.join(fileMapping.repoRoot, 'canonical', 'rule.md');
+  fs.writeFileSync(canonicalFile, '# Canonical\n');
+  fileMapping.manifest.mappings[0] = {
+    ...fileMapping.manifest.mappings[0],
+    source: 'canonical/rule.md',
+    mode: 'file',
+    installedIgnore: ['.env'],
+  };
+  assert.ok(validateManifest(fileMapping.manifest, fileMapping.repoRoot, fileMapping.roots)
+    .some((failure) => /valid only for tree mappings/u.test(failure)));
 });
 
 test('Proves: default and adoption installs refuse unsafe installed entries before any mutation; Test type: no-write security mutation; Surface: ordinary installer preflight; Authority: managed-root deny boundary; Killer mutation: let ordinary or adoptExisting mode overwrite managed bytes while a denied file persists; Gated command: npm test', () => {

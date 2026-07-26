@@ -1,0 +1,217 @@
+// TEMPLATE (bootstrap-orchestrator): Postgres-RLS project gate — copy into scripts/ and adjust the
+// project knobs: GATED_MARKER (your DB-skip literal, e.g. skipIf(!HAS_TEST_DB)) and any import-alias resolution your repo needs.
+// Origin: Auxara Dialer 2026-07-21 (DB-LANE-INVISIBLE-COVERAGE-001 / RLS-DELETE-DEAD-PATH-GATE-001).
+
+#!/usr/bin/env node
+/**
+ * gate:db-mutation-coverage — a `describe.skipIf(!HAS_TEST_DB)` suite may not be the SOLE test
+ *   coverage of a DB-mutating production module. Locally and in `gates:all`/`verify` those suites
+ *   SKIP, so "skip = green" certifies mutation paths that have never executed. FAILS the build on
+ *   any UNANNOTATED module whose only reaching suites are DB-gated (or that no suite reaches).
+ *
+ * WHY THIS EXISTS (2026-07-21, DB-LANE-INVISIBLE-COVERAGE-001 control 2): 18 DB-backed test files
+ *   on `main` failed the moment `test:integration` actually ran — including a dead-on-arrival
+ *   production path — because the DB lane was not on the merge path and nothing flagged skip-only
+ *   coverage. Control 1 made the DB lane a MERGE gate for backend-touching branches; THIS gate
+ *   keeps the fast lane honest in between: every DB-mutating module needs an always-run unit test
+ *   reaching it (the two-lane shape: gated integration suite + always-run unit test asserting the
+ *   mutation's args), or a reviewed annotation.
+ *
+ * HOW IT DECIDES:
+ *   1. Production modules under backend/src containing a Prisma mutation call
+ *      (`.<clientAccessor>.<create|createMany|createManyAndReturn|update|updateMany|upsert|delete|deleteMany>(`,
+ *      accessors derived from schema.prisma) are the TARGETS.
+ *   2. Suites are `*.test.ts` files under backend/src; a suite containing the literal
+ *      `skipIf(!HAS_TEST_DB)` marker is DB-GATED, otherwise ALWAYS-RUN.
+ *   3. Reachability = BFS over the RELATIVE-import graph of backend/src (import/export-from/dynamic
+ *      import). A target reached by ≥1 always-run suite is covered; a target reached only by gated
+ *      suites — or by none — is flagged.
+ *
+ * ESCAPE HATCH: `// db-mutation-coverage-ok: <reason>` anywhere in the FLAGGED MODULE (module-level
+ *   granularity — the verdict is per-module, so the annotation is too). The reason is required so
+ *   the bypass is reviewable; the expected reasons are "covered by <gated suite> + the DB-lane
+ *   merge gate (AGENTS.md Local proof)" with a burn-down intention, or a genuinely
+ *   unit-untestable seam.
+ *
+ * KNOWN GAPS (honest limits — test-intent review + the DB-lane merge gate are the backstop):
+ *   - Module granularity, not call-site: one always-run test reaching the module covers ALL its
+ *     mutations; whether that test actually ASSERTS the mutation's args is test-intent §4.1
+ *     review territory, not statically checkable here.
+ *   - A mixed file (gated + ungated describes in one *.test.ts) counts as GATED — conservative;
+ *     the house two-lane convention is separate files.
+ *   - Only RELATIVE imports are traversed (`@auxara/shared` is types-only and external); a
+ *     mutation module wired exclusively through a non-relative alias would be invisible and
+ *     reported as unreachable — which fails closed, not open.
+ *
+ * Exit code: 1 on any unannotated flagged module or a missing tree (fail-closed), else 0.
+ * Run: `npm run gate:db-mutation-coverage` (optionally `-- --root <dir>` for meta-test scaffolds).
+ */
+
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { isTestPath, parsePrismaModels, walkTsFiles } from './lib/db-scan-shared.mjs';
+
+const GATED_MARKER = 'skipIf(!HAS_TEST_DB)';
+const ESCAPE = /db-mutation-coverage-ok:\s*\S/;
+const MUTATION_METHODS =
+  '(?:create|createMany|createManyAndReturn|update|updateMany|upsert|delete|deleteMany)';
+
+function resolveImport(fromFile, spec) {
+  if (!spec.startsWith('.')) return null;
+  const base = resolve(dirname(fromFile), spec);
+  const candidates = [base, `${base}.ts`, join(base, 'index.ts'), base.replace(/\.js$/, '.ts')];
+  for (const c of candidates) {
+    if (c.endsWith('.ts') && existsSync(c)) return resolve(c);
+  }
+  return null;
+}
+
+export function scanDbMutationCoverage(root) {
+  const schemaPath = join(root, 'backend', 'prisma', 'schema.prisma');
+  const srcDir = join(root, 'backend', 'src');
+  for (const [what, p] of [
+    ['schema.prisma', schemaPath],
+    ['backend/src', srcDir],
+  ]) {
+    if (!existsSync(p))
+      return {
+        fatal: `${what} not found at ${p} — refusing to report a pass over a tree this gate cannot see`,
+      };
+  }
+
+  const models = parsePrismaModels(readFileSync(schemaPath, 'utf8'));
+  const mutationRe = new RegExp(
+    `\\.(${models.map((m) => m.accessor).join('|')})\\.${MUTATION_METHODS}\\s*\\(`,
+    'g',
+  );
+
+  const allFiles = walkTsFiles(srcDir).map((f) => resolve(f));
+  const contents = new Map(allFiles.map((f) => [f, readFileSync(f, 'utf8')]));
+
+  // Import graph: file -> resolved relative imports.
+  const importRe =
+    /(?:import|export)\s[^;]*?from\s+['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)/g;
+  const edges = new Map();
+  for (const [file, text] of contents) {
+    const out = [];
+    let m;
+    importRe.lastIndex = 0;
+    while ((m = importRe.exec(text)) !== null) {
+      const target = resolveImport(file, m[1] ?? m[2]);
+      if (target) out.push(target);
+    }
+    edges.set(file, out);
+  }
+
+  // Targets: production modules with mutation call sites.
+  const targets = new Map(); // file -> [{line, accessor, method}]
+  for (const [file, text] of contents) {
+    if (isTestPath(file)) continue;
+    const lines = text.split(/\r?\n/);
+    const sites = [];
+    for (let i = 0; i < lines.length; i += 1) {
+      mutationRe.lastIndex = 0;
+      const hit = mutationRe.exec(lines[i]);
+      if (hit) sites.push({ line: i + 1, call: hit[0].slice(1, -1) });
+    }
+    if (sites.length > 0) targets.set(file, sites);
+  }
+
+  // Suites, classified.
+  const suites = allFiles.filter((f) => /\.test\.ts$/.test(f));
+  const alwaysRun = suites.filter((f) => !contents.get(f).includes(GATED_MARKER));
+  const gated = suites.filter((f) => contents.get(f).includes(GATED_MARKER));
+
+  const reach = (from) => {
+    const seen = new Set([from]);
+    const queue = [from];
+    while (queue.length) {
+      for (const next of edges.get(queue.pop()) ?? []) {
+        if (!seen.has(next)) {
+          seen.add(next);
+          queue.push(next);
+        }
+      }
+    }
+    return seen;
+  };
+
+  const alwaysReached = new Set();
+  for (const suite of alwaysRun) for (const f of reach(suite)) alwaysReached.add(f);
+  const gatedReachedBy = new Map(); // target -> [gated suite names]
+  for (const suite of gated) {
+    for (const f of reach(suite)) {
+      if (targets.has(f)) {
+        const list = gatedReachedBy.get(f) ?? [];
+        list.push(relative(root, suite));
+        gatedReachedBy.set(f, list);
+      }
+    }
+  }
+
+  const flagged = [];
+  let annotated = 0;
+  for (const [file, sites] of targets) {
+    if (alwaysReached.has(file)) continue;
+    if (ESCAPE.test(contents.get(file))) {
+      annotated += 1;
+      continue;
+    }
+    flagged.push({
+      file: relative(root, file),
+      sites,
+      gatedSuites: gatedReachedBy.get(file) ?? [],
+    });
+  }
+  flagged.sort((a, b) => a.file.localeCompare(b.file));
+  return {
+    flagged,
+    annotated,
+    targetCount: targets.size,
+    scannedFiles: allFiles.length,
+    suiteCounts: { alwaysRun: alwaysRun.length, gated: gated.length },
+  };
+}
+
+function main() {
+  const args = process.argv.slice(2);
+  const rootFlag = args.indexOf('--root');
+  const root =
+    rootFlag !== -1
+      ? resolve(args[rootFlag + 1])
+      : resolve(fileURLToPath(import.meta.url), '..', '..');
+
+  const result = scanDbMutationCoverage(root);
+  if (result.fatal) {
+    console.error(`check-db-mutation-coverage: FAILED — ${result.fatal}`);
+    process.exit(1);
+  }
+  const summary = `scanned ${result.scannedFiles} file(s): ${result.targetCount} DB-mutating module(s), ${result.suiteCounts.alwaysRun} always-run + ${result.suiteCounts.gated} db-gated suite(s), ${result.annotated} annotated`;
+  if (result.flagged.length > 0) {
+    console.error(
+      `check-db-mutation-coverage: FAILED — ${result.flagged.length} DB-mutating module(s) with NO always-run test coverage (${summary}):`,
+    );
+    for (const f of result.flagged) {
+      const coverage =
+        f.gatedSuites.length > 0
+          ? `only DB-gated suites reach it (${f.gatedSuites.join(', ')}) — those SKIP in verify/gates:all`
+          : 'NO suite reaches it at all';
+      console.error(`  - ${f.file} — ${coverage}`);
+      for (const s of f.sites.slice(0, 5)) console.error(`      L${s.line}: ${s.call}(…)`);
+      if (f.sites.length > 5) console.error(`      … +${f.sites.length - 5} more mutation site(s)`);
+    }
+    console.error(
+      '  Fix: add an always-run unit test that reaches the module and asserts the mutation args (the two-lane shape), or annotate the module `// db-mutation-coverage-ok: <reason>`.',
+    );
+    process.exit(1);
+  }
+  console.log(
+    `check-db-mutation-coverage: OK — ${summary}; every DB-mutating module is reached by an always-run suite or carries a reviewed annotation.`,
+  );
+}
+
+const invokedDirectly =
+  process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (invokedDirectly) main();
