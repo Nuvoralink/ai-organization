@@ -50,6 +50,12 @@ For a project overlay, use `node scripts/project-overlay.mjs rollback <project> 
 - `absolute-path`, `secret-shaped-content`, or `forbidden-tracked-path`: stop publication and remove the unsafe canonical content.
 - `unexpected-link-target`: do not follow or replace the link automatically. Verify ownership and use an explicitly approved retirement migration.
 
+## Weekday drift alarm
+
+`node scripts/control-check-notify.mjs` runs the real `npm run control:check` against the registered user roots and returns only portable mapping-relative metadata. It never captures or installs; a non-zero check is preserved as a non-zero notifier exit and written to stderr.
+
+`automations/registry.v1.json` contains the weekday `universal-weekday-control-plane-drift-alarm` specification. Its activation is `recommend-only`: this repository records the safe schedule and prompt but does not create, enable, or modify a scheduled task. The founder may enable that exact ID through the Codex desktop automation service after reviewing the stored spec.
+
 ## Human gates
 
 Local validation, branches, commits, and PR creation/update are agent-authorized inside task scope. Push is conditional on live proof that it cannot trigger a preview/production deploy, publish or billed build, production write, or external contact; preview counts as deploy and uncertainty requires the user. Deployment, production mutation/configuration, migrations, destructive or billed actions, external contact, secrets, visible-design approval, and unresolved product/material-architecture decisions require the user. Conditional agent merge is never used for a broad control-plane change or any change with a deploy effect.

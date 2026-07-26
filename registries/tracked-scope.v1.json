@@ -3499,6 +3499,10 @@
       "class": "schema"
     },
     {
+      "path": "scripts/control-check-notify.mjs",
+      "class": "control-plane-tooling"
+    },
+    {
       "path": "scripts/control-plane.mjs",
       "class": "control-plane-tooling"
     },
@@ -4804,6 +4808,10 @@
     },
     {
       "path": "tests/bootstrap-templates.test.mjs",
+      "class": "control-plane-test"
+    },
+    {
+      "path": "tests/control-check-notify.test.mjs",
       "class": "control-plane-test"
     },
     {

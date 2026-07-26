@@ -1090,11 +1090,19 @@ export function validateAutomationSpecs(registry, projectSpecs) {
   const problems = [];
   const ids = new Set();
   const universal = registry.automations?.find((automation) => automation.id === 'universal-biweekly-orchestration-backflow');
+  const driftAlarm = registry.automations?.find((automation) => automation.id === 'universal-weekday-control-plane-drift-alarm');
   for (const automation of registry.automations ?? []) {
     if (ids.has(automation.id)) problems.push(`Duplicate automation id: ${automation.id}`);
     ids.add(automation.id);
   }
   if (!universal?.rrule || !universal?.prompt || universal.mode !== 'read-only') problems.push('Universal backflow automation must be fully reconstructable and read-only');
+  if (
+    !driftAlarm?.rrule?.includes('BYDAY=MO,TU,WE,TH,FR')
+    || !driftAlarm?.prompt?.includes('scripts/control-check-notify.mjs')
+    || driftAlarm.mode !== 'read-only'
+    || driftAlarm.activation !== 'recommend-only'
+    || driftAlarm.targetRoot !== '${PROJECT:control-plane}'
+  ) problems.push('Universal control-plane drift alarm must be weekday, reconstructable, read-only, and recommend-only');
   for (const action of ['edit', 'merge', 'deploy', 'production mutation', 'external message']) {
     if (!registry.forbiddenActions?.includes(action)) problems.push(`Automation forbidden action is missing: ${action}`);
   }
