@@ -130,13 +130,19 @@ function renderedBytes(file, roots, renderContentTokens = true) {
   const ext = path.extname(file).toLowerCase();
   if (!TEXT_EXTENSIONS.has(ext) || !renderContentTokens) return bytes;
   const rendered = bytes.toString('utf8').replace(
-    /\$\{([^}|]+)(?:\|(forward-slash|backslash))?\}/g,
+    /\$\{([^}|]+)(?:\|([a-z-]+(?:\+[a-z-]+)*))?\}/g,
     (match, token, style) => {
       const root = roots[token];
       if (typeof root !== 'string') return match;
-      if (style === 'forward-slash') return root.replaceAll('\\', '/');
-      if (style === 'backslash') return root.replaceAll('/', '\\');
-      return root;
+      const transforms = style?.split('+') ?? [];
+      if (transforms.some((transform) => !['forward-slash', 'backslash', 'lowercase-drive', 'uppercase-drive'].includes(transform))) return match;
+      if (transforms.includes('forward-slash') && transforms.includes('backslash')) return match;
+      let value = root;
+      if (transforms.includes('forward-slash')) value = value.replaceAll('\\', '/');
+      if (transforms.includes('backslash')) value = value.replaceAll('/', '\\');
+      if (transforms.includes('lowercase-drive')) value = value.replace(/^([A-Z]):/u, (drive) => drive.toLowerCase());
+      if (transforms.includes('uppercase-drive')) value = value.replace(/^([a-z]):/u, (drive) => drive.toUpperCase());
+      return value;
     },
   );
   return Buffer.from(rendered);
@@ -149,11 +155,22 @@ function capturedBytes(file, roots, tokenizeRegisteredPathsOnCapture = false) {
   const replacements = [];
   for (const [token, root] of Object.entries(roots)) {
     if (typeof root !== 'string' || root.length === 0) continue;
-    replacements.push({ token, value: root, style: undefined });
-    const forwardSlash = root.replaceAll('\\', '/');
-    const backslash = root.replaceAll('/', '\\');
-    if (forwardSlash !== root) replacements.push({ token, value: forwardSlash, style: 'forward-slash' });
-    if (backslash !== root) replacements.push({ token, value: backslash, style: 'backslash' });
+    const separatorVariants = [
+      { value: root, transform: undefined },
+      { value: root.replaceAll('\\', '/'), transform: 'forward-slash' },
+      { value: root.replaceAll('/', '\\'), transform: 'backslash' },
+    ];
+    for (const separator of separatorVariants) {
+      const driveVariants = [
+        { value: separator.value, transform: undefined },
+        { value: separator.value.replace(/^([A-Z]):/u, (drive) => drive.toLowerCase()), transform: 'lowercase-drive' },
+        { value: separator.value.replace(/^([a-z]):/u, (drive) => drive.toUpperCase()), transform: 'uppercase-drive' },
+      ];
+      for (const drive of driveVariants) {
+        const style = [separator.transform, drive.transform].filter(Boolean).join('+') || undefined;
+        replacements.push({ token, value: drive.value, style });
+      }
+    }
   }
   replacements.sort((left, right) =>
     right.value.length - left.value.length

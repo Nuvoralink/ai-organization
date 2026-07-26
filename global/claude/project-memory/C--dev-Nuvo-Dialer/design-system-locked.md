@@ -1,0 +1,22 @@
+---
+name: design-system-locked
+description: Auxara dialer design system is locked (2026-06-09) — where the spec lives + the mockup-first workflow
+metadata: 
+  node_type: memory
+  type: project
+  originSessionId: c5eaca53-3c6c-476e-9d83-7bbf8f484115
+---
+
+The Auxara dialer **design system is locked** (2026-06-09). Do not re-derive the visual direction or rebuild primitives from scratch — read the authoritative docs first:
+
+- `docs/design-system/visual-direction-lock.md` — the locked visual direction ("Calm-led with cockpit atmosphere", Plus Jakarta Sans, **iris accent (OKLCH hue 274, locked 2026-06-09)**, 3-tier OKLCH tokens light+dark).
+- `docs/design-system/primitives.md` — the locked primitive spec: **tactile / glow / frost** buttons, the **raised / recessed / refined-flat** depth system, the **selection-control best-practice pattern** (real native `<input>` + inclusively hidden + **inline SVG** + `em` + tokens + `:focus-visible` + forced-colors), and an **anti-patterns table where each entry caused a real bug** (oval radios, zoom-fragile circles, `display:none` inputs, hardcoded offsets, `background-image` checks).
+- Mockups: `frontend/public/explorations/*.html` — throwaway/historical visual source (now built into `frontend/src/components/ui/*`).
+
+**Workflow (blocking):** any frontend change is **mocked up → shown to Amin → approved → then coded** (global rule). Tokens-only, no raw literals at the leaf ([[relational-never-hardcoded]] / Gate 11 + `check:ui-guardrails`).
+
+The React primitives in `frontend/src/components/ui/*` are **built** (Button, Checkbox/Radio/Switch, Badge, Field/Input/Textarea/Select, Chip, Avatar, Tabs/Segmented, Spinner/Progress/Tooltip/Skeleton/Kbd) — tokens-only, accessible, 37 tests, live at `/ui`. Depth recipes in `tokens/elevation.css`; accent ramp = **iris (hue 274)** in `primitives.css`. They must keep following `primitives.md` exactly. Next surfaces (nav/app-shell, wallboard) are mockup-first when built.
+
+**Locked surface mocks (2026-06-10):** the **power dialer cockpit** (`frontend/public/explorations/softphone.html`) and the **manual dialer** (`manual-dial.html`) are user-approved and locked in `docs/design-system/locked-surfaces.md` — match the mock when building them in React; visible changes are mockup-first + re-approval (an always-on "Locked surfaces" rule in the frontend rules + a 🔒 LOCKED banner in each file enforce it). Locked structure: cockpit = full-screen, state-morph idle→ringing→connected→wrap-up→inbound, lead = tenant-CSV display fields shown TIERED (base name+phone+city/state+local-time; richer fields — company/email/spouse/DOB/etc. — shown when present) + weather cue + our-own attempt timeline — NOT a CRM profile/score or "cleared to call" verdict (display ≠ ownership; authority≠show-capability per [[dialer-not-crm-design-boundary]]), connected = 2-col Call|Book/Notes, DTMF+battlecards as on-demand popovers; manual dialer = **search-first hero (NOT a keypad)**, smart "Calling from" auto-match, confirm-not-block out-of-hours (CMP-012). The mock `_design.css` now carries the iris "cockpit atmosphere" in **both** light + dark (iris ambient + iris-tinted `--glass`). UX layout patterns: `docs/app-plan/product/31-dialer-ux-design-benchmarks.md` (UX-DO/UX-DONT, cited to incumbent reviews). This design work landed on branch `design/cockpit-mocks` (worktree-isolated, pending merge).
+
+**Locked surface mocks (2026-06-12, PR #28 merged):** **number-pool** (`number-pool.html`) + **number-health** (`number-health.html`) are user-approved + locked in the same registry. Pool's locked structure: badges-by-the-number table (lifecycle + reputation ✓/🚩, NO separate status columns, NO per-number dials — analytics owns volume), filter bar + multi-select bulk-assign (agent/pod), Messaging (10DLC) + Last-activity columns, ONE lead-coverage cue, deviation-only advisories (answer-rate ↓ / CNAM-mismatch on ported-in only / coverage gap); BUY v3 = multi-select grid + cart + **Review & assign** (per-number agent/pod, RingCentral pattern; price ONLY on overage — $5/mo + 6-included are BIL placeholders); **port-in** replaces "adopt" (LOA e-sign + FOC + 5-step tracker). Key user rules learned: **stop narrating the obvious** (no copy for what the UX shows), **deviation-only signals** (quiet rows stay quiet), no per-usage pricing shown (BIL-003), no badge that over-promises ("clean numbers only" rejected — clean-by-default stays a silent backend default via Telnyx `exclude_held_numbers`, NUM-007).

@@ -1,0 +1,39 @@
+---
+name: companion-comms-backend-phaseb
+description: Backend work OWED for the Dialer Pop-out Companion (Phase B) + the shared cockpit/comms telephony gaps — handed to the sprint orchestrator to scope + wire. The Companion FRONTEND (Phase A) ships reuse-only with honest-empty + typed seams; these endpoints fill them.
+metadata:
+  node_type: memory
+  type: project
+  originSessionId: c6cb6c0f-fc79-4576-b5c4-e28042c86ce8
+---
+
+Amin's division of labor (2026-06-29): **the frontend orchestrator (this session) finishes the responsive slices + the Companion FRONTEND only**; ALL backend wiring goes to the **sprint orchestrator** via this memory + a `docs/BUG_BACKLOG.md` ticket + the sprint log. The Companion Phase-A build reuses every real telephony source (no parallel logic) and leaves **typed `api.companion.*` seams returning honest-empty** where the backend doesn't exist — Phase B wires them. Parent context: [[comms-surfaces-architecture]] (BUX-019/INT-008), the [[mightycall-cti-overlay-insight]], and the wiring discovery (`tasks/woga2zj4p.output`: 30 reuse / 12 gap / 5 parallel-risk).
+
+## Companion Phase-B endpoints (each: what it feeds · the frontend seam Phase A leaves · shape)
+0. **⚠ THE TOP GAP — a raw-number DIAL endpoint (the Companion's CORE action, surfaced by the 2026-06-29 audit).** `DialRequest` is `{listId}`-only — there is NO way to place a call to a typed/pasted raw number. The live-call surface + the shared call machine + `/call-events` socket + `useWebRTC` are all BUILT + wired (REUSE) in the Companion, but **nothing can initiate a dial to a raw number**, so Phase A's "Call" is **honest-gated** (disabled/notice — the audit caught + the fix removed a *fabricated* live-call-surface + "Call logged · 0:00" toast for a never-placed call). Phase B: a raw-number dial path — e.g. `POST /api/calls/dial-number { e164, fromNumberId }` (or extend the dial service to accept an e164 + a chosen caller-ID) — that drives the SAME machine the Companion already consumes (do NOT fork a 2nd dial path). Until it lands, the Companion can only display a real socket-driven call, never start one. **This is the gating dependency for the Companion's headline value.**
+1. **`GET /api/companion/history/:e164`** — OUR call+SMS+VM history keyed by **phone NUMBER** (tenant-scoped, most-recent-first), **must work even when the number was never imported as a prospect**. Schema supports it (`Prospect.e164`, `Call.prospectId`, `SmsMessage.prospectId`) but NO route exposes a number-keyed read — the existing `leadActivity` (`GET /api/prospects/:id/activity`) is **prospect-ID-keyed** (ARC-006 forbids the Companion looking up a prospect). Feeds the `ready`-state "Our history with this number" strip. Seam: `api.companion.history(e164)` → `[]` today (honest "No prior calls or texts with this number").
+2. **Recents REFINEMENT — `GET /api/companion/recents`.** ⚠ The existing `api.calls.recentActivity()` (`GET /api/calls/recent-activity`, `ShiftActivityResponse`) is **WIRED NOW in the Companion frontend** — it's calls-only + disposition-gated but real. The only NEW part: a number-distinct, **SMS-inclusive**, includes-no-disposition-dials recents (counts + last-contact). Swap the data source when it lands; not urgent.
+3. **`GET /api/calling-hours-check?e164=&state=`** — READ-ONLY pre-dial verdict `{ inWindow, tz, localHour, reason }` from the deterministic `backend/src/services/complianceGate.ts` (`evaluateCallingHours`). Today the verdict only exists EMBEDDED in a dial transaction (DialResponse); the Companion shows the calling-hours badge BEFORE dialing. **MUST be a server read of the real gate — NEVER client-side math** (parallel-risk #4). Feeds the `ready` calling-hours badge + the CMP-012 confirm. Seam: `api.companion.callingHoursCheck(e164)` → honest "Checking…".
+4. **`GET /api/conversations/by-number/:e164`** — resolve a conversation for a raw number that has **NO existing conversation** (expose `conversationResolver.findOpenConversationForInbound`, INTERNAL-only today). ⚠ The EXISTING-conversation case is **WIRED NOW** (`api.conversations.list/get/send` — CONV-004; the frontend finds the number's conversation via `list()` and uses `get`/`send`). This endpoint only unblocks SMS thread/send for a **brand-new** number with no prior conversation. Honest "No messages yet" for new numbers until then.
+5. **SMS live-inbound channel** — a `/sms-events` Socket.IO namespace **parallel to the existing `/call-events`** (`shared/src/contracts/realtime.ts`, `useCallSocket`) OR a poll. No SMS realtime exists. Feeds "inbound arrives live + New-message toast". (Frontend currently has no live inbound — honest.)
+
+## ⚠ WIRED NOW in the Companion FRONTEND (these EXIST — Amin's rule 2026-06-29: wire what's available; do NOT honest-empty it or hand it to the sprint orchestrator)
+- **Recents** → `api.calls.recentActivity()` (`GET /api/calls/recent-activity`, `ShiftActivityResponse`). Real now; #2 above is only the refinement.
+- **SMS thread + send** → `api.conversations.list/get/send` (**CONV-004 shipped** `s13-sms-send`; `send` = POST /api/conversations/:id/messages, idempotency-keyed). For a number with an EXISTING conversation (found via `list()` on the lead e164). #4 above (number→conversation) only covers a brand-new number.
+- The `SmsComposer.tsx` "no SMS-send backend yet" comment is **STALE** (doctrine-loop Arm 3) — the discovery's "no SMS send" gap came from it; fix the comment.
+- (Plus the always-reuse: call machine / `/call-events` socket / `useWebRTC` / numbers pool / `resolveProspectIanaTz` / templates.)
+
+So the GENUINELY-NEW backend the sprint orchestrator owns = #1 (number-keyed history-with-number), #2's recents refinement, #3 (calling-hours read), #4 (number→conversation for NEW numbers), #5 (sms-events socket) — plus the shared cockpit gaps below.
+
+## Shared COCKPIT/comms gaps (benefit the cockpit + comms workspace too — not Companion-only)
+6. **DTMF send** — no backend (`useWebRTC.sendDtmf()` / a socket emit). The cockpit keypad (`CallCard` KeypadPopover) is presentational too.
+7. **Call duration timer source** — `CallDTO.answeredAt` → a real elapsed counter. The cockpit's `ConnectedStatusRow` shows a **static `02:14` placeholder** (`CallCard.tsx ~L1069`). The Companion computes client-side from `answeredAt` (correct, not a fork) but the DTO must carry `answeredAt` reliably.
+
+## The 5 parallel-risks Phase B MUST preserve (the audit's core finding — never let a leaf re-implement)
+1 Telnyx WebRTC client + token **per booker** (broker cap; a separate Companion window must share-or-sole-client, not a 2nd live client). · 1 call-state machine (`callMachine.ts`) synced via the `/call-events` socket. · 1 SMS send path (CONV-004). · 1 compliance-math source (`complianceGate.ts`). · 1 area-code→tz source (`resolveProspectIanaTz` + `AREA_CODE_TO_IANA_TZ`, `shared/src/config/complianceGeo.ts`).
+
+## Sprint placement (for the sprint orchestrator to sequence)
+The Companion **Manual-pop-out FRONTEND is NOW** (this session). The endpoints above + the **MV3 extension shell** (the host that enables true page paste-to-dial) are the **FOLLOW-ON → Phase 2 / INT-008 comms-backend** (sequence into a comms/INT sprint under `docs/app-plan/implementation/sprints/`). #1–#3 are net-new; #4–#5 build on CONV-004.
+
+## Not-backend, but blocked (frontend/product gap — flag, don't build)
+**Slice E (§5 Number pool→detail drill-in) is BLOCKED**: there is NO number-detail master/detail surface (NumberPoolPage is a flat list + Buy/Release modals + a separate Health page). Building a number-detail view is **new product+design scope (mockup-first)**, not a responsive refactor. Same assumption-gap class as §4's DataTable (the handoff repeatedly assumes structures that don't exist — see [[responsive-build-process-fixes]] FIX F). Decide in a product/design pass whether a number-detail surface is wanted before any §5-numbers responsive work.

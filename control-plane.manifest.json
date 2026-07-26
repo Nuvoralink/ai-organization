@@ -250,6 +250,106 @@
       "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json"
     },
     {
+      "id": "claude-project-memory-nuvo-dialer",
+      "source": "global/claude/project-memory/C--dev-Nuvo-Dialer",
+      "captureFrom": "${HOME}/.claude/projects/C--dev-Nuvo-Dialer/memory",
+      "destinations": [
+        "${HOME}/.claude/projects/C--dev-Nuvo-Dialer/memory"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        ".md"
+      ],
+      "exclude": [],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "renderContentTokens": true,
+      "tokenizeRegisteredPathsOnCapture": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json"
+    },
+    {
+      "id": "claude-project-memory-coachai",
+      "source": "global/claude/project-memory/C--dev-Nuvora-CoachAi",
+      "captureFrom": "${HOME}/.claude/projects/C--dev-Nuvora-CoachAi/memory",
+      "destinations": [
+        "${HOME}/.claude/projects/C--dev-Nuvora-CoachAi/memory"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        ".md"
+      ],
+      "exclude": [],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "renderContentTokens": true,
+      "tokenizeRegisteredPathsOnCapture": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json"
+    },
+    {
+      "id": "claude-project-memory-nuvora-link",
+      "source": "global/claude/project-memory/C--dev-Nuvora-Link",
+      "captureFrom": "${HOME}/.claude/projects/C--dev-Nuvora-Link/memory",
+      "destinations": [
+        "${HOME}/.claude/projects/C--dev-Nuvora-Link/memory"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        ".md"
+      ],
+      "exclude": [],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "renderContentTokens": true,
+      "tokenizeRegisteredPathsOnCapture": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json"
+    },
+    {
+      "id": "claude-project-memory-llm-councel",
+      "source": "global/claude/project-memory/C--dev-Skills-LLM-Councel",
+      "captureFrom": "${HOME}/.claude/projects/C--dev-Skills-LLM-Councel/memory",
+      "destinations": [
+        "${HOME}/.claude/projects/C--dev-Skills-LLM-Councel/memory"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        ".md"
+      ],
+      "exclude": [],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "renderContentTokens": true,
+      "tokenizeRegisteredPathsOnCapture": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json"
+    },
+    {
+      "id": "claude-project-memory-voice-agents",
+      "source": "global/claude/project-memory/C--dev-Voice-Agents",
+      "captureFrom": "${HOME}/.claude/projects/C--dev-Voice-Agents/memory",
+      "destinations": [
+        "${HOME}/.claude/projects/C--dev-Voice-Agents/memory"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        ".md"
+      ],
+      "exclude": [],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "renderContentTokens": true,
+      "tokenizeRegisteredPathsOnCapture": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json"
+    },
+    {
       "id": "skill-ai-decision-contract-builder",
       "source": "skills/ai-decision-contract-builder",
       "captureFrom": "${HOME}/.codex/skills/ai-decision-contract-builder",

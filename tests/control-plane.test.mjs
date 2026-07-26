@@ -449,6 +449,22 @@ test('Proves: ORG-BOUNDARY-CLAUDE-SETTINGS-001; Test type: secret-boundary liven
       && !(mapping.destinations ?? []).includes('${HOME}/.claude/settings.json')));
 });
 
+test('Proves: ORG-BOUNDARY-CLAUDE-MEMORY-001; Test type: source-boundary liveness and mutation; Surface: curated Claude project memory; Authority: explicit per-project memory mappings; Killer mutation: capture the projects root, include a non-Markdown format, or omit tokenized path round-trip; Gated command: npm test', () => {
+  const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const manifest = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'control-plane.manifest.json'), 'utf8'));
+  const memoryMappings = manifest.mappings.filter((mapping) => mapping.id.startsWith('claude-project-memory-'));
+
+  assert.ok(memoryMappings.length > 0, 'at least one current project memory root must be live');
+  for (const mapping of memoryMappings) {
+    assert.match(mapping.source, /^global\/claude\/project-memory\/[^/]+$/u);
+    assert.match(mapping.captureFrom, /^\$\{HOME\}\/\.claude\/projects\/[^/]+\/memory$/u);
+    assert.deepEqual(mapping.allowedExtensions, ['.md']);
+    assert.equal(mapping.renderContentTokens, true);
+    assert.equal(mapping.tokenizeRegisteredPathsOnCapture, true);
+  }
+  assert.ok(manifest.mappings.every((mapping) => mapping.captureFrom !== '${HOME}/.claude/projects'));
+});
+
 test('Proves: capture rejects machine-specific paths before writes; Test type: portability mutation; Surface: capture; Authority: tokenized roots; Killer mutation: import a C drive path; Gated command: npm test', () => {
   const f = fixture();
   fs.writeFileSync(path.join(f.home, '.claude', 'rules', 'unsafe.md'), `Tool: ${['C:', 'dev', 'Some Tool'].join('\\')}\n`);
@@ -456,12 +472,13 @@ test('Proves: capture rejects machine-specific paths before writes; Test type: p
   assert.equal(fs.existsSync(path.join(f.repoRoot, 'canonical', 'rules', 'unsafe.md')), false);
 });
 
-test('Proves: ORG-CAPTURE-PORTABILITY-001; Test type: registered-path round trip; Surface: dependency capture and installed parity; Authority: root registry plus manifest token-render contract; Killer mutation: stop inverse-tokenizing a registered path, tokenize an unregistered path, or allow tokenization while install rendering is disabled; Gated command: npm test', () => {
+test('Proves: ORG-CAPTURE-PORTABILITY-001; Test type: registered-path round trip; Surface: dependency capture and installed parity; Authority: root registry plus manifest token-render contract; Killer mutation: stop inverse-tokenizing a registered path, lose exact Windows drive casing, tokenize an unregistered path, or allow tokenization while install rendering is disabled; Gated command: npm test', () => {
   const f = fixture();
   const installed = path.join(f.home, '.claude', 'rules', 'portable.md');
   const registeredHome = f.home;
   const alternateSeparatorHome = f.home.replaceAll('\\', '/');
-  fs.writeFileSync(installed, `Exact ${registeredHome}\\.claude\\rules\nAlternate ${alternateSeparatorHome}/.claude/rules\n`);
+  f.roots['WORKSPACE:dev'] = 'C:\\dev';
+  fs.writeFileSync(installed, `Exact ${registeredHome}\\.claude\\rules\nAlternate ${alternateSeparatorHome}/.claude/rules\nLower drive c:\\dev\\worktree\n`);
   f.manifest.mappings[0].tokenizeRegisteredPathsOnCapture = true;
   f.manifest.mappings[0].renderContentTokens = true;
 
@@ -469,11 +486,11 @@ test('Proves: ORG-CAPTURE-PORTABILITY-001; Test type: registered-path round trip
   assert.equal(operations.length, 1);
   assert.equal(
     fs.readFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'portable.md'), 'utf8'),
-    'Exact ${HOME}\\.claude\\rules\nAlternate ${HOME|forward-slash}/.claude/rules\n',
+    'Exact ${HOME}\\.claude\\rules\nAlternate ${HOME|forward-slash}/.claude/rules\nLower drive ${WORKSPACE:dev|lowercase-drive}\\worktree\n',
   );
   assert.deepEqual(runCheck(f), []);
 
-  fs.writeFileSync(installed, `See ${['C:', 'dev', 'unregistered', 'private', 'rules'].join('/')}\n`);
+  fs.writeFileSync(installed, `See ${['C:', 'Users', 'unregistered', 'private', 'rules'].join('/')}\n`);
   assert.throws(() => runCapture({ ...f, dryRun: true, updateExisting: true }), /Machine-specific absolute path refused/u);
 
   f.manifest.mappings[0].renderContentTokens = false;
