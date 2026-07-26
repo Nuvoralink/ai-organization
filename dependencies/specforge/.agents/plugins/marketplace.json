@@ -1,0 +1,20 @@
+{
+  "name": "specforge-local-marketplace",
+  "interface": {
+    "displayName": "SpecForge Local Marketplace"
+  },
+  "plugins": [
+    {
+      "name": "specforge",
+      "source": {
+        "source": "local",
+        "path": "."
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "name": "specforge",
+  "version": "1.2.0",
+  "description": "Turn an app idea or existing repo into evidence-backed product, architecture, security, proportional assurance, AI guardrail, and implementation-artifact documentation.",
+  "skills": "./skills/",
+  "author": {
+    "name": "SpecForge contributors"
+  },
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "skills",
+    "documentation",
+    "product-requirements",
+    "architecture",
+    "security",
+    "threat-modeling",
+    "ai-guardrails",
+    "developer-tools",
+    "source-of-truth",
+    "prompt-engineering",
+    "assurance-architecture",
+    "decision-matrix",
+    "documentation-governance",
+    "validation-fixtures",
+    "implementation-artifacts"
+  ],
+  "category": "Developer Tools",
+  "interface": {
+    "displayName": "SpecForge",
+    "shortDescription": "Evidence-backed specs, architecture, security, and AI guardrails.",
+    "longDescription": "SpecForge turns app ideas and existing repos into product scope, architecture, security, proportional assurance, AI guardrail, source-of-truth, and implementation-artifact documentation.",
+    "developerName": "SpecForge contributors",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use SpecForge to turn this app idea into a product and architecture spec",
+      "Use SpecForge to audit this repo and generate source-of-truth docs",
+      "Use SpecForge to define AI guardrails and validation fixtures",
+      "Use SpecForge to build post-docs implementation artifacts"
+    ],
+    "brandColor": "#111827",
+    "screenshots": []
+  }
+}

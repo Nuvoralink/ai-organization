@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Design QA"
+  short_description: "Audit checklist, contradiction sweep, slop sweep, visual regression plan, accessibility audit, performance review."
+  default_prompt: "Use $visualforge-design-qa for this product:"
+policy:
+  allow_implicit_invocation: true

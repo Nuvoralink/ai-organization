@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Surface Treatments"
+  short_description: "Material, glass, blur, gradients, shadows, edges, depth philosophy with concrete recipes."
+  default_prompt: "Use $visualforge-surface-treatments for this product:"
+policy:
+  allow_implicit_invocation: true

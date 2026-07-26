@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Motion Design"
+  short_description: "Spring physics, easing library, choreography, page transitions, modal entry/exit, loading skeleton motion."
+  default_prompt: "Use $visualforge-motion-design for this product:"
+policy:
+  allow_implicit_invocation: true

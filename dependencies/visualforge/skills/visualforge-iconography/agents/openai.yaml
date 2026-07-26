@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Iconography"
+  short_description: "Icon library, stroke weight, corner radius, sizing scale, semantic icon map, animation rules."
+  default_prompt: "Use $visualforge-iconography for this product:"
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,9 @@
+{
+  "description": "VF-FIND-005: malformed Specforge-style DEC-CATEGORY-NNN ID is rejected.",
+  "mode": "mid-run",
+  "errors_include": [
+    "Malformed DEC-ID 'DEC-CATEGORY-001'"
+  ],
+  "errors_exclude": [],
+  "warnings_include": []
+}

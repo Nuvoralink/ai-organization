@@ -1,0 +1,12 @@
+{
+  "description": "VF-FIND-047: design-tokens.md declares a palette (OKLCH stop + hex color present) but does NOT cite color-theory-and-decision-matrix.md. The check must fire warning the agent that palette decisions require theory + matrix grounding.",
+  "mode": "mid-run",
+  "errors_include": [],
+  "errors_exclude": [],
+  "warnings_include": [
+    "VF-FIND-047: design-tokens.md declares a color palette",
+    "color-theory-and-decision-matrix.md"
+  ],
+  "warnings_exclude": [],
+  "verdict_must_be": "PASS"
+}

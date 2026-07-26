@@ -1,0 +1,13 @@
+{
+  "description": "VF-FIND-011: sub-decision DEC-300.1 is distinguished from parent DEC-300 (no cross-tree dupe). DEC-400 is a genuine dupe across two files — proves check_decision_log is running. If sub-decision regex breaks, DEC-300 fires; if check_decision_log is sabotaged, DEC-400 doesn't fire.",
+  "mode": "mid-run",
+  "errors_include": [
+    "Cross-tree duplicate DEC-400"
+  ],
+  "errors_exclude": [
+    "Cross-tree duplicate DEC-300:",
+    "Cross-tree duplicate DEC-300\n",
+    "duplicate DEC-300 "
+  ],
+  "warnings_include": []
+}

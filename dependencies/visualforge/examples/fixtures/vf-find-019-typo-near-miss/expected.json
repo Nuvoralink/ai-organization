@@ -1,0 +1,10 @@
+{
+  "description": "VF-FIND-019: `Reversal thrigger` typo detected as near-miss for `Reversal trigger`.",
+  "mode": "mid-run",
+  "errors_include": [
+    "typo near-miss",
+    "Reversal thrigger"
+  ],
+  "errors_exclude": [],
+  "warnings_include": []
+}

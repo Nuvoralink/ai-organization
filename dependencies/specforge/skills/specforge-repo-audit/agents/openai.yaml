@@ -1,0 +1,6 @@
+interface:
+  display_name: "Repo Docs Audit"
+  short_description: "Audit an existing repo and update documentation without changing product code."
+  default_prompt: "Use $specforge-repo-audit to audit and update docs for this repo."
+policy:
+  allow_implicit_invocation: true

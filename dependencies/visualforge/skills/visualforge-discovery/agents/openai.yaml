@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Discovery"
+  short_description: "Design brief, platform targets, audience density, brand constraints, accessibility level."
+  default_prompt: "Use $visualforge-discovery for this product:"
+policy:
+  allow_implicit_invocation: true

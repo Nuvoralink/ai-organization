@@ -1,5 +1,10 @@
 {
   "HOME": "X:/example/home",
   "PROJECT:auxara-dialer": "X:/example/projects/Auxara Dialer",
-  "PROJECT:coachai": "X:/example/projects/Nuvora CoachAi"
+  "PROJECT:coachai": "X:/example/projects/Nuvora CoachAi",
+  "DEPENDENCY:skills-root": "X:/example/dependencies/Skills",
+  "DEPENDENCY:specforge": "X:/example/dependencies/Skills/Specforge",
+  "DEPENDENCY:visualforge": "X:/example/dependencies/Skills/VisualForge",
+  "DEPENDENCY:marketforge": "X:/example/dependencies/Skills/MarketForge",
+  "DEPENDENCY:hormozi": "X:/example/dependencies/Skills/Hormozi"
 }

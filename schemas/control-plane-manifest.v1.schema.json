@@ -37,6 +37,7 @@
           "allowRootLink": { "type": "boolean" },
           "allowInstalledRootLink": { "type": "boolean" },
           "renderContentTokens": { "type": "boolean" },
+          "tokenizeRegisteredPathsOnCapture": { "type": "boolean" },
           "lock": { "type": "string", "pattern": "^\\$\\{[^}]+\\}(?:/.*)?$" }
         }
       }

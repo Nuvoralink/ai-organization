@@ -84,6 +84,11 @@ const REPOSITORY_META_FILES = new Set([
   '.gitattributes', '.gitignore', '.gitleaks.toml', '.gitleaksignore', 'AGENTS.md', 'CLAUDE.md',
   'README.md', 'control-plane.manifest.json', 'package-lock.json', 'package.json'
 ]);
+const ORCHESTRATION_DEPENDENCY_EXTENSIONS = new Set(['.md', '.json', '.py', '.toml', '.lock', '.yaml', '.yml', '']);
+const ORCHESTRATION_DEPENDENCY_EXACT_ASSETS = new Set([
+  'dependencies/marketforge/Marketing Guide V3.pdf',
+  'dependencies/visualforge/examples/fixtures/vf-find-025-wrapper-semantic-drift/app/sign-in/page.tsx',
+]);
 
 export function classifyTrackedScope(relativeInput) {
   const relative = normalizeRelative(relativeInput);
@@ -110,7 +115,11 @@ export function classifyTrackedScope(relativeInput) {
   if (relative.startsWith('core/')) return ['.mjs', '.md'].includes(extension) ? 'shared-control-plane-runtime' : undefined;
   if (relative.startsWith('global/')) return ['.md', '.json', '.mjs', '.yaml', '.yml'].includes(extension) ? 'global-orchestration' : undefined;
   if (relative.startsWith('skills/')) return ['.md', '.json', '.mjs', '.js', '.ts', '.tsx', '.py', '.ps1', '.csv', '.yaml', '.yml', '.template'].includes(extension) ? 'reusable-skill' : undefined;
-  if (relative.startsWith('dependencies/')) return ['.md', '.json', '.py', '.toml', '.lock', ''].includes(extension) ? 'orchestration-dependency' : undefined;
+  if (relative.startsWith('dependencies/')) {
+    return ORCHESTRATION_DEPENDENCY_EXTENSIONS.has(extension) || ORCHESTRATION_DEPENDENCY_EXACT_ASSETS.has(relative)
+      ? 'orchestration-dependency'
+      : undefined;
+  }
   return undefined;
 }
 
@@ -118,8 +127,42 @@ function renderedBytes(file, roots, renderContentTokens = true) {
   const bytes = fs.readFileSync(file);
   const ext = path.extname(file).toLowerCase();
   if (!TEXT_EXTENSIONS.has(ext) || !renderContentTokens) return bytes;
-  const rendered = bytes.toString('utf8').replace(/\$\{([^}]+)\}/g, (match, token) => roots[token] ?? match);
+  const rendered = bytes.toString('utf8').replace(
+    /\$\{([^}|]+)(?:\|(forward-slash|backslash))?\}/g,
+    (match, token, style) => {
+      const root = roots[token];
+      if (typeof root !== 'string') return match;
+      if (style === 'forward-slash') return root.replaceAll('\\', '/');
+      if (style === 'backslash') return root.replaceAll('/', '\\');
+      return root;
+    },
+  );
   return Buffer.from(rendered);
+}
+
+function capturedBytes(file, roots, tokenizeRegisteredPathsOnCapture = false) {
+  const bytes = fs.readFileSync(file);
+  const ext = path.extname(file).toLowerCase();
+  if (!TEXT_EXTENSIONS.has(ext) || !tokenizeRegisteredPathsOnCapture) return bytes;
+  const replacements = [];
+  for (const [token, root] of Object.entries(roots)) {
+    if (typeof root !== 'string' || root.length === 0) continue;
+    replacements.push({ token, value: root, style: undefined });
+    const forwardSlash = root.replaceAll('\\', '/');
+    const backslash = root.replaceAll('/', '\\');
+    if (forwardSlash !== root) replacements.push({ token, value: forwardSlash, style: 'forward-slash' });
+    if (backslash !== root) replacements.push({ token, value: backslash, style: 'backslash' });
+  }
+  replacements.sort((left, right) =>
+    right.value.length - left.value.length
+    || Number(Boolean(left.style)) - Number(Boolean(right.style))
+    || left.token.localeCompare(right.token));
+  let content = bytes.toString('utf8');
+  for (const { token, value, style } of replacements) {
+    const modifier = style ? `|${style}` : '';
+    content = content.replaceAll(value, `\${${token}${modifier}}`);
+  }
+  return Buffer.from(content);
 }
 
 function hashBytes(bytes, file) {
@@ -434,18 +477,26 @@ export function runDigest({ manifest, roots, mappingIds }) {
   return { mapping: mapping.id, physicalDestination: destinationTemplate, sha256: digest.sha256, fileCount: digest.fileCount };
 }
 
-function secretFinding(file) {
+function secretFindingBytes(bytes, file) {
   const ext = path.extname(file).toLowerCase();
   if (!TEXT_EXTENSIONS.has(ext)) return -1;
-  const content = fs.readFileSync(file, 'utf8');
+  const content = bytes.toString('utf8');
   return SECRET_PATTERNS.findIndex((pattern) => pattern.test(content));
 }
 
-function portablePathFinding(file) {
+function secretFinding(file) {
+  return secretFindingBytes(fs.readFileSync(file), file);
+}
+
+function portablePathFindingBytes(bytes, file) {
   const ext = path.extname(file).toLowerCase();
   if (!TEXT_EXTENSIONS.has(ext)) return false;
-  const content = fs.readFileSync(file, 'utf8');
+  const content = bytes.toString('utf8');
   return /\bC:[\\/](?:Users|dev)[\\/]/i.test(content);
+}
+
+function portablePathFinding(file) {
+  return portablePathFindingBytes(fs.readFileSync(file), file);
 }
 
 export function validateManifest(manifest, repoRoot, roots) {
@@ -456,6 +507,9 @@ export function validateManifest(manifest, repoRoot, roots) {
   const physicalTargets = new Map();
   for (const mapping of manifest.mappings) {
     errors.push(...installedIgnoreErrors(mapping, manifest));
+    if (mapping.tokenizeRegisteredPathsOnCapture && mapping.renderContentTokens === false) {
+      errors.push(`Capture path tokenization requires rendered install parity: ${mapping.id}`);
+    }
     if (!/^[a-z0-9][a-z0-9-]+$/.test(mapping.id ?? '')) errors.push(`Invalid mapping id: ${mapping.id}`);
     if (ids.has(mapping.id)) errors.push(`Duplicate mapping id: ${mapping.id}`);
     ids.add(mapping.id);
@@ -499,6 +553,9 @@ export function validateCanonical({ repoRoot, manifest }) {
   const destinationTemplates = new Set();
   for (const mapping of manifest.mappings) {
     for (const message of installedIgnoreErrors(mapping, manifest)) problems.push({ type: 'manifest', mapping: mapping.id, message });
+    if (mapping.tokenizeRegisteredPathsOnCapture && mapping.renderContentTokens === false) {
+      problems.push({ type: 'manifest', mapping: mapping.id, message: 'Capture path tokenization requires rendered install parity' });
+    }
     if (!/^[a-z0-9][a-z0-9-]+$/.test(mapping.id ?? '')) problems.push({ type: 'manifest', message: `Invalid mapping id: ${mapping.id}` });
     if (ids.has(mapping.id)) problems.push({ type: 'manifest', message: `Duplicate mapping id: ${mapping.id}` });
     ids.add(mapping.id);
@@ -871,15 +928,16 @@ export function runCapture({ repoRoot, manifest, roots, dryRun = false, updateEx
     invariant(captured.size > 0, `Capture source is empty: ${mapping.id}`);
     for (const [relative, input] of captured) {
       if (selectedFiles.size > 0 && !selectedFiles.get(mapping.id)?.has(relative)) continue;
-      const secretIndex = secretFinding(input);
+      const bytes = capturedBytes(input, roots, mapping.tokenizeRegisteredPathsOnCapture);
+      const secretIndex = secretFindingBytes(bytes, input);
       invariant(secretIndex < 0, `Secret-shaped content refused (pattern ${secretIndex + 1}): ${mapping.id}/${relative}`);
-      invariant(!portablePathFinding(input), `Machine-specific absolute path refused: ${mapping.id}/${relative}`);
+      invariant(!portablePathFindingBytes(bytes, input), `Machine-specific absolute path refused: ${mapping.id}/${relative}`);
       const target = mapping.mode === 'file' ? sourceRoot : path.join(sourceRoot, relative);
       if (canonical.has(relative)) {
-        if (hashFile(input) === hashFile(canonical.get(relative))) continue;
+        if (hashBytes(bytes, input) === hashFile(canonical.get(relative))) continue;
         invariant(updateExisting, `Canonical source differs; capture refused: ${mapping.id}/${relative}`);
-        operations.push({ type: 'update-capture', mapping: mapping.id, relative, input, target });
-      } else operations.push({ type: 'capture', mapping: mapping.id, relative, input, target });
+        operations.push({ type: 'update-capture', mapping: mapping.id, relative, bytes, target });
+      } else operations.push({ type: 'capture', mapping: mapping.id, relative, bytes, target });
     }
     if (selectedFiles.has(mapping.id)) {
       const missing = [...selectedFiles.get(mapping.id)].filter((relative) => !captured.has(relative));
@@ -887,7 +945,7 @@ export function runCapture({ repoRoot, manifest, roots, dryRun = false, updateEx
     }
   }
   if (!dryRun) {
-    for (const operation of operations) writeAtomic(operation.target, fs.readFileSync(operation.input));
+    for (const operation of operations) writeAtomic(operation.target, operation.bytes);
   }
   return operations;
 }

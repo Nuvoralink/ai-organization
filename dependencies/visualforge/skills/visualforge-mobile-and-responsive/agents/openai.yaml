@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Mobile & Responsive"
+  short_description: "Mobile UX patterns, iOS/Android native, foldables, tablet, ultra-wide, browser zoom, hi-DPI, multi-window."
+  default_prompt: "Use $visualforge-mobile-and-responsive for this product:"
+policy:
+  allow_implicit_invocation: true

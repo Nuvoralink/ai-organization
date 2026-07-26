@@ -810,6 +810,574 @@
       "license": "review-required"
     },
     {
+      "id": "dependency-specforge",
+      "family": "engine-dependency",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge",
+      "destinations": [
+        "${DEPENDENCY:specforge}"
+      ],
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "dependency-visualforge",
+      "family": "engine-dependency",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/visualforge",
+      "destinations": [
+        "${DEPENDENCY:visualforge}"
+      ],
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "dependency-marketforge",
+      "family": "engine-dependency",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/marketforge",
+      "destinations": [
+        "${DEPENDENCY:marketforge}"
+      ],
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "dependency-hormozi",
+      "family": "engine-dependency",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/hormozi",
+      "destinations": [
+        "${DEPENDENCY:hormozi}"
+      ],
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "dependency-skills-root-readme",
+      "family": "dependency-metadata",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/skills-root/README.md",
+      "destinations": [
+        "${DEPENDENCY:skills-root}/README.md"
+      ],
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "dependency-skills-root-consolidation-changelog",
+      "family": "dependency-metadata",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/skills-root/CONSOLIDATION_CHANGELOG.md",
+      "destinations": [
+        "${DEPENDENCY:skills-root}/CONSOLIDATION_CHANGELOG.md"
+      ],
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-shared",
+      "family": "skill-support",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/_specforge-shared",
+      "destinations": [
+        "${HOME}/.claude/skills/_specforge-shared"
+      ],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge"
+      ],
+      "declaredName": "specforge",
+      "installDirectory": "specforge",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-ai-guardrails",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-ai-guardrails",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-ai-guardrails"
+      ],
+      "declaredName": "specforge-ai-guardrails",
+      "installDirectory": "specforge-ai-guardrails",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-analytics-metrics",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-analytics-metrics",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-analytics-metrics"
+      ],
+      "declaredName": "specforge-analytics-metrics",
+      "installDirectory": "specforge-analytics-metrics",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-architecture",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-architecture",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-architecture"
+      ],
+      "declaredName": "specforge-architecture",
+      "installDirectory": "specforge-architecture",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-assurance-architecture",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-assurance-architecture",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-assurance-architecture"
+      ],
+      "declaredName": "specforge-assurance-architecture",
+      "installDirectory": "specforge-assurance-architecture",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-blast-radius-change-risk",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-blast-radius-change-risk",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-blast-radius-change-risk"
+      ],
+      "declaredName": "specforge-blast-radius-change-risk",
+      "installDirectory": "specforge-blast-radius-change-risk",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-business-gtm-monetization",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-business-gtm-monetization",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-business-gtm-monetization"
+      ],
+      "declaredName": "specforge-business-gtm-monetization",
+      "installDirectory": "specforge-business-gtm-monetization",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-compliance-policy",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-compliance-policy",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-compliance-policy"
+      ],
+      "declaredName": "specforge-compliance-policy",
+      "installDirectory": "specforge-compliance-policy",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-cost-capacity-performance",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-cost-capacity-performance",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-cost-capacity-performance"
+      ],
+      "declaredName": "specforge-cost-capacity-performance",
+      "installDirectory": "specforge-cost-capacity-performance",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-data-contracts",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-data-contracts",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-data-contracts"
+      ],
+      "declaredName": "specforge-data-contracts",
+      "installDirectory": "specforge-data-contracts",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-decision-advisor",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-decision-advisor",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-decision-advisor"
+      ],
+      "declaredName": "specforge-decision-advisor",
+      "installDirectory": "specforge-decision-advisor",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-dependency-supply-chain",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-dependency-supply-chain",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-dependency-supply-chain"
+      ],
+      "declaredName": "specforge-dependency-supply-chain",
+      "installDirectory": "specforge-dependency-supply-chain",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-discovery-interview",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-discovery-interview",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-discovery-interview"
+      ],
+      "declaredName": "specforge-discovery-interview",
+      "installDirectory": "specforge-discovery-interview",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-engineering-rules",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-engineering-rules",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-engineering-rules"
+      ],
+      "declaredName": "specforge-engineering-rules",
+      "installDirectory": "specforge-engineering-rules",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-environment-config-secrets",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-environment-config-secrets",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-environment-config-secrets"
+      ],
+      "declaredName": "specforge-environment-config-secrets",
+      "installDirectory": "specforge-environment-config-secrets",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-glossary-taxonomy",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-glossary-taxonomy",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-glossary-taxonomy"
+      ],
+      "declaredName": "specforge-glossary-taxonomy",
+      "installDirectory": "specforge-glossary-taxonomy",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-implementation-artifacts",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-implementation-artifacts",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-implementation-artifacts"
+      ],
+      "declaredName": "specforge-implementation-artifacts",
+      "installDirectory": "specforge-implementation-artifacts",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-implementation-task-plan",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-implementation-task-plan",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-implementation-task-plan"
+      ],
+      "declaredName": "specforge-implementation-task-plan",
+      "installDirectory": "specforge-implementation-task-plan",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-operations-runbooks",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-operations-runbooks",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-operations-runbooks"
+      ],
+      "declaredName": "specforge-operations-runbooks",
+      "installDirectory": "specforge-operations-runbooks",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-platform-feature-contracts",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-platform-feature-contracts",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-platform-feature-contracts"
+      ],
+      "declaredName": "specforge-platform-feature-contracts",
+      "installDirectory": "specforge-platform-feature-contracts",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-privacy-compliance",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-privacy-compliance",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-privacy-compliance"
+      ],
+      "declaredName": "specforge-privacy-compliance",
+      "installDirectory": "specforge-privacy-compliance",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-product-scope",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-product-scope",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-product-scope"
+      ],
+      "declaredName": "specforge-product-scope",
+      "installDirectory": "specforge-product-scope",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-quality-release-observability",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-quality-release-observability",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-quality-release-observability"
+      ],
+      "declaredName": "specforge-quality-release-observability",
+      "installDirectory": "specforge-quality-release-observability",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-repo-audit",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-repo-audit",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-repo-audit"
+      ],
+      "declaredName": "specforge-repo-audit",
+      "installDirectory": "specforge-repo-audit",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-reviewer",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-reviewer",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-reviewer"
+      ],
+      "declaredName": "specforge-reviewer",
+      "installDirectory": "specforge-reviewer",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-security-threat-model",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-security-threat-model",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-security-threat-model"
+      ],
+      "declaredName": "specforge-security-threat-model",
+      "installDirectory": "specforge-security-threat-model",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-trust-safety-abuse",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-trust-safety-abuse",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-trust-safety-abuse"
+      ],
+      "declaredName": "specforge-trust-safety-abuse",
+      "installDirectory": "specforge-trust-safety-abuse",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
+      "id": "skill-specforge-ux-ui-content",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "dependencies/specforge/skills/specforge-ux-ui-content",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-ux-ui-content"
+      ],
+      "declaredName": "specforge-ux-ui-content",
+      "installDirectory": "specforge-ux-ui-content",
+      "aliases": [],
+      "dependency": "dependency-specforge",
+      "provenance": "user-authored-development-repository",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
       "id": "dependency-council-studio",
       "family": "engine-dependency",
       "lifecycle": "active",

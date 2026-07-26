@@ -1743,6 +1743,1016 @@
       "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json"
     },
     {
+      "id": "dependency-specforge",
+      "source": "dependencies/specforge",
+      "captureFrom": "${DEPENDENCY:specforge}",
+      "destinations": [
+        "${DEPENDENCY:specforge}"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "installedIgnore": [
+        "scripts/__pycache__"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "dependency-visualforge",
+      "source": "dependencies/visualforge",
+      "captureFrom": "${DEPENDENCY:visualforge}",
+      "destinations": [
+        "${DEPENDENCY:visualforge}"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py",
+        ".lock",
+        ".tsx"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "installedIgnore": [
+        "scripts/__pycache__",
+        "scripts/validators/__pycache__"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "dependency-marketforge",
+      "source": "dependencies/marketforge",
+      "captureFrom": "${DEPENDENCY:marketforge}",
+      "destinations": [
+        "${DEPENDENCY:marketforge}"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".py",
+        ".pdf"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "installedIgnore": [
+        "scripts/__pycache__",
+        "tests/__pycache__",
+        "tests/boundary/__pycache__",
+        "tests/integration/__pycache__",
+        "tests/mutation/__pycache__",
+        "tests/unit/__pycache__"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "dependency-hormozi",
+      "source": "dependencies/hormozi",
+      "captureFrom": "${DEPENDENCY:hormozi}",
+      "destinations": [
+        "${DEPENDENCY:hormozi}"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "dependency-skills-root-readme",
+      "source": "dependencies/skills-root/README.md",
+      "captureFrom": "${DEPENDENCY:skills-root}/README.md",
+      "destinations": [
+        "${DEPENDENCY:skills-root}/README.md"
+      ],
+      "mode": "file",
+      "allowedExtensions": [
+        ".md"
+      ],
+      "exclude": [],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "dependency-skills-root-consolidation-changelog",
+      "source": "dependencies/skills-root/CONSOLIDATION_CHANGELOG.md",
+      "captureFrom": "${DEPENDENCY:skills-root}/CONSOLIDATION_CHANGELOG.md",
+      "destinations": [
+        "${DEPENDENCY:skills-root}/CONSOLIDATION_CHANGELOG.md"
+      ],
+      "mode": "file",
+      "allowedExtensions": [
+        ".md"
+      ],
+      "exclude": [],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-shared",
+      "source": "dependencies/specforge/skills/_specforge-shared",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/_specforge-shared",
+      "destinations": [
+        "${HOME}/.claude/skills/_specforge-shared"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge",
+      "source": "dependencies/specforge/skills/specforge",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-ai-guardrails",
+      "source": "dependencies/specforge/skills/specforge-ai-guardrails",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-ai-guardrails",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-ai-guardrails"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-analytics-metrics",
+      "source": "dependencies/specforge/skills/specforge-analytics-metrics",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-analytics-metrics",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-analytics-metrics"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-architecture",
+      "source": "dependencies/specforge/skills/specforge-architecture",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-architecture",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-architecture"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-assurance-architecture",
+      "source": "dependencies/specforge/skills/specforge-assurance-architecture",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-assurance-architecture",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-assurance-architecture"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-blast-radius-change-risk",
+      "source": "dependencies/specforge/skills/specforge-blast-radius-change-risk",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-blast-radius-change-risk",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-blast-radius-change-risk"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-business-gtm-monetization",
+      "source": "dependencies/specforge/skills/specforge-business-gtm-monetization",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-business-gtm-monetization",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-business-gtm-monetization"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-compliance-policy",
+      "source": "dependencies/specforge/skills/specforge-compliance-policy",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-compliance-policy",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-compliance-policy"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-cost-capacity-performance",
+      "source": "dependencies/specforge/skills/specforge-cost-capacity-performance",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-cost-capacity-performance",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-cost-capacity-performance"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-data-contracts",
+      "source": "dependencies/specforge/skills/specforge-data-contracts",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-data-contracts",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-data-contracts"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-decision-advisor",
+      "source": "dependencies/specforge/skills/specforge-decision-advisor",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-decision-advisor",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-decision-advisor"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-dependency-supply-chain",
+      "source": "dependencies/specforge/skills/specforge-dependency-supply-chain",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-dependency-supply-chain",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-dependency-supply-chain"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-discovery-interview",
+      "source": "dependencies/specforge/skills/specforge-discovery-interview",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-discovery-interview",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-discovery-interview"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-engineering-rules",
+      "source": "dependencies/specforge/skills/specforge-engineering-rules",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-engineering-rules",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-engineering-rules"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-environment-config-secrets",
+      "source": "dependencies/specforge/skills/specforge-environment-config-secrets",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-environment-config-secrets",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-environment-config-secrets"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-glossary-taxonomy",
+      "source": "dependencies/specforge/skills/specforge-glossary-taxonomy",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-glossary-taxonomy",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-glossary-taxonomy"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-implementation-artifacts",
+      "source": "dependencies/specforge/skills/specforge-implementation-artifacts",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-implementation-artifacts",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-implementation-artifacts"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-implementation-task-plan",
+      "source": "dependencies/specforge/skills/specforge-implementation-task-plan",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-implementation-task-plan",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-implementation-task-plan"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-operations-runbooks",
+      "source": "dependencies/specforge/skills/specforge-operations-runbooks",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-operations-runbooks",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-operations-runbooks"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-platform-feature-contracts",
+      "source": "dependencies/specforge/skills/specforge-platform-feature-contracts",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-platform-feature-contracts",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-platform-feature-contracts"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-privacy-compliance",
+      "source": "dependencies/specforge/skills/specforge-privacy-compliance",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-privacy-compliance",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-privacy-compliance"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-product-scope",
+      "source": "dependencies/specforge/skills/specforge-product-scope",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-product-scope",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-product-scope"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-quality-release-observability",
+      "source": "dependencies/specforge/skills/specforge-quality-release-observability",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-quality-release-observability",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-quality-release-observability"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-repo-audit",
+      "source": "dependencies/specforge/skills/specforge-repo-audit",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-repo-audit",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-repo-audit"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-reviewer",
+      "source": "dependencies/specforge/skills/specforge-reviewer",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-reviewer",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-reviewer"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-security-threat-model",
+      "source": "dependencies/specforge/skills/specforge-security-threat-model",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-security-threat-model",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-security-threat-model"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-trust-safety-abuse",
+      "source": "dependencies/specforge/skills/specforge-trust-safety-abuse",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-trust-safety-abuse",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-trust-safety-abuse"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
+      "id": "skill-specforge-ux-ui-content",
+      "source": "dependencies/specforge/skills/specforge-ux-ui-content",
+      "captureFrom": "${DEPENDENCY:specforge}/skills/specforge-ux-ui-content",
+      "destinations": [
+        "${HOME}/.claude/skills/specforge-ux-ui-content"
+      ],
+      "mode": "tree",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".py"
+      ],
+      "exclude": [
+        ".venv",
+        "data",
+        ".pytest_cache"
+      ],
+      "detectLocalOnly": true,
+      "ownership": "canonical",
+      "allowRootLink": false,
+      "allowInstalledRootLink": true,
+      "renderContentTokens": true,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
+    },
+    {
       "id": "dependency-council-studio",
       "source": "dependencies/llm-council",
       "captureFrom": "${DEPENDENCY:council-studio}",

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Data Contracts"
+  short_description: "Generate or update data contracts documentation."
+  default_prompt: "Use $specforge-data-contracts for this documentation task."
+policy:
+  allow_implicit_invocation: true

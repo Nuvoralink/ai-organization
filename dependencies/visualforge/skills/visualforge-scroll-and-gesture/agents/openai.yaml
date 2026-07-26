@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Scroll and Gesture"
+  short_description: "Scroll physics, snap, parallax, scroll-driven animation, custom scrollbars, gestures."
+  default_prompt: "Use $visualforge-scroll-and-gesture for this product:"
+policy:
+  allow_implicit_invocation: true

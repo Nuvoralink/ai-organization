@@ -1,0 +1,11 @@
+{
+  "description": "VF-FIND-046: full-mode fixture that exercises scan_slop. The fixture contains the slop-candidate word 'modern' in prose. With mode=full, run_full_checks invokes scan_slop (which is NOT called in mid-run mode). Closes the coverage gap surfaced by golden-mutation-trust-harness mutation 3 in VF-FIND-045: previously, dropping a SLOP_WORDS value caused no self-test failure because no fixture exercised slop scan. Now sabotaging scan_slop fails exactly this fixture.",
+  "mode": "full",
+  "errors_include": [],
+  "errors_exclude": [],
+  "warnings_include": [
+    "Slop-candidate 'modern'",
+    "brand-identity.md"
+  ],
+  "warnings_exclude": []
+}

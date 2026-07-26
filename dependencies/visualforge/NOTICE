@@ -1,0 +1,12 @@
+VisualForge
+
+A skill suite for generating opinionated, detail-obsessed design systems for
+Codex and Claude Code.
+
+Companion to Specforge (https://github.com/specforge). Specforge handles
+product, architecture, and security documentation. VisualForge handles design.
+
+The two integrate when both are present: shared decision-log ID space,
+namespaced output directories (docs/app-plan/ for Specforge, docs/design-system/
+for VisualForge), and Specforge's basic UI output is treated as input context
+that VisualForge can replace with a deeper design system.

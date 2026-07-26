@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Design Pressure Test"
+  short_description: "Post-generation red team: heuristic evaluation, persona walkthroughs, edge / failure / adversarial sweeps, cognitive load, feasibility, future-shift robustness."
+  default_prompt: "Use $visualforge-design-pressure-test for this product:"
+policy:
+  allow_implicit_invocation: true

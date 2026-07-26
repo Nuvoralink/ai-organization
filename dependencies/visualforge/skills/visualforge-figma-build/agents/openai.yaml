@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Figma Build"
+  short_description: "Build the design system in Figma via MCP, with importable bundle as fallback."
+  default_prompt: "Use $visualforge-figma-build for this product:"
+policy:
+  allow_implicit_invocation: true

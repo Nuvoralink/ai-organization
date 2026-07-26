@@ -1,0 +1,6 @@
+interface:
+  display_name: "Ai Guardrails"
+  short_description: "Generate or update ai guardrails documentation."
+  default_prompt: "Use $specforge-ai-guardrails for this documentation task."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Frontend Implementation Contract"
+  short_description: "CSS architecture, asset strategy, performance budgets, theming, framework specifics, build pipeline."
+  default_prompt: "Use $visualforge-frontend-contract for this product:"
+policy:
+  allow_implicit_invocation: true

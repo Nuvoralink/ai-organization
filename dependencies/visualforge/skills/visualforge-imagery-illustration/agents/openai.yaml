@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Imagery and Illustration"
+  short_description: "Photography treatment, illustration style, AI imagery rules, aspect ratios, placeholders, empty-state imagery."
+  default_prompt: "Use $visualforge-imagery-illustration for this product:"
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Accessibility"
+  short_description: "WCAG 2.2 target, keyboard contract, screen reader contract, focus management, contrast, touch targets, reduced motion, high contrast."
+  default_prompt: "Use $visualforge-accessibility for this product:"
+policy:
+  allow_implicit_invocation: true

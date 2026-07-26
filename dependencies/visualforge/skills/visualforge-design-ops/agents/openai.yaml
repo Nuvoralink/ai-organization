@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Design Ops"
+  short_description: "Storybook, token pipeline, design review workflow, versioning, deprecation, design system health metrics."
+  default_prompt: "Use $visualforge-design-ops for this product:"
+policy:
+  allow_implicit_invocation: true

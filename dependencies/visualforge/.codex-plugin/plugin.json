@@ -1,0 +1,49 @@
+{
+  "name": "visualforge",
+  "version": "1.8.0",
+  "description": "Turn an app idea, Specforge output, or existing repo into a detail-obsessed, evidence-backed design system: tokens, components, motion, accessibility, surface treatments, micro-interactions, Figma artifacts, and frontend implementation contract.",
+  "skills": "./skills/",
+  "author": {
+    "name": "VisualForge contributors"
+  },
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "skills",
+    "design-system",
+    "ui-ux",
+    "frontend",
+    "figma",
+    "design-tokens",
+    "accessibility",
+    "motion-design",
+    "component-library",
+    "design-research",
+    "brand-identity",
+    "micro-interactions",
+    "design-qa",
+    "anti-slop-design",
+    "drift-prevention"
+  ],
+  "category": "Designer & Developer Tools",
+  "interface": {
+    "displayName": "VisualForge",
+    "shortDescription": "Detail-obsessed design system, tokens, components, motion, and Figma artifacts from intent or repo.",
+    "longDescription": "VisualForge generates a complete, opinionated design system from product intent or an existing repo. Every decision is specific, evidence-backed, and recorded with options, rationale, and reversal triggers. Outputs include markdown design docs, design tokens (JSON/CSS/TS), Figma file build via MCP (with JSON fallback), and agent rules that prevent drift across future contributors.",
+    "developerName": "VisualForge contributors",
+    "category": "Designer & Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use VisualForge to generate a complete design system for this app idea",
+      "Use VisualForge to upgrade the design from these Specforge docs",
+      "Use VisualForge to audit this repo and produce an ideal design plus drift report",
+      "Use VisualForge to build the design system in Figma using MCP"
+    ],
+    "brandColor": "#0B1020",
+    "screenshots": []
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "description": "VF-FIND-038: design-pressure-test-report.md has Pass L but is missing the Visual-direction critic and React-product-fit critic rows. The check must fire with both names.",
+  "mode": "mid-run",
+  "errors_include": [],
+  "warnings_include": [
+    "VF-FIND-038: design-pressure-test-report.md Pass L missing reviewer",
+    "Visual-direction critic",
+    "React-product-fit critic"
+  ],
+  "warnings_exclude": [],
+  "verdict_must_be": "PASS"
+}

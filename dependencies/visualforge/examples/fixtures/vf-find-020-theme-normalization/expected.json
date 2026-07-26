@@ -1,0 +1,12 @@
+{
+  "description": "VF-FIND-020: DEC-300 cited with normalization-resistant phrasings (personas/binding/persona binding) — should NOT warn. DEC-400 cited with genuinely disjoint themes — SHOULD warn. If theme normalization breaks, DEC-300 fires; if check_decision_id_singleton is sabotaged, DEC-400 doesn't fire.",
+  "mode": "mid-run",
+  "errors_include": [],
+  "errors_exclude": [],
+  "warnings_include": [
+    "DEC-400 cited with disjoint parenthetical themes"
+  ],
+  "warnings_exclude": [
+    "DEC-300 cited with disjoint parenthetical themes"
+  ]
+}

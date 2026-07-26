@@ -1,0 +1,24 @@
+{
+  "name": "hormozi-local-marketplace",
+  "description": "Local directory marketplace exposing the Hormozi offer + lead-generation engine.",
+  "owner": {
+    "name": "Amin Sharifkhani"
+  },
+  "plugins": [
+    {
+      "name": "hormozi",
+      "source": ".",
+      "description": "Alex Hormozi's $100M Offers + $100M Leads as an orchestrated skill engine — build Grand Slam Offers, engineer lead magnets, and design Core-Four lead-generation plans for any product.",
+      "version": "0.1.0",
+      "category": "marketing",
+      "keywords": [
+        "marketing",
+        "offers",
+        "grand-slam-offer",
+        "lead-generation",
+        "hormozi",
+        "sales"
+      ]
+    }
+  ]
+}

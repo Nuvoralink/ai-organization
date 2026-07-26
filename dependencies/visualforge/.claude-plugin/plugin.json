@@ -1,0 +1,18 @@
+{
+  "name": "visualforge",
+  "version": "1.8.0",
+  "description": "Detail-obsessed design system generator: from product intent or repo to tokens, components, motion, micro-interactions, Figma artifacts, and frontend implementation contract.",
+  "author": {
+    "name": "VisualForge contributors"
+  },
+  "license": "MIT",
+  "keywords": [
+    "design-system",
+    "ui-ux",
+    "frontend",
+    "figma",
+    "design-tokens",
+    "accessibility",
+    "motion-design"
+  ]
+}

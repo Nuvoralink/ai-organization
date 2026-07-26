@@ -11,7 +11,8 @@
 *.db
 credentials*
 secrets*
-tokens*
+# Root-level machine token state only; nested source files such as validators/tokens.py remain reviewable.
+/tokens*
 sessions/
 history/
 logs/

@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Brand Identity"
+  short_description: "Brand personality, mood, color philosophy, type philosophy, illustration/imagery style, voice direction."
+  default_prompt: "Use $visualforge-brand-identity for this product:"
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Engineering Rules"
+  short_description: "Generate or update engineering rules documentation."
+  default_prompt: "Use $specforge-engineering-rules for this documentation task."
+policy:
+  allow_implicit_invocation: true

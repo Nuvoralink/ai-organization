@@ -1,0 +1,6 @@
+interface:
+  display_name: "Security Threat Model"
+  short_description: "Generate or update security threat model documentation."
+  default_prompt: "Use $specforge-security-threat-model for this documentation task."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,10 @@
+{
+  "description": "VF-FIND-040: auth-flows.md exists but does not cite state-page-patterns.md. The check must fire.",
+  "mode": "mid-run",
+  "errors_include": [],
+  "warnings_include": [
+    "VF-FIND-040: auth-flows.md does not cite state-page-patterns.md"
+  ],
+  "warnings_exclude": [],
+  "verdict_must_be": "PASS"
+}

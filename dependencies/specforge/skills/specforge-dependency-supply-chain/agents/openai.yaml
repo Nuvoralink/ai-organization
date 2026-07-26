@@ -1,0 +1,4 @@
+version: 1
+name: specforge-dependency-supply-chain
+invocation:
+  default_prompt: "Use $specforge-dependency-supply-chain to create or update its docs/app-plan document."

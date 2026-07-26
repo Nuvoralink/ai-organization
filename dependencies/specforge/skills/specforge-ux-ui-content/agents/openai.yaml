@@ -1,0 +1,6 @@
+interface:
+  display_name: "Ux Ui Content"
+  short_description: "Generate or update ux ui content documentation."
+  default_prompt: "Use $specforge-ux-ui-content for this documentation task."
+policy:
+  allow_implicit_invocation: true

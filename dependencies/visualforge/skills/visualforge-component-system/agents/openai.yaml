@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Component System"
+  short_description: "Full component inventory with variants, states, slots, props, bound tokens, accessibility contract, and animation behavior per component."
+  default_prompt: "Use $visualforge-component-system for this product:"
+policy:
+  allow_implicit_invocation: true

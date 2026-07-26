@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — Design Tokens"
+  short_description: "Full token system — color, type, spacing, shadow, motion, radius, breakpoint — in JSON / CSS / TS / Figma formats."
+  default_prompt: "Use $visualforge-design-tokens for this product:"
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,4 @@
+version: 1
+name: specforge-operations-runbooks
+invocation:
+  default_prompt: "Use $specforge-operations-runbooks to create or update its docs/app-plan document."

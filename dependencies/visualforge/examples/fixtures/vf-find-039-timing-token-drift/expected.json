@@ -1,0 +1,13 @@
+{
+  "description": "VF-FIND-039: motion-design.md declares `duration.fast` as 120ms but micro-interactions.md redeclares it as 150ms. Timing-token drift warning must fire.",
+  "mode": "mid-run",
+  "errors_include": [],
+  "warnings_include": [
+    "VF-FIND-039: timing-token drift",
+    "duration.fast",
+    "150ms",
+    "120ms"
+  ],
+  "warnings_exclude": [],
+  "verdict_must_be": "PASS"
+}

@@ -1,0 +1,6 @@
+version: 1
+openai:
+  short_description: "Source-of-truth, decision authority, validation, and docs lifecycle for high-risk app claims."
+  invocation_examples:
+    - "Use $specforge-assurance-architecture to map source-of-truth risks for this app."
+    - "Build the assurance extension for dashboards, exports, and role-based workflow status."

@@ -1,0 +1,9 @@
+{
+  "description": "VF-FIND-015: DEC-210 is owned by Mallory but cited as 'Alex anti-persona'. Should FAIL with persona-DEC misattribution.",
+  "mode": "mid-run",
+  "errors_include": [
+    "Persona-DEC misattribution"
+  ],
+  "errors_exclude": [],
+  "warnings_include": []
+}

@@ -1,0 +1,9 @@
+{
+  "description": "VF-FIND-010: DEC-999 cited but never defined and not annotated as forward-ref/Phase N/capability-pending/Specforge. Should FAIL.",
+  "mode": "mid-run",
+  "errors_include": [
+    "Dangling cross-cite DEC-999"
+  ],
+  "errors_exclude": [],
+  "warnings_include": []
+}

@@ -1,0 +1,9 @@
+{
+  "description": "VF-FIND-001: same DEC-300 defined as `### DEC-300` headline in two files. Cross-tree dupe should FAIL.",
+  "mode": "mid-run",
+  "errors_include": [
+    "Cross-tree duplicate DEC-300"
+  ],
+  "errors_exclude": [],
+  "warnings_include": []
+}

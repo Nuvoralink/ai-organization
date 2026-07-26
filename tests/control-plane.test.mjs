@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
+  classifyTrackedScope,
   computeInstalledTreeDigest,
   parseControlPlaneArgs,
   runCapture,
@@ -393,11 +394,59 @@ test('Proves: allowed-extension overlay files require an explicit reviewed regis
   assert.deepEqual(approved.files.at(-1), { path: copiedSource, class: 'project-orchestration-overlay' });
 });
 
+test('Proves: ORG-BOUNDARY-DEPENDENCY-001; Test type: source-shape boundary; Surface: tracked dependency mirrors; Authority: orchestration dependency classifier; Killer mutation: remove an admitted marketplace format or broaden exact PDF/TSX assets to arbitrary dependency binaries/application source; Gated command: npm test', () => {
+  const portableDependencyFiles = [
+    'dependencies/specforge/skills/specforge/SKILL.md',
+    'dependencies/specforge/.agents/skills/specforge/openai.yaml',
+    'dependencies/specforge/scripts/validate.py',
+    'dependencies/visualforge/.codex-plugin/plugin.json',
+    'dependencies/visualforge/examples/fixtures/_base/.visualforge.lock',
+    'dependencies/visualforge/examples/fixtures/vf-find-025-wrapper-semantic-drift/app/sign-in/page.tsx',
+    'dependencies/marketforge/Marketing Guide V3.pdf',
+    'dependencies/hormozi/LICENSE',
+  ];
+  for (const relative of portableDependencyFiles) {
+    assert.equal(classifyTrackedScope(relative), 'orchestration-dependency', relative);
+  }
+  for (const relative of [
+    'dependencies/marketforge/unreviewed-guide.pdf',
+    'dependencies/visualforge/application/page.tsx',
+    'dependencies/specforge/bin/runner.exe',
+  ]) {
+    assert.equal(classifyTrackedScope(relative), undefined, relative);
+  }
+});
+
 test('Proves: capture rejects machine-specific paths before writes; Test type: portability mutation; Surface: capture; Authority: tokenized roots; Killer mutation: import a C drive path; Gated command: npm test', () => {
   const f = fixture();
   fs.writeFileSync(path.join(f.home, '.claude', 'rules', 'unsafe.md'), `Tool: ${['C:', 'dev', 'Some Tool'].join('\\')}\n`);
   assert.throws(() => runCapture({ ...f, dryRun: false }), /Machine-specific absolute path refused/u);
   assert.equal(fs.existsSync(path.join(f.repoRoot, 'canonical', 'rules', 'unsafe.md')), false);
+});
+
+test('Proves: ORG-CAPTURE-PORTABILITY-001; Test type: registered-path round trip; Surface: dependency capture and installed parity; Authority: root registry plus manifest token-render contract; Killer mutation: stop inverse-tokenizing a registered path, tokenize an unregistered path, or allow tokenization while install rendering is disabled; Gated command: npm test', () => {
+  const f = fixture();
+  const installed = path.join(f.home, '.claude', 'rules', 'portable.md');
+  const registeredHome = f.home;
+  const alternateSeparatorHome = f.home.replaceAll('\\', '/');
+  fs.writeFileSync(installed, `Exact ${registeredHome}\\.claude\\rules\nAlternate ${alternateSeparatorHome}/.claude/rules\n`);
+  f.manifest.mappings[0].tokenizeRegisteredPathsOnCapture = true;
+  f.manifest.mappings[0].renderContentTokens = true;
+
+  const operations = runCapture({ ...f, dryRun: false });
+  assert.equal(operations.length, 1);
+  assert.equal(
+    fs.readFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'portable.md'), 'utf8'),
+    'Exact ${HOME}\\.claude\\rules\nAlternate ${HOME|forward-slash}/.claude/rules\n',
+  );
+  assert.deepEqual(runCheck(f), []);
+
+  fs.writeFileSync(installed, `See ${['C:', 'dev', 'unregistered', 'private', 'rules'].join('/')}\n`);
+  assert.throws(() => runCapture({ ...f, dryRun: true, updateExisting: true }), /Machine-specific absolute path refused/u);
+
+  f.manifest.mappings[0].renderContentTokens = false;
+  assert.ok(validateManifest(f.manifest, f.repoRoot, f.roots).some((message) =>
+    message === 'Capture path tokenization requires rendered install parity: claude-rules'));
 });
 
 test('Proves: overlapping destination roots cannot race; Test type: collision mutation; Surface: manifest; Authority: destination planner; Killer mutation: nest one managed destination under another; Gated command: npm test', () => {

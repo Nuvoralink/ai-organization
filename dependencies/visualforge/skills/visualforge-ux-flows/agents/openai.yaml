@@ -1,0 +1,6 @@
+interface:
+  display_name: "VisualForge — UX Flows"
+  short_description: "User journey maps, task flows, wireframe-level screen specs, every state path."
+  default_prompt: "Use $visualforge-ux-flows for this product:"
+policy:
+  allow_implicit_invocation: true
