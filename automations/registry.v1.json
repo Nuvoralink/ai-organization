@@ -14,6 +14,17 @@
       "prompt": "Read-only biweekly universal orchestration backflow audit. Compare tracked orchestration structures added or materially improved in ${PROJECT:auxara-dialer} and ${PROJECT:coachai} during the prior 14 days against this canonical private control-plane checkout and its installed global derivatives under ${HOME}. Inspect actual diffs and artifacts, not status summaries. Check whether each reusable project improvement is already represented in the canonical core, project overlays, agent registry, rules, hooks, lifecycle governor, guardrails, gates, skills, prompts, automation specs, schemas, and mutation tests. Distinguish project-specific product policy from genuinely universal structure; deduplicate against the canonical repository and state the strongest argument against each promotion. Also detect the inverse: a canonical change missing from either project overlay or installed project copy. Return at most five evidence-backed promotion or propagation candidates with source file, canonical destination, affected overlays, why universal, why not already covered, and the smallest safe promotion. If nothing qualifies, say none. Never inspect credentials, tokens, session logs, .env files, secret stores, customer/provider data, transcripts, recordings, histories, caches, build output, or raw telemetry payloads. Do not edit any repo or global file, create or switch branches, commit, push, open or modify issues or pull requests, merge, deploy, publish, delete, purchase, mutate production, or send external messages."
     },
     {
+      "id": "universal-weekday-control-plane-drift-alarm",
+      "name": "Universal weekday control-plane drift alarm",
+      "scope": "organization",
+      "rrule": "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0",
+      "reasoningTier": "low",
+      "mode": "read-only",
+      "activation": "recommend-only",
+      "targetRoot": "${PROJECT:control-plane}",
+      "prompt": "Read-only weekday control-plane parity alarm. Run `node scripts/control-check-notify.mjs` from the canonical control-plane checkout and return its portable metadata report. On a non-zero result, recommend inspection and reconciliation of the named mapping-relative findings; never auto-capture or install. Do not edit files, mutate git refs, enable or modify scheduled tasks, open or modify issues or pull requests, merge, deploy, publish, delete, purchase, mutate production, or send external messages."
+    },
+    {
       "id": "project-daily-orchestration-drift",
       "scope": "template",
       "cadence": "weekdays",
