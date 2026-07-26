@@ -15,6 +15,12 @@ paraphrase. Runs after assembly, before delivery. Read `../_hormozi-shared/refer
    result for *this* product.
 3. **Fabrication** — a statistic, benchmark, price, or $ value with no basis and no `<placeholder>`.
 4. **Generic** — the output would read identically for an unrelated product; the avatar isn't specific.
+4a. **Category copy in a HOOK** (attention lines only, not body copy) — a call-out, hook, opener or stop-them headline names a CATEGORY
+   ("busy agents", "overweight people", "growing teams") or uses lingo a reader can smell
+   ("streamline", "maximise", "struggling with", "take it to the next level") instead of a concrete
+   MOMENT the prospect lived recently. Per `moment-specificity.md`: no moment list shown in the
+   output, or the chosen moment is rare rather than weekly, is a FAIL. A moment that is specific but
+   INVENTED (not grounded in transcripts/calls/real experience) is also a FAIL.
 4b. **Regurgitation** — the user supplied angles/ideas and the output only polishes those: no divergent
    journey walk, no net-new angles beyond what the user brought (and no stated reason why none exist).
    The engine's divergent pass (rubric §2) is mandatory, not optional when the user "already has ideas."

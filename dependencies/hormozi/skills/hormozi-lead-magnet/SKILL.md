@@ -13,6 +13,9 @@ problem it reveals. A Grand Slam Offer works for free stuff too, so make it a no
 and run the 7 steps in order — never skip or reorder. Also read `decision-and-fidelity-rubric.md` and
 `value-equation.md` (the magnet is judged on the same 4 value drivers).
 
+**Copy specificity (mandatory for name/headline):** read `../_hormozi-shared/references/moment-specificity.md` before writing the magnet name and headline. Name the MOMENT the prospect lived in the last week, not the category they belong to. Category words and marketing lingo are the fail-state; run the moment-mining procedure and show the moment list in the output.
+
+
 ## When to use
 - "Build my lead magnet", "what free thing do I give away", "make a freebie that converts", or as
   step 2 of the `hormozi-leads` chain (after the roadmap, before the channels).

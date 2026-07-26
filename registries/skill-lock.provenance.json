@@ -27,6 +27,24 @@
       "skillFolderHash": "a6d128e53b4ec0238baee751dde33bf707adb5ec",
       "installedAt": "2026-07-15T10:06:39.105Z",
       "updatedAt": "2026-07-15T10:06:39.105Z"
+    },
+    "copywriting-hooks": {
+      "source": "samber/cc-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/samber/cc-skills.git",
+      "skillPath": "skills/copywriting-hooks/SKILL.md",
+      "skillFolderHash": "af813f6ef29e9e89e5038a689deff18390126cd3",
+      "installedAt": "2026-07-26T13:51:52.149Z",
+      "updatedAt": "2026-07-26T13:51:52.149Z"
+    },
+    "copywriting-tone-of-voice-creator": {
+      "source": "samber/cc-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/samber/cc-skills.git",
+      "skillPath": "skills/copywriting-tone-of-voice-creator/SKILL.md",
+      "skillFolderHash": "1224941f8d8e078a37fc425809f55c8c81b8148c",
+      "installedAt": "2026-07-26T13:52:01.328Z",
+      "updatedAt": "2026-07-26T13:52:01.328Z"
     }
   },
   "dismissed": {

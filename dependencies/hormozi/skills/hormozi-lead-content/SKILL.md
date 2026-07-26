@@ -12,6 +12,9 @@ and free content makes every other advertising method more effective.
 **Method (authority):** `../_hormozi-shared/references/core-four.md` **§ Post Free Content**. Read it
 before running. Also read `decision-and-fidelity-rubric.md`.
 
+**Copy specificity (mandatory for Hook):** read `../_hormozi-shared/references/moment-specificity.md` before writing the content Hook. Name the MOMENT the prospect lived in the last week, not the category they belong to. Category words and marketing lingo are the fail-state; run the moment-mining procedure and show the moment list in the output.
+
+
 ## When to use
 - "How do I grow on social", "what should I post", "build my content engine", or as the content channel
   selected by `hormozi-lead-roadmap` (the recommended second channel when you have more time than money).

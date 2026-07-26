@@ -11,6 +11,9 @@ offer (or promotion / lead magnet) and refreshes fatigued names.
 **Method (authority):** `../_hormozi-shared/references/magic-naming.md`. Read it before naming.
 Also read `decision-and-fidelity-rubric.md`.
 
+**Copy specificity (mandatory for offer name):** read `../_hormozi-shared/references/moment-specificity.md` before writing the offer name. Name the MOMENT the prospect lived in the last week, not the category they belong to. Category words and marketing lingo are the fail-state; run the moment-mining procedure and show the moment list in the output.
+
+
 ## When to use
 - "Name my offer/program/promo", or as the naming step of the `build-offer` chain.
 - "My offer is fatiguing" → use the offer-fatigue change ladder in the reference.

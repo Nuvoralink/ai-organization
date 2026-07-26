@@ -12,6 +12,9 @@ fastest way to reach the most people. **Reach is guaranteed; getting your money 
 **Method (authority):** `../_hormozi-shared/references/core-four.md` **§ Paid Ads**. Read it before
 running. Also read `lead-magnet-7-step.md` (the CTA/scarcity toolkit) and `decision-and-fidelity-rubric.md`.
 
+**Copy specificity (mandatory for Call Out line):** read `../_hormozi-shared/references/moment-specificity.md` before writing the ad Call Out. Name the MOMENT the prospect lived in the last week, not the category they belong to. Category words and marketing lingo are the fail-state; run the moment-mining procedure and show the moment list in the output.
+
+
 ## When to use
 - "Run ads", "Facebook/Google/YouTube ads", "scale with paid acquisition", or the paid channel selected
   by `hormozi-lead-roadmap` (a fit when you have more money than time — learn it last, it costs what the

@@ -2295,6 +2295,10 @@
       "class": "documentation"
     },
     {
+      "path": "docs/new-machine-bootstrap.md",
+      "class": "documentation"
+    },
+    {
       "path": "docs/operations.md",
       "class": "documentation"
     },

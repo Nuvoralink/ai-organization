@@ -34,6 +34,17 @@ The engine's job is to apply Hormozi's **actual method**, not a paraphrase of it
   did NOT name, mark which are new, and rank them. The deliverable must contain net-new angles beyond
   what the user brought, or explicitly state why the journey walk produced none.
 
+## 2b. Specificity: name the moment, not the category (HOOKS ONLY)
+
+The **attention line** — an ad call-out, a content hook, a cold-outreach opener, a stop-them headline
+or offer name — must name a **moment the prospect lived recently**, not the category they belong to.
+This is a hook rule. It does NOT apply to body copy, feature lists, pricing descriptions, guarantees
+or process steps, whose job is clarity so a reader can self-select. Over-applying it makes copy
+exhausting and narrows qualification. Category words
+and marketing lingo are the tell that makes copy read as advertising and stop working.
+Run the moment-mining procedure in `moment-specificity.md` and show the moment list in the
+output. Specificity must be TRUE to their world: an invented moment is fabrication (§3).
+
 ## 3. No slop, no fabrication
 
 - No taste-words with no mechanism ("amazing", "powerful", "next-level") — Hormozi's copy is concrete

@@ -12,6 +12,9 @@ find how much outreach engages one lead, then do more. Expect a slow ramp before
 **Method (authority):** `../_hormozi-shared/references/core-four.md` **§ Cold Outreach**. Read it before
 running. Also read `lead-magnet-7-step.md` (the Big-Fast-Value magnet) and `decision-and-fidelity-rubric.md`.
 
+**Copy specificity (mandatory for opener):** read `../_hormozi-shared/references/moment-specificity.md` before writing the cold opener. Name the MOMENT the prospect lived in the last week, not the category they belong to. Category words and marketing lingo are the fail-state; run the moment-mining procedure and show the moment list in the output.
+
+
 ## When to use
 - "Cold email / cold calling / cold DMs", "reach people who've never heard of us", or the cold-outreach
   channel selected by `hormozi-lead-roadmap` (a fit when you have more money/time to spend than audience).
