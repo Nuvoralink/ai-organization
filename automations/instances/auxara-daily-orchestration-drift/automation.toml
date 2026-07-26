@@ -1,0 +1,14 @@
+version = 1
+id = "auxara-daily-orchestration-drift"
+kind = "cron"
+name = "Organization weekday orchestration drift"
+prompt = "Read-only organization-wide orchestration drift report. Inspect both C:\\dev\\Nuvo Dialer and C:\\dev\\Nuvora CoachAi. For each project, inspect live git branch/worktree status, origin divergence when safely fetchable, open GitHub PRs/issues and review/check state, current sprint/decision/architecture docs, AGENTS/CLAUDE rule wiring, lifecycle hooks, gate/workflow/template presence, and orchestration-related backlog items. Run only existing safe read-only orchestration/context/rules gates and open their raw output; if a named gate does not exist, report that fact instead of inventing one. Report evidence-backed discrepancies, blockers, stale handoffs, orphaned branches/worktrees, and exact next actions, grouped by project and deduplicated across both. Never inspect credentials, tokens, session logs, .env files, secret stores, customer or provider data, transcripts, recordings, histories, caches, build output, or raw telemetry payloads. Do not edit files, create or switch branches, commit, push, open or modify issues/PRs, merge, deploy, publish, delete, purchase, mutate production, or send external messages."
+status = "ACTIVE"
+rrule = "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=10"
+model = "gpt-5.6-terra"
+reasoning_effort = "medium"
+execution_environment = "local"
+target = { type = "project", project_id = "local-981fa41819cafa1bf63ebf558f8ea804" }
+cwds = ["C:\\dev\\Nuvo Dialer"]
+created_at = 1784043045849
+updated_at = 1784271939539

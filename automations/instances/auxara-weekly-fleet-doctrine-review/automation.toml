@@ -1,0 +1,14 @@
+version = 1
+id = "auxara-weekly-fleet-doctrine-review"
+kind = "cron"
+name = "Organization weekly fleet doctrine review"
+prompt = "Read-only organization-wide weekly fleet and doctrine review. Inspect both C:\\dev\\Nuvo Dialer and C:\\dev\\Nuvora CoachAi. Review tracked commits and merged PR/review findings from the prior seven days, project agent rules and learned-classes logs, hook/gate failures, content-free telemetry summaries if present, journey lessons, architecture blast-radius updates, decision docs, and open orchestration-related backlog rows. Inspect only safe installed global doctrine, rule, agent, skill, and bootstrap-template surfaces declared by the canonical private control-plane manifest at C:\\dev\\AI Organization Control Plane; never search an entire home directory. Identify recurring failure classes, why introduced, why controls missed them, and the smallest reusable gate/rule/brief/test improvement. Deduplicate across both projects and existing doctrine; recommend at most three high-leverage changes and do not implement them. Never inspect credentials, tokens, session logs, raw telemetry payloads, .env files, secret stores, customer/provider data, transcripts, recordings, histories, caches, or build output. Do not edit files, create or switch branches, commit, push, open or modify issues/PRs, merge, deploy, publish, delete, purchase, mutate production, or send external messages."
+status = "ACTIVE"
+rrule = "FREQ=WEEKLY;BYDAY=MO;BYHOUR=9;BYMINUTE=25"
+model = "gpt-5.6-terra"
+reasoning_effort = "high"
+execution_environment = "local"
+target = { type = "project", project_id = "local-981fa41819cafa1bf63ebf558f8ea804" }
+cwds = ["C:\\dev\\Nuvo Dialer"]
+created_at = 1784043052778
+updated_at = 1784271949791

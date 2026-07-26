@@ -50,6 +50,42 @@
       "sensitivity": "orchestration-only"
     },
     {
+      "id": "global-codex-memories",
+      "family": "curated-memory",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "global/codex/memories",
+      "destinations": [
+        "${HOME}/.codex/memories"
+      ],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only"
+    },
+    {
+      "id": "codex-automation-instances",
+      "family": "automation-instance",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "automations/instances",
+      "destinations": [
+        "${HOME}/.codex/automations"
+      ],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only"
+    },
+    {
+      "id": "codex-retired-skills",
+      "family": "retired-skill-archive",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills-retired",
+      "destinations": [
+        "${HOME}/.codex/skills/_retired"
+      ],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only"
+    },
+    {
       "id": "skill-ai-decision-contract-builder",
       "family": "skill",
       "lifecycle": "active",

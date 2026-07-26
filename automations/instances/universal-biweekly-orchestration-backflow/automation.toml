@@ -1,0 +1,14 @@
+version = 1
+id = "universal-biweekly-orchestration-backflow"
+kind = "cron"
+name = "Universal biweekly orchestration backflow"
+prompt = "Read-only biweekly universal orchestration backflow audit. Compare tracked orchestration structures added or materially improved in C:\\dev\\Nuvo Dialer and C:\\dev\\Nuvora CoachAi during the prior 14 days against the canonical private control-plane checkout at C:\\dev\\AI Organization Control Plane and its installed global derivatives under C:\\Users\\amins\\.claude, C:\\Users\\amins\\.codex, and C:\\Users\\amins\\.agents. Inspect actual diffs and artifacts, not status summaries. Check whether each reusable project improvement is already represented in the canonical core, project overlays, agent registry, rules, hooks, lifecycle governor, guardrails, gates, skills, prompts, automation specs, schemas, and mutation tests. Distinguish project-specific product policy from genuinely universal structure; deduplicate against the canonical repository and state the strongest argument against each promotion. Also detect the inverse: a canonical change missing from either project overlay or installed project copy. Return at most five evidence-backed promotion or propagation candidates with source file, canonical destination, affected overlays, why universal, why not already covered, and the smallest safe promotion. If nothing qualifies, say none. Never inspect credentials, tokens, session logs, .env files, secret stores, customer/provider data, transcripts, recordings, histories, caches, build output, or raw telemetry payloads. Do not edit any repo or global file, create or switch branches, commit, push, open or modify issues or pull requests, merge, deploy, publish, delete, purchase, mutate production, or send external messages."
+status = "ACTIVE"
+rrule = "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO;BYHOUR=10;BYMINUTE=0"
+model = "gpt-5.6-terra"
+reasoning_effort = "high"
+execution_environment = "local"
+target = { type = "project", project_id = "local-981fa41819cafa1bf63ebf558f8ea804" }
+cwds = ["C:\\dev\\Nuvo Dialer"]
+created_at = 1784112567281
+updated_at = 1784264467283

@@ -51,6 +51,22 @@
       "class": "presentation-artifact"
     },
     {
+      "path": "automations/instances/auxara-daily-orchestration-drift/automation.toml",
+      "class": "automation-instance"
+    },
+    {
+      "path": "automations/instances/auxara-daily-orchestration-drift/memory.md",
+      "class": "automation-instance"
+    },
+    {
+      "path": "automations/instances/auxara-weekly-fleet-doctrine-review/automation.toml",
+      "class": "automation-instance"
+    },
+    {
+      "path": "automations/instances/universal-biweekly-orchestration-backflow/automation.toml",
+      "class": "automation-instance"
+    },
+    {
       "path": "automations/registry.v1.json",
       "class": "automation-specification"
     },
@@ -2339,6 +2355,70 @@
       "class": "global-orchestration"
     },
     {
+      "path": "global/codex/memories/MEMORY.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/instructions.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/2026-05-14T12-51-12-coachai-spider-pass.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/2026-05-14T12-56-12-prompt-testing-ladder.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/2026-07-06-133905-auxara-s13-config-authority.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/2026-07-06-153005-orchestrator-microfix-rule.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/2026-07-06-153028-orchestrator-microfix-rule.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/2026-07-06-auxara-placeholder-authority-retirement.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/2026-07-06-auxara-s13-ai-disposition-and-next-slice.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/2026-07-06-auxara-s13-doc-cleanup-config-authority-plan.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/2026-07-06-frontend-mockup-threshold-rule.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/2026-07-06T19-29-20-auxara-s13-list-ai-remediation.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/2026-07-06T19-38-58-auxara-s13-remediation.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/2026-07-08T08-15-00-s13-non-mock-closure.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/2026-07-08T09-41-17-s13-recovery-hardening.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/memory_summary.md",
+      "class": "global-orchestration"
+    },
+    {
       "path": "overlays/auxara-dialer/automations/project-automations.v1.json",
       "class": "project-orchestration-overlay"
     },
@@ -3033,6 +3113,22 @@
     {
       "path": "scripts/refresh-tracked-scope.mjs",
       "class": "control-plane-tooling"
+    },
+    {
+      "path": "skills-retired/README.md",
+      "class": "retired-skill"
+    },
+    {
+      "path": "skills-retired/ai-build-lessons-capture/SKILL.md",
+      "class": "retired-skill"
+    },
+    {
+      "path": "skills-retired/gpt-tasteskill/SKILL.md",
+      "class": "retired-skill"
+    },
+    {
+      "path": "skills-retired/soft-skill/SKILL.md",
+      "class": "retired-skill"
     },
     {
       "path": "skills/ai-decision-contract-builder/SKILL.md",
