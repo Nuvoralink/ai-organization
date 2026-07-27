@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { effectiveRoles, validateProjectRoleExtensionSemantics } from '../core/roles/agent-role-registry.mjs';
 import { validateJsonAgainstSchema } from '../core/schema/validate-json-schema.mjs';
+import { validateAgentRoleRegistries } from '../scripts/lib/control-plane.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const universalSchema = path.join(repoRoot, 'schemas', 'agent-role-registry.v1.schema.json');
@@ -84,4 +86,23 @@ test('Proves: effectiveRoles removes each superseded universal role and preserve
     effectiveRoles(universal, coexistence).map((entry) => entry.id),
     ['security-auditor', 'claude-frontend-implementer', 'doctrine-drift-auditor'],
   );
+});
+
+test('Proves: the seeded dialer and CoachAI project registries validate through the control-plane registry gate; Test type: canonical integration; Surface: project role registries; Authority: control-plane validator; Killer mutation: remove a required output, duplicate a project id, or point extends at an absent universal role; Gated command: control:validate and npm test', () => {
+  assert.deepEqual(validateAgentRoleRegistries(repoRoot), []);
+});
+
+test('Proves: the dialer specialization replaces generic security and frontend implementation while CoachAI retains universal security; Test type: canonical merge integration; Surface: effective project fleets; Authority: universal plus project registries; Killer mutation: ignore supersedes_universal or apply one project extension globally; Gated command: npm test', () => {
+  const canonicalUniversal = JSON.parse(fs.readFileSync(path.join(repoRoot, 'registries', 'agent-roles.v1.json'), 'utf8'));
+  const dialer = JSON.parse(fs.readFileSync(path.join(repoRoot, 'overlays', 'auxara-dialer', 'control-plane', 'registries', 'agent-roles.project.v1.json'), 'utf8'));
+  const coachai = JSON.parse(fs.readFileSync(path.join(repoRoot, 'overlays', 'coachai', 'control-plane', 'registries', 'agent-roles.project.v1.json'), 'utf8'));
+  const dialerIds = effectiveRoles(canonicalUniversal, dialer).map((entry) => entry.id);
+  const coachaiIds = effectiveRoles(canonicalUniversal, coachai).map((entry) => entry.id);
+
+  assert.equal(dialerIds.includes('security-auditor'), false);
+  assert.equal(dialerIds.includes('cybersecurity-auditor'), true);
+  assert.equal(dialerIds.includes('claude-frontend-implementer'), false);
+  assert.equal(dialerIds.includes('sprint-implementer'), true);
+  assert.equal(coachaiIds.includes('security-auditor'), true);
+  assert.equal(coachaiIds.includes('cybersecurity-auditor'), false);
 });

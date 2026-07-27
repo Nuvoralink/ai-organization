@@ -1,0 +1,68 @@
+{
+  "$schema": "https://nuvoralink.internal/schemas/agent-role-project-extension.v1.schema.json",
+  "version": "1.0.0",
+  "roles": [
+    {
+      "id": "ai-decision-boundary-auditor",
+      "purpose": "Audit CoachAI's semantic pipeline so grounded AI owns coaching meaning, deterministic code remains a validation backstop, bounded repair stays truthful, coaching sensitivity reaches every surface, and paid provider calls remain metered.",
+      "trigger": ["before merging analysis, prompt, semantic-judgment, scoring, coaching-generation, or paid-model changes"],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "claude",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": [
+        "AI-decision-boundary findings with file-line evidence",
+        "semantic and metering invariants checked and found clean",
+        "surfaces and files not reached",
+        "doctrine-loop findings"
+      ]
+    },
+    {
+      "id": "doctrine-drift-auditor",
+      "purpose": "Find contradictions between CoachAI code and its settled decision log, AI decision-matrix register, authority tiers, central registries, and source-of-truth maps, including contradictions between doctrine artifacts.",
+      "trigger": ["before merging behavior governed by a decision-log row, AI-matrix entry, authority tier, or central registry"],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "claude",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": [
+        "doctrine-drift findings with governing-authority quotes",
+        "doctrine artifacts and behaviors checked and found consistent",
+        "surfaces and doctrine not reached",
+        "doctrine-loop findings"
+      ]
+    },
+    {
+      "id": "source-to-screen-auditor",
+      "purpose": "Trace CoachAI's authoritative evidence and derived state through persistence, DTOs, mappers, and final surfaces while checking lifecycle safety, anti-fabrication, useful coaching, reanalysis replacement, and route-artifact parity.",
+      "trigger": ["before merging DTO, mapper, coaching-entity, persisted-derived-state, manager-surface, or visible coaching changes"],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "claude",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": [
+        "source-to-screen and lifecycle findings with file-line evidence",
+        "chains and lifecycles traced and found clean",
+        "surfaces and files not reached",
+        "doctrine-loop findings"
+      ],
+      "extends": "functionality-parity-auditor"
+    },
+    {
+      "id": "test-runner",
+      "purpose": "Run CoachAI's named verification battery as the sole local or disposable test-database user, preserve real exits and nonzero summaries, and return a compact failure diagnosis without editing.",
+      "trigger": ["after a finished CoachAI slice requires its named heavy verification battery"],
+      "mode": "verify_runtime",
+      "strength": "strongest_available",
+      "vendor_preference": "claude",
+      "incompatible_with": ["concurrent-test-db-user", "source-editor-for-same-run"],
+      "required_outputs": [
+        "verify and named-battery verdicts",
+        "real command exits",
+        "nonzero proof summary",
+        "one root cause and suggested fix per failure",
+        "doctrine-loop findings"
+      ]
+    }
+  ]
+}

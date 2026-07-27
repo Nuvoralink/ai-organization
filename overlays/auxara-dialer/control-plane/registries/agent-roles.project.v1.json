@@ -1,0 +1,94 @@
+{
+  "$schema": "https://nuvoralink.internal/schemas/agent-role-project-extension.v1.schema.json",
+  "version": "1.0.0",
+  "roles": [
+    {
+      "id": "compliance-auditor",
+      "purpose": "Audit the dialer's telephony, legal, carrier, audit-honesty, action-authority, and tenant-isolation invariants across STIR/SHAKEN, 10DLC, TCPA/CASL calling hours, DNC, recording disclosure, and ARC-006 without editing.",
+      "trigger": ["before merging work that dials, texts, records, stores prospect data, or mutates number state"],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "claude",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": [
+        "findings by severity with quoted file-line evidence",
+        "compliance and authority invariants checked and found clean",
+        "honesty clause naming unreached surfaces",
+        "doctrine-loop findings",
+        "pressure-tested fix proposals (FIX-PROVEN or FIX-PLAUSIBLE, defaulting to PLAUSIBLE)"
+      ]
+    },
+    {
+      "id": "doctrine-drift-auditor",
+      "purpose": "Find contradictions between dialer code and its settled ADRs, decision log, ARC-006 tiers, centralization registries, and source-of-truth maps, including contradictions between doctrine artifacts themselves.",
+      "trigger": ["before merging behavior governed by an ADR, decision-log row, authority tier, or central registry"],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "claude",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": [
+        "findings by severity with governing-authority quotes",
+        "doctrine artifacts and behaviors checked and found consistent",
+        "honesty clause naming unreached doctrine or code",
+        "doctrine-loop findings",
+        "pressure-tested fix proposals (FIX-PROVEN or FIX-PLAUSIBLE, defaulting to PLAUSIBLE)"
+      ]
+    },
+    {
+      "id": "cybersecurity-auditor",
+      "purpose": "Audit the internet-exposed multi-tenant dialer from an attacker's perspective across auth, CSRF, RBAC and object scope, tenant isolation and RLS, untrusted input, secrets, PII telemetry, abuse controls, provider boundaries, and dependency risk.",
+      "trigger": ["before merging auth, security, privacy, billing, upload, provider, tenant-data, or prospect-data changes"],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "claude",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": [
+        "threat-path findings with attack scenarios and evidence",
+        "cross-tenant and authorization probes",
+        "redaction and sensitive-data evidence",
+        "security passes checked and found clean",
+        "honesty clause naming unreached surfaces",
+        "doctrine-loop findings",
+        "pressure-tested fix proposals (FIX-PROVEN or FIX-PLAUSIBLE, defaulting to PLAUSIBLE)"
+      ],
+      "extends": "security-auditor",
+      "supersedes_universal": true
+    },
+    {
+      "id": "test-runner",
+      "purpose": "Run the serialized local CI-equivalent heavy gate as the sole local test-database user, preserve command-owned exit codes and nonzero test counts, and return a compact diagnosis without editing.",
+      "trigger": ["after a finished dialer slice requires the heavy local proof ladder"],
+      "mode": "verify_runtime",
+      "strength": "strongest_available",
+      "vendor_preference": "claude",
+      "incompatible_with": ["concurrent-test-db-user", "source-editor-for-same-run"],
+      "required_outputs": [
+        "real command exits",
+        "nonzero test file and test counts",
+        "compact pass-or-fail verdict",
+        "one root cause and suggested fix per failure",
+        "doctrine-loop findings"
+      ]
+    },
+    {
+      "id": "sprint-implementer",
+      "purpose": "Implement one settled bounded dialer slice completely in an isolated worktree, self-audit the actual diff, run the authorized fast gates, and return evidence to the orchestrator.",
+      "trigger": ["a settled self-contained dialer sprint slice"],
+      "mode": "implement",
+      "strength": "implementation",
+      "vendor_preference": "claude",
+      "incompatible_with": ["independent-reviewer-for-own-diff", "unapproved-visible-frontend"],
+      "required_outputs": [
+        "approved design reference for any visible frontend work",
+        "actual diff",
+        "real command exits",
+        "proof artifacts and self-audit findings",
+        "rendered evidence for any visible frontend work",
+        "unreached surfaces",
+        "doctrine-loop findings"
+      ],
+      "extends": "claude-frontend-implementer",
+      "supersedes_universal": true
+    }
+  ]
+}
