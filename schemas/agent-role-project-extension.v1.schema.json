@@ -10,6 +10,20 @@
       "const": "https://nuvoralink.internal/schemas/agent-role-project-extension.v1.schema.json"
     },
     "version": { "type": "string" },
+    "agent_file_exceptions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role_id", "source", "reason"],
+        "properties": {
+          "role_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]+$" },
+          "source": { "const": "inherited_global_agent" },
+          "reason": { "type": "string", "minLength": 10 }
+        }
+      }
+    },
     "roles": {
       "type": "array",
       "items": {

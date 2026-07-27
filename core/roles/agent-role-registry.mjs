@@ -3,6 +3,15 @@ function rolesFrom(registry, label) {
   return registry.roles;
 }
 
+function agentFileExceptionsFrom(projectExtension, problems) {
+  if (projectExtension?.agent_file_exceptions === undefined) return [];
+  if (!Array.isArray(projectExtension.agent_file_exceptions)) {
+    problems.push('Project extension agent_file_exceptions must be an array');
+    return [];
+  }
+  return projectExtension.agent_file_exceptions;
+}
+
 function replacementTarget(role, universalIds) {
   if (role.supersedes_universal !== true) return undefined;
   if (typeof role.extends === 'string') return role.extends;
@@ -14,9 +23,11 @@ export function validateProjectRoleExtensionSemantics(universal, projectExtensio
   const projectRoles = rolesFrom(projectExtension, 'project extension');
   const problems = [];
   const universalIds = new Set();
+  const universalById = new Map();
   for (const role of universalRoles) {
     if (universalIds.has(role.id)) problems.push(`Duplicate universal role id: ${role.id}`);
     universalIds.add(role.id);
+    universalById.set(role.id, role);
   }
 
   const projectIds = new Set();
@@ -41,6 +52,28 @@ export function validateProjectRoleExtensionSemantics(universal, projectExtensio
     } else if (target !== undefined) {
       if (supersededTargets.has(target)) problems.push(`Multiple project roles supersede universal role: ${target}`);
       supersededTargets.add(target);
+    }
+  }
+
+  const exceptionIds = new Set();
+  for (const exception of agentFileExceptionsFrom(projectExtension, problems)) {
+    const roleId = exception?.role_id;
+    if (typeof roleId !== 'string') {
+      problems.push('Project agent-file exception lacks a role_id');
+      continue;
+    }
+    if (exceptionIds.has(roleId)) problems.push(`Duplicate project agent-file exception: ${roleId}`);
+    exceptionIds.add(roleId);
+    if (!universalIds.has(roleId)) {
+      problems.push(`Project agent-file exception names non-universal role: ${roleId}`);
+      continue;
+    }
+    if (supersededTargets.has(roleId)) {
+      problems.push(`Project agent-file exception names superseded universal role: ${roleId}`);
+      continue;
+    }
+    if (['orchestrate', 'implement'].includes(universalById.get(roleId)?.mode)) {
+      problems.push(`Project agent-file exception is redundant for universal ${universalById.get(roleId).mode} role: ${roleId}`);
     }
   }
   return problems;

@@ -175,6 +175,24 @@
       "lock": "${HOME}/.nuvoralink-control-plane/project-locks/coachai/overlay-lock.json"
     },
     {
+      "id": "coachai-fleet-parity-gate",
+      "source": "scripts/check-fleet-parity.mjs",
+      "captureFrom": "${PROJECT:coachai}/scripts/check-fleet-parity.mjs",
+      "destinations": [
+        "${PROJECT:coachai}/scripts/check-fleet-parity.mjs"
+      ],
+      "mode": "file",
+      "ownership": "generated",
+      "allowedExtensions": [
+        ".mjs"
+      ],
+      "exclude": [],
+      "detectLocalOnly": false,
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "lock": "${HOME}/.nuvoralink-control-plane/project-locks/coachai/overlay-lock.json"
+    },
+    {
       "id": "coachai-automation-specs",
       "source": "overlays/coachai/automations",
       "captureFrom": "${PROJECT:coachai}/.ai-organization/automations",

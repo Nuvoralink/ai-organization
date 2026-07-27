@@ -175,6 +175,24 @@
       "lock": "${HOME}/.nuvoralink-control-plane/project-locks/auxara-dialer/overlay-lock.json"
     },
     {
+      "id": "auxara-fleet-parity-gate",
+      "source": "scripts/check-fleet-parity.mjs",
+      "captureFrom": "${PROJECT:auxara-dialer}/scripts/check-fleet-parity.mjs",
+      "destinations": [
+        "${PROJECT:auxara-dialer}/scripts/check-fleet-parity.mjs"
+      ],
+      "mode": "file",
+      "ownership": "generated",
+      "allowedExtensions": [
+        ".mjs"
+      ],
+      "exclude": [],
+      "detectLocalOnly": false,
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "lock": "${HOME}/.nuvoralink-control-plane/project-locks/auxara-dialer/overlay-lock.json"
+    },
+    {
       "id": "auxara-automation-specs",
       "source": "overlays/auxara-dialer/automations",
       "captureFrom": "${PROJECT:auxara-dialer}/.ai-organization/automations",

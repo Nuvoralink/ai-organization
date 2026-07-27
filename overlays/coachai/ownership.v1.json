@@ -9,6 +9,7 @@
     { "id": "coachai-agent-role-extension-registry", "mode": "generated", "destination": ".ai-organization/registries/agent-roles.project.v1.json" },
     { "id": "coachai-assurance-schemas", "mode": "generated", "destination": ".ai-organization/schemas" },
     { "id": "coachai-shared-runtime", "mode": "generated", "destination": ".ai-organization/runtime/core" },
+    { "id": "coachai-fleet-parity-gate", "mode": "generated", "destination": "scripts/check-fleet-parity.mjs" },
     { "id": "coachai-automation-specs", "mode": "generated", "destination": ".ai-organization/automations" },
     { "id": "coachai-project-readme", "mode": "generated", "destination": ".ai-organization/README.md", "sourcePath": ".ai-organization/README.md", "installMode": "file", "allowedExtensions": [".md"], "detectLocalOnly": false },
     { "id": "coachai-project-task-governor-adapter", "mode": "generated", "destination": "scripts/task-governor.mjs", "sourcePath": "scripts/task-governor.mjs", "installMode": "file", "allowedExtensions": [".mjs"], "detectLocalOnly": false },
