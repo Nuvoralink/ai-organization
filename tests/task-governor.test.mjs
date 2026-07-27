@@ -327,8 +327,15 @@ test('Proves: ORG-GOV-001; Test type: contract; Surface: TaskCreated; Authority:
   assert.match(validateTaskContract(contract(), { riskPolicy: unknownDefault }).join('\n'), /has no enforcement mapping/u);
 });
 
-test('Proves: ORG-GOV-002; Test type: golden mutation; Surface: TaskCompleted; Authority: runner evidence; Killer mutation: forge legacy booleans without a bound receipt; Gated command: npm test', () => {
+test('Proves: ORG-GOV-002; Test type: golden mutation; Surface: TaskCompleted; Authority: runner evidence; Killer mutation: forge legacy booleans without a bound receipt or serialize an omitted optional field as literal undefined; Gated command: npm test', () => {
   const generated = generateValidCompletion();
+  const persistedAttemptFile = fs
+    .readdirSync(path.join(generated.stateDirectory, 'attempts'))
+    .map((name) => path.join(generated.stateDirectory, 'attempts', name))
+    .find((file) => file.endsWith('.json'));
+  const persistedAttempt = fs.readFileSync(persistedAttemptFile, 'utf8');
+  assert.doesNotMatch(persistedAttempt, /:undefined(?:[,}])/u);
+  assert.doesNotThrow(() => JSON.parse(persistedAttempt));
   assert.deepEqual(validateCompletion(contract(), generated.evidence, generated.context), []);
   const callerAuthored = {
     task_id: 'ORG-001',
