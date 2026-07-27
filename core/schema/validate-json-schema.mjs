@@ -40,6 +40,9 @@ function walk(schema, value, location, schemaFile, cache, failures) {
     return;
   }
   for (const branch of schema.allOf ?? []) walk(branch, value, location, schemaFile, cache, failures);
+  if (schema.anyOf && !schema.anyOf.some((branch) => schemaMatches(branch, value, location, schemaFile, cache))) {
+    failures.push(`${location}: must match at least one schema`);
+  }
   if (schema.if) {
     const branch = schemaMatches(schema.if, value, location, schemaFile, cache) ? schema.then : schema.else;
     if (branch) walk(branch, value, location, schemaFile, cache, failures);
@@ -67,6 +70,9 @@ function walk(schema, value, location, schemaFile, cache, failures) {
   }
   if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
     for (const required of schema.required ?? []) if (!Object.hasOwn(value, required)) failures.push(`${location}: missing required property ${required}`);
+    if (schema.propertyNames) {
+      for (const key of Object.keys(value)) walk(schema.propertyNames, key, `${location} property ${JSON.stringify(key)}`, schemaFile, cache, failures);
+    }
     for (const [key, child] of Object.entries(value)) {
       if (schema.properties?.[key]) walk(schema.properties[key], child, `${location}.${key}`, schemaFile, cache, failures);
       else if (schema.additionalProperties === false) failures.push(`${location}: unexpected property ${key}`);

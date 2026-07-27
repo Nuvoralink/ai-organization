@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nuvoralink.internal/schemas/agent-role-project-extension.v1.schema.json",
+  "title": "Project agent role extension registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "version", "roles"],
+  "properties": {
+    "$schema": {
+      "const": "https://nuvoralink.internal/schemas/agent-role-project-extension.v1.schema.json"
+    },
+    "version": { "type": "string" },
+    "roles": {
+      "type": "array",
+      "items": {
+        "allOf": [
+          { "$ref": "agent-role-registry.v1.schema.json#/$defs/role" },
+          {
+            "type": "object",
+            "properties": {
+              "extends": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]+$" },
+              "supersedes_universal": { "type": "boolean" }
+            },
+            "propertyNames": {
+              "anyOf": [
+                { "$ref": "agent-role-registry.v1.schema.json#/$defs/rolePropertyName" },
+                { "enum": ["extends", "supersedes_universal"] }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}
