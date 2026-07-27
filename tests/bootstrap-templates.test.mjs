@@ -265,6 +265,18 @@ test('Proves: ORG-GOV-005; Test type: architecture; Surface: cross-vendor assura
   assert.match(template, /TASK_CONTRACT_JSON/u);
 });
 
+test('Proves: ORG-COORD-CLI-007; Test type: shipped-template mutation; Surface: bounded Claude dispatch brief; Authority: one brief drives prompt and coordination claim; Killer mutation: omit --brief/task_id or route the global dispatcher to a global ledger; Gated command: npm test', () => {
+  const skill = read('SKILL.md');
+  const brief = read('templates/briefs/dispatch-brief.template.md');
+  assert.match(brief, /CLAUDE_DISPATCH_BOUNDARY_JSON:\{"task_id":"<stable-task-id>"/u);
+  assert.match(brief, /both `?--prompt-file`? and.*`?--brief`?|--prompt-file and.*--brief/u);
+  assert.match(brief, /--claim-file is the mutually exclusive compatibility fallback/u);
+  assert.match(skill, /git rev-parse --show-toplevel/u);
+  assert.match(skill, /repository's installed `.ai-organization\/runtime\/core\/coordination\/` modules/u);
+  assert.match(skill, /proven `enforce` overlap refuses before spawn with exit `125`/u);
+  assert.match(skill, /child-owned exit `125` is remapped to `3`/u);
+});
+
 test('Proves: ORG-HOOK-001; Test type: mutation and path counterexample; Surface: bootstrap and overlay hook descriptors; Authority: Claude project-root hook contract; Killer mutation: restore a cwd-relative shell-form command; Gated command: npm test', () => {
   const settingsSources = [
     ['bootstrap', parseCommentedJson(read('templates/settings.json.template'))],
