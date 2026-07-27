@@ -48,6 +48,11 @@ test('CoachAI paths select semantic, DB, and supply-chain proof rather than gene
   const rootDocSelection = selectProof(process.cwd(), ['COACHING_ARCHITECTURE.md']);
   assert.ok(rootDocSelection.profiles.map((p) => p.id).includes('documentation'), 'a root-level .md must select the documentation profile');
   assert.equal(rootDocSelection.unknown.length, 0, 'a root-level .md must not fail closed as an unmapped path');
+  // Orchestration skills are managed control-plane content. Killer mutation: drop
+  // ".agents/skills/**" from organization-control and this path becomes unmapped.
+  const skillSelection = selectProof(process.cwd(), ['.agents/skills/coachai-call-audit-rca/SKILL.md']);
+  assert.ok(skillSelection.profiles.map((p) => p.id).includes('organization-control'), 'a managed orchestration skill must select organization-control proof');
+  assert.equal(skillSelection.unknown.length, 0, 'a managed orchestration skill must not fail closed as an unmapped path');
 });
 
 test('killer mutations: unknown path, failed command, and missing DB authority fail', () => {

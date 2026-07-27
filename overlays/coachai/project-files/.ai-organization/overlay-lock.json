@@ -40,7 +40,7 @@
     },
     {
       "path": ".ai-organization/proof-profiles.json",
-      "sha256": "822e014d53589b71b716ac54df87a2238f2c384f58478bb4bd86fea0b6ce0b2f"
+      "sha256": "042594609100de17bb9df2dcb2e571ec0a2a2ac2db7455e65e96b478085307a5"
     },
     {
       "path": ".ai-organization/registries/agent-roles.v1.json",
@@ -68,7 +68,7 @@
     },
     {
       "path": ".ai-organization/runtime/core/coordination/coverage.mjs",
-      "sha256": "719c5a3386686137adabfcfceec7fb257e1050636b7f4192a7d46686157e74da"
+      "sha256": "7f7b38f923becfcce3c40ebe30d9bdcd9df82da4adb0df69ef9429fcdec2ba16"
     },
     {
       "path": ".ai-organization/runtime/core/coordination/dependencyGraph.mjs",
@@ -116,7 +116,7 @@
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/lifecycle-controller.mjs",
-      "sha256": "b3388c78ac8261545bcb2974372873f73ee387f9f43565a9e9aa228402f6ffb4"
+      "sha256": "c2fd23ce28b794e5b5b705ca7b6533550f01408c95fd9cb08ab0f515e5557a44"
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/run-evidence-integrity-mutation.mjs",
@@ -168,7 +168,7 @@
     },
     {
       "path": ".claude/agents/adversarial-reviewer.md",
-      "sha256": "b7c78e0da32a59bf1939d1285fd779dbf9670fc56de961dc27fc3fb3e92f8368"
+      "sha256": "df62773147191fd827510d44bb39ba4b4a5f883a9552af228ba8d7f60ca80f13"
     },
     {
       "path": ".claude/agents/ai-decision-boundary-auditor.md",
@@ -180,11 +180,11 @@
     },
     {
       "path": ".claude/agents/functionality-parity-auditor.md",
-      "sha256": "263ae949e3a31b4855450268ccc0eafecf406c519256d83c572c3c54e2d23e9d"
+      "sha256": "5a6db3f0254153e814d007e7d1d708cccb30fc1fae73b8ac999c1e2704e6e751"
     },
     {
       "path": ".claude/agents/performance-auditor.md",
-      "sha256": "623a526c48f49000464f8ddbc10f5df838a69e634f269dd06c99f134727108e5"
+      "sha256": "df5f39c80d437ae86c2c799b73ed38c71dc621cf5ae3b34ef051baa6c2afd40f"
     },
     {
       "path": ".claude/agents/premise-and-architecture-challenger.md",
@@ -192,7 +192,7 @@
     },
     {
       "path": ".claude/agents/release-verifier.md",
-      "sha256": "2317f7fd0f2b890be9c00860beb15d8b88ae23b1678e2db42bc6bb9276f9717f"
+      "sha256": "4f6bc3e5512259bbe8ebecb81c476575f148824946ff2fbd94dda55d860736b8"
     },
     {
       "path": ".claude/agents/source-to-screen-auditor.md",
@@ -208,11 +208,11 @@
     },
     {
       "path": ".claude/agents/ui-verifier.md",
-      "sha256": "0616ec5bfb121ac61f9d7d1df882e04a8bfcc889bd00c544c02f3d4c951d31f9"
+      "sha256": "849901771a0edb764a9d9775ce64115359aa3961de3b8af28f44856c491ebfba"
     },
     {
       "path": ".claude/agents/user-journey-auditor.md",
-      "sha256": "48e504d8759e28af3cb908f3e1b6785cf31b3a773dfc12195df2bfd509432b81"
+      "sha256": "74f1e45b866fb3bc8f10a620a86d452e943b0ade41b13deb92301096d1cb00e0"
     },
     {
       "path": ".cursor/rules/agent-product-intent.mdc",
@@ -384,7 +384,7 @@
     },
     {
       "path": "scripts/tests/riskSelectedProofRegression.mjs",
-      "sha256": "4acc4001e229c183492b9427938924b9807e2c1a15c2019b436274fc27bc60dc"
+      "sha256": "7462b726e329272e01a78680d909c3ab293d43a5fb36b97963b909dcd0f4088c"
     },
     {
       "path": "scripts/tests/taskLifecycleRegression.mjs",
@@ -404,7 +404,7 @@
       "scripts.proof:changed": "4bfc520d777a10dc90733e32aadec7d92b0a9b7266227eb27a87f1de6816b82d",
       "scripts.test:organization-control-plane": "1c097a3b80598bc3bb156d3239afa4bb1f42bde973db652bcdc5168e62c5cb01",
       "scripts.test:evidence-integrity-mutation": "2b7ec9ebecd833ee23c906b81349d676eb418e18991b8517a1f1f3335723cbfb",
-      "scripts.gates:all": "a6523122c18e4862712b42164a12f16e20e5cd32fc30a39b99685239bbb0f93d",
+      "scripts.gates:all": "7da47e3b8d6591c39df4c6b84948d47244bdb8fc16a5ce0ad71814e4b100a098",
       "scripts.verify": "217cf314de5043c85b05401ecd1e3294077067f3b1f45edc3248d3c82d2ff46e",
       "scripts.verify:db": "2b1785002c0c3c7172446c78839c7bbc6b7967f283e37b1dd3178e4dd9db0a5b",
       "scripts.ci:local": "47db5601b61ff94cbd4ce34cd9a40217d0ffeec299b35d85321d747649f39a3b"
