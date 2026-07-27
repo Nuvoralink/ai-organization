@@ -40,7 +40,7 @@ If the work is materially multi-turn but no coherent checkpoints are present, th
 0. **Capability preflight before expensive grounding:**
    - Implementation: read only what the declared `capability_probe` needs, attempt that narrowest intended Edit/Write first, and immediately return `CAPABILITY_BLOCKED` with the denied tool/path if it cannot run. Do not spend a grounding pass before proving mutation capability.
    - Review/audit: use the dispatcher-materialized repository-bound PR evidence; prove every required read-only tool opens before substantive reading. A fitting full patch is whole-PR evidence. An oversized patch fails closed unless this brief contains the one exact scope marker above; then report `partial_review_scope:true`, the unreviewed file count, and every surface not reviewed. Any denial, stale/missing ref or object, origin mismatch, dirty-state ambiguity, invalid/non-ancestor/empty scope, or oversized/truncated scoped patch returns `CAPABILITY_BLOCKED`; never silently narrow or make a whole-PR clean claim.
-1. <step> … including which checks to run and HOW to read their REAL exit code (`cmd; echo "EXIT: $?"` — never a piped tail's status).
+1. <step> … including which checks to run and HOW to read their REAL exit code (`cmd; rc=$?; echo "EXIT: $rc"; exit $rc` — never a piped tail's status).
 2. …
 <!-- For a bounded CLAUDE CLI dispatch on Windows, use the canonical user-owned helper:
      ~/.codex/skills/bootstrap-orchestrator/scripts/dispatch-claude-cli.mjs.

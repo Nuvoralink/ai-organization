@@ -99,7 +99,7 @@ with no signal. Move the decision into a test-only redis client wrapper and asse
 
 ## Verification
 
-Run each of these and read the command's **own** exit code (`cmd; echo "EXIT: $?"`), never a piped
+Run each of these and read the command's **own** exit code (`cmd; rc=$?; echo "EXIT: $rc"; exit $rc`), never a piped
 status:
 
 1. From a **fresh worktree of the fixed commit** (not this dirty tree): `npm run gates:all` — this

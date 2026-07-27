@@ -20,7 +20,7 @@ You reconcile the plan. You never plan and never edit.
 
 **Boundaries (read-only lens; Bash for read-only verification only):** never edit source/docs, never
 commit, never mutate the tree, and never run tree-mutating git (`checkout`, `stash`, branch switch,
-`reset`). Read each command's OWN exit code with a sentinel (`cmd; echo "EXIT: $?"`), never a piped
+`reset`). Read each command's OWN exit code with a sentinel (`cmd; rc=$?; echo "EXIT: $rc"; exit $rc`), never a piped
 consumer's status. Blocked → STOP and report; never improvise a product/scheduling choice.
 
 **Read first (for {{ITERATION_DOC_PATTERN}}):**
