@@ -20,7 +20,7 @@ export function writeJson(file, value) {
 
 export function organizationFixture(sourceRoot) {
   const root = tempFixture();
-  for (const rel of ['AGENTS.md', 'CLAUDE.md', '.ai-organization', '.claude/agents', '.claude/settings.json', '.cursor/rules', '.github', 'docs/app-plan/decision-log.md', 'docs/app-plan/adr', 'package.json', 'scripts/check-agent-context.mjs', 'scripts/check-rules-wiring.mjs', 'scripts/check-agent-control-plane.mjs', 'scripts/check-overlay-parity.mjs', 'scripts/task-governor.mjs', 'scripts/claude-lifecycle-hook.mjs', 'scripts/run-risk-selected-proof.mjs', 'scripts/claude-posttooluse-gate.mjs', 'scripts/ci-local.mjs', 'scripts/check-test-intent.mjs', 'scripts/check-doc-code-drift.mjs', 'scripts/tests']) {
+  for (const rel of ['AGENTS.md', 'CLAUDE.md', '.ai-organization', '.claude/agents', '.claude/settings.json', '.cursor/rules', '.github', 'docs/app-plan/decision-log.md', 'docs/app-plan/adr', 'package.json', 'scripts/check-agent-context.mjs', 'scripts/check-rules-wiring.mjs', 'scripts/check-agent-control-plane.mjs', 'scripts/check-fleet-parity.mjs', 'scripts/check-overlay-parity.mjs', 'scripts/task-governor.mjs', 'scripts/claude-lifecycle-hook.mjs', 'scripts/run-risk-selected-proof.mjs', 'scripts/claude-posttooluse-gate.mjs', 'scripts/ci-local.mjs', 'scripts/check-test-intent.mjs', 'scripts/check-doc-code-drift.mjs', 'scripts/tests']) {
     copyRel(sourceRoot, root, rel);
   }
   return root;

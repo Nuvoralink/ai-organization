@@ -1,6 +1,13 @@
 {
   "$schema": "https://nuvoralink.internal/schemas/agent-role-project-extension.v1.schema.json",
   "version": "1.0.0",
+  "agent_file_exceptions": [
+    {
+      "role_id": "security-auditor",
+      "source": "inherited_global_agent",
+      "reason": "CoachAI inherits the global security auditor and must not duplicate it under the project agent directory."
+    }
+  ],
   "roles": [
     {
       "id": "ai-decision-boundary-auditor",

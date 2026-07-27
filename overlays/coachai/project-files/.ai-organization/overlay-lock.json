@@ -28,7 +28,7 @@
     },
     {
       "path": ".ai-organization/ownership.json",
-      "sha256": "788efd5a1ad3e323b7ab4e1a668abfa4c99885631766539ee8386d4f027b6f78"
+      "sha256": "a46dab7876c4b95e02de835701a2f02cb6bf13f09b1b2d08604981dde92cce1d"
     },
     {
       "path": ".ai-organization/policies/action-authority.v1.json",
@@ -40,7 +40,11 @@
     },
     {
       "path": ".ai-organization/proof-profiles.json",
-      "sha256": "042594609100de17bb9df2dcb2e571ec0a2a2ac2db7455e65e96b478085307a5"
+      "sha256": "cce17302ff6e9f0260352cdfe5a1a304c69ea50a52c3e09ca1e78766ff1d5b10"
+    },
+    {
+      "path": ".ai-organization/registries/agent-roles.project.v1.json",
+      "sha256": "d0185481ebfa98c04a775df7c5c6e8331a35b844879dc2223c5bee065bba6fe8"
     },
     {
       "path": ".ai-organization/registries/agent-roles.v1.json",
@@ -48,7 +52,7 @@
     },
     {
       "path": ".ai-organization/roles.json",
-      "sha256": "70e80b27f0af91442639492f4c87e83801e10cbeb178d9e5dd9fe4428d21e509"
+      "sha256": "2dc314beab12667b639e55c432b141df7c3f8b67b298d3f9daf8681140b9f595"
     },
     {
       "path": ".ai-organization/runtime/core/authority/assess-action.mjs",
@@ -131,20 +135,28 @@
       "sha256": "8b456ca18473d9597c150cac08873033f79687ac28700ec6cec981846a505774"
     },
     {
+      "path": ".ai-organization/runtime/core/roles/agent-role-registry.mjs",
+      "sha256": "09ef74464b38da61e1046f3077323b36a872b0fe53c0152a6d0d179da6a740f1"
+    },
+    {
       "path": ".ai-organization/runtime/core/schema/task-assurance.mjs",
       "sha256": "a63568c084cb14f084c4ab74a048f2b0cff0d5fae350a479863897854ee4c734"
     },
     {
       "path": ".ai-organization/runtime/core/schema/validate-json-schema.mjs",
-      "sha256": "1d0b9d3a2a86a0e550b44bf4f3e885be5b9a22dd7c048f8d30ed59a4a54eef95"
+      "sha256": "70e98d860004091737bb589c009547fb4f5afed71d8793127bc585e6d2861a46"
     },
     {
       "path": ".ai-organization/schemas/action-authority.v1.schema.json",
       "sha256": "e281de325ece7c119e497d28f2dd8014f42eab30e45bfcbaa885594e2f543ea9"
     },
     {
+      "path": ".ai-organization/schemas/agent-role-project-extension.v1.schema.json",
+      "sha256": "3d8a8f2d1bf8959694a677473b9dd91904f2459214b63f06ec0be3cc97113d18"
+    },
+    {
       "path": ".ai-organization/schemas/agent-role-registry.v1.schema.json",
-      "sha256": "235d3007d15d288ea2664a3c7ff59bdc423ca8201b424f471359c62904adc8d4"
+      "sha256": "456d7fd82037228cd677dd5a715753de84f3ffdeda429c5ca03d291a88221a94"
     },
     {
       "path": ".ai-organization/schemas/control-plane-manifest.v1.schema.json",
@@ -296,7 +308,7 @@
     },
     {
       "path": ".github/CODEOWNERS",
-      "sha256": "010b7040aba124776f10977f202c6448b3a80a046d9f50e1e46522e16e2bac67"
+      "sha256": "15b63b5e1867d677cdef7c0dacf3ad76ed8f14b1ca4b40269454f35623d8230d"
     },
     {
       "path": ".github/ISSUE_TEMPLATE/agent-slice.yml",
@@ -328,11 +340,15 @@
     },
     {
       "path": "scripts/check-agent-control-plane.mjs",
-      "sha256": "551c449f8027620ecdd4305271b991463c4220f8c2f0636b9b4469eeeb2f16ae"
+      "sha256": "cbd737d10a624bff4b217ace0d2ae21eb38619707df06c1c8311282bf834fa08"
     },
     {
       "path": "scripts/check-doc-code-drift.mjs",
-      "sha256": "b58dc0e169fb66e3a2d87632a9bd57d3b28eed134c298d41e9622f038e4552f5"
+      "sha256": "2714e1e405a5e6bde49eaa141e4ead60651da1dbf4f171fe59b26c3faf7ac803"
+    },
+    {
+      "path": "scripts/check-fleet-parity.mjs",
+      "sha256": "ca723711a827c0cb91f5a67af905f89f7c379d125df6c08d8ac5db8e74c312e7"
     },
     {
       "path": "scripts/check-overlay-parity.mjs",
@@ -372,11 +388,11 @@
     },
     {
       "path": "scripts/tests/controlPlaneRegression.mjs",
-      "sha256": "9915bfa35239cd5657c985b868e87d850d7c8acd360cc6161a165bd59716c784"
+      "sha256": "abcd2584b73e076cb14d9d001b45a6d97a341902808af30348a602ea86a85ca3"
     },
     {
       "path": "scripts/tests/fixture-helpers.mjs",
-      "sha256": "61704d864f500b55dfc90a080558b5d0362da59828d53a654ba4d90d474895a0"
+      "sha256": "c289bbd0f95ef8f4facd00ada3d9f268ff7cab7498cdfbf76205a560cb1ea1e1"
     },
     {
       "path": "scripts/tests/overlayParityRegression.mjs",
@@ -388,7 +404,7 @@
     },
     {
       "path": "scripts/tests/taskLifecycleRegression.mjs",
-      "sha256": "941098fabeaefad2c852b4a82a2e26c1af1d99459b96eb30537662f60ded30a5"
+      "sha256": "b7a34cbf9a0c9fe4820cb9f9c402a8fdd0281a83eda9185a080c48aaf3474025"
     }
   ],
   "json_sections": {
@@ -399,12 +415,13 @@
       "scripts.gate:agent-context": "83eb407ace5d068cf5b56062e8ad67563294fee055375a78d5be8601f4627ed8",
       "scripts.gate:rules-wiring": "1201d76e9fd70ad4ddd74ab80998421ffac4ddde0cffad8f370ef3e595247b9b",
       "scripts.gate:agent-control-plane": "41571d360522ef6506e743f8a4e4fb3f59578b412ae970038907b080ab646e16",
+      "scripts.gate:fleet-parity": "0c52db346e952ce8a20715558c836c3b5a4468850482b642b69d83b62d653a5c",
       "scripts.gate:overlay-parity": "1a8628d10ac232722aad9b376f7a2b1b957703716595b0e3f3ae294f316e5926",
-      "scripts.gate:organization": "433ec8b29e1d93c8eb2ce04f5bc365d34df8662414e9cc126f908a99ca0a7b13",
+      "scripts.gate:organization": "b2304c7fbbe7f7380708e38a92d498dcbd2da96820703589fa8b65899c233632",
       "scripts.proof:changed": "4bfc520d777a10dc90733e32aadec7d92b0a9b7266227eb27a87f1de6816b82d",
       "scripts.test:organization-control-plane": "1c097a3b80598bc3bb156d3239afa4bb1f42bde973db652bcdc5168e62c5cb01",
       "scripts.test:evidence-integrity-mutation": "2b7ec9ebecd833ee23c906b81349d676eb418e18991b8517a1f1f3335723cbfb",
-      "scripts.gates:all": "7da47e3b8d6591c39df4c6b84948d47244bdb8fc16a5ce0ad71814e4b100a098",
+      "scripts.gates:all": "a6523122c18e4862712b42164a12f16e20e5cd32fc30a39b99685239bbb0f93d",
       "scripts.verify": "217cf314de5043c85b05401ecd1e3294077067f3b1f45edc3248d3c82d2ff46e",
       "scripts.verify:db": "2b1785002c0c3c7172446c78839c7bbc6b7967f283e37b1dd3178e4dd9db0a5b",
       "scripts.ci:local": "47db5601b61ff94cbd4ce34cd9a40217d0ffeec299b35d85321d747649f39a3b"

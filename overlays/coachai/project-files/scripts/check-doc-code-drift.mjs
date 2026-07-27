@@ -56,6 +56,7 @@ function isIgnoredLocalScript(file) {
   const organizationControl = new Set([
     'scripts/check-agent-context.mjs',
     'scripts/check-agent-control-plane.mjs',
+    'scripts/check-fleet-parity.mjs',
     'scripts/check-overlay-parity.mjs',
     'scripts/check-rules-wiring.mjs',
     'scripts/claude-lifecycle-hook.mjs',

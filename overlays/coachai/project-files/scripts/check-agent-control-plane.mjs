@@ -32,7 +32,8 @@ export function checkAgentControlPlane(root = process.cwd()) {
     '.ai-organization/policies/action-authority.v1.json', '.ai-organization/roles.json', '.ai-organization/proof-profiles.json',
     '.ai-organization/lifecycle-policy.json', '.ai-organization/schemas/task-assurance.v2.schema.json', '.ai-organization/schemas/task-evidence.v2.schema.json',
     '.ai-organization/ownership.json', '.claude/settings.json', '.github/CODEOWNERS', '.github/ISSUE_TEMPLATE/agent-slice.yml',
-    '.github/pull_request_template.md', 'docs/app-plan/decision-log.md', 'docs/app-plan/adr/README.md', 'docs/app-plan/adr/000-template.md'
+    '.github/pull_request_template.md', 'docs/app-plan/decision-log.md', 'docs/app-plan/adr/README.md', 'docs/app-plan/adr/000-template.md',
+    'scripts/check-fleet-parity.mjs'
   ];
   for (const rel of requiredFiles) if (!exists(root, rel)) errors.push(`required control-plane artifact missing: ${rel}`);
   if (errors.length) return { ok: false, errors };
@@ -100,6 +101,15 @@ export function checkAgentControlPlane(root = process.cwd()) {
   const lifecycleProfileIds = new Set((proof.profiles ?? []).filter((profile) => profile.assurance).map((profile) => profile.id));
   const lifecycleProfiles = normalizeProfileRegistry(proof).filter((profile) => lifecycleProfileIds.has(profile.id));
   for (const profile of lifecycleProfiles) errors.push(...validateSafeProofProfile(profile, { cwd: root, actionAuthority: action }).map((error) => `invalid assurance provider ${profile.id}: ${error}`));
+  const organizationGateProof = proof.profiles
+    ?.find((profile) => profile.id === 'organization-control')
+    ?.assurance?.commands
+    ?.find((command) => command.id === 'organization-gates');
+  for (const marker of ['fleet-parity: PASS', 'overlay-parity: PASS']) {
+    if (!organizationGateProof?.parser?.required_patterns?.includes(marker)) {
+      errors.push(`organization-gates proof must require aggregate receipt marker: ${marker}`);
+    }
+  }
   const assuranceCapabilities = new Set(lifecycleProfiles.flatMap((profile) => profile.capabilities ?? []));
   const roleProviders = new Set(names);
   for (const riskClass of proof.lifecycle_supported_risk_classes ?? []) {
@@ -127,7 +137,8 @@ export function checkAgentControlPlane(root = process.cwd()) {
   if (post?.length !== 1 || post[0]?.matcher !== 'Edit|Write' || postHooks.length !== 1 || !isRootedExecHook(postHooks[0], 'claude-posttooluse-gate.mjs')) errors.push('separate rooted exec-form PostToolUse gate is missing');
 
   const pkg = readJson(root, 'package.json');
-  for (const script of ['gate:agent-context', 'gate:rules-wiring', 'gate:agent-control-plane', 'gate:overlay-parity', 'gate:organization', 'proof:changed', 'test:organization-control-plane']) if (!pkg.scripts?.[script]) errors.push(`package script missing: ${script}`);
+  for (const script of ['gate:agent-context', 'gate:rules-wiring', 'gate:agent-control-plane', 'gate:fleet-parity', 'gate:overlay-parity', 'gate:organization', 'proof:changed', 'test:organization-control-plane']) if (!pkg.scripts?.[script]) errors.push(`package script missing: ${script}`);
+  if (!/npm run gate:fleet-parity/u.test(pkg.scripts?.['gate:organization'] ?? '')) errors.push('gate:organization must include gate:fleet-parity');
   if (!/npm run proof:changed/.test(pkg.scripts?.verify ?? '')) errors.push('verify must include changed-path proof');
   if (!/auxara-sso/.test(pkg.scripts?.['verify:db'] ?? '')) errors.push('verify:db must include auxara-sso regression');
 

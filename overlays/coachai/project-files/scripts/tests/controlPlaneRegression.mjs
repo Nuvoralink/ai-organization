@@ -76,6 +76,32 @@ test('killer mutation: malformed lifecycle authority schema fails', () => {
   assert.match(checkAgentControlPlane(root).errors.join('\n'), /invalid JSON authority/i);
 });
 
+test('killer mutations: missing fleet-parity gate, aggregate bypass, and proof-receipt weakening all fail', () => {
+  const missingGate = organizationFixture(source);
+  fs.rmSync(path.join(missingGate, 'scripts/check-fleet-parity.mjs'));
+  assert.match(checkAgentControlPlane(missingGate).errors.join('\n'), /required control-plane artifact missing: scripts\/check-fleet-parity\.mjs/u);
+
+  const aggregateBypass = organizationFixture(source);
+  const packagePath = path.join(aggregateBypass, 'package.json');
+  const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+  packageJson.scripts['gate:organization'] = packageJson.scripts['gate:organization']
+    .replace(' && npm run gate:fleet-parity', '');
+  writeJson(packagePath, packageJson);
+  assert.match(checkAgentControlPlane(aggregateBypass).errors.join('\n'), /gate:organization must include gate:fleet-parity/u);
+
+  const receiptWeakening = organizationFixture(source);
+  const proofPath = path.join(receiptWeakening, '.ai-organization/proof-profiles.json');
+  const proof = JSON.parse(fs.readFileSync(proofPath, 'utf8'));
+  const organizationGate = proof.profiles
+    .find((profile) => profile.id === 'organization-control')
+    .assurance.commands
+    .find((command) => command.id === 'organization-gates');
+  organizationGate.parser.required_patterns = organizationGate.parser.required_patterns
+    .filter((marker) => marker !== 'fleet-parity: PASS');
+  writeJson(proofPath, proof);
+  assert.match(checkAgentControlPlane(receiptWeakening).errors.join('\n'), /aggregate receipt marker: fleet-parity: PASS/u);
+});
+
 test('killer mutations: invalid assurance, missing reviewer provider, and timeout drift fail closure', () => {
   const invalidProvider = organizationFixture(source);
   const proofPath = path.join(invalidProvider, '.ai-organization/proof-profiles.json');

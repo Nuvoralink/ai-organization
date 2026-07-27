@@ -1,9 +1,9 @@
 /**
- * Proves: ORG-GOV-COACH-001
- * Test type: lifecycle / false-pass mutation
+ * Proves: REQ-ORG-001
+ * Test type: regression
  * Surface: CoachAI Claude TaskCreated and TaskCompleted adapter
  * Authority: accepted task-attempt controller and shared proof runner
- * Product statement: a CoachAI task cannot self-certify proof, replace its kickoff contract, mutate a read-only tree, or replay proof execution.
+ * What this test proves about the product: a CoachAI task cannot self-certify proof, replace its kickoff contract, mutate a read-only tree, or replay proof execution.
  * Killer mutation: restore caller-authored artifact/mutation booleans or the AGENT_PROOF_COMMAND override.
  * Gated command: npm run test:organization-control-plane
  */

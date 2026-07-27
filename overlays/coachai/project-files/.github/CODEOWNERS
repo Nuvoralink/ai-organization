@@ -10,6 +10,7 @@
 /AGENTS.md @Nuvoralink
 /CLAUDE.md @Nuvoralink
 /scripts/check-agent-*.mjs @Nuvoralink
+/scripts/check-fleet-parity.mjs @Nuvoralink
 /scripts/check-rules-wiring.mjs @Nuvoralink
 /scripts/check-overlay-parity.mjs @Nuvoralink
 /scripts/task-governor.mjs @Nuvoralink

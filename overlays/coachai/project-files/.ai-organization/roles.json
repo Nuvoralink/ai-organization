@@ -3,7 +3,8 @@
   "dispatch_authority": "orchestrator",
   "global_roles": [
     { "name": "orchestrator", "kind": "orchestrator", "dispatch": true, "mutates_source": false },
-    { "name": "implementer", "kind": "global", "dispatch": false, "mutates_source": true },
+    { "name": "codex-backend-implementer", "kind": "global", "dispatch": false, "mutates_source": true },
+    { "name": "claude-frontend-implementer", "kind": "global", "dispatch": false, "mutates_source": true },
     { "name": "security-auditor", "kind": "global", "dispatch": false, "mutates_source": false }
   ],
   "project_roles": [
