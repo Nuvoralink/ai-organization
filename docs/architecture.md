@@ -12,14 +12,14 @@ Connect a clean machine to this private repository and begin safe, consistent Cl
 4. `install` snapshots every canonical managed target, creates or updates only declared destinations, records hashes, and never deletes unmanaged files unless a future separately approved migration says so. Captured mappings are reported as skipped-by-mode and never reach destination planning or writes. A partial failure restores the pre-install snapshot.
 5. `check` compares canonical and installed bytes, detects missing/drifted/local-only canonical assets, validates schemas and role/skill identities, and rejects unsafe, overlapping, or unresolved paths. For captured mappings it inspects the live `captureFrom` source directly, treats backup content differences as informational, and fails when the live source is missing. A validated `installedIgnore` entry is skipped by name before metadata/content access and is reported as expected installed-local state; canonical validation never consults that list.
 6. `capture` is an explicit migration tool. It imports only manifest-declared orchestration paths after all deny rules pass; it is never an open-ended home-directory copier. A mapping may explicitly inverse-tokenize registered root literals only when install rendering is enabled; separator-style modifiers preserve exact round-trip bytes, while unregistered machine paths still fail closed.
-7. Project overlays install the same universal contracts plus project-specific routers, agents, hooks, gates, and automation specifications into a registered product repository without copying its application tree.
+7. Project overlays install the same universal contracts plus project-specific role extensions, routers, agents, hooks, gates, and automation specifications into a registered product repository without copying its application tree. Effective role inventories are derived from the universal registry and one project extension; a project role may specialize a universal role with `extends` and may replace that universal role only through explicit `supersedes_universal`.
 8. The task governor and action evaluator turn task scope, risk, proof, mutation, review, and action permissions into machine-checked decisions shared by Claude and Codex.
 
 ## Authority seams
 
 - Policy: `policies/action-authority.v1.json` owns what agents may do autonomously.
 - Task assurance: `schemas/task-assurance.v2.schema.json`, `schemas/task-evidence.v2.schema.json`, and `core/lifecycle/` own the cross-vendor contract, runner evidence, attempt state, and completion authority.
-- Roles: `registries/agent-roles.v1.json` owns standing roles, triggers, and incompatible responsibilities.
+- Roles: `registries/agent-roles.v1.json` owns the universal fleet; each `overlays/<project>/control-plane/registries/agent-roles.project.v1.json` owns only that project's extensions, and `core/roles/agent-role-registry.mjs` owns fail-closed merge semantics.
 - Assets: `global`, `skills`, and `overlays` own portable files.
 - Location: `registries/project-roots.local.json` owns machine-specific paths and is never committed.
 - Product truth: referenced product repositories remain authoritative.

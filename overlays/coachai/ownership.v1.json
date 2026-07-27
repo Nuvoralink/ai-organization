@@ -6,6 +6,7 @@
     { "id": "coachai-action-authority", "mode": "generated", "destination": ".ai-organization/policies/action-authority.v1.json" },
     { "id": "coachai-risk-controls", "mode": "generated", "destination": ".ai-organization/policies/risk-controls.v1.json" },
     { "id": "coachai-agent-role-registry", "mode": "generated", "destination": ".ai-organization/registries/agent-roles.v1.json" },
+    { "id": "coachai-agent-role-extension-registry", "mode": "generated", "destination": ".ai-organization/registries/agent-roles.project.v1.json" },
     { "id": "coachai-assurance-schemas", "mode": "generated", "destination": ".ai-organization/schemas" },
     { "id": "coachai-shared-runtime", "mode": "generated", "destination": ".ai-organization/runtime/core" },
     { "id": "coachai-automation-specs", "mode": "generated", "destination": ".ai-organization/automations" },
