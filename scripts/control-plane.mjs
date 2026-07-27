@@ -40,10 +40,12 @@ export function runControlPlaneCli(argv, context = {}) {
       stdout('control-plane validation passed');
     } else if (command === 'check') {
       const skippedInstalledEntries = [];
+      const informationalEntries = [];
       const problems = [
         ...validateRegistries(repoRoot),
-        ...runCheck({ repoRoot, manifest, roots, mappingIds, skippedInstalledEntries }),
+        ...runCheck({ repoRoot, manifest, roots, mappingIds, skippedInstalledEntries, informationalEntries }),
       ];
+      for (const entry of informationalEntries) stdout(JSON.stringify(entry));
       for (const skipped of skippedInstalledEntries) stdout(JSON.stringify(skipped));
       if (problems.length > 0) {
         for (const problem of problems) stderr(typeof problem === 'string' ? problem : JSON.stringify(problem));

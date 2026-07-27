@@ -239,6 +239,17 @@ function installedIgnoreErrors(mapping, manifest) {
   return errors;
 }
 
+const MAPPING_OWNERSHIPS = new Set(['canonical', 'captured', 'generated', 'external-state', 'reference']);
+
+function mappingOwnershipErrors(mapping) {
+  const errors = [];
+  if (!MAPPING_OWNERSHIPS.has(mapping.ownership)) errors.push(`Unknown mapping ownership: ${String(mapping.ownership)}`);
+  if (mapping.ownership !== 'captured' && (!Array.isArray(mapping.destinations) || mapping.destinations.length === 0)) {
+    errors.push(`Ownership ${String(mapping.ownership)} requires at least one destination`);
+  }
+  return errors;
+}
+
 function installedIgnoreReason(relative, manifest, mapping, isDirectory = false) {
   if (mapping.mode !== 'tree' || !Array.isArray(mapping.installedIgnore)) return undefined;
   const normalized = normalizeRelative(relative);
@@ -526,6 +537,7 @@ export function validateManifest(manifest, repoRoot, roots) {
   const physicalTargets = new Map();
   for (const mapping of manifest.mappings) {
     errors.push(...installedIgnoreErrors(mapping, manifest));
+    errors.push(...mappingOwnershipErrors(mapping).map((message) => `${message}: ${mapping.id}`));
     if (mapping.tokenizeRegisteredPathsOnCapture && mapping.renderContentTokens === false) {
       errors.push(`Capture path tokenization requires rendered install parity: ${mapping.id}`);
     }
@@ -572,6 +584,7 @@ export function validateCanonical({ repoRoot, manifest }) {
   const destinationTemplates = new Set();
   for (const mapping of manifest.mappings) {
     for (const message of installedIgnoreErrors(mapping, manifest)) problems.push({ type: 'manifest', mapping: mapping.id, message });
+    for (const message of mappingOwnershipErrors(mapping)) problems.push({ type: 'manifest', mapping: mapping.id, message });
     if (mapping.tokenizeRegisteredPathsOnCapture && mapping.renderContentTokens === false) {
       problems.push({ type: 'manifest', mapping: mapping.id, message: 'Capture path tokenization requires rendered install parity' });
     }
@@ -688,8 +701,11 @@ function restoreSnapshot(snapshot, directory) {
   else if (fs.existsSync(snapshot.lockPath)) fs.unlinkSync(snapshot.lockPath);
 }
 
+const CAPTURED_INSTALL_SKIP_OPERATION = 'skipped-by-mode';
+
 function applyInstallTransaction({ operations, locks, repoRoot, failAfter = undefined }) {
-  const writes = operations.filter((operation) => !['retain-legacy-link', 'refresh-lock'].includes(operation.type));
+  const writes = operations.filter((operation) =>
+    !['retain-legacy-link', 'refresh-lock', CAPTURED_INSTALL_SKIP_OPERATION].includes(operation.type));
   const refreshesLockOnly = operations.some((operation) => operation.type === 'refresh-lock');
   if (writes.length === 0 && !refreshesLockOnly && [...locks.keys()].every((lockPath) => fs.existsSync(lockPath))) return undefined;
   const id = installId();
@@ -834,7 +850,14 @@ function validatedReconciliation({ manifest, mappingIds, adoptExisting, reconcil
   return reconcileInstalled;
 }
 
-export function runCheck({ repoRoot, manifest, roots, mappingIds = undefined, skippedInstalledEntries = undefined }) {
+export function runCheck({
+  repoRoot,
+  manifest,
+  roots,
+  mappingIds = undefined,
+  skippedInstalledEntries = undefined,
+  informationalEntries = undefined,
+}) {
   const canonicalProblems = validateCanonical({ repoRoot, manifest });
   const invalidSources = new Set(canonicalProblems
     .filter((problem) => problem.type === 'source' || problem.message === 'Canonical source resolution failed')
@@ -857,6 +880,40 @@ export function runCheck({ repoRoot, manifest, roots, mappingIds = undefined, sk
     }
     catch {
       problems.push({ type: 'source', mapping: mapping.id, message: 'Canonical source inventory failed' });
+      continue;
+    }
+    if (mapping.ownership === 'captured') {
+      let captureRoot;
+      try { captureRoot = resolveTokenPath(mapping.captureFrom, roots); }
+      catch {
+        problems.push({ type: 'captured-source', mapping: mapping.id, message: 'Captured source resolution failed' });
+        continue;
+      }
+      if (!fs.existsSync(captureRoot)) {
+        problems.push({ type: 'missing-captured-source', mapping: mapping.id, source: mapping.captureFrom });
+        continue;
+      }
+      let capturedFiles;
+      try { capturedFiles = collectFiles(captureRoot, manifest, mapping, { inventoryLabel: mapping.captureFrom }); }
+      catch (error) {
+        problems.push({ type: 'captured-source', mapping: mapping.id, message: error.message });
+        continue;
+      }
+      for (const difference of compareTrees(
+        sourceFiles,
+        capturedFiles,
+        mapping.detectLocalOnly,
+        roots,
+        mapping.renderContentTokens !== false,
+      )) {
+        informationalEntries?.push({
+          type: 'captured-backup-behind',
+          mapping: mapping.id,
+          source: mapping.captureFrom,
+          difference: difference.type,
+          relative: difference.relative,
+        });
+      }
       continue;
     }
     for (const destinationTemplate of mapping.destinations ?? []) {
@@ -988,6 +1045,16 @@ export function runInstall({ repoRoot, manifest, roots, dryRun = false, adoptExi
   const locks = new Map();
 
   for (const mapping of mappings) {
+    if (mapping.ownership === 'captured') {
+      operations.push({
+        type: CAPTURED_INSTALL_SKIP_OPERATION,
+        mapping: mapping.id,
+        ownership: mapping.ownership,
+        destinationCount: mapping.destinations?.length ?? 0,
+        relative: '',
+      });
+      continue;
+    }
     const sourceRoot = resolveSource(repoRoot, mapping.source);
     const sourceFiles = collectFiles(sourceRoot, manifest, mapping, { inventoryLabel: mapping.source });
     invariant(sourceFiles.size > 0, `Canonical source is empty: ${mapping.id}`);

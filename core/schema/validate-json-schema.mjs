@@ -27,11 +27,22 @@ function typeMatches(value, expected) {
   return typeof value === expected;
 }
 
+function schemaMatches(schema, value, location, schemaFile, cache) {
+  const failures = [];
+  walk(schema, value, location, schemaFile, cache, failures);
+  return failures.length === 0;
+}
+
 function walk(schema, value, location, schemaFile, cache, failures) {
   if (schema.$ref) {
     const resolved = resolveReference(schema.$ref, schemaFile, cache);
     walk(resolved.schema, value, location, resolved.schemaFile, cache, failures);
     return;
+  }
+  for (const branch of schema.allOf ?? []) walk(branch, value, location, schemaFile, cache, failures);
+  if (schema.if) {
+    const branch = schemaMatches(schema.if, value, location, schemaFile, cache) ? schema.then : schema.else;
+    if (branch) walk(branch, value, location, schemaFile, cache, failures);
   }
   if (Object.hasOwn(schema, 'const') && value !== schema.const) failures.push(`${location}: must equal ${JSON.stringify(schema.const)}`);
   if (schema.enum && !schema.enum.some((candidate) => Object.is(candidate, value))) failures.push(`${location}: value is not in enum`);

@@ -17,12 +17,12 @@ Run `gitleaks git --redact` as the independent history-aware secret scan before 
 
 ## Normal change flow
 
-1. Edit canonical content in this repository or capture a declared project orchestration path after reviewing the source diff.
+1. Edit canonical content in this repository or capture a declared orchestration path after reviewing the source diff. For `ownership: "captured"`, the live `captureFrom` path is authoritative and capture is the only direction that may change its repository backup.
 2. Run the narrow test for the changed authority, then `npm test` and `npm run control:validate`.
 3. Dry-run the install. A dirty managed target, local-only managed file, collision, secret-shaped value, or machine-specific path is a stop condition.
 4. Install, run parity, open the affected generated files, and use an isolated branch/PR for every product-repository update.
 
-Do not hand-edit a generated destination and leave the change there. Promote the change to canonical source, reinstall it, and prove parity in the same task.
+Do not hand-edit a generated destination and leave the change there. Promote the change to canonical source, reinstall it, and prove parity in the same task. Captured mappings are the explicit counterexample: install reports them as skipped-by-mode and must never write their live authority.
 
 ## Recovery and rollback
 
@@ -47,6 +47,8 @@ For a project overlay, use `node scripts/project-overlay.mjs rollback <project> 
 - `local-only`: classify it. Add an explicit safe mapping only when it is orchestration; otherwise move/remove it from the managed root.
 - `unclassified-local-only`: a non-allowlisted file exists in a dedicated managed root. Investigate without opening a secret-bearing file.
 - `skipped-installed-entry`: an exact per-mapping `installedIgnore` path names denied machine-local dependency state. Verify the manifest entry is still necessary; never open or promote the installed content, and never use this exception for an ordinary local-only orchestration file.
+- `captured-backup-behind`: informational only; review and explicitly capture the live-authoritative mapping when a fresh repository backup is required.
+- `missing-captured-source`: blocking; restore or deliberately re-register the live authority before treating control-plane health as green.
 - `absolute-path`, `secret-shaped-content`, or `forbidden-tracked-path`: stop publication and remove the unsafe canonical content.
 - `unexpected-link-target`: do not follow or replace the link automatically. Verify ownership and use an explicitly approved retirement migration.
 

@@ -5,6 +5,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { validateJsonAgainstSchema } from '../core/schema/validate-json-schema.mjs';
 import {
   classifyTrackedScope,
   computeInstalledTreeDigest,
@@ -70,13 +71,50 @@ test('Proves: capture and install are deterministic; Test type: mutation; Surfac
   fs.writeFileSync(path.join(f.home, '.claude', 'rules', 'local-only.md'), '# hidden drift\n');
   assert.ok(runCheck(f).some((problem) => problem.type === 'local-only'));
 });
-test('Proves: byte drift cannot hide; Test type: mutation; Surface: installed rule; Authority: canonical hash; Killer mutation: change installed content', () => {
-  const f = fixture();
-  fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
-  runInstall({ ...f, dryRun: false });
-  fs.writeFileSync(path.join(f.home, '.claude', 'rules', 'base.md'), '# Changed locally\n');
-  assert.ok(runCheck(f).some((problem) => problem.type === 'drift'));
-  assert.throws(() => runInstall({ ...f, dryRun: false }), /Dirty managed target/);
+test('Proves: CAPTURED-DATA-LOSS-001 captured ownership can never overwrite its newer live authority while canonical mappings still install and detect drift; Test type: data-loss, mode, and regression mutation; Surface: install/check/CLI; Authority: mapping ownership; Killer mutations: let captured install write, count captured content drift as failure, ignore a missing captured source, or bypass canonical install/drift checks; Gated command: npm test', () => {
+  const captured = fixture();
+  const canonicalFile = path.join(captured.repoRoot, 'canonical', 'rules', 'base.md');
+  const liveRoot = path.join(captured.home, '.claude', 'rules');
+  const liveFile = path.join(liveRoot, 'base.md');
+  const liveAuthority = Buffer.from('# Newer live authority\r\n');
+  fs.writeFileSync(canonicalFile, liveAuthority);
+  runInstall(captured);
+  captured.manifest.mappings[0].ownership = 'captured';
+  fs.writeFileSync(canonicalFile, '# Older captured backup\n');
+
+  const beforeInstall = fs.readFileSync(liveFile);
+  const installIo = cliContext(captured);
+  assert.equal(runControlPlaneCli(['install'], installIo.context), 0);
+  assert.deepEqual(fs.readFileSync(liveFile), beforeInstall);
+  assert.ok(installIo.stdout.includes('skipped-by-mode\tclaude-rules\t.'));
+  assert.ok(installIo.stdout.includes('operations=1 dryRun=false'));
+
+  const informationalEntries = [];
+  assert.deepEqual(runCheck({ ...captured, informationalEntries }), []);
+  assert.deepEqual(informationalEntries, [{
+    type: 'captured-backup-behind',
+    mapping: 'claude-rules',
+    source: '${HOME}/.claude/rules',
+    difference: 'drift',
+    relative: 'base.md',
+  }]);
+
+  fs.rmSync(liveRoot, { recursive: true });
+  assert.deepEqual(runCheck(captured).filter((problem) => problem.type === 'missing-captured-source'), [{
+    type: 'missing-captured-source',
+    mapping: 'claude-rules',
+    source: '${HOME}/.claude/rules',
+  }]);
+
+  const canonical = fixture();
+  const canonicalFilePath = path.join(canonical.repoRoot, 'canonical', 'rules', 'base.md');
+  const canonicalLivePath = path.join(canonical.home, '.claude', 'rules', 'base.md');
+  fs.writeFileSync(canonicalFilePath, '# Canonical\n');
+  runInstall(canonical);
+  assert.equal(fs.readFileSync(canonicalLivePath, 'utf8'), '# Canonical\n');
+  fs.writeFileSync(canonicalLivePath, '# Changed locally\n');
+  assert.ok(runCheck(canonical).some((problem) => problem.type === 'drift'));
+  assert.throws(() => runInstall(canonical), /Dirty managed target/);
 });
 
 test('Proves: canonically retired managed files are transactionally removed and rollback-restorable; Test type: lifecycle mutation; Surface: installer retirement; Authority: prior install lock; Killer mutation: leave an obsolete locked file installed or delete it without snapshot recovery; Gated command: npm test', () => {
@@ -274,13 +312,30 @@ test('Proves: environment references are not secrets; Test type: counterexample;
   assert.equal(operations.length, 1);
 });
 
-test('Proves: raw absolute destinations and duplicate destinations cannot enter the manifest; Test type: schema mutation; Surface: manifest; Authority: tokenized roots; Killer mutation: use C drive path twice', () => {
+test('Proves: raw/duplicate destinations and empty non-captured destination sets cannot enter the manifest while captured mappings may be destination-free; Test type: schema mutation; Surface: manifest; Authority: tokenized roots and ownership mode; Killer mutations: use a C drive path twice or allow canonical ownership with zero destinations; Gated command: npm test', () => {
   const f = fixture();
   f.manifest.mappings[0].destinations = [["C:", "Users", "example", ".claude", "rules"].join('/'), '${HOME}/.claude/rules', '${HOME}/.claude/rules'];
   const errors = validateManifest(f.manifest, f.repoRoot, f.roots);
   assert.ok(errors.some((message) => message.includes('Invalid destination path for mapping')));
   assert.ok(errors.some((message) => message.includes('Duplicate destination')));
   assert.doesNotMatch(JSON.stringify(errors), /C:\/Users\/example/u);
+
+  const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const schemaFile = path.join(repositoryRoot, 'schemas', 'control-plane-manifest.v1.schema.json');
+  const schemaFixture = fixture();
+  const canonicalWithoutDestinations = structuredClone(schemaFixture.manifest);
+  canonicalWithoutDestinations.mappings[0].destinations = [];
+  assert.ok(validateJsonAgainstSchema(schemaFile, canonicalWithoutDestinations).some((failure) =>
+    failure.includes('destinations: fewer than 1 items')));
+  assert.ok(validateManifest(
+    canonicalWithoutDestinations,
+    schemaFixture.repoRoot,
+    schemaFixture.roots,
+  ).some((failure) => failure.includes('Ownership canonical requires at least one destination')));
+
+  const capturedWithoutDestinations = structuredClone(canonicalWithoutDestinations);
+  capturedWithoutDestinations.mappings[0].ownership = 'captured';
+  assert.deepEqual(validateJsonAgainstSchema(schemaFile, capturedWithoutDestinations), []);
 });
 
 test('Proves: line-ending-only differences remain portable; Test type: counterexample; Surface: parity; Authority: normalized hash; Killer mutation: CRLF versus LF is not drift', () => {
@@ -449,10 +504,18 @@ test('Proves: ORG-BOUNDARY-CLAUDE-SETTINGS-001; Test type: secret-boundary liven
       && !(mapping.destinations ?? []).includes('${HOME}/.claude/settings.json')));
 });
 
-test('Proves: ORG-BOUNDARY-CLAUDE-MEMORY-001; Test type: source-boundary liveness and mutation; Surface: curated Claude project memory; Authority: explicit per-project memory mappings; Killer mutation: capture the projects root, include a non-Markdown format, or omit tokenized path round-trip; Gated command: npm test', () => {
+test('Proves: ORG-BOUNDARY-CLAUDE-MEMORY-001; Test type: source-boundary liveness and ownership mutation; Surface: curated agent memory; Authority: exact captured-memory mapping set; Killer mutation: capture the projects root, include a non-Markdown format, omit tokenized path round-trip, capture the wrong mapping, or leave a memory mapping install-authoritative; Gated command: npm test', () => {
   const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   const manifest = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'control-plane.manifest.json'), 'utf8'));
   const memoryMappings = manifest.mappings.filter((mapping) => mapping.id.startsWith('claude-project-memory-'));
+  const expectedCapturedIds = [
+    'global-codex-memories',
+    'claude-project-memory-nuvo-dialer',
+    'claude-project-memory-coachai',
+    'claude-project-memory-nuvora-link',
+    'claude-project-memory-llm-councel',
+    'claude-project-memory-voice-agents',
+  ].sort();
 
   assert.ok(memoryMappings.length > 0, 'at least one current project memory root must be live');
   for (const mapping of memoryMappings) {
@@ -462,6 +525,13 @@ test('Proves: ORG-BOUNDARY-CLAUDE-MEMORY-001; Test type: source-boundary livenes
     assert.equal(mapping.renderContentTokens, true);
     assert.equal(mapping.tokenizeRegisteredPathsOnCapture, true);
   }
+  assert.deepEqual(
+    manifest.mappings.filter((mapping) => mapping.ownership === 'captured').map((mapping) => mapping.id).sort(),
+    expectedCapturedIds,
+  );
+  assert.ok(manifest.mappings
+    .filter((mapping) => !expectedCapturedIds.includes(mapping.id))
+    .every((mapping) => mapping.ownership === 'canonical'));
   assert.ok(manifest.mappings.every((mapping) => mapping.captureFrom !== '${HOME}/.claude/projects'));
 });
 
@@ -1322,10 +1392,11 @@ test('Proves: malformed canonical source resolution remains mapping-scoped and d
   assert.doesNotMatch(JSON.stringify(findings), new RegExp(f.repoRoot.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
 });
 
-test('Proves: a valid mapping with no destinations is an empty destination set rather than a check-wide exception; Test type: absent-list counterexample; Surface: runCheck mapping loop; Authority: optional destination inventory; Killer mutation: iterate mapping.destinations without the empty-array fallback; Gated command: npm test', () => {
+test('Proves: a captured mapping with no destinations remains checkable through captureFrom rather than throwing; Test type: absent-list counterexample; Surface: runCheck mapping loop; Authority: captured ownership; Killer mutation: iterate mapping.destinations without the empty-array fallback or skip captureFrom inspection; Gated command: npm test', () => {
   const f = fixture();
   fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
-  delete f.manifest.mappings[0].destinations;
+  f.manifest.mappings[0].ownership = 'captured';
+  f.manifest.mappings[0].destinations = [];
 
   assert.doesNotThrow(() => runCheck(f));
 });
