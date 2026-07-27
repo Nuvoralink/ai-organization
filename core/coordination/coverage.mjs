@@ -7,12 +7,10 @@ import { COORDINATION_MODES, coordinationMode } from './mode.mjs';
 const MODE_SET = new Set(COORDINATION_MODES);
 export const COORDINATION_DISPATCH_PATHS = Object.freeze({
   boundedAgent: 'agent-run',
+  claudeCli: 'dispatch-claude-cli',
   claudeTaskCreated: 'claude-task-created',
 });
-export const DEFERRED_COORDINATION_DISPATCH_PATH = 'dispatch-claude-cli';
-export const KNOWN_UNINSTRUMENTED_DISPATCHERS = Object.freeze([
-  DEFERRED_COORDINATION_DISPATCH_PATH,
-]);
+export const KNOWN_UNINSTRUMENTED_DISPATCHERS = Object.freeze([]);
 const MILLISECONDS_PER_HOUR = 60 * 60 * 1_000;
 export const COORDINATION_PROMOTION_THRESHOLDS = Object.freeze({
   minimumClaimsRegistered: 100,
@@ -69,10 +67,7 @@ function projectionFrom(snapshot) {
       ]),
     ),
     dispatch_path_hits: { ...snapshot.dispatch_path_hits },
-    uninstrumented_path_hits: {
-      [DEFERRED_COORDINATION_DISPATCH_PATH]: 0,
-      ...snapshot.uninstrumented_path_hits,
-    },
+    uninstrumented_path_hits: { ...snapshot.uninstrumented_path_hits },
     mode_epoch: snapshot.mode_epoch,
     mode: requireMode(snapshot.mode),
     started_at: snapshot.started_at,
