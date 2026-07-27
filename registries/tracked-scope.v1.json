@@ -71,6 +71,10 @@
       "class": "automation-instance"
     },
     {
+      "path": "automations/instances/universal-biweekly-orchestration-backflow/memory.md",
+      "class": "automation-instance"
+    },
+    {
       "path": "automations/registry.v1.json",
       "class": "automation-specification"
     },
@@ -3587,6 +3591,10 @@
       "class": "schema"
     },
     {
+      "path": "scripts/check-fleet-parity.mjs",
+      "class": "control-plane-tooling"
+    },
+    {
       "path": "scripts/control-check-notify.mjs",
       "class": "control-plane-tooling"
     },
@@ -4908,6 +4916,10 @@
     },
     {
       "path": "tests/control-plane.test.mjs",
+      "class": "control-plane-test"
+    },
+    {
+      "path": "tests/fleet-parity.test.mjs",
       "class": "control-plane-test"
     },
     {

@@ -9,6 +9,7 @@
     { "id": "auxara-agent-role-extension-registry", "mode": "generated", "destination": ".ai-organization/registries/agent-roles.project.v1.json" },
     { "id": "auxara-assurance-schemas", "mode": "generated", "destination": ".ai-organization/schemas" },
     { "id": "auxara-shared-runtime", "mode": "generated", "destination": ".ai-organization/runtime/core" },
+    { "id": "auxara-fleet-parity-gate", "mode": "generated", "destination": "scripts/check-fleet-parity.mjs" },
     { "id": "auxara-automation-specs", "mode": "generated", "destination": ".ai-organization/automations" },
     { "id": "auxara-project-agent-registry", "mode": "generated", "destination": ".ai-organization/agents.json", "sourcePath": ".ai-organization/agents.json", "installMode": "file", "allowedExtensions": [".json"], "detectLocalOnly": false },
     { "id": "auxara-project-completion-profiles", "mode": "generated", "destination": ".ai-organization/completion-profiles.json", "sourcePath": ".ai-organization/completion-profiles.json", "installMode": "file", "allowedExtensions": [".json"], "detectLocalOnly": false },
