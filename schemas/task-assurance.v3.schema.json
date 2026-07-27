@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-organization.internal/schemas/task-assurance.v3.schema.json",
+  "title": "Cross-vendor task assurance contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "product_intent",
+    "settled_decisions",
+    "scope",
+    "execution",
+    "paths",
+    "risk",
+    "authorities",
+    "blast_radius",
+    "procedure",
+    "acceptance",
+    "proofs",
+    "action_authority",
+    "completion"
+  ],
+  "properties": {
+    "schema_version": { "enum": [3] },
+    "id": { "type": "string", "pattern": "^[A-Z0-9][A-Z0-9._-]+$" },
+    "product_intent": { "type": "string", "minLength": 10 },
+    "settled_decisions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "requires": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/dependencyEdge" }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["in", "out", "too_little", "too_much"],
+      "properties": {
+        "in": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "out": { "type": "array", "items": { "type": "string" } },
+        "too_little": { "type": "string", "minLength": 1 },
+        "too_much": { "type": "string", "minLength": 1 }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["implementer_role"],
+      "properties": {
+        "implementer_role": { "type": "string", "minLength": 1 }
+      }
+    },
+    "paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["read", "edit", "read_only", "output"],
+      "properties": {
+        "read": { "$ref": "#/$defs/pathList" },
+        "edit": { "$ref": "#/$defs/pathList" },
+        "read_only": { "$ref": "#/$defs/pathList" },
+        "output": { "$ref": "#/$defs/pathList" }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["level", "classes", "reasons"],
+      "properties": {
+        "level": { "enum": ["low", "medium", "high", "critical"] },
+        "classes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "frontend",
+              "auth",
+              "security",
+              "privacy",
+              "billing",
+              "database",
+              "data_migration",
+              "provider",
+              "ai_semantics",
+              "production",
+              "destructive",
+              "external_contact",
+              "architecture",
+              "documentation",
+              "control_plane"
+            ]
+          }
+        },
+        "reasons": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+      }
+    },
+    "authorities": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "blast_radius": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feeders",
+        "producers",
+        "transformers",
+        "persistence",
+        "validators",
+        "consumers",
+        "surfaces",
+        "retirements"
+      ],
+      "properties": {
+        "feeders": { "$ref": "#/$defs/blastRadiusList" },
+        "producers": { "$ref": "#/$defs/blastRadiusList" },
+        "transformers": { "$ref": "#/$defs/blastRadiusList" },
+        "persistence": { "$ref": "#/$defs/blastRadiusList" },
+        "validators": { "$ref": "#/$defs/blastRadiusList" },
+        "consumers": { "$ref": "#/$defs/blastRadiusList" },
+        "surfaces": { "$ref": "#/$defs/blastRadiusList" },
+        "retirements": { "$ref": "#/$defs/blastRadiusList" }
+      }
+    },
+    "procedure": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "acceptance": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "proofs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "profile_id",
+          "capability",
+          "proves",
+          "surface",
+          "authority",
+          "risk_classes",
+          "mutation",
+          "required"
+        ],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "profile_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]+$" },
+          "capability": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]+$" },
+          "proves": { "type": "string", "minLength": 1 },
+          "surface": { "type": "string", "minLength": 1 },
+          "authority": { "type": "string", "minLength": 1 },
+          "risk_classes": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "mutation": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["required", "case_id", "rationale"],
+            "properties": {
+              "required": { "type": "boolean" },
+              "case_id": { "type": ["string", "null"] },
+              "rationale": { "type": "string", "minLength": 1 }
+            }
+          },
+          "required": { "type": "boolean" }
+        }
+      }
+    },
+    "action_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed", "conditional", "human_required"],
+      "properties": {
+        "allowed": { "$ref": "#/$defs/stringList" },
+        "conditional": { "$ref": "#/$defs/stringList" },
+        "human_required": { "$ref": "#/$defs/stringList" }
+      }
+    },
+    "completion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tier", "honesty_clause", "unreached_surfaces", "doctrine_loop"],
+      "properties": {
+        "tier": {
+          "enum": [
+            "analysis",
+            "implemented",
+            "locally_verified",
+            "review_verified",
+            "deployed_verified"
+          ]
+        },
+        "honesty_clause": { "type": "string", "minLength": 1 },
+        "unreached_surfaces": { "$ref": "#/$defs/stringList" },
+        "doctrine_loop": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "$defs": {
+    "dependencyEdge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "edge_type", "bound_value"],
+      "properties": {
+        "task_id": { "type": "string", "minLength": 1 },
+        "edge_type": {
+          "enum": ["contract_digest_active", "artifact_available", "landed_commit"]
+        },
+        "bound_value": { "type": "string", "minLength": 1 }
+      }
+    },
+    "stringList": { "type": "array", "items": { "type": "string" } },
+    "blastRadiusList": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "pathList": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+  }
+}

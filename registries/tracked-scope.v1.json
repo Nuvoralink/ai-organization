@@ -83,6 +83,54 @@
       "class": "shared-control-plane-runtime"
     },
     {
+      "path": "core/coordination/candidate.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/coordination/candidate.test.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/coordination/coordination.test.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/coordination/coverage.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/coordination/dependencyGraph.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/coordination/freeze.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/coordination/freeze.test.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/coordination/ledger.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/coordination/mode.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/coordination/register.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/coordination/resourceConfig.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/coordination/resourceKey.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
       "path": "core/lifecycle/README.md",
       "class": "shared-control-plane-runtime"
     },
@@ -103,7 +151,15 @@
       "class": "shared-control-plane-runtime"
     },
     {
+      "path": "core/lifecycle/task-assurance.test.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
       "path": "core/lifecycle/task-governor.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/schema/task-assurance.mjs",
       "class": "shared-control-plane-runtime"
     },
     {
@@ -3504,6 +3560,10 @@
     },
     {
       "path": "schemas/task-assurance.v2.schema.json",
+      "class": "schema"
+    },
+    {
+      "path": "schemas/task-assurance.v3.schema.json",
       "class": "schema"
     },
     {
