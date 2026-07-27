@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawn, spawnSync } from "node:child_process";
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { appendFileSync, existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import { copyFile, lstat, mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -35,6 +35,14 @@ const MAX_SKILL_BYTES = 10 * 1024 * 1024;
 const TRUSTED_SKILL_NAME = /^[a-z0-9][a-z0-9_-]{0,127}$/u;
 const IMPLEMENTATION_BOUNDARY_MARKER = "CLAUDE_DISPATCH_BOUNDARY_JSON:";
 const PR_DIFF_SCOPE_MARKER = "CLAUDE_PR_DIFF_SCOPE_JSON:";
+const COORDINATION_RUNTIME_RELATIVE_PATH = path.join(
+  ".ai-organization",
+  "runtime",
+  "core",
+  "coordination",
+);
+const RESOURCE_ADMISSION_REFUSED_EXIT_CODE = 125;
+const CHILD_RESERVED_EXIT_CODE = 3;
 const BOUNDARY_HOOK_SOURCE_PATH = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "dispatch-boundary-hook.mjs",
@@ -83,6 +91,17 @@ const DISPATCH_CHILD_ENV_ALLOWLIST = new Set([
   "TERM", "TMP", "TMPDIR", "USER", "USERNAME", "USERPROFILE", "WINDIR",
   "XDG_CACHE_HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME",
 ]);
+
+export class DispatchExitError extends Error {
+  constructor(message, exitCode) {
+    super(message);
+    if (!Number.isSafeInteger(exitCode) || exitCode < 1 || exitCode > 255) {
+      throw new TypeError("dispatcher exit code must be an integer from 1 through 255");
+    }
+    this.name = "DispatchExitError";
+    this.exitCode = exitCode;
+  }
+}
 
 export function buildDispatchChildEnvironment(environment = process.env) {
   if (!environment || typeof environment !== "object" || Array.isArray(environment)) {
@@ -957,6 +976,322 @@ function structuredPromptMarker(prompt, marker) {
   try { return JSON.parse(line.slice(marker.length).trim()); } catch { throw new Error(`${marker} must contain valid JSON on one line`); }
 }
 
+export function normalizeDispatchBoundaryPath(value) {
+  return String(value).replaceAll("\\", "/").replace(/^\.\//u, "");
+}
+
+function requireClaimPathArray(value, field, { allowEmpty = false } = {}) {
+  if (!Array.isArray(value) || (!allowEmpty && value.length === 0)) {
+    throw new TypeError(`${field} must be ${allowEmpty ? "an" : "a non-empty"} array`);
+  }
+  return value.map((entry, index) => {
+    if (typeof entry !== "string" || entry.trim() === "") {
+      throw new TypeError(`${field}[${index}] must be a non-empty string`);
+    }
+    return normalizeDispatchBoundaryPath(entry.trim());
+  });
+}
+
+function optionalClaimString(value, field) {
+  if (value === undefined) return undefined;
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new TypeError(`${field} must be a non-empty string when present`);
+  }
+  return value.trim();
+}
+
+export function claimDescriptorFromBrief({ briefPath, content, taskIdFallback }) {
+  const boundary = structuredPromptMarker(content, IMPLEMENTATION_BOUNDARY_MARKER);
+  if (boundary === null) {
+    throw new Error(`${briefPath}: missing ${IMPLEMENTATION_BOUNDARY_MARKER} row`);
+  }
+  exactObject(boundary, `${briefPath} dispatch boundary`);
+  const taskId = optionalClaimString(
+    boundary.taskId ?? boundary.task_id ?? taskIdFallback,
+    "taskId",
+  );
+  if (!taskId) {
+    throw new Error(
+      `${briefPath}: dispatch boundary has no taskId/task_id and no explicit taskId fallback`,
+    );
+  }
+  return {
+    taskId,
+    agentKind: "claude",
+    editPaths: requireClaimPathArray(boundary.edit_paths, "edit_paths"),
+    readPaths: requireClaimPathArray(boundary.read_paths ?? [], "read_paths", {
+      allowEmpty: true,
+    }),
+    branch: optionalClaimString(boundary.branch, "branch"),
+    worktreePath: optionalClaimString(
+      boundary.worktreePath ?? boundary.worktree_path,
+      "worktreePath",
+    ),
+  };
+}
+
+export function normalizeClaimDescriptor(value, source = "claim descriptor") {
+  const descriptor = exactObject(value, source);
+  const agentKind = optionalClaimString(descriptor.agentKind, "agentKind");
+  if (agentKind !== "claude") {
+    throw new Error(`${source} agentKind must be claude`);
+  }
+  const taskId = optionalClaimString(descriptor.taskId, "taskId");
+  if (!taskId) throw new Error(`${source} taskId must be a non-empty string`);
+  return {
+    taskId,
+    agentKind,
+    editPaths: requireClaimPathArray(descriptor.editPaths, "editPaths"),
+    readPaths: requireClaimPathArray(descriptor.readPaths ?? [], "readPaths", {
+      allowEmpty: true,
+    }),
+    branch: optionalClaimString(descriptor.branch, "branch"),
+    worktreePath: optionalClaimString(descriptor.worktreePath, "worktreePath"),
+  };
+}
+
+function warnCoordination(message, dependencies = {}) {
+  if (typeof message !== "string" || message.length === 0) return;
+  try {
+    if (typeof dependencies.warnCoordination === "function") {
+      dependencies.warnCoordination(message);
+    } else {
+      process.stderr.write(`${message}\n`);
+    }
+  } catch {
+    // A closed or faulty diagnostic sink cannot turn coordination into a dispatch blocker.
+  }
+}
+
+function coordinationFailOpenMessage(registerModule, error) {
+  try {
+    return registerModule?.coordinationFailOpenWarning(error)
+      ?? `[coordination] FAIL-OPEN: coordination could not be evaluated (${error instanceof Error ? error.message : String(error)}); dispatch will proceed.`;
+  } catch {
+    return `[coordination] FAIL-OPEN: coordination could not be evaluated (${error instanceof Error ? error.message : String(error)}); dispatch will proceed.`;
+  }
+}
+
+function recordCoordinationErrorBestEffort(coverageModule, input) {
+  try {
+    coverageModule?.recordCoordinationErrorCoverage(input);
+  } catch {
+    // The original coordination failure is already reported; error accounting is best-effort.
+  }
+}
+
+function resolveCoordinationRepositoryRoot(cwd, dependencies = {}) {
+  if (typeof dependencies.resolveCoordinationRepositoryRoot === "function") {
+    return dependencies.resolveCoordinationRepositoryRoot(cwd);
+  }
+  const runGit = dependencies.spawnCoordinationGit ?? spawnSync;
+  let result;
+  try {
+    result = runGit("git", ["rev-parse", "--show-toplevel"], {
+      cwd,
+      encoding: "utf8",
+      env: buildDispatchChildEnvironment(dependencies.environment ?? process.env),
+      maxBuffer: MAX_GIT_OUTPUT_BYTES,
+      shell: false,
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+    });
+  } catch {
+    return null;
+  }
+  if (result?.error || result?.status !== 0 || typeof result?.stdout !== "string") return null;
+  const root = result.stdout.trim();
+  return root === "" ? null : path.resolve(root);
+}
+
+function installedCoordinationRuntime(repoRoot) {
+  const root = path.join(repoRoot, COORDINATION_RUNTIME_RELATIVE_PATH);
+  try {
+    const stat = lstatSync(root);
+    if (!stat.isDirectory() || stat.isSymbolicLink()) return null;
+    const modules = Object.fromEntries(
+      ["mode", "coverage", "register"].map((name) => [name, path.join(root, `${name}.mjs`)]),
+    );
+    if (Object.values(modules).some((file) => !existsSync(file) || !lstatSync(file).isFile())) {
+      return null;
+    }
+    return { root, modules };
+  } catch {
+    return null;
+  }
+}
+
+async function importCoordinationModule(file, dependencies = {}) {
+  const importer = dependencies.importCoordinationModule ?? ((specifier) => import(specifier));
+  return importer(pathToFileURL(file).href);
+}
+
+function claimSourceFromOptions(options, cwd) {
+  if (options.brief && options.claimFile) {
+    throw new Error("--brief and --claim-file are mutually exclusive");
+  }
+  if (options.brief) return { kind: "brief", file: path.resolve(cwd, options.brief) };
+  if (options.claimFile) return { kind: "claim", file: path.resolve(cwd, options.claimFile) };
+  return null;
+}
+
+async function loadClaimDescriptor(source, options) {
+  if (!source) return undefined;
+  const content = await readFile(source.file, "utf8");
+  if (source.kind === "brief") {
+    return claimDescriptorFromBrief({
+      briefPath: source.file,
+      content,
+      taskIdFallback: options.taskId,
+    });
+  }
+  return normalizeClaimDescriptor(JSON.parse(content), source.file);
+}
+
+export async function dispatchWithProjectCoordination(
+  options,
+  spawnChild,
+  dependencies = {},
+) {
+  if (typeof spawnChild !== "function") {
+    throw new TypeError("coordinated dispatch requires a child-spawn function");
+  }
+  const cwd = path.resolve(options.cwd);
+  const repoRoot = resolveCoordinationRepositoryRoot(cwd, dependencies);
+  if (!repoRoot) return spawnChild();
+  const runtime = installedCoordinationRuntime(repoRoot);
+  if (!runtime) return spawnChild();
+
+  let coverageModule;
+  let registerModule;
+  let mode = "off";
+  let modeEpoch;
+  let claim;
+  let refusalMessage;
+  try {
+    const modeModule = await importCoordinationModule(runtime.modules.mode, dependencies);
+    if (typeof modeModule.coordinationMode !== "function") {
+      throw new Error("installed coordination mode module does not export coordinationMode");
+    }
+    mode = modeModule.coordinationMode(repoRoot);
+    if (mode === "off") return spawnChild();
+
+    [coverageModule, registerModule] = await Promise.all([
+      importCoordinationModule(runtime.modules.coverage, dependencies),
+      importCoordinationModule(runtime.modules.register, dependencies),
+    ]);
+    const admission = registerModule.coordinationAdmissionDecision({ repoRoot });
+    mode = admission.effectiveMode;
+    warnCoordination(registerModule.coordinationAdmissionWarning(admission), dependencies);
+    const source = claimSourceFromOptions(options, cwd);
+    let descriptor;
+    let descriptorError;
+    if (source) {
+      try {
+        descriptor = await loadClaimDescriptor(source, options);
+      } catch (error) {
+        descriptorError = error;
+      }
+    }
+    const editPaths = Array.isArray(descriptor?.editPaths) ? descriptor.editPaths : [];
+    const dispatchCoverage = coverageModule.countDispatch(mode, {
+      repoRoot,
+      dispatchPath: coverageModule.COORDINATION_DISPATCH_PATHS.claudeCli,
+      skippedNoEditPaths: !source || editPaths.length === 0,
+    });
+    modeEpoch = dispatchCoverage.modeEpoch;
+    if (dispatchCoverage.error) {
+      warnCoordination(
+        coordinationFailOpenMessage(registerModule, dispatchCoverage.error),
+        dependencies,
+      );
+    }
+    if (descriptorError) {
+      recordCoordinationErrorBestEffort(coverageModule, { repoRoot, mode, modeEpoch });
+      warnCoordination(
+        coordinationFailOpenMessage(registerModule, descriptorError),
+        dependencies,
+      );
+    } else if (editPaths.length > 0) {
+      const ownerToken = randomUUID();
+      const registration = await registerModule.registerClaim({
+        repoRoot,
+        taskId: descriptor.taskId,
+        attemptId: randomUUID(),
+        agentKind: descriptor.agentKind,
+        editPaths,
+        readPaths: descriptor.readPaths,
+        ownerToken,
+        ownerPid: process.pid,
+        branch: descriptor.branch,
+        worktreePath: descriptor.worktreePath ?? repoRoot,
+        admission,
+        modeEpoch,
+      });
+      if (registration?.error) {
+        warnCoordination(
+          coordinationFailOpenMessage(registerModule, registration.error),
+          dependencies,
+        );
+      } else if (registration?.refused) {
+        try {
+          refusalMessage = registerModule.coordinationRefusalMessage(registration.conflicts);
+        } catch (error) {
+          recordCoordinationErrorBestEffort(coverageModule, { repoRoot, mode, modeEpoch });
+          warnCoordination(coordinationFailOpenMessage(registerModule, error), dependencies);
+        }
+      } else if (registration?.claimId) {
+        claim = {
+          repoRoot,
+          claimId: registration.claimId,
+          ownerToken,
+          fencingEpoch: registration.fencingEpoch,
+        };
+      }
+      for (const coordinationError of [registration?.coverageError, registration?.receiptError]) {
+        if (coordinationError) {
+          warnCoordination(
+            coordinationFailOpenMessage(registerModule, coordinationError),
+            dependencies,
+          );
+        }
+      }
+    }
+  } catch (error) {
+    if (repoRoot && mode !== "off") {
+      recordCoordinationErrorBestEffort(coverageModule, { repoRoot, mode, modeEpoch });
+    }
+    warnCoordination(coordinationFailOpenMessage(registerModule, error), dependencies);
+  }
+
+  if (refusalMessage) {
+    throw new DispatchExitError(
+      `${refusalMessage}.`,
+      RESOURCE_ADMISSION_REFUSED_EXIT_CODE,
+    );
+  }
+
+  try {
+    return await spawnChild();
+  } finally {
+    if (claim) {
+      try {
+        const released = await registerModule.releaseClaim(claim);
+        for (const coordinationError of [released?.error, released?.coverageError, released?.receiptError]) {
+          if (coordinationError) {
+            warnCoordination(
+              coordinationFailOpenMessage(registerModule, coordinationError),
+              dependencies,
+            );
+          }
+        }
+      } catch (error) {
+        warnCoordination(coordinationFailOpenMessage(registerModule, error), dependencies);
+      }
+    }
+  }
+}
+
 export function validateImplementationBrief(prompt, cwd, tools) {
   const unexpectedTools = tools.filter((tool) => !IMPLEMENTATION_TOOLS.has(tool));
   if (unexpectedTools.length > 0 || !tools.some((tool) => tool === "Edit" || tool === "Write")) {
@@ -965,7 +1300,18 @@ export function validateImplementationBrief(prompt, cwd, tools) {
   const contract = structuredPromptMarker(prompt, IMPLEMENTATION_BOUNDARY_MARKER);
   const value = exactObject(contract, IMPLEMENTATION_BOUNDARY_MARKER);
   const keys = Object.keys(value).sort();
-  if (JSON.stringify(keys) !== JSON.stringify(["authority", "boundaries", "capability_probe", "edit_paths", "read_paths", "skill_names"])) throw new Error(`${IMPLEMENTATION_BOUNDARY_MARKER} contains unexpected or missing fields`);
+  const requiredKeys = ["authority", "boundaries", "capability_probe", "edit_paths", "read_paths", "skill_names"];
+  const allowedKeys = new Set([...requiredKeys, "branch", "taskId", "task_id", "worktreePath", "worktree_path"]);
+  if (requiredKeys.some((key) => !Object.hasOwn(value, key)) || keys.some((key) => !allowedKeys.has(key))) throw new Error(`${IMPLEMENTATION_BOUNDARY_MARKER} contains unexpected or missing fields`);
+  if (Object.hasOwn(value, "taskId") && Object.hasOwn(value, "task_id")) throw new Error(`${IMPLEMENTATION_BOUNDARY_MARKER} must not duplicate task identity`);
+  if (Object.hasOwn(value, "worktreePath") && Object.hasOwn(value, "worktree_path")) throw new Error(`${IMPLEMENTATION_BOUNDARY_MARKER} must not duplicate worktree identity`);
+  for (const [field, fieldValue] of [
+    ["taskId", value.taskId ?? value.task_id],
+    ["branch", value.branch],
+    ["worktreePath", value.worktreePath ?? value.worktree_path],
+  ]) {
+    optionalClaimString(fieldValue, field);
+  }
   if (!Array.isArray(value.edit_paths) || value.edit_paths.length === 0 || value.edit_paths.length > 100) throw new Error(`${IMPLEMENTATION_BOUNDARY_MARKER} edit_paths must contain 1-100 exact paths`);
   const projectRoot = path.resolve(cwd);
   const editPaths = value.edit_paths.map((entry, index) => {
@@ -2169,6 +2515,7 @@ function runChild(executable, argv, options, prompt, dependencies = {}) {
 
 export async function dispatchClaude(options, dependencies = {}) {
   const cwd = path.resolve(options.cwd);
+  claimSourceFromOptions(options, cwd);
   const promptFile = path.resolve(options.promptFile);
   const stdoutFile = path.resolve(options.stdoutFile);
   const stderrFile = path.resolve(options.stderrFile);
@@ -2387,16 +2734,25 @@ export async function dispatchClaude(options, dependencies = {}) {
     let result;
     let runError = null;
     try {
-      result = await runChild(
-        plan.executable,
-        plan.argv,
-        plan,
-        materializedPrompt,
+      result = await dispatchWithProjectCoordination(
         {
-          ...dependencies,
-          persistStdoutChunk: (chunk) => appendFileSync(stdoutFile, chunk),
-          persistStderrChunk: (chunk) => appendFileSync(stderrFile, chunk),
+          cwd,
+          brief: options.brief,
+          claimFile: options.claimFile,
+          taskId: options.taskId,
         },
+        () => runChild(
+          plan.executable,
+          plan.argv,
+          plan,
+          materializedPrompt,
+          {
+            ...dependencies,
+            persistStdoutChunk: (chunk) => appendFileSync(stdoutFile, chunk),
+            persistStderrChunk: (chunk) => appendFileSync(stderrFile, chunk),
+          },
+        ),
+        dependencies,
       );
     } catch (error) {
       runError = error;
@@ -2451,19 +2807,26 @@ export async function dispatchClaude(options, dependencies = {}) {
       } catch (error) {
         causes.push(`failed to persist dispatcher state evidence: ${error.message}`);
       }
+      if (runError instanceof DispatchExitError) {
+        throw new DispatchExitError(causes.join("; "), runError.exitCode);
+      }
       throw new Error(causes.join("; "));
     }
     if (result.code !== 0) {
-      const failure = `Claude CLI exited ${result.code}${result.signal ? ` (signal ${result.signal})` : ""}; post-run implementation evidence=${JSON.stringify(implementationChanges)}`;
+      const childReservedExit = result.code === RESOURCE_ADMISSION_REFUSED_EXIT_CODE;
+      const reportedExitCode = childReservedExit ? CHILD_RESERVED_EXIT_CODE : result.code;
+      const failure = childReservedExit
+        ? `Claude CLI child exit ${RESOURCE_ADMISSION_REFUSED_EXIT_CODE} is reserved for resource-admission refusal; remapped to ${CHILD_RESERVED_EXIT_CODE}; post-run implementation evidence=${JSON.stringify(implementationChanges)}`
+        : `Claude CLI exited ${result.code}${result.signal ? ` (signal ${result.signal})` : ""}; post-run implementation evidence=${JSON.stringify(implementationChanges)}`;
       await writeFile(dispatchStateFile, `${JSON.stringify(stateRecord("failed", {
-        exit_code: result.code,
+        exit_code: reportedExitCode,
+        child_exit_code: result.code,
         signal: result.signal,
         failure: failure.slice(0, 16 * 1024),
         implementation_changes: implementationChanges,
       }))}\n`, "utf8");
-      throw new Error(
-        failure,
-      );
+      if (childReservedExit) throw new DispatchExitError(failure, reportedExitCode);
+      throw new Error(failure);
     }
     await writeFile(dispatchStateFile, `${JSON.stringify(stateRecord("completed", {
       exit_code: result.code,
@@ -2490,7 +2853,7 @@ export function parseCliArgs(argv) {
   const values = {};
   const booleans = new Set(["--dry-run", "--preflight"]);
   const repeatable = new Set(["--skill-source-root"]);
-  const valued = new Set(["--cwd", "--prompt-file", "--tools", "--mode", "--stdout-file", "--stderr-file", "--max-runtime-ms", "--handoff-ref"]);
+  const valued = new Set(["--brief", "--claim-file", "--cwd", "--prompt-file", "--task-id", "--tools", "--mode", "--stdout-file", "--stderr-file", "--max-runtime-ms", "--handoff-ref"]);
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
     if (booleans.has(token)) {
@@ -2542,7 +2905,7 @@ async function main() {
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   } catch (error) {
     process.stderr.write(`dispatch-claude-cli: ${error.message}\n`);
-    process.exitCode = 1;
+    process.exitCode = error instanceof DispatchExitError ? error.exitCode : 1;
   }
 }
 

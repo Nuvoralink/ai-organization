@@ -10,12 +10,12 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { EventEmitter } from "node:events";
 import { writeFileSync } from "node:fs";
-import { access, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { access, cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { test } from "node:test";
 import path from "node:path";
 import { PassThrough } from "node:stream";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import {
   auditObservedTools,
@@ -27,6 +27,7 @@ import {
   createDispatchPlan,
   DEFAULT_MAX_RUNTIME_MS,
   dispatchClaude,
+  DispatchExitError,
   materializeGitHubHandoff,
   materializePullRequestDiff,
   materializeSkillPlugin,
@@ -59,6 +60,7 @@ import {
 } from "./dispatch-boundary-hook.mjs";
 
 const TEST_DIRECTORY = path.dirname(fileURLToPath(import.meta.url));
+const CONTROL_PLANE_ROOT = path.resolve(TEST_DIRECTORY, "../../..");
 const BOUNDARY_HOOK_PATH = path.join(TEST_DIRECTORY, "dispatch-boundary-hook.mjs");
 const CONFIG_PATH = path.resolve("C:/Temp/claude-dispatch/mcp.json");
 const SETTINGS_PATH = path.resolve("C:/Temp/claude-dispatch/settings.json");
@@ -291,6 +293,119 @@ function successfulNoToolStream({ tools = READ_ONLY_TOOLS, permissionMode = 'don
     JSON.stringify({ type: 'system', subtype: 'init', session_id: sessionId, tools, skills, plugins, permissionMode, mcp_servers: [] }),
     JSON.stringify({ type: 'result', subtype: 'success', session_id: sessionId, is_error: false, permission_denials: [] }),
   ].join('\n');
+}
+
+async function createInstalledCoordinationRepository(
+  t,
+  { mode = "observe", acceptNotReady = false, installRuntime = true } = {},
+) {
+  const root = await mkdtemp(path.join(tmpdir(), "claude-dispatch-coordination-repo-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  assert.equal(spawnSync("git", ["init", "-b", "main"], { cwd: root, encoding: "utf8" }).status, 0);
+  assert.equal(spawnSync("git", ["config", "user.email", "dispatcher@example.invalid"], { cwd: root, encoding: "utf8" }).status, 0);
+  assert.equal(spawnSync("git", ["config", "user.name", "Dispatcher Test"], { cwd: root, encoding: "utf8" }).status, 0);
+  await writeFile(path.join(root, "README.md"), "coordination fixture\n", "utf8");
+  assert.equal(spawnSync("git", ["add", "README.md"], { cwd: root, encoding: "utf8" }).status, 0);
+  assert.equal(spawnSync("git", ["commit", "-m", "fixture"], { cwd: root, encoding: "utf8" }).status, 0);
+
+  const policyRoot = path.join(root, ".ai-organization", "policies");
+  await mkdir(policyRoot, { recursive: true });
+  await writeFile(
+    path.join(policyRoot, "coordination-mode.v1.json"),
+    `${JSON.stringify({ mode, acceptNotReady })}\n`,
+    "utf8",
+  );
+  await writeFile(
+    path.join(policyRoot, "authority-domains.v1.json"),
+    `${JSON.stringify({ version: 1, domains: {} })}\n`,
+    "utf8",
+  );
+
+  const runtimeRoot = path.join(root, ".ai-organization", "runtime", "core");
+  if (installRuntime) {
+    await cp(path.join(CONTROL_PLANE_ROOT, "core"), runtimeRoot, { recursive: true });
+  }
+  return { root, runtimeRoot };
+}
+
+async function importCoordinationModule(runtimeRoot, name) {
+  return import(pathToFileURL(path.join(runtimeRoot, "coordination", name)).href);
+}
+
+async function writeCoordinationBrief(root, name, { taskId, editPaths }) {
+  const file = path.join(root, `${name}.md`);
+  await writeFile(
+    file,
+    [
+      `# ${name}`,
+      `CLAUDE_DISPATCH_BOUNDARY_JSON:${JSON.stringify({
+        task_id: taskId,
+        edit_paths: editPaths,
+        read_paths: ["README.md"],
+      })}`,
+    ].join("\n"),
+    "utf8",
+  );
+  return file;
+}
+
+function readOnlySpawn({ onSpawn = () => {}, beforeClose = async () => {}, code = 0 } = {}) {
+  return (executable, argv, options) => {
+    onSpawn({ executable, argv, options });
+    const child = new EventEmitter();
+    child.pid = 4242;
+    child.stdin = new PassThrough();
+    child.stdout = new PassThrough();
+    child.stderr = new PassThrough();
+    child.stdin.on("finish", () => {
+      Promise.resolve(beforeClose()).then(
+        () => {
+          child.stdout.end(`${successfulNoToolStream()}\n`);
+          child.stderr.end();
+          setImmediate(() => child.emit("close", code, null));
+        },
+        (error) => setImmediate(() => child.emit("error", error)),
+      );
+    });
+    return child;
+  };
+}
+
+async function dispatchCoordinationFixture(
+  t,
+  { cwd, brief, claimFile, spawnProcess, warnings = [] },
+) {
+  const evidenceRoot = await mkdtemp(path.join(tmpdir(), "claude-dispatch-coordination-evidence-"));
+  t.after(() => rm(evidenceRoot, { recursive: true, force: true }));
+  const promptFile = path.join(evidenceRoot, "prompt.md");
+  await writeFile(promptFile, "bounded local prompt", "utf8");
+  return dispatchClaude(
+    {
+      cwd,
+      promptFile,
+      tools: READ_ONLY_TOOLS,
+      mode: "dontAsk",
+      stdoutFile: path.join(evidenceRoot, "stdout.jsonl"),
+      stderrFile: path.join(evidenceRoot, "stderr.log"),
+      brief,
+      claimFile,
+    },
+    {
+      platform: "linux",
+      isProcessAlive: () => true,
+      spawnProcess,
+      warnCoordination: (message) => warnings.push(message),
+    },
+  );
+}
+
+async function captureRejection(promise) {
+  try {
+    await promise;
+  } catch (error) {
+    return error;
+  }
+  assert.fail("expected promise to reject");
 }
 
 function successfulToolStream(name, {
@@ -2451,6 +2566,31 @@ test("CLI parsing rejects unknown and duplicate single-value flags while preserv
     tools: "Read,Skill,Edit",
     skillSourceRoots: ["C:\\skills-one", "D:\\skills-two"],
   });
+  assert.deepEqual(parseCliArgs([
+    "--brief", "dispatch-brief.md",
+    "--task-id", "dispatch-task",
+  ]), {
+    brief: "dispatch-brief.md",
+    taskId: "dispatch-task",
+  });
+  assert.deepEqual(parseCliArgs(["--claim-file", "claim.json"]), {
+    claimFile: "claim.json",
+  });
+});
+
+test("Brief-derived and explicit claim descriptors are mutually exclusive before spawn; mutation: accept two coordination authorities", async () => {
+  let spawnCount = 0;
+  await assert.rejects(
+    dispatchClaude({
+      cwd: process.cwd(),
+      brief: "brief.md",
+      claimFile: "claim.json",
+    }, {
+      spawnProcess: () => { spawnCount += 1; },
+    }),
+    /--brief and --claim-file are mutually exclusive/u,
+  );
+  assert.equal(spawnCount, 0);
 });
 
 test("Proves the dispatcher writes prompt bytes to stdin, never argv; mutation: append prompt to argv", async (t) => {
@@ -2557,6 +2697,246 @@ test("Proves SIGTERM uses the same exact-tree termination path; mutation: leave 
 test("Proves an extra observed tool fails the post-run audit; mutation: emit an unlisted Write call", () => {
   const stream = successfulToolStream("Write", { tools: ["Read"] });
   assert.throws(() => auditObservedTools(stream, ["Read"], { permissionMode: "dontAsk" }), /Write/u);
+});
+
+test("Proves: ORG-COORD-CLI-001; Test type: installed-runtime integration; Surface: global Claude dispatcher to project ledger; Authority: brief-derived project write set; Killer mutation: bypass coordination before spawn; Gated command: npm test", async (t) => {
+  const { root, runtimeRoot } = await createInstalledCoordinationRepository(t);
+  const sharedEditPath = "scripts/shared-dispatch-resource.mjs";
+  const firstBrief = await writeCoordinationBrief(root, "first-overlap", {
+    taskId: "claude-dispatch-first",
+    editPaths: [sharedEditPath],
+  });
+  const secondBrief = await writeCoordinationBrief(root, "second-overlap", {
+    taskId: "claude-dispatch-second",
+    editPaths: [sharedEditPath],
+  });
+  let releaseFirst;
+  const firstMayClose = new Promise((resolve) => { releaseFirst = resolve; });
+  let markFirstSpawned;
+  const firstSpawned = new Promise((resolve) => { markFirstSpawned = resolve; });
+  let firstSpawnCount = 0;
+  let secondSpawnCount = 0;
+
+  const first = dispatchCoordinationFixture(t, {
+    cwd: root,
+    brief: firstBrief,
+    spawnProcess: readOnlySpawn({
+      onSpawn: () => {
+        firstSpawnCount += 1;
+        markFirstSpawned();
+      },
+      beforeClose: () => firstMayClose,
+    }),
+  });
+  await firstSpawned;
+  const second = await dispatchCoordinationFixture(t, {
+    cwd: root,
+    brief: secondBrief,
+    spawnProcess: readOnlySpawn({ onSpawn: () => { secondSpawnCount += 1; } }),
+  });
+  releaseFirst();
+  const firstResult = await first;
+
+  assert.equal(firstResult.exitCode, 0);
+  assert.equal(second.exitCode, 0);
+  assert.equal(firstSpawnCount, 1, "liveness: the first observed claim must still spawn");
+  assert.equal(secondSpawnCount, 1, "OBSERVE conflict must not suppress the second spawn");
+
+  const { openCoordinationLedger } = await importCoordinationModule(runtimeRoot, "ledger.mjs");
+  const ledger = openCoordinationLedger({ cwd: root });
+  try {
+    const conflicts = ledger.listConflicts();
+    assert.equal(conflicts.length, 1);
+    assert.equal(conflicts[0].resource_key, sharedEditPath);
+    const firstClaim = ledger.getClaim(conflicts[0].other_claim_id);
+    const secondClaim = ledger.getClaim(conflicts[0].claim_id);
+    assert.deepEqual(
+      [firstClaim.task_id, secondClaim.task_id].sort(),
+      ["claude-dispatch-first", "claude-dispatch-second"],
+    );
+    assert.deepEqual([firstClaim.agent_kind, secondClaim.agent_kind], ["claude", "claude"]);
+    assert.deepEqual([firstClaim.state, secondClaim.state], ["retired", "retired"]);
+  } finally {
+    ledger.close();
+  }
+
+  const { COORDINATION_DISPATCH_PATHS, readCoordinationCoverage } =
+    await importCoordinationModule(runtimeRoot, "coverage.mjs");
+  const coverage = readCoordinationCoverage({ repoRoot: root });
+  assert.equal(coverage.dispatches_seen, 2);
+  assert.equal(coverage.claims_registered, 2);
+  assert.equal(coverage.conflicts_observed, 1);
+  assert.equal(coverage.dispatch_path_hits[COORDINATION_DISPATCH_PATHS.claudeCli], 2);
+});
+
+test("Proves: ORG-COORD-CLI-002; Test type: no-op counterexample matrix; Surface: projects without active coordination; Authority: target repository installed runtime and mode; Killer mutation: import or parse coordination unconditionally; Gated command: npm test", async (t) => {
+  const notRepository = await mkdtemp(path.join(tmpdir(), "claude-dispatch-not-repository-"));
+  t.after(() => rm(notRepository, { recursive: true, force: true }));
+  const withoutRuntime = await createInstalledCoordinationRepository(t, { installRuntime: false });
+  const modeOff = await createInstalledCoordinationRepository(t, { mode: "off" });
+
+  for (const [label, cwd] of [
+    ["not-a-repository", notRepository],
+    ["repository-without-runtime", withoutRuntime.root],
+    ["mode-off", modeOff.root],
+  ]) {
+    let spawnCount = 0;
+    const warnings = [];
+    const result = await dispatchCoordinationFixture(t, {
+      cwd,
+      brief: path.join(cwd, "intentionally-missing-brief.md"),
+      warnings,
+      spawnProcess: readOnlySpawn({ onSpawn: () => { spawnCount += 1; } }),
+    });
+    assert.equal(result.exitCode, 0, label);
+    assert.equal(spawnCount, 1, `${label}: ordinary dispatch remains live`);
+    assert.deepEqual(warnings, [], `${label}: expected absence/off is silent`);
+  }
+});
+
+test("Proves: ORG-COORD-CLI-003; Test type: ledger-failure integration; Surface: Claude child liveness under coordination failure; Authority: fail-open dispatch policy; Killer mutation: throw or return before child spawn; Gated command: npm test", async (t) => {
+  const { root, runtimeRoot } = await createInstalledCoordinationRepository(t);
+  const brief = await writeCoordinationBrief(root, "broken-ledger", {
+    taskId: "claude-dispatch-broken-ledger",
+    editPaths: ["scripts/broken-ledger.mjs"],
+  });
+  const { defaultCoordinationDatabasePath } = await importCoordinationModule(runtimeRoot, "ledger.mjs");
+  await mkdir(defaultCoordinationDatabasePath(root), { recursive: true });
+  let spawnCount = 0;
+  const warnings = [];
+  const result = await dispatchCoordinationFixture(t, {
+    cwd: root,
+    brief,
+    warnings,
+    spawnProcess: readOnlySpawn({ onSpawn: () => { spawnCount += 1; } }),
+  });
+
+  assert.equal(result.exitCode, 0);
+  assert.equal(spawnCount, 1, "liveness: an unavailable ledger cannot block Claude");
+  assert.ok(warnings.some((message) => /FAIL-OPEN/iu.test(message)));
+  assert.ok(warnings.some((message) => /could not open or validate|directory|database/iu.test(message)));
+});
+
+test("Proves: ORG-COORD-CLI-004; Test type: ENFORCE refusal integration; Surface: global Claude dispatcher admission; Authority: proven project-ledger overlap; Killer mutation: spawn after refused registration; Gated command: npm test", async (t) => {
+  const { root, runtimeRoot } = await createInstalledCoordinationRepository(t, {
+    mode: "enforce",
+    acceptNotReady: true,
+  });
+  const register = await importCoordinationModule(runtimeRoot, "register.mjs");
+  const priorOwnerToken = "prior-owner-token";
+  const prior = await register.registerClaim({
+    repoRoot: root,
+    taskId: "claude-prior-owner",
+    attemptId: "claude-prior-attempt",
+    agentKind: "claude",
+    editPaths: ["scripts/enforced-overlap.mjs"],
+    readPaths: [],
+    ownerToken: priorOwnerToken,
+    ownerPid: process.pid,
+    branch: "main",
+    worktreePath: root,
+  });
+  assert.ok(prior.claimId, prior.error);
+
+  const claimFile = path.join(root, "enforced-claim.json");
+  await writeFile(
+    claimFile,
+    `${JSON.stringify({
+      taskId: "claude-refused-owner",
+      agentKind: "claude",
+      editPaths: ["scripts/enforced-overlap.mjs"],
+      readPaths: [],
+    })}\n`,
+    "utf8",
+  );
+  let spawnCount = 0;
+  const error = await captureRejection(
+    dispatchCoordinationFixture(t, {
+      cwd: root,
+      claimFile,
+      spawnProcess: readOnlySpawn({ onSpawn: () => { spawnCount += 1; } }),
+    }),
+  );
+  assert.ok(error instanceof DispatchExitError);
+  assert.equal(error.exitCode, 125);
+  assert.match(error.message, /Resource admission refused by ENFORCE/u);
+  assert.match(error.message, /claude-prior-owner/u);
+  assert.match(error.message, new RegExp(prior.claimId, "u"));
+  assert.match(error.message, /scripts\/enforced-overlap\.mjs/u);
+  assert.equal(spawnCount, 0, "a proven ENFORCE overlap must refuse before spawn");
+
+  const { openCoordinationLedger } = await importCoordinationModule(runtimeRoot, "ledger.mjs");
+  const ledger = openCoordinationLedger({ cwd: root });
+  try {
+    assert.equal(ledger.listConflicts().length, 1, "liveness: refusal persisted the named conflict");
+  } finally {
+    ledger.close();
+  }
+  await register.releaseClaim({
+    repoRoot: root,
+    claimId: prior.claimId,
+    ownerToken: priorOwnerToken,
+    fencingEpoch: prior.fencingEpoch,
+  });
+});
+
+test("Proves: ORG-COORD-CLI-005; Test type: reserved-exit integration; Surface: dispatcher process result; Authority: exit 125 is coordination-refusal-only; Killer mutation: expose child exit 125 unchanged; Gated command: npm test", async (t) => {
+  const cwd = await mkdtemp(path.join(tmpdir(), "claude-dispatch-child-125-"));
+  t.after(() => rm(cwd, { recursive: true, force: true }));
+  let spawnCount = 0;
+  const error = await captureRejection(
+    dispatchCoordinationFixture(t, {
+      cwd,
+      spawnProcess: readOnlySpawn({
+        code: 125,
+        onSpawn: () => { spawnCount += 1; },
+      }),
+    }),
+  );
+  assert.ok(error instanceof DispatchExitError);
+  assert.equal(error.exitCode, 3);
+  assert.match(error.message, /child exit 125.*remapped to 3/iu);
+  assert.equal(spawnCount, 1, "liveness: this is a real child result, not admission refusal");
+});
+
+test("Proves: ORG-COORD-CLI-006; Test type: promotion-readiness integration; Surface: coordination rollout gate; Authority: every instrumented dispatcher and healthy observe window; Killer mutation: retain the standing blocker or omit the Claude CLI dispatch path; Gated command: npm test", async (t) => {
+  const { root, runtimeRoot } = await createInstalledCoordinationRepository(t);
+  const coverageModule = await importCoordinationModule(runtimeRoot, "coverage.mjs");
+  const {
+    COORDINATION_DISPATCH_PATHS,
+    COORDINATION_PROMOTION_THRESHOLDS,
+    KNOWN_UNINSTRUMENTED_DISPATCHERS,
+    countDispatch,
+    promotionReadiness,
+    readCoordinationCoverage,
+  } = coverageModule;
+  assert.equal(KNOWN_UNINSTRUMENTED_DISPATCHERS.includes("dispatch-claude-cli"), false);
+  let modeEpoch;
+  for (const dispatchPath of Object.values(COORDINATION_DISPATCH_PATHS)) {
+    const counted = countDispatch("observe", { repoRoot: root, dispatchPath });
+    assert.equal(counted.error, undefined);
+    modeEpoch = counted.modeEpoch;
+  }
+  const { openCoordinationLedger } = await importCoordinationModule(runtimeRoot, "ledger.mjs");
+  const ledger = openCoordinationLedger({ cwd: root });
+  try {
+    ledger.incrementCoverage({
+      mode: "observe",
+      modeEpoch,
+      increments: {
+        claims_registered: COORDINATION_PROMOTION_THRESHOLDS.minimumClaimsRegistered,
+      },
+    });
+  } finally {
+    ledger.close();
+  }
+  const coverage = readCoordinationCoverage({ repoRoot: root });
+  const now = Date.parse(coverage.started_at)
+    + COORDINATION_PROMOTION_THRESHOLDS.minimumObserveDurationMs;
+  const readiness = promotionReadiness({ repoRoot: root, now });
+  assert.equal(readiness.ready, true, JSON.stringify(readiness.reasons));
+  assert.deepEqual(readiness.reasons, []);
+  assert.equal(readiness.observed.dispatchPathHits[COORDINATION_DISPATCH_PATHS.claudeCli], 1);
 });
 
 test("Proves Agent and Task events remain rejected instead of being normalized into authority", () => {
