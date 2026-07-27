@@ -9,7 +9,7 @@ project template and must not be duplicated into each bootstrapped repository.
 - Every two weeks on Monday at 10:00 in the user's local timezone.
 - Local, read-only execution, bound to the saved Auxara Dialer project so it has a durable task home.
 - Compare the prior 14 days of tracked orchestration changes in the registered `${PROJECT:auxara-dialer}` and
-  `${PROJECT:coachai}` roots against this skill, the safe Claude global rule/agent surfaces, and the Codex
+  `${PROJECT:coachai}` roots (as bound in `registries/project-roots.local.json`) against this skill, the safe Claude global rule/agent surfaces, and the Codex
   global `AGENTS.md`.
 
 ## Decision contract
