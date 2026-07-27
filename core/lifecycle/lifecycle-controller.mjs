@@ -25,10 +25,6 @@ import {
 } from './evidence-runtime.mjs';
 import { classifyMinimumRiskPaths, loadActionAuthority, loadRiskPolicy, validateCompletion, validateTaskContract } from './task-governor.mjs';
 
-function readJson(file) {
-  return JSON.parse(fs.readFileSync(file, 'utf8'));
-}
-
 function acceptedRepositoryBaseRef(attempt) {
   const baseRef = attempt?.repository_base_ref;
   const prefix = 'origin/';
