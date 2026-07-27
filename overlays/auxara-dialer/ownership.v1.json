@@ -6,6 +6,7 @@
     { "id": "auxara-action-authority", "mode": "generated", "destination": ".ai-organization/policies/action-authority.v1.json" },
     { "id": "auxara-risk-controls", "mode": "generated", "destination": ".ai-organization/policies/risk-controls.v1.json" },
     { "id": "auxara-agent-role-registry", "mode": "generated", "destination": ".ai-organization/registries/agent-roles.v1.json" },
+    { "id": "auxara-agent-role-extension-registry", "mode": "generated", "destination": ".ai-organization/registries/agent-roles.project.v1.json" },
     { "id": "auxara-assurance-schemas", "mode": "generated", "destination": ".ai-organization/schemas" },
     { "id": "auxara-shared-runtime", "mode": "generated", "destination": ".ai-organization/runtime/core" },
     { "id": "auxara-automation-specs", "mode": "generated", "destination": ".ai-organization/automations" },

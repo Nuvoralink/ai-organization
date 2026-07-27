@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { effectiveRoles, validateProjectRoleExtensionSemantics } from '../core/roles/agent-role-registry.mjs';
 import { validateJsonAgainstSchema } from '../core/schema/validate-json-schema.mjs';
 import { validateAgentRoleRegistries } from '../scripts/lib/control-plane.mjs';
+import { validateOverlay } from '../scripts/project-overlay.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const universalSchema = path.join(repoRoot, 'schemas', 'agent-role-registry.v1.schema.json');
@@ -105,4 +106,31 @@ test('Proves: the dialer specialization replaces generic security and frontend i
   assert.equal(dialerIds.includes('sprint-implementer'), true);
   assert.equal(coachaiIds.includes('security-auditor'), true);
   assert.equal(coachaiIds.includes('cybersecurity-auditor'), false);
+});
+
+test('Proves: each overlay installs exactly one project extension beside the unchanged universal registry under the project registry root; Test type: overlay contract; Surface: overlay manifests and ownership; Authority: project overlay mappings; Killer mutation: drop the extension mapping or its metadata-tree exclusion, change its destination, or omit its ownership row; Gated command: overlay validate and npm test', () => {
+  for (const [project, prefix] of [['auxara-dialer', 'auxara'], ['coachai', 'coachai']]) {
+    const overlayRoot = path.join(repoRoot, 'overlays', project);
+    const manifest = JSON.parse(fs.readFileSync(path.join(overlayRoot, 'manifest.json'), 'utf8'));
+    const ownership = JSON.parse(fs.readFileSync(path.join(overlayRoot, 'ownership.v1.json'), 'utf8'));
+    const universalMapping = manifest.mappings.find((mapping) => mapping.id === `${prefix}-agent-role-registry`);
+    const extensionMapping = manifest.mappings.find((mapping) => mapping.id === `${prefix}-agent-role-extension-registry`);
+    const metadataMapping = manifest.mappings.find((mapping) => mapping.id === `${prefix}-organization-metadata`);
+
+    assert.equal(universalMapping.source, 'registries/agent-roles.v1.json');
+    assert.equal(extensionMapping.source, `overlays/${project}/control-plane/registries/agent-roles.project.v1.json`);
+    assert.deepEqual(
+      extensionMapping.destinations,
+      [`\${PROJECT:${project}}/.ai-organization/registries/agent-roles.project.v1.json`],
+    );
+    for (const field of ['mode', 'ownership', 'allowedExtensions', 'detectLocalOnly', 'allowRootLink', 'allowInstalledRootLink', 'lock']) {
+      assert.deepEqual(extensionMapping[field], universalMapping[field], `${project} extension must match universal ${field} discipline`);
+    }
+    assert.ok(metadataMapping.exclude.includes('registries/agent-roles.project.v1.json'));
+    assert.ok(ownership.assets.some((asset) =>
+      asset.id === extensionMapping.id
+      && asset.mode === 'generated'
+      && asset.destination === '.ai-organization/registries/agent-roles.project.v1.json'));
+    assert.deepEqual(validateOverlay(project).map((failure) => failure.message ?? failure), []);
+  }
 });
