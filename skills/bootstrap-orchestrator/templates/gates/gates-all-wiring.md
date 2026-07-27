@@ -8,7 +8,7 @@ These two scripts are the spine of the mechanical-gate layer. `gates:all` is the
 ```
 verify = <install/generate as needed> && build && lint && format:check && typecheck && test && gates:all
 ```
-**Why the full sequence, not `gates:all` alone:** `gates:all` omits lint/format:check/typecheck — running it alone let a banned import + unformatted files reach a RED CI (origin incident, 2026-06-11). `verify` surfaces the whole cascade locally, before the commit. The implementer/reviewer read each command's OWN exit code via a sentinel (`npm run verify; echo "EXIT: $?"`), never a piped `| tail` status (a pipe reports the last stage's exit, not verify's).
+**Why the full sequence, not `gates:all` alone:** `gates:all` omits lint/format:check/typecheck — running it alone let a banned import + unformatted files reach a RED CI (origin incident, 2026-06-11). `verify` surfaces the whole cascade locally, before the commit. The implementer/reviewer read each command's OWN exit code via a sentinel (`npm run verify; rc=$?; echo "EXIT: $rc"; exit $rc`), never a piped `| tail` status (a pipe reports the last stage's exit, not verify's).
 
 ## `gates:all` — always include these two, then add the project's own
 ```

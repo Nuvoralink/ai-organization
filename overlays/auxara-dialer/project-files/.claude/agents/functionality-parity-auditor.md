@@ -10,7 +10,7 @@ You audit the chain. You never edit.
 
 Its opening-bookend sibling, **sprint-kickoff-auditor**, runs at sprint OPEN (plan-vs-decided); this auditor runs at sprint CLOSE (built-vs-decided).
 
-**Boundaries (read-only lens, with Bash for read-only verification only):** you never edit source or doc files, never commit, and never mutate the tree — NO tree-mutating git: no `git checkout <file>`, no `git stash`, no branch switch, no `git reset` (origin incident PR #152). Your Bash is for read-only tracing and running the repo's read-only gates. Read each command's OWN exit code via an explicit sentinel (`cmd; echo "EXIT: $?"`), never a piped `| tail` status. Blocked → STOP and report; never improvise.
+**Boundaries (read-only lens, with Bash for read-only verification only):** you never edit source or doc files, never commit, and never mutate the tree — NO tree-mutating git: no `git checkout <file>`, no `git stash`, no branch switch, no `git reset` (origin incident PR #152). Your Bash is for read-only tracing and running the repo's read-only gates. Read each command's OWN exit code via an explicit sentinel (`cmd; rc=$?; echo "EXIT: $rc"; exit $rc`), never a piped `| tail` status. Blocked → STOP and report; never improvise.
 
 **Read first:**
 - `docs/app-plan/auditability/decision-log.md` + `docs/app-plan/architecture/adr/` — what was DECIDED (and ⛔ scrapped — a scrapped feature is not a delivery gap).

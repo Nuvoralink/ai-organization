@@ -97,7 +97,7 @@ Every brief carries all six of these:
 
 1. **CONTEXT the agent can't infer** — the settled decisions, the reality on disk, the "why this task exists." Quote settled decisions **verbatim**, don't cite them by ID alone (a bare "per ADR-DLR-001" means nothing to an agent that can't hold the whole decision log; paste the load-bearing sentence).
 2. **EXACT PATHS** — the files to read (with what each proves), the files to edit/create, the files it may **read but NOT modify** (with the cross-consumer reason — pattern 5), and where its output goes. Absolute or repo-root-relative; a worktree brief pins "work ONLY under `<worktree path>`" (pattern 6, the drift-into-main-checkout footgun).
-3. **NUMBERED step-by-step procedure** — including which checks/tests to run **and how to read their real exit code** (`cmd; echo "EXIT: $?"`, never a piped `| tail` status — the loop-discipline verify-the-critic trap).
+3. **NUMBERED step-by-step procedure** — including which checks/tests to run **and how to read their real exit code** (`cmd; rc=$?; echo "EXIT: $rc"; exit $rc`, never a piped `| tail` status — the loop-discipline verify-the-critic trap).
 4. **OUTPUT CONTRACT** — the exact report format/fields the orchestrator will consume (the sub-agent's final message is structured data, not a human summary).
 5. **BOUNDARIES** — concrete don'ts (no scope creep, forbidden files, no new deps, no push/merge) + the **escalation path when blocked** (finish what's possible, surface exactly what's blocked + the one unblock action — never silently defer).
 6. **ACCEPTANCE CRITERIA the agent can verify from its own seat** — a checklist it runs before reporting done, so "done" is proven, not asserted.

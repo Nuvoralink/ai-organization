@@ -48,6 +48,11 @@ definitions, raw HTML prose and attributes, code comments, string and template l
 historical/negated counterexamples where applicable. Use grammar-aware parsers for each language and
 extract semantic prose from the complete relevant AST; a parser used only for links does not prove raw
 HTML prose coverage, and a token scanner used only for comments/strings does not prove JSX coverage.
+Inventory the physical source roots with traversal that includes hidden authority directories such as
+`.claude` and `.codex`; default `rg`/glob ignore behavior is never coverage evidence. Use explicit safe
+roots plus `rg --hidden`, `rg --files --hidden`, or an equivalent filesystem walk, and count the full
+result before filtering. Keep secret/runtime/cache/vendor trees excluded through an explicit safe
+allowlist rather than broad `--no-ignore` traversal.
 
 For every matrix cell, require one rejecting mutation and one legitimate counterexample, then run the
 gate against the real repository after the fixture suite. Read the actual failure output and confirm it
@@ -55,12 +60,14 @@ names the mutated file/line. A green fixture suite plus a green real-repo gate i
 unrepresented source shape can carry the same live authority.
 
 - **Fail-state:** the guardrail is reported as repo-wide while stale live authority in an omitted syntax
-  shape (for example JSX text or raw-HTML prose) passes, or a historical/negated statement is rejected.
+  shape (for example JSX text or raw-HTML prose) or hidden authority directory passes, or a
+  historical/negated statement is rejected.
 - **Regression mutation:** place the same forbidden current claim in each matrix cell, including JSX
-  text split around a child element and raw HTML with nested inline elements; every mutation must make
-  the gate exit nonzero.
+  text split around a child element, raw HTML with nested inline elements, and a hidden `.claude` or
+  `.codex` authority file; every mutation must make the gate exit nonzero.
 - **Counterexample:** code fences/inline code, historical lessons, and legitimate mobile-only values stay
-  accepted when the guard applies only to current prose or a different surface.
+  accepted when the guard applies only to current prose or a different surface; explicitly excluded
+  secret, runtime, cache, and vendor directories remain unread.
 - **Validation:** report the matrix, fixture exits, real-repository exit, and at least one independently
   reproduced bypass attempt. Do not summarize this as "parser-backed" without naming the AST nodes and
   source roots actually covered.

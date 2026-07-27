@@ -31,8 +31,17 @@ catches. The deeper sections below expand the gates; this list governs that I ac
    invokes it **and** every input/feeder/dependency that supplies it. I grep the name across the *whole
    repo* — not just the file I'm in — and update each one to match. Fixing a function means finding and
    updating *every* call site in *every* file, not only the definition; changing a shape means every
-   producer that fills it and every consumer that reads it. *Fail-state:* a caller or feeder in a file I
-   never opened still expects the old shape/behavior after my change.
+   producer that fills it and every consumer that reads it. **An enumeration that establishes a blast
+   radius is NEVER truncated or narrowly scoped: no `head -N`, no `| head`, no limiting the search to the
+   directory I happen to be thinking about.** A truncated result is visually indistinguishable from a
+   complete one — same clean output, no signal anything was cut — so "I grepped it" silently becomes a
+   guess. Use `grep -rln` over the *whole* repo (plus every parallel fleet/config dir: `.claude/`,
+   `.codex/`, `docs/`, templates), count the hits, and fix ALL of them; only *after* the full list exists
+   may I filter it deliberately, naming what I excluded and why. (2026-07-27: a 15-file fix was enumerated
+   from `head -10` output and shipped as 10; the follow-up grep was scoped to `.claude/` and missed the
+   entire `.codex/` agent fleet plus the sprint template — two truncations inside one investigation.)
+   *Fail-state:* a caller or feeder in a file I never opened still expects the old shape/behavior after my
+   change — or my "repo-wide" grep was capped/scoped and I never knew what it hid.
 5. **Replace, don't layer.** A new / central / unified version of anything must **delete or demote** the
    old path it supersedes — grep the old symbol to confirm it's gone, not orphaned. *Fail-state:* two
    producers of the same output now race and the less-informed one wins on some input.

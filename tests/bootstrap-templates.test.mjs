@@ -11,6 +11,20 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const bootstrap = path.join(root, 'skills', 'bootstrap-orchestrator');
 const read = (relative) => fs.readFileSync(path.join(bootstrap, relative), 'utf8');
 
+function markdownFilesUnder(directory) {
+  const files = [];
+  const pending = [directory];
+  while (pending.length > 0) {
+    const current = pending.pop();
+    for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+      const absolute = path.join(current, entry.name);
+      if (entry.isDirectory()) pending.push(absolute);
+      else if (entry.isFile() && entry.name.endsWith('.md')) files.push(absolute);
+    }
+  }
+  return files;
+}
+
 const REQUIRED_HOOK_EVENTS = [
   'SessionStart', 'SubagentStart', 'TaskCreated', 'TaskCompleted',
   'SubagentStop', 'PostCompact', 'SessionEnd', 'PostToolUse',
@@ -275,6 +289,33 @@ test('Proves: ORG-COORD-CLI-007; Test type: shipped-template mutation; Surface: 
   assert.match(skill, /repository's installed `.ai-organization\/runtime\/core\/coordination\/` modules/u);
   assert.match(skill, /proven `enforce` overlap refuses before spawn with exit `125`/u);
   assert.match(skill, /child-owned exit `125` is remapped to `3`/u);
+});
+
+test('Proves: ORG-LOOP-002; Test type: exact-literal authority sweep; Surface: global, bootstrap, and overlay Markdown; Authority: propagating exit sentinel; Killer mutation: restore cmd; echo without saving and re-exiting the command status; Gated command: npm test', () => {
+  const loopDiscipline = path.join(root, 'global', 'claude', 'rules', 'loop-discipline.md');
+  const authorityRoots = [
+    path.join(root, 'global'),
+    path.join(root, 'skills', 'bootstrap-orchestrator'),
+    path.join(root, 'overlays'),
+  ];
+  const unsafeLiteral = 'cmd; echo "EXIT: $?"';
+  const offenders = authorityRoots
+    .flatMap(markdownFilesUnder)
+    .filter((file) => path.resolve(file) !== path.resolve(loopDiscipline))
+    .filter((file) => fs.readFileSync(file, 'utf8').includes(unsafeLiteral))
+    .map((file) => path.relative(root, file).replaceAll('\\', '/'))
+    .sort();
+  assert.deepEqual(offenders, []);
+  const lesson = fs.readFileSync(loopDiscipline, 'utf8');
+  assert.match(lesson, /`cmd; echo "EXIT: \$\?"` — is itself a masking bug/u);
+  assert.match(lesson, /rc=\$\?; echo "EXIT: \$rc"; exit \$rc/u);
+  const promotionSkill = fs.readFileSync(
+    path.join(root, 'skills', 'docs-rules-guardrail-promotion', 'SKILL.md'),
+    'utf8',
+  );
+  assert.match(promotionSkill, /`rg --hidden`/u);
+  assert.match(promotionSkill, /hidden `\.claude` or\s+`\.codex` authority file/u);
+  assert.match(promotionSkill, /secret, runtime, cache, and vendor directories remain unread/u);
 });
 
 test('Proves: ORG-HOOK-001; Test type: mutation and path counterexample; Surface: bootstrap and overlay hook descriptors; Authority: Claude project-root hook contract; Killer mutation: restore a cwd-relative shell-form command; Gated command: npm test', () => {
