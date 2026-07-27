@@ -4,6 +4,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { validateJsonAgainstSchema, validateSchemaReferences } from '../../core/schema/validate-json-schema.mjs';
 import { validateActionPolicySemantics } from '../../core/authority/assess-action.mjs';
+import { validateProjectRoleExtensionSemantics } from '../../core/roles/agent-role-registry.mjs';
 
 const TEXT_EXTENSIONS = new Set([
   '', '.md', '.txt', '.json', '.jsonl', '.ndjson', '.yaml', '.yml', '.toml', '.mjs', '.cjs', '.js', '.ts', '.tsx',
@@ -15,6 +16,7 @@ const SECRET_PATTERNS = [
   /\b(?:gh[opusr]_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16})\b/,
   /\b(?:api[_-]?key|access[_-]?token|client[_-]?secret)\s*[:=]\s*["']?(?!\$\{|<|REDACTED|EXAMPLE|YOUR_|process\.env|Deno\.env|env\.|os\.environ|getenv\()[A-Za-z0-9_\-/.+=]{16,}/i
 ];
+const PROJECT_OVERLAYS = Object.freeze(['auxara-dialer', 'coachai']);
 
 function invariant(condition, message) {
   if (!condition) throw new Error(message);
@@ -1186,6 +1188,42 @@ export function validateAutomationSpecs(registry, projectSpecs) {
   return problems;
 }
 
+export function validateAgentRoleRegistries(repoRoot) {
+  const problems = [];
+  const universalSchema = path.join(repoRoot, 'schemas', 'agent-role-registry.v1.schema.json');
+  const projectSchema = path.join(repoRoot, 'schemas', 'agent-role-project-extension.v1.schema.json');
+  let universal;
+  try {
+    universal = readJson(path.join(repoRoot, 'registries', 'agent-roles.v1.json'));
+  } catch {
+    return ['Agent registry is missing or unreadable'];
+  }
+
+  problems.push(...validateJsonAgainstSchema(universalSchema, universal).map((failure) => `Agent registry schema: ${failure}`));
+  const ids = new Set();
+  for (const role of universal.roles ?? []) {
+    if (ids.has(role.id)) problems.push(`Duplicate agent role: ${role.id}`);
+    ids.add(role.id);
+    if (!Array.isArray(role.required_outputs) || role.required_outputs.length === 0) problems.push(`Agent role lacks output contract: ${role.id}`);
+  }
+  if (!ids.has('premise-and-architecture-challenger')) problems.push('Premise challenger role is required');
+
+  for (const project of PROJECT_OVERLAYS) {
+    let extension;
+    try {
+      extension = readJson(path.join(repoRoot, 'overlays', project, 'control-plane', 'registries', 'agent-roles.project.v1.json'));
+    } catch {
+      problems.push(`${project} role extension is missing or unreadable`);
+      continue;
+    }
+    problems.push(...validateJsonAgainstSchema(projectSchema, extension).map((failure) => `${project} role extension schema: ${failure}`));
+    if (Array.isArray(universal.roles) && Array.isArray(extension.roles)) {
+      problems.push(...validateProjectRoleExtensionSemantics(universal, extension).map((failure) => `${project} role extension: ${failure}`));
+    }
+  }
+  return problems;
+}
+
 export function validateRegistries(repoRoot) {
   const problems = [];
   const policyFile = path.join(repoRoot, 'policies', 'action-authority.v1.json');
@@ -1193,15 +1231,7 @@ export function validateRegistries(repoRoot) {
   problems.push(...validateJsonAgainstSchema(path.join(repoRoot, 'schemas', 'action-authority.v1.schema.json'), policy).map((failure) => `Action policy schema: ${failure}`));
   problems.push(...validateActionPolicy(policy));
 
-  const registry = readJson(path.join(repoRoot, 'registries', 'agent-roles.v1.json'));
-  problems.push(...validateJsonAgainstSchema(path.join(repoRoot, 'schemas', 'agent-role-registry.v1.schema.json'), registry).map((failure) => `Agent registry schema: ${failure}`));
-  const ids = new Set();
-  for (const role of registry.roles) {
-    if (ids.has(role.id)) problems.push(`Duplicate agent role: ${role.id}`);
-    ids.add(role.id);
-    if (role.required_outputs.length === 0) problems.push(`Agent role lacks output contract: ${role.id}`);
-  }
-  if (!ids.has('premise-and-architecture-challenger')) problems.push('Premise challenger role is required');
+  problems.push(...validateAgentRoleRegistries(repoRoot));
   const artifacts = readJson(path.join(repoRoot, 'registries', 'artifacts.v1.json'));
   const artifactIds = new Set();
   const skillNames = new Set();
@@ -1216,7 +1246,7 @@ export function validateRegistries(repoRoot) {
   const manifest = readJson(path.join(repoRoot, 'control-plane.manifest.json'));
   problems.push(...validateJsonAgainstSchema(path.join(repoRoot, 'schemas', 'control-plane-manifest.v1.schema.json'), manifest).map((failure) => `Control manifest schema: ${failure}`));
   for (const mapping of manifest.mappings) if (!artifactIds.has(mapping.id)) problems.push(`Mapping lacks artifact registry row: ${mapping.id}`);
-  for (const project of ['auxara-dialer', 'coachai']) {
+  for (const project of PROJECT_OVERLAYS) {
     const overlay = readJson(path.join(repoRoot, 'overlays', project, 'manifest.json'));
     problems.push(...validateJsonAgainstSchema(path.join(repoRoot, 'schemas', 'project-overlay.v1.schema.json'), overlay).map((failure) => `${project} overlay schema: ${failure}`));
   }

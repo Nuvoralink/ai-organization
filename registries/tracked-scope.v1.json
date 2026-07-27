@@ -159,6 +159,10 @@
       "class": "shared-control-plane-runtime"
     },
     {
+      "path": "core/roles/agent-role-registry.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
       "path": "core/schema/task-assurance.mjs",
       "class": "shared-control-plane-runtime"
     },
@@ -2899,6 +2903,10 @@
       "class": "project-orchestration-overlay"
     },
     {
+      "path": "overlays/auxara-dialer/control-plane/registries/agent-roles.project.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
       "path": "overlays/auxara-dialer/exclusions.v1.json",
       "class": "project-orchestration-overlay"
     },
@@ -3180,6 +3188,10 @@
     },
     {
       "path": "overlays/coachai/control-plane/project-profile.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/control-plane/registries/agent-roles.project.v1.json",
       "class": "project-orchestration-overlay"
     },
     {
@@ -3544,6 +3556,10 @@
     },
     {
       "path": "schemas/action-authority.v1.schema.json",
+      "class": "schema"
+    },
+    {
+      "path": "schemas/agent-role-project-extension.v1.schema.json",
       "class": "schema"
     },
     {
@@ -4872,6 +4888,10 @@
     },
     {
       "path": "tests/action-authority.test.mjs",
+      "class": "control-plane-test"
+    },
+    {
+      "path": "tests/agent-role-registry.test.mjs",
       "class": "control-plane-test"
     },
     {
