@@ -4,9 +4,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   loadRoots,
+  parseControlPlaneArgs,
   readJson,
   runCapture,
   runCheck,
+  runDigest,
   runInstall,
   runRollback,
   validateCanonical,
@@ -130,73 +132,110 @@ export function validateOverlay(project, rootsOverride = undefined) {
   return failures;
 }
 
-function printFailures(failures) {
-  failures.forEach((failure) => console.error(typeof failure === 'string' ? failure : JSON.stringify(failure)));
+function printFailures(failures, stderr = console.error) {
+  failures.forEach((failure) => stderr(typeof failure === 'string' ? failure : JSON.stringify(failure)));
 }
 
-function cli(argv) {
+export function parseProjectOverlayArgs(argv) {
   const [command, project, ...rest] = argv;
-  if (!['validate', 'check', 'install', 'capture', 'inventory', 'rollback'].includes(command) || !project) {
-    console.error('Usage: project-overlay.mjs <validate|check|install|capture|inventory|rollback> <project> [--root PATH] [--dry-run] [--update-existing] [--adopt-existing] [--install-id ID]');
-    return 2;
+  if (!['validate', 'check', 'install', 'capture', 'digest', 'inventory', 'rollback'].includes(command) || !project) {
+    throw new Error('Usage: project-overlay.mjs <validate|check|install|capture|digest|inventory|rollback> <project> [--root PATH] [--dry-run] [--update-existing] [--mapping ID] [--file MAPPING:RELATIVE] [--adopt-existing] [--reconcile-installed MAPPING:SHA256] [--install-id ID]');
   }
-  const rootIndex = rest.indexOf('--root');
-  const loaded = loadOverlay(project);
-  const roots = { ...loaded.roots };
-  if (rootIndex >= 0) {
-    const root = rest[rootIndex + 1];
-    if (!root) throw new Error('--root requires a path');
-    roots[loaded.manifest.rootToken] = path.resolve(root);
-  }
-  const failures = validateOverlay(project, roots);
-  let portableCaptureReplacementValid = false;
-  if (command === 'capture' && roots[loaded.manifest.rootToken]) {
-    const replacement = path.join(roots[loaded.manifest.rootToken], '.ai-organization', 'overlay-lock.json');
-    if (fs.existsSync(replacement)) {
-      try { portableCaptureReplacementValid = validatePortableOverlayLock(readJson(replacement)).length === 0; }
-      catch { portableCaptureReplacementValid = false; }
+  let rootOverride;
+  const forwarded = [];
+  for (let index = 0; index < rest.length; index += 1) {
+    const value = rest[index];
+    if (value !== '--root') {
+      forwarded.push(value);
+      continue;
     }
+    if (rootOverride !== undefined) throw new Error('Duplicate --root');
+    rootOverride = rest[index + 1];
+    if (!rootOverride || rootOverride.startsWith('--')) throw new Error('--root requires a path');
+    index += 1;
   }
-  const blockingFailures = command === 'capture'
-    ? failures.filter((failure) => failure.type !== 'empty-source' && !(portableCaptureReplacementValid && failure.type === 'overlay' && failure.message?.startsWith('portable overlay lock ')))
-    : failures;
-  if (blockingFailures.length > 0) {
-    printFailures(blockingFailures);
-    return 1;
-  }
-  if (command === 'validate') {
-    console.log(`${project} overlay validation passed`);
-    return 0;
-  }
-  if (command === 'inventory') {
-    console.log(JSON.stringify({ project, rootToken: loaded.manifest.rootToken, mappings: loaded.manifest.mappings.map(({ id, source, destinations }) => ({ id, source, destinations })) }, null, 2));
-    return 0;
-  }
-  if (command === 'check') {
-    const problems = runCheck({ repoRoot, manifest: loaded.manifest, roots });
-    if (problems.length) {
-      printFailures(problems);
+  return {
+    project,
+    rootOverride,
+    ...parseControlPlaneArgs([command, ...forwarded]),
+  };
+}
+
+export function runProjectOverlayCli(argv, context = {}) {
+  const stdout = context.stdout ?? console.log;
+  const stderr = context.stderr ?? console.error;
+  try {
+    const {
+      command,
+      project,
+      rootOverride,
+      dryRun,
+      updateExisting,
+      mappingIds,
+      fileSelectors,
+      adoptExisting,
+      reconcileInstalled,
+      installId,
+    } = parseProjectOverlayArgs(argv);
+    const loaded = loadOverlay(project, context.rootsOverride);
+    const roots = { ...loaded.roots };
+    if (rootOverride !== undefined) {
+      roots[loaded.manifest.rootToken] = path.resolve(rootOverride);
+    }
+    const failures = validateOverlay(project, roots);
+    let portableCaptureReplacementValid = false;
+    if (command === 'capture' && roots[loaded.manifest.rootToken]) {
+      const replacement = path.join(roots[loaded.manifest.rootToken], '.ai-organization', 'overlay-lock.json');
+      if (fs.existsSync(replacement)) {
+        try { portableCaptureReplacementValid = validatePortableOverlayLock(readJson(replacement)).length === 0; }
+        catch { portableCaptureReplacementValid = false; }
+      }
+    }
+    const blockingFailures = command === 'capture'
+      ? failures.filter((failure) => failure.type !== 'empty-source' && !(portableCaptureReplacementValid && failure.type === 'overlay' && failure.message?.startsWith('portable overlay lock ')))
+      : failures;
+    if (blockingFailures.length > 0) {
+      printFailures(blockingFailures, stderr);
       return 1;
     }
-    console.log(`${project} overlay check passed`);
+    if (command === 'validate') {
+      stdout(`${project} overlay validation passed`);
+      return 0;
+    }
+    if (command === 'inventory') {
+      stdout(JSON.stringify({ project, rootToken: loaded.manifest.rootToken, mappings: loaded.manifest.mappings.map(({ id, source, destinations }) => ({ id, source, destinations })) }, null, 2));
+      return 0;
+    }
+    if (command === 'check') {
+      const problems = runCheck({ repoRoot, manifest: loaded.manifest, roots, mappingIds });
+      if (problems.length) {
+        printFailures(problems, stderr);
+        return 1;
+      }
+      stdout(`${project} overlay check passed`);
+      return 0;
+    }
+    if (command === 'digest') {
+      stdout(JSON.stringify(runDigest({ manifest: loaded.manifest, roots, mappingIds })));
+      return 0;
+    }
+    if (command === 'rollback') {
+      const ids = runRollback({ manifest: loaded.manifest, roots, installId });
+      stdout(`rolled back install ${[...new Set(ids)].join(', ')}`);
+      return 0;
+    }
+    const operations = command === 'capture'
+      ? runCapture({ repoRoot, manifest: loaded.manifest, roots, dryRun, updateExisting, mappingIds, fileSelectors })
+      : runInstall({ repoRoot, manifest: loaded.manifest, roots, dryRun, adoptExisting, mappingIds, reconcileInstalled });
+    operations.forEach((operation) => stdout(`${operation.type}\t${operation.mapping}\t${operation.relative || '.'}`));
+    stdout(`operations=${operations.length} dryRun=${dryRun}`);
     return 0;
+  } catch (error) {
+    stderr(error.message);
+    return 1;
   }
-  if (command === 'rollback') {
-    const idIndex = rest.indexOf('--install-id');
-    const ids = runRollback({ manifest: loaded.manifest, roots, installId: idIndex >= 0 ? rest[idIndex + 1] : undefined });
-    console.log(`rolled back install ${[...new Set(ids)].join(', ')}`);
-    return 0;
-  }
-  const dryRun = rest.includes('--dry-run');
-  const operations = command === 'capture'
-    ? runCapture({ repoRoot, manifest: loaded.manifest, roots, dryRun, updateExisting: rest.includes('--update-existing') })
-    : runInstall({ repoRoot, manifest: loaded.manifest, roots, dryRun, adoptExisting: rest.includes('--adopt-existing') });
-  operations.forEach((operation) => console.log(`${operation.type}\t${operation.mapping}\t${operation.relative || '.'}`));
-  console.log(`operations=${operations.length} dryRun=${dryRun}`);
-  return 0;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  try { process.exitCode = cli(process.argv.slice(2)); }
-  catch (error) { console.error(error.message); process.exitCode = 1; }
+  process.exitCode = runProjectOverlayCli(process.argv.slice(2));
 }

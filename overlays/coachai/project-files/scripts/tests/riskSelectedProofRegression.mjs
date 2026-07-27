@@ -43,6 +43,11 @@ test('CoachAI paths select semantic, DB, and supply-chain proof rather than gene
   assert.ok(route.includes('backend-db'));
   const dependency = selectProof(process.cwd(), ['package-lock.json']).profiles.map((p) => p.id);
   assert.deepEqual(dependency, ['dependency-supply-chain']);
+  // Root-level product docs (not under docs/) are documentation, not unmapped fail-closed paths.
+  // Killer mutation: drop "*.md" from the documentation profile's include and both assertions fail.
+  const rootDocSelection = selectProof(process.cwd(), ['COACHING_ARCHITECTURE.md']);
+  assert.ok(rootDocSelection.profiles.map((p) => p.id).includes('documentation'), 'a root-level .md must select the documentation profile');
+  assert.equal(rootDocSelection.unknown.length, 0, 'a root-level .md must not fail closed as an unmapped path');
 });
 
 test('killer mutations: unknown path, failed command, and missing DB authority fail', () => {

@@ -66,3 +66,46 @@ test('explicit lock refresh records the current declared managed surface', () =>
   writeOverlayLock(root);
   assert.equal(checkOverlayParity(root).ok, true);
 });
+
+test('append-only learned-classes region is excluded from parity, and the exclusion is load-bearing', () => {
+  const root = organizationFixture(source);
+  const agentFile = path.join(root, '.claude/agents/adversarial-reviewer.md');
+  assert.match(fs.readFileSync(agentFile, 'utf8'), /^## Learned classes/m, 'fixture agent file must carry the append-only marker');
+
+  // The closed-loop-learning flow appends learned-class rows over a project's life; that must NOT trip
+  // overlay parity — the overlay owns control-plane STRUCTURE, not accumulated project content.
+  fs.appendFileSync(agentFile, '\n- 2026-07-24: a newly learned class row.\n');
+  assert.equal(checkOverlayParity(root).ok, true, 'a learned-classes append must stay clean');
+
+  // Killer mutation — drop the marker declaration and relock the current file as an honest baseline;
+  // a further learned-classes append must now trip parity, proving the exclusion (not incidental slack)
+  // is what kept the append above clean.
+  const ownershipFile = path.join(root, '.ai-organization/ownership.json');
+  const ownership = JSON.parse(fs.readFileSync(ownershipFile, 'utf8'));
+  ownership.append_only_markers = [];
+  fs.writeFileSync(ownershipFile, `${JSON.stringify(ownership, null, 2)}\n`);
+  writeOverlayLock(root);
+  assert.equal(checkOverlayParity(root).ok, true, 'relock under empty markers is a clean baseline');
+  fs.appendFileSync(agentFile, '\n- 2026-07-24: another row after relock.\n');
+  assert.match(
+    checkOverlayParity(root).errors.join('\n'),
+    /managed file modified: \.claude\/agents\/adversarial-reviewer\.md/,
+    'with the marker removed, the same learned-classes append must trip parity',
+  );
+});
+
+test('structural change ABOVE the append-only marker still trips overlay parity', () => {
+  const root = organizationFixture(source);
+  const agentFile = path.join(root, '.claude/agents/adversarial-reviewer.md');
+  const text = fs.readFileSync(agentFile, 'utf8');
+  const markerIdx = text.search(/^## Learned classes/m);
+  assert.ok(markerIdx > 0, 'marker present with structure above it');
+  // Mutate a line in the managed structure above the marker — excluding the live-log must not blind
+  // the file's governed role/tools/procedure content.
+  fs.writeFileSync(agentFile, `${text.slice(0, markerIdx).replace(/\n/, ' STRUCTURAL-DRIFT\n')}${text.slice(markerIdx)}`);
+  assert.match(
+    checkOverlayParity(root).errors.join('\n'),
+    /managed file modified: \.claude\/agents\/adversarial-reviewer\.md/,
+    'structure above the marker must remain parity-protected',
+  );
+});

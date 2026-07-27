@@ -43,5 +43,8 @@
     "**/__pycache__/**",
     "tmp/**"
   ],
+  "append_only_markers": [
+    "## Learned classes"
+  ],
   "lock_file": ".ai-organization/overlay-lock.json"
 }

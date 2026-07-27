@@ -28,11 +28,11 @@
     },
     {
       "path": ".ai-organization/ownership.json",
-      "sha256": "571404e2809c86e51d4449429d772bfe96b8ebb26b2751a0a593b54607d36d0f"
+      "sha256": "788efd5a1ad3e323b7ab4e1a668abfa4c99885631766539ee8386d4f027b6f78"
     },
     {
       "path": ".ai-organization/policies/action-authority.v1.json",
-      "sha256": "dff8b12d250446bb73c430026173f60e19173530e1b0ea6f0ef84047eb15e088"
+      "sha256": "12c4b0ed89d5fad68c727d84c6aeb1cd41dc21ecddaecf6d83b2c4d7afd4c580"
     },
     {
       "path": ".ai-organization/policies/risk-controls.v1.json",
@@ -40,7 +40,7 @@
     },
     {
       "path": ".ai-organization/proof-profiles.json",
-      "sha256": "ca3fe3b08e6cce72a12d3d958fd9b9102debb1324696a5f45af805b1ab14b9e8"
+      "sha256": "822e014d53589b71b716ac54df87a2238f2c384f58478bb4bd86fea0b6ce0b2f"
     },
     {
       "path": ".ai-organization/registries/agent-roles.v1.json",
@@ -52,7 +52,55 @@
     },
     {
       "path": ".ai-organization/runtime/core/authority/assess-action.mjs",
-      "sha256": "79587bcd28275d7a1823e958efd3d6fef8d96b5a388da1f02ea29504d3faae6c"
+      "sha256": "c80793aa9f71dfb771930b22eac386333973beb1c184a3595bf004e6023d8747"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/candidate.mjs",
+      "sha256": "dc576bbc92c42463c65041ddfd0cc35b48758e038b84b9969c7649e864cc3fb9"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/candidate.test.mjs",
+      "sha256": "4e8330cff4c2aa44e0e323d7c6bfc2ce46f28a6dc08f167e86b93a8bc0b13164"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/coordination.test.mjs",
+      "sha256": "2373c8002240b6501720b2c582abf99e43cde937eeb5a068e550fc768838f2eb"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/coverage.mjs",
+      "sha256": "719c5a3386686137adabfcfceec7fb257e1050636b7f4192a7d46686157e74da"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/dependencyGraph.mjs",
+      "sha256": "050a8c91b7c6808de9a13f5adf0d719eabe541cf07fade9b3a5666ffda8008e4"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/freeze.mjs",
+      "sha256": "ae3add33cf0bfaf51bb81257c53da275648f3bfc6d3fdd5beca44aa212e94255"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/freeze.test.mjs",
+      "sha256": "fbd3f97c416407f26b4e6796f1ddcfe4057eaa676e59ddc2eb23d4fc10d43333"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/ledger.mjs",
+      "sha256": "121ac385dbd0ebf99f94d61cfe3143c19d30d9a4c39e81da10e2c263b1ee435e"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/mode.mjs",
+      "sha256": "84621908dd229572f62cb6701fea06fd3ec04981fa392da80112dbf6ce0edbe3"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/register.mjs",
+      "sha256": "8b1dec0a351aff642be35c1b6f4247af1fdf9123771ebf7c70752d9376036558"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/resourceConfig.mjs",
+      "sha256": "bff1dfa549454d3b14b98923f5b49b9dda9fd101178163d9045026cdf8b1c88b"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/resourceKey.mjs",
+      "sha256": "985e988bb58d1550b464ae8619f1dedc33c90a737dd7f105bc6be1f0bfdbd624"
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/README.md",
@@ -64,7 +112,7 @@
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/evidence-runtime.mjs",
-      "sha256": "34c31c7bea18d2c8fbd6a7f66eda6e662b6adebdc3be3028bbfbf32f678a8b9e"
+      "sha256": "fd81a79742c0a95c1d717ca197dfea09809d1d093ec2f7c78b0770600192406d"
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/lifecycle-controller.mjs",
@@ -75,12 +123,20 @@
       "sha256": "c21bc62b78a981eca9e67806b321240e4fcf2c996bb960897f51bb238491b4fc"
     },
     {
+      "path": ".ai-organization/runtime/core/lifecycle/task-assurance.test.mjs",
+      "sha256": "42362f27c43693743da386e17f6b4ff29ed900adbaea93abb1ae7f672bd89c59"
+    },
+    {
       "path": ".ai-organization/runtime/core/lifecycle/task-governor.mjs",
-      "sha256": "92285c0903afe2fc8af83e0d93c061bcea5ea31cb85810e19170f02a081f880b"
+      "sha256": "8b456ca18473d9597c150cac08873033f79687ac28700ec6cec981846a505774"
+    },
+    {
+      "path": ".ai-organization/runtime/core/schema/task-assurance.mjs",
+      "sha256": "a63568c084cb14f084c4ab74a048f2b0cff0d5fae350a479863897854ee4c734"
     },
     {
       "path": ".ai-organization/runtime/core/schema/validate-json-schema.mjs",
-      "sha256": "d9ac4138159b93515d9ebdde0963da5054436962ad1d6694753a504579ae45ab"
+      "sha256": "1d0b9d3a2a86a0e550b44bf4f3e885be5b9a22dd7c048f8d30ed59a4a54eef95"
     },
     {
       "path": ".ai-organization/schemas/action-authority.v1.schema.json",
@@ -92,7 +148,7 @@
     },
     {
       "path": ".ai-organization/schemas/control-plane-manifest.v1.schema.json",
-      "sha256": "bfae8365923628c0d1640621c555d212784e34c88e2f3574b49b4f3edf4e2f48"
+      "sha256": "503cad0aa4e60927c4e39ecb3d2532f33f569118871f47b3d811c11f129fd8d1"
     },
     {
       "path": ".ai-organization/schemas/project-overlay.v1.schema.json",
@@ -103,28 +159,32 @@
       "sha256": "df1b4b7578c9d4cf909bdbbcec41b81196dfbaad44f9fa42d73d3b8ff618312e"
     },
     {
+      "path": ".ai-organization/schemas/task-assurance.v3.schema.json",
+      "sha256": "7c1848e0628dca0d3d644a147c0d7b398d89d52aa8423a93cce4d318cfd64941"
+    },
+    {
       "path": ".ai-organization/schemas/task-evidence.v2.schema.json",
       "sha256": "51c1e08d38a5ce040a81bf088ff40a2c27bfa39c3b5b62add3d415b43b37f002"
     },
     {
       "path": ".claude/agents/adversarial-reviewer.md",
-      "sha256": "ca38a52772945802cb11c045cf4b1ca01c0eb7a1a50f11f1457e11cde24693a0"
+      "sha256": "b7c78e0da32a59bf1939d1285fd779dbf9670fc56de961dc27fc3fb3e92f8368"
     },
     {
       "path": ".claude/agents/ai-decision-boundary-auditor.md",
-      "sha256": "79fce27e186f2e73b6d1560f288d72cb4d08b20d65484c28317d85267ac7314b"
+      "sha256": "b53c897a6779c2b451e34dbd690b6fefcd221c3f4784cbfc27d9a134ea792fa6"
     },
     {
       "path": ".claude/agents/doctrine-drift-auditor.md",
-      "sha256": "4bb7c2e22ea4cff9f265f226c3771e37a9a7e993e5dc91f0628c67279bb7f2a6"
+      "sha256": "c980f91b0c33c5407635994453fd21814495656ad5df2697ad8e5cf8e14f412a"
     },
     {
       "path": ".claude/agents/functionality-parity-auditor.md",
-      "sha256": "b0f05ee5783f5799f9f7a1bd316b152c41f1778ca96c78a8c81b651131bde90c"
+      "sha256": "263ae949e3a31b4855450268ccc0eafecf406c519256d83c572c3c54e2d23e9d"
     },
     {
       "path": ".claude/agents/performance-auditor.md",
-      "sha256": "701b58db3cde47cbc872babaafb3804db4976027f22b3d584d64321519582734"
+      "sha256": "623a526c48f49000464f8ddbc10f5df838a69e634f269dd06c99f134727108e5"
     },
     {
       "path": ".claude/agents/premise-and-architecture-challenger.md",
@@ -132,11 +192,11 @@
     },
     {
       "path": ".claude/agents/release-verifier.md",
-      "sha256": "667ff1804343343c2e4b563b26c79fc56666011e647af78903ea5da10dd045fc"
+      "sha256": "2317f7fd0f2b890be9c00860beb15d8b88ae23b1678e2db42bc6bb9276f9717f"
     },
     {
       "path": ".claude/agents/source-to-screen-auditor.md",
-      "sha256": "d0408ed77dbd7dcef8c55ce369538cafc653d7b16d505c51aac09345c4d4041c"
+      "sha256": "bda6cf9119a895710f99546426997003bc0ae786867c49a837b2f837f03f1ef5"
     },
     {
       "path": ".claude/agents/sprint-kickoff-auditor.md",
@@ -144,15 +204,15 @@
     },
     {
       "path": ".claude/agents/test-runner.md",
-      "sha256": "c04368f5f8bea226f65087781d4e2bef476eebb91bc94cd5d22d6ce80de518e8"
+      "sha256": "6595fecedf826f31e38929cb963e5f9154a4a726b2ca3698b552ac8d9f83f6a0"
     },
     {
       "path": ".claude/agents/ui-verifier.md",
-      "sha256": "23f45d59cb0600fdef52ffbb6088096a1d98b8b639598499928cc4303d3aca31"
+      "sha256": "0616ec5bfb121ac61f9d7d1df882e04a8bfcc889bd00c544c02f3d4c951d31f9"
     },
     {
       "path": ".claude/agents/user-journey-auditor.md",
-      "sha256": "95300a27526d799c274fe8bf18fa50e1fa8d106804d1b51213be11258410812f"
+      "sha256": "48e504d8759e28af3cb908f3e1b6785cf31b3a773dfc12195df2bfd509432b81"
     },
     {
       "path": ".cursor/rules/agent-product-intent.mdc",
@@ -256,7 +316,7 @@
     },
     {
       "path": "AGENTS.md",
-      "sha256": "a14c307585f8bb04767add5dd4158a3873e2d10a1b5b7e36d4810de33fd16612"
+      "sha256": "435a666deb6d7f314da79e9b55a75def0dbb65158fceb388a939ab1e737442e6"
     },
     {
       "path": "CLAUDE.md",
@@ -276,7 +336,7 @@
     },
     {
       "path": "scripts/check-overlay-parity.mjs",
-      "sha256": "5ca40dcb277b86f77f203abf4d9e48bba5fa08d7ca832ba97f3ac15482a8fe58"
+      "sha256": "32f036230cf12ca5add25aef8d3f7ec5ee810ceaa0fc8379d1844d302bffd636"
     },
     {
       "path": "scripts/check-rules-wiring.mjs",
@@ -292,11 +352,11 @@
     },
     {
       "path": "scripts/claude-lifecycle-hook.mjs",
-      "sha256": "d7099eaa56fbb65f1337f37dca17797f4a2cb7a4fd166e9be8839fc50fdeda56"
+      "sha256": "b1ac95654bfa3588fcc7f737a03f2728d436f45fa01074d8166a4ee74e4ed66b"
     },
     {
       "path": "scripts/claude-posttooluse-gate.mjs",
-      "sha256": "749045096acd82b8440c781531f8984bfd0886a2d24f8c152be96e13906b04fe"
+      "sha256": "816ff7433cde5463bc81c95fe75fcee9601e84da4b2b192fb189d53322e8f939"
     },
     {
       "path": "scripts/run-risk-selected-proof.mjs",
@@ -320,15 +380,15 @@
     },
     {
       "path": "scripts/tests/overlayParityRegression.mjs",
-      "sha256": "fc95952c96d6bcafed78fce24db507881a00b3930225d1bcb5711a9ffa43c874"
+      "sha256": "f96d7e2473f54a2f5c1777f7e27be8f320a4c65b2ddb647957d39f1a68e25bf8"
     },
     {
       "path": "scripts/tests/riskSelectedProofRegression.mjs",
-      "sha256": "11de7d5609340d3b7a2a9293edc9cb56ded240c930f0120715c37fb4d71e21a1"
+      "sha256": "4acc4001e229c183492b9427938924b9807e2c1a15c2019b436274fc27bc60dc"
     },
     {
       "path": "scripts/tests/taskLifecycleRegression.mjs",
-      "sha256": "8aa9f5863532968e0cb2a8e7bdcb8e0c1af184ca4691884e65b3f31f891340d8"
+      "sha256": "941098fabeaefad2c852b4a82a2e26c1af1d99459b96eb30537662f60ded30a5"
     }
   ],
   "json_sections": {

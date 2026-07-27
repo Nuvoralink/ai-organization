@@ -7,10 +7,24 @@ import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 
 const sha = (value) => crypto.createHash('sha256').update(value).digest('hex');
-function fileSha(file) {
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// Drop append-only project-accumulated regions (the agent "## Learned classes" live log) before
+// hashing: the overlay owns control-plane STRUCTURE, not the closed-loop-learning rows the orchestrator
+// appends over a project's life. Same philosophy as excluded_project_owned, at region granularity
+// (a whole-file exclusion can't work — the file's structure above the marker must still be parity-checked).
+function stripAppendOnlyRegions(text, markers) {
+  for (const marker of markers) {
+    const match = new RegExp(`^${escapeRegex(marker)}`, 'm').exec(text);
+    if (match) return `${text.slice(0, match.index).replace(/\n+$/, '')}\n`;
+  }
+  return text;
+}
+function fileSha(file, appendOnlyMarkers = []) {
   const buffer = fs.readFileSync(file);
   // Git may materialize text as LF or CRLF. Overlay meaning is content, not checkout convention.
-  return buffer.includes(0) ? sha(buffer) : sha(buffer.toString('utf8').replace(/\r\n/g, '\n'));
+  if (buffer.includes(0)) return sha(buffer);
+  const text = buffer.toString('utf8').replace(/\r\n/g, '\n');
+  return sha(appendOnlyMarkers.length ? stripAppendOnlyRegions(text, appendOnlyMarkers) : text);
 }
 const normalize = (rel) => rel.replace(/\\/g, '/').replace(/^\.\//, '');
 function globRegex(pattern) {
@@ -37,12 +51,13 @@ export function buildOverlayLock(root = process.cwd()) {
   const ownership = JSON.parse(fs.readFileSync(path.join(root, '.ai-organization', 'ownership.json'), 'utf8'));
   const excluded = (ownership.excluded_project_owned ?? []).map(globRegex);
   const isExcluded = (rel) => rel === ownership.lock_file || excluded.some((re) => re.test(rel));
+  const appendOnlyMarkers = ownership.append_only_markers ?? [];
   const files = new Set((ownership.managed_files ?? []).map(normalize));
   for (const managedRoot of ownership.managed_roots ?? []) for (const rel of walk(root, managedRoot)) if (!isExcluded(rel)) files.add(rel);
   const fileHashes = [];
   for (const rel of [...files].sort()) {
     const abs = path.join(root, rel);
-    fileHashes.push({ path: rel, sha256: fs.existsSync(abs) && fs.statSync(abs).isFile() ? fileSha(abs) : null });
+    fileHashes.push({ path: rel, sha256: fs.existsSync(abs) && fs.statSync(abs).isFile() ? fileSha(abs, appendOnlyMarkers) : null });
   }
   const jsonSections = {};
   for (const [rel, sections] of Object.entries(ownership.managed_json_sections ?? {})) {
