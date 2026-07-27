@@ -85,7 +85,7 @@
       "id": "documentation",
       "lane": "static",
       "risk": "documentation_contract",
-      "include": ["docs/**"],
+      "include": ["docs/**", "*.md"],
       "commands": ["npm run test:doc-code-drift"]
     },
     {
