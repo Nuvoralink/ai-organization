@@ -23,13 +23,28 @@
         "type": "object",
         "additionalProperties": false,
         "required": ["id", "source", "captureFrom", "destinations", "mode", "ownership", "allowedExtensions", "detectLocalOnly", "lock"],
+        "allOf": [
+          {
+            "if": {
+              "required": ["ownership"],
+              "properties": {
+                "ownership": { "const": "captured" }
+              }
+            },
+            "else": {
+              "properties": {
+                "destinations": { "minItems": 1 }
+              }
+            }
+          }
+        ],
         "properties": {
           "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]+$" },
           "source": { "type": "string" },
           "captureFrom": { "type": "string", "pattern": "^\\$\\{[^}]+\\}(?:/.*)?$" },
-          "destinations": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^\\$\\{[^}]+\\}(?:/.*)?$" } },
+          "destinations": { "type": "array", "items": { "type": "string", "pattern": "^\\$\\{[^}]+\\}(?:/.*)?$" } },
           "mode": { "enum": ["file", "tree"] },
-          "ownership": { "enum": ["canonical", "generated", "external-state", "reference"] },
+          "ownership": { "enum": ["canonical", "captured", "generated", "external-state", "reference"] },
           "allowedExtensions": { "$ref": "#/$defs/stringList" },
           "exclude": { "$ref": "#/$defs/stringList" },
           "installedIgnore": { "$ref": "#/$defs/exactRelativePathList" },

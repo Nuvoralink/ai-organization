@@ -26,7 +26,9 @@ The control plane must not read, capture, or publish:
 
 ## Authority and generation
 
-Canonical orchestration files live under `global/`, `skills/`, and `overlays/`. Install destinations are generated copies declared in `control-plane.manifest.json`. A generated copy may be committed to a product repository because agents need it at startup, but it does not become a second authority. Any change discovered in an installed copy must flow back to the matching canonical source in the same task, then be reinstalled.
+Canonical orchestration files live under `global/`, `skills/`, and `overlays/`. Ordinary install destinations are generated copies declared in `control-plane.manifest.json`. A generated copy may be committed to a product repository because agents need it at startup, but it does not become a second authority. Any change discovered in an installed copy must flow back to the matching canonical source in the same task, then be reinstalled.
+
+Mappings with `ownership: "captured"` reverse that direction deliberately: the live `captureFrom` tree is authoritative and the repository copy is a backup. Capture still imports live bytes into the declared canonical source, but install reports the mapping as skipped-by-mode and never writes any declared destination. Check reports backup content differences as informational `captured-backup-behind` entries while a missing live capture source remains a blocking problem. Only captured mappings may declare an empty destination list.
 
 Project product authorities remain in their project repositories. Overlay rules link to those authorities and may summarize only the irreducible startup facts necessary for safe routing. The parity gate compares orchestration assets, not application/product trees.
 
@@ -48,6 +50,6 @@ Claude `settings.json` remains deny-listed and unmanaged because it contains mac
 
 ## Curated Claude project memory
 
-Claude project session transcripts, jobs, and history under `~/.claude/projects/` are machine-local and excluded. Only authored Markdown under an explicit project `memory/` directory is portable; current project directories each have a dedicated mapping into `global/claude/project-memory/<project-dir-name>/`. Add a new project by reviewing its `memory/*.md` content, then adding an equally narrow mapping and artifact-registry row—never broaden capture to the projects root.
+Claude project session transcripts, jobs, and history under `~/.claude/projects/` are machine-local and excluded. Only authored Markdown under an explicit project `memory/` directory is portable; current project directories each have a dedicated captured mapping into `global/claude/project-memory/<project-dir-name>/`. Add a new project by reviewing its `memory/*.md` content, then adding an equally narrow captured mapping and artifact-registry row—never broaden capture to the projects root.
 
 Also excluded are `~/.codex/config.toml`, `~/.codex/rules/default.rules`, every credential/auth/cache/log/session surface, and the LLM-Councel `.env`. These remain machine-local deny-listed state and are never captured.

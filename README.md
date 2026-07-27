@@ -13,7 +13,7 @@ A clean machine can clone this repository, register its project locations, run o
 - `global/` is canonical for safe cross-project Claude and Codex doctrine, rules, and agent adapters.
 - `skills/` contains one materialized canonical package per active user-authored skill.
 - `overlays/<project>/` is canonical for that project's orchestration overlay, not its application or product source.
-- Installed files under user-home and project directories are generated copies. Edit the canonical source first, then sync.
+- Installed files under user-home and project directories are generated copies unless their manifest ownership is `captured`. Captured live state is authoritative, is imported into the repository as a backup, and is never an install target.
 - `policies/`, `schemas/`, and `registries/` are machine-readable control-plane authorities.
 - Local project-root registration is machine-specific and intentionally untracked.
 

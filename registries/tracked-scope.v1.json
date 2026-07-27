@@ -63,6 +63,10 @@
       "class": "automation-instance"
     },
     {
+      "path": "automations/instances/auxara-weekly-fleet-doctrine-review/memory.md",
+      "class": "automation-instance"
+    },
+    {
       "path": "automations/instances/universal-biweekly-orchestration-backflow/automation.toml",
       "class": "automation-instance"
     },
