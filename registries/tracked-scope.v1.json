@@ -4907,6 +4907,10 @@
       "class": "control-plane-test"
     },
     {
+      "path": "tests/auxara-hybrid-surfaces.test.mjs",
+      "class": "control-plane-test"
+    },
+    {
       "path": "tests/bootstrap-templates.test.mjs",
       "class": "control-plane-test"
     },
