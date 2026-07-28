@@ -161,6 +161,37 @@ test('Proves: COORDINATION-RUNNER-DELIVERY-001; Test type: missing-mapping mutat
   );
 });
 
+test('Proves: CONTROL-PLANE-LIFECYCLE-OVERLAY-DRIFT-001; Test type: scoped overlay install; Surface: installed lifecycle README in both declared projects; Authority: shared-runtime mappings; Killer mutation: exclude core/lifecycle/README.md from either shared-runtime delivery; Gated command: npm test', () => {
+  const canonicalReadme = fs.readFileSync(
+    path.join(repoRoot, 'core', 'lifecycle', 'README.md'),
+    'utf8',
+  );
+  for (const project of ['auxara-dialer', 'coachai']) {
+    const target = fixture(project);
+    runInstall({
+      repoRoot,
+      manifest: target.manifest,
+      roots: target.roots,
+      mappingIds: [`${project === 'coachai' ? 'coachai' : 'auxara'}-shared-runtime`],
+    });
+    assert.equal(
+      fs.readFileSync(
+        path.join(
+          target.root,
+          '.ai-organization',
+          'runtime',
+          'core',
+          'lifecycle',
+          'README.md',
+        ),
+        'utf8',
+      ),
+      canonicalReadme,
+      `${project} shared-runtime mapping must deliver the canonical lifecycle README`,
+    );
+  }
+});
+
 test('Proves: portable overlay locks can contain only normalized paths and SHA-256 integrity hashes without secret-shaped path/hash pairs on one line; Test type: secret-boundary mutation; Surface: project overlay lock; Authority: portable lock schema; Killer mutation: restore a path-keyed hash map or hide a generic API key in a lock entry; Gated command: npm test', () => {
   const valid = { version: 1, source: 'universal-private-orchestrator/overlays/coachai', files: [{ path: 'AGENTS.md', sha256: 'a'.repeat(64) }], json_sections: {} };
   assert.deepEqual(validatePortableOverlayLock(valid), []);

@@ -112,7 +112,7 @@
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/README.md",
-      "sha256": "1f70fac2ac5581c907f7377dfa348c39c046adc845a57125031b4bf2032ea002"
+      "sha256": "da31327f145bdb6b690dff1f1dee667ac07759eb1d31598c983d6c13181a5edd"
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/codex-task-status.mjs",
@@ -132,7 +132,7 @@
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/task-assurance.test.mjs",
-      "sha256": "42362f27c43693743da386e17f6b4ff29ed900adbaea93abb1ae7f672bd89c59"
+      "sha256": "848e9a868bc5262df2a6200616657b717cfc24d365fb5aeae967306c10108720"
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/task-governor.mjs",
@@ -140,7 +140,7 @@
     },
     {
       "path": ".ai-organization/runtime/core/roles/agent-role-registry.mjs",
-      "sha256": "09ef74464b38da61e1046f3077323b36a872b0fe53c0152a6d0d179da6a740f1"
+      "sha256": "16026a82a9f1ade1a8d9f0d4e0cf3474a534125c98cbe6e14a9e6b06fab8b4f7"
     },
     {
       "path": ".ai-organization/runtime/core/schema/task-assurance.mjs",

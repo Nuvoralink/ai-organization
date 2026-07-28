@@ -395,6 +395,19 @@ test('Proves: COORDINATION-RUNNER-DELIVERY-001; Test type: canonical-template an
   }
 });
 
+test('Proves: CONTROL-PLANE-LIFECYCLE-OVERLAY-DRIFT-001; Test type: canonical skill truth mutation; Surface: lifecycle bootstrap contract and state inventory; Authority: executable v2/v3 schema dispatcher and Git-common-dir state resolver; Killer mutations: restore v2-only schema wording or claim tmp/agent-assurance is runtime state; Gated command: npm test', () => {
+  const skill = read('SKILL.md');
+  assert.match(skill, /task-assurance v2 and v3 plus task-evidence v2/u);
+  assert.match(
+    skill,
+    /<absolute-git-common-dir>\/auxara-agent-assurance\//u,
+  );
+  assert.match(
+    skill,
+    /tmp\/agent-assurance\/` ignore is only a defensive exclusion/u,
+  );
+});
+
 test('Proves: ORG-LOOP-002; Test type: exact-literal authority sweep; Surface: global, bootstrap, and overlay Markdown; Authority: propagating exit sentinel; Killer mutation: restore cmd; echo without saving and re-exiting the command status; Gated command: npm test', () => {
   const loopDiscipline = path.join(root, 'global', 'claude', 'rules', 'loop-discipline.md');
   const authorityRoots = [
