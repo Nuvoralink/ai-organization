@@ -80,7 +80,9 @@ export function validateProjectRoleExtensionSemantics(universal, projectExtensio
 }
 
 function normalizedProjectRole(role) {
-  const { extends: _extends, supersedes_universal: _supersedesUniversal, ...effectiveRole } = role;
+  const effectiveRole = { ...role };
+  delete effectiveRole.extends;
+  delete effectiveRole.supersedes_universal;
   return effectiveRole;
 }
 
