@@ -306,6 +306,9 @@ test('Proves: ORG-HOOK-006; Test type: canonical source-contract mutation; Surfa
       'utf8',
     ),
   };
+  const boundedProcessTemplate = read(
+    'templates/lifecycle/lib/boundedProcess.mjs.template',
+  );
   for (const [name, source] of Object.entries(sources)) {
     for (const requiredSeam of [
       'coordinationAdmissionDecision',
@@ -328,7 +331,22 @@ test('Proves: ORG-HOOK-006; Test type: canonical source-contract mutation; Surfa
       /result\.accepted\)[\s\S]*safelyReleaseTaskClaim/u,
       `${name}: completion must release the task claim`,
     );
+    assert.match(
+      source,
+      /import \{ isProcessAlive \} from '\.\/lib\/boundedProcess\.mjs';/u,
+      `${name}: lifecycle liveness must use the shared bounded-process seam`,
+    );
+    assert.doesNotMatch(
+      source,
+      /function isProcessAlive\(/u,
+      `${name}: lifecycle liveness policy must not be forked inline`,
+    );
   }
+  assert.match(
+    boundedProcessTemplate,
+    /export function isProcessAlive\(/u,
+    'the bootstrap must ship the helper imported by the lifecycle template',
+  );
   assert.match(
     sources.auxara,
     /export async function dispatchLifecyclePayload\(/u,
@@ -481,6 +499,11 @@ test('Proves: ORG-HOOK-003C and ORG-HOOK-006; Test type: canonical-template runt
     .replaceAll('{{INTEGRATION_BRANCH}}', 'main')
     .replaceAll('{{TASK_COMPLETION_GATE}}', 'verify');
   fs.writeFileSync(path.join(fixtureRoot, 'scripts', 'claude-lifecycle-hook.mjs'), adapter);
+  fs.mkdirSync(path.join(fixtureRoot, 'scripts', 'lib'), { recursive: true });
+  fs.writeFileSync(
+    path.join(fixtureRoot, 'scripts', 'lib', 'boundedProcess.mjs'),
+    read('templates/lifecycle/lib/boundedProcess.mjs.template'),
+  );
   assert.equal(spawnSync('git', ['init', '-b', 'root-proof'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);
   assert.equal(spawnSync('git', ['config', 'user.email', 'lifecycle@example.invalid'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);
   assert.equal(spawnSync('git', ['config', 'user.name', 'Lifecycle Test'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);

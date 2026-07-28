@@ -1,0 +1,17 @@
+/**
+ * Shared process-liveness seam for lifecycle coordination.
+ *
+ * Save as scripts/lib/boundedProcess.mjs beside the generated lifecycle hook. Projects that already
+ * own a richer bounded-process module keep that implementation; the lifecycle hook imports this
+ * stable seam instead of forking an inline liveness policy.
+ */
+export function isProcessAlive(pid, killProcess = process.kill) {
+  try {
+    killProcess(pid, 0);
+    return true;
+  } catch (error) {
+    if (error?.code === 'ESRCH') return false;
+    if (error?.code === 'EPERM') return true;
+    throw error;
+  }
+}

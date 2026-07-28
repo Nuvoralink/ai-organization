@@ -30,6 +30,7 @@ import {
   recordReplacementDispatch,
   replacementDispatchWouldStall,
 } from '../.ai-organization/runtime/core/lifecycle/evidence-runtime.mjs';
+import { isProcessAlive } from './lib/boundedProcess.mjs';
 
 const INTEGRATION_BRANCH = '{{INTEGRATION_BRANCH}}';
 const TASK_COMPLETION_GATE = '{{TASK_COMPLETION_GATE}}';
@@ -86,17 +87,6 @@ function configuredProjectRoot() {
 
 function hash(value) {
   return createHash('sha256').update(String(value ?? ''), 'utf8').digest('hex');
-}
-
-function isProcessAlive(pid, killProcess = process.kill) {
-  try {
-    killProcess(pid, 0);
-    return true;
-  } catch (error) {
-    if (error?.code === 'ESRCH') return false;
-    if (error?.code === 'EPERM') return true;
-    throw error;
-  }
 }
 
 function coordinationOwnerToken(payload) {
