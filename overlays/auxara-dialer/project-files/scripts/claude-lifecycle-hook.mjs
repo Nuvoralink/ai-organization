@@ -976,6 +976,69 @@ function verifiedProjectRoot() {
   return scriptReal;
 }
 
+export async function dispatchLifecyclePayload(
+  payload,
+  projectRoot,
+  telemetryDir = telemetryDirectory(projectRoot),
+) {
+  const explicitRoot = path.resolve(realpathSync.native(projectRoot));
+  const gitRoot = resolveGitRoot(explicitRoot);
+  const key = (value) => (process.platform === 'win32' ? value.toLowerCase() : value);
+  if (!gitRoot || key(path.resolve(realpathSync.native(gitRoot))) !== key(explicitRoot)) {
+    throw new Error('Explicit lifecycle project root must be a Git repository root');
+  }
+  try {
+    switch (payload?.hook_event_name) {
+      case 'SessionStart':
+        await handleSessionStart(payload, telemetryDir, explicitRoot);
+        break;
+      case 'SubagentStart':
+        handleSubagentStart(payload, telemetryDir, explicitRoot);
+        break;
+      case 'TaskCreated':
+        await handleTaskCreated(payload, telemetryDir, { projectRoot: explicitRoot });
+        break;
+      case 'TaskCompleted':
+        await handleTaskCompleted(payload, telemetryDir, explicitRoot);
+        break;
+      case 'SubagentStop':
+        await handleSubagentStop(payload, telemetryDir, explicitRoot);
+        break;
+      case 'PostCompact':
+        await handlePostCompact(payload, telemetryDir, explicitRoot);
+        break;
+      case 'SessionEnd':
+        handleSessionEnd(payload, telemetryDir);
+        break;
+      default:
+        safelyAppendTelemetry(
+          eventTelemetry(payload, {
+            eventName: 'Malformed',
+            outcome: 'observe',
+            malformedCount: 1,
+          }),
+          telemetryDir,
+        );
+    }
+  } catch (error) {
+    // Context/observation hooks must never block due to their own plumbing. Guard hooks fail closed
+    // only when their event is known and their deterministic contract cannot be evaluated.
+    const blockingEvent = ['TaskCreated', 'TaskCompleted', 'SubagentStop'].includes(
+      payload?.hook_event_name,
+    );
+    safelyAppendTelemetry(
+      eventTelemetry(payload, {
+        eventName: 'Malformed',
+        outcome: blockingEvent ? 'block' : 'observe',
+        malformedCount: 1,
+      }),
+      telemetryDir,
+    );
+    if (blockingEvent)
+      block(`[lifecycle-hook] ${payload.hook_event_name} blocked: lifecycle check failed safely.`);
+  }
+}
+
 export async function main() {
   let projectRoot;
   try {
@@ -1009,56 +1072,7 @@ export async function main() {
     return;
   }
 
-  try {
-    switch (payload?.hook_event_name) {
-      case 'SessionStart':
-        await handleSessionStart(payload, telemetryDir, projectRoot);
-        break;
-      case 'SubagentStart':
-        handleSubagentStart(payload, telemetryDir, projectRoot);
-        break;
-      case 'TaskCreated':
-        await handleTaskCreated(payload, telemetryDir, { projectRoot });
-        break;
-      case 'TaskCompleted':
-        await handleTaskCompleted(payload, telemetryDir, projectRoot);
-        break;
-      case 'SubagentStop':
-        await handleSubagentStop(payload, telemetryDir, projectRoot);
-        break;
-      case 'PostCompact':
-        await handlePostCompact(payload, telemetryDir, projectRoot);
-        break;
-      case 'SessionEnd':
-        handleSessionEnd(payload, telemetryDir);
-        break;
-      default:
-        safelyAppendTelemetry(
-          eventTelemetry(payload, {
-            eventName: 'Malformed',
-            outcome: 'observe',
-            malformedCount: 1,
-          }),
-          telemetryDir,
-        );
-    }
-  } catch (error) {
-    // Context/observation hooks must never block due to their own plumbing. Guard hooks fail closed
-    // only when their event is known and their deterministic contract cannot be evaluated.
-    const blockingEvent = ['TaskCreated', 'TaskCompleted', 'SubagentStop'].includes(
-      payload?.hook_event_name,
-    );
-    safelyAppendTelemetry(
-      eventTelemetry(payload, {
-        eventName: 'Malformed',
-        outcome: blockingEvent ? 'block' : 'observe',
-        malformedCount: 1,
-      }),
-      telemetryDir,
-    );
-    if (blockingEvent)
-      block(`[lifecycle-hook] ${payload.hook_event_name} blocked: lifecycle check failed safely.`);
-  }
+  await dispatchLifecyclePayload(payload, projectRoot, telemetryDir);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

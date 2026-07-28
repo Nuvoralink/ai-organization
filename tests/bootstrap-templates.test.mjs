@@ -329,6 +329,16 @@ test('Proves: ORG-HOOK-006; Test type: canonical source-contract mutation; Surfa
       `${name}: completion must release the task claim`,
     );
   }
+  assert.match(
+    sources.auxara,
+    /export async function dispatchLifecyclePayload\(/u,
+    'Auxara fixture tests must use an explicit-root module seam without weakening executable root binding',
+  );
+  assert.match(
+    sources.auxara,
+    /Explicit lifecycle project root must be a Git repository root/u,
+    'the explicit-root seam must reject a nested or non-repository path',
+  );
 });
 
 test('Proves: ORG-LOOP-002; Test type: exact-literal authority sweep; Surface: global, bootstrap, and overlay Markdown; Authority: propagating exit sentinel; Killer mutation: restore cmd; echo without saving and re-exiting the command status; Gated command: npm test', () => {
