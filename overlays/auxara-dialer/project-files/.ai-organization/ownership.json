@@ -64,11 +64,23 @@
     },
     {
       "path": "scripts/check-organization-overlay.mjs",
-      "sha256": "494994d69a0420a4bed107864a2ae5cc9d45360adb5ccdc28c71d1edbecd909e"
+      "sha256": "2e93429429adcaac8bb0aab556043be6715ba27173dd14b285cbbee963f22848"
     },
     {
       "path": "scripts/claude-lifecycle-hook.mjs",
       "sha256": "ca6d0ba16254284d236c3de7f493375cbce424278fb0b82a556130fb7e12f31e"
+    },
+    {
+      "path": "scripts/run-bounded-agent.mjs",
+      "sha256": "12ecf3073472c7d883d55729c75736944d454c70f559e8fb59a6206613673598"
+    },
+    {
+      "path": "scripts/lib/boundedProcess.mjs",
+      "sha256": "f8599afaa689f4baa101ae0a314505e75fca13e89877c3659871d391e169a0f9"
+    },
+    {
+      "path": "scripts/lib/dispatchBoundary.mjs",
+      "sha256": "76f7e6fcbcd3627ab2f76a52947cc95ea83b34c47cec8e2378260a36d1ef87d7"
     },
     {
       "path": "scripts/lib/agentTelemetry.mjs",

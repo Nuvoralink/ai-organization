@@ -3179,7 +3179,15 @@
       "class": "project-orchestration-overlay"
     },
     {
+      "path": "overlays/auxara-dialer/project-files/scripts/lib/dispatchBoundary.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
       "path": "overlays/auxara-dialer/project-files/scripts/orchestration-state.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/scripts/run-bounded-agent.mjs",
       "class": "project-orchestration-overlay"
     },
     {
@@ -3496,6 +3504,18 @@
     },
     {
       "path": "overlays/coachai/project-files/scripts/claude-posttooluse-gate.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/scripts/lib/boundedProcess.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/scripts/lib/dispatchBoundary.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/coachai/project-files/scripts/run-bounded-agent.mjs",
       "class": "project-orchestration-overlay"
     },
     {
@@ -3908,6 +3928,18 @@
     },
     {
       "path": "skills/bootstrap-orchestrator/templates/lifecycle/lib/boundedProcess.mjs.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/lifecycle/lib/dispatchBoundary.mjs.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/lifecycle/package-scripts.json.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/lifecycle/run-bounded-agent.mjs.template",
       "class": "reusable-skill"
     },
     {

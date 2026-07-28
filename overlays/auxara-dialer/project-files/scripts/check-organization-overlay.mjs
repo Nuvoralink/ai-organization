@@ -27,6 +27,9 @@ const REQUIRED_MANAGED_FILES = new Set([
   'scripts/check-agent-control-plane.mjs',
   'scripts/check-organization-overlay.mjs',
   'scripts/claude-lifecycle-hook.mjs',
+  'scripts/run-bounded-agent.mjs',
+  'scripts/lib/boundedProcess.mjs',
+  'scripts/lib/dispatchBoundary.mjs',
   'scripts/lib/agentTelemetry.mjs',
 ]);
 

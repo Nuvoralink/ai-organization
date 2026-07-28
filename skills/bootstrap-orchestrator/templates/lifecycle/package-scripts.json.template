@@ -1,0 +1,3 @@
+{
+  "agent:run": "node scripts/run-bounded-agent.mjs"
+}
