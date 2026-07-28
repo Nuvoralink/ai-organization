@@ -52,15 +52,6 @@ const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
  */
 export const PENDING_LINKAGE = [
   {
-    id: 'BUX-019',
-    reason:
-      'Ownership of the unified home and pop-out across Sprint 1.4 versus later is unsettled.',
-    owner: 'Amin / sprint kickoff decision',
-    addedAt: '2026-07-15',
-    decision:
-      'Choose whole-in-1.4 or an explicit split; do not infer the split from existing docs.',
-  },
-  {
     id: 'CMP-011',
     reason:
       'The row names missing Sprint 3.4, its notes say pre-external-tenant, and Sprint 3.3 includes it.',
@@ -114,12 +105,19 @@ function readLines(root, relativePath) {
   return fs.readFileSync(absolutePath, 'utf8').replace(/\r\n/g, '\n').split('\n');
 }
 
-/** Split a Markdown table row on unescaped pipes. `human\|ai_agent` remains one cell. */
+/**
+ * Split a Markdown table row on structural pipes. Escaped pipes and pipes inside inline-code spans
+ * remain content. Decision notes legitimately carry canonical values such as `self|team|tenant`; a
+ * naive pipe split turns one valid seven-cell authority row into nine cells and makes the gate report
+ * the target sprint as missing. Backtick runs are tracked so both `code` and ``code with ` inside``
+ * stay intact. An unclosed code span fails closed as an invalid row (`null`).
+ */
 export function splitMarkdownRow(line) {
   const trimmed = line.trim();
   if (!trimmed.startsWith('|') || !trimmed.endsWith('|')) return null;
   const cells = [];
   let cell = '';
+  let codeDelimiterLength = 0;
   for (let index = 1; index < trimmed.length - 1; index += 1) {
     const char = trimmed[index];
     if (char === '\\' && trimmed[index + 1] === '|') {
@@ -127,13 +125,24 @@ export function splitMarkdownRow(line) {
       index += 1;
       continue;
     }
-    if (char === '|') {
+    if (char === '`') {
+      let runLength = 1;
+      while (trimmed[index + runLength] === '`') runLength += 1;
+      const ticks = '`'.repeat(runLength);
+      cell += ticks;
+      if (codeDelimiterLength === 0) codeDelimiterLength = runLength;
+      else if (codeDelimiterLength === runLength) codeDelimiterLength = 0;
+      index += runLength - 1;
+      continue;
+    }
+    if (char === '|' && codeDelimiterLength === 0) {
       cells.push(cell.trim());
       cell = '';
       continue;
     }
     cell += char;
   }
+  if (codeDelimiterLength !== 0) return null;
   cells.push(cell.trim());
   return cells;
 }
