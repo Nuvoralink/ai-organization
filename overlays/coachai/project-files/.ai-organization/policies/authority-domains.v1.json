@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "domains": {
+    "coaching-contracts": {
+      "owns": [
+        "shared/src/coaching/taxonomy.ts",
+        "shared/src/coaching/contracts.ts"
+      ],
+      "note": "Canonical coaching enums, API versions, and shared DTO contracts must evolve together."
+    },
+    "coaching-presentation": {
+      "owns": [
+        "shared/src/coaching/checklistLabels.ts",
+        "shared/src/coaching/labels.ts",
+        "shared/src/coaching/presentation.ts"
+      ],
+      "note": "Lane predicates and rep-facing labels and presentation helpers must stay aligned."
+    },
+    "coaching-thresholds": {
+      "owns": [
+        "shared/src/coaching/config.ts",
+        "backend/src/lib/analysisConfig.ts"
+      ],
+      "note": "Shared coaching thresholds and backend-only analysis limits form the paired coaching configuration authority."
+    },
+    "design-tokens": {
+      "owns": [
+        "frontend/src/design-system/foundations.ts",
+        "frontend/src/design-system/roles.ts",
+        "frontend/src/design-system/appDesign.ts",
+        "frontend/src/design-system/recipes.ts"
+      ],
+      "note": "Foundation primitives, semantic roles, app mappings, and reusable recipes are one design-system authority."
+    },
+    "authority-inventory": {
+      "owns": [
+        ".cursor/rules/centralization-doctrine.mdc",
+        "docs/app-plan/v2-authority-source-inventory.json",
+        "docs/app-plan/v2-authority-migration-inventory.md"
+      ],
+      "note": "The centralization rule and machine and human authority inventories must record the same sources."
+    }
+  }
+}
