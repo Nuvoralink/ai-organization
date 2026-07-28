@@ -35,6 +35,10 @@
       "sha256": "12c4b0ed89d5fad68c727d84c6aeb1cd41dc21ecddaecf6d83b2c4d7afd4c580"
     },
     {
+      "path": ".ai-organization/policies/authority-domains.v1.json",
+      "sha256": "3de4b7aa0094e8a3fe01f0bde3032a8a2b32cf665ab7af32bf87fab40d259f28"
+    },
+    {
       "path": ".ai-organization/policies/coordination-mode.v1.json",
       "sha256": "8fd4da14876028fe59d02ac3cdca76d2c88cf1612c552732e03d038d403a2582"
     },
