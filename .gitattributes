@@ -9,6 +9,7 @@
 *.yml text eol=lf
 *.ps1 text eol=lf
 *.py text eol=lf
+*.template text eol=lf
 
 # Preserve authored Markdown hard-breaks and upstream formatting in materialized skill/dependency packages.
 skills/** whitespace=-blank-at-eol,-blank-at-eof

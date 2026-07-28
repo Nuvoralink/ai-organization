@@ -359,7 +359,12 @@ test('Proves: ORG-HOOK-006; Test type: canonical source-contract mutation; Surfa
   );
 });
 
-test('Proves: COORDINATION-RUNNER-DELIVERY-001; Test type: canonical-template and overlay byte-parity mutation; Surface: bounded runner bootstrap delivery; Authority: Dialer-proven runner union and package-script template; Killer mutations: omit the runner, process seam, boundary parser, package script, or fork either project overlay; Gated command: npm test', () => {
+test('Proves: COORDINATION-RUNNER-DELIVERY-001; Test type: canonical-template and overlay byte-parity mutation; Surface: bounded runner bootstrap delivery; Authority: Dialer-proven runner union and package-script template; Killer mutations: omit the runner, process seam, boundary parser, package script, template LF authority, or fork either project overlay; Gated command: npm test', () => {
+  assert.match(
+    fs.readFileSync(path.join(root, '.gitattributes'), 'utf8'),
+    /^\*\.template text eol=lf\r?$/mu,
+    'template sources must have platform-stable LF bytes before parity comparison',
+  );
   const templateSources = {
     runner: read('templates/lifecycle/run-bounded-agent.mjs.template'),
     process: read('templates/lifecycle/lib/boundedProcess.mjs.template'),
