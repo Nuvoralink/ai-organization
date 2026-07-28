@@ -179,6 +179,41 @@ test('Proves: ORG-OVERLAY-004; Test type: registry mutation; Surface: overlay ow
   assert.deepEqual(validateOverlay('coachai').map((failure) => failure.message ?? failure), []);
 });
 
+test('Proves: REQ-COACHAI-AUTHORITY-DOMAINS-001; Test type: parser and overlay-registration mutation; Surface: installed CoachAI semantic resource folding; Authority: CoachAI authority-domain registry plus generated overlay ownership; Killer mutation: empty any domain owns array or remove the generated mapping; Gated command: npm test', () => {
+  const registryPath = path.join(
+    repoRoot,
+    'overlays',
+    'coachai',
+    'project-files',
+    '.ai-organization',
+    'policies',
+    'authority-domains.v1.json',
+  );
+  const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
+  assert.equal(registry.version, 1);
+  const domainEntries = Object.entries(registry.domains ?? {});
+  assert.ok(domainEntries.length >= 4 && domainEntries.length <= 6);
+  for (const [domain, definition] of domainEntries) {
+    assert.ok(
+      Array.isArray(definition?.owns) && definition.owns.length >= 1,
+      `${domain} must own at least one path`,
+    );
+  }
+
+  const { manifest } = loadOverlay('coachai');
+  const mapping = manifest.mappings.find(
+    ({ id }) => id === 'coachai-project-authority-domains',
+  );
+  assert.ok(mapping, 'CoachAI authority domains must be registered as an overlay mapping');
+  assert.equal(
+    mapping.source,
+    'overlays/coachai/project-files/.ai-organization/policies/authority-domains.v1.json',
+  );
+  assert.deepEqual(mapping.destinations, [
+    '${PROJECT:coachai}/.ai-organization/policies/authority-domains.v1.json',
+  ]);
+});
+
 test('Proves: COORDINATION-RUNNER-DELIVERY-001; Test type: missing-mapping mutation; Surface: bootstrap project overlay and installed CoachAI organization parity; Authority: bounded runner ownership contract; Killer mutation: remove the runner mapping from an overlay copy; Gated command: npm test', () => {
   for (const project of ['auxara-dialer', 'coachai']) {
     const ownership = JSON.parse(
