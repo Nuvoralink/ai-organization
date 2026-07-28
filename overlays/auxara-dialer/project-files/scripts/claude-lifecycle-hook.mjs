@@ -52,6 +52,7 @@ import {
   recordReplacementDispatch,
   replacementDispatchWouldStall,
 } from '../.ai-organization/runtime/core/lifecycle/evidence-runtime.mjs';
+import { isProcessAlive } from './lib/boundedProcess.mjs';
 
 const REQUIRED_BRIEF_SECTIONS = Object.freeze([
   { name: 'Context', aliases: ['context'] },
@@ -81,17 +82,6 @@ const REQUIRED_REPORT_SECTIONS = Object.freeze([
   { name: 'Honesty clause', aliases: ['honesty clause'] },
 ]);
 const STDERR_LIMIT = 12_000;
-
-function isProcessAlive(pid, killProcess = process.kill) {
-  try {
-    killProcess(pid, 0);
-    return true;
-  } catch (error) {
-    if (error?.code === 'ESRCH') return false;
-    if (error?.code === 'EPERM') return true;
-    throw error;
-  }
-}
 
 function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -288,6 +278,7 @@ function taskAttemptSummaries(repoRoot) {
     return listTaskAttempts(defaultAssuranceStateDirectory(repoRoot)).map((attempt) =>
       attempt.corrupt
         ? {
+            file: attempt.file,
             taskId: null,
             attemptId: null,
             lifecycle: 'needs_reconciliation',
@@ -328,6 +319,20 @@ function collectLifecycleState(repoRoot) {
     ...collectOrchestrationState(repoRoot),
     taskAttempts: taskAttemptSummaries(repoRoot),
   };
+}
+
+function formatLifecycleState(state) {
+  const orchestration = formatOrchestrationState(state);
+  if (!Array.isArray(state.taskAttempts) || state.taskAttempts.length === 0) return orchestration;
+  return [
+    orchestration,
+    `task attempts: ${state.taskAttempts.length}`,
+    ...state.taskAttempts.map((attempt) =>
+      attempt.needsReconciliation
+        ? `- ${attempt.file ?? '<attempt-directory>'}: needs_reconciliation/indeterminate`
+        : `- ${attempt.taskId}: ${attempt.lifecycle}/${attempt.state}`,
+    ),
+  ].join('\n');
 }
 
 function stableStateDigest(state) {
@@ -518,7 +523,7 @@ async function handleSessionStart(payload, telemetryDir, projectRoot) {
       restartGuidance(reconciliation),
       '',
       'Live local orchestration state (read-only; no fetch):',
-      formatOrchestrationState(state),
+      formatLifecycleState(state),
     ].join('\n'),
   );
 }
@@ -944,7 +949,7 @@ async function handlePostCompact(payload, telemetryDir, projectRoot) {
       restartGuidance(reconciliation),
       '',
       'Reconciled live local state:',
-      formatOrchestrationState(state),
+      formatLifecycleState(state),
     ].join('\n'),
   );
 }
@@ -1040,38 +1045,53 @@ export async function dispatchLifecyclePayload(
 }
 
 export async function main() {
-  let projectRoot;
-  try {
-    projectRoot = verifiedProjectRoot();
-  } catch (error) {
-    process.stderr.write(`[lifecycle-hook] blocked: ${error.message}\n`);
-    process.exitCode = 2;
-    return;
-  }
-  const telemetryDir = telemetryDirectory(projectRoot);
+  const rootedInvocation = configuredProjectDir.length > 0;
   let payload;
   try {
     const stdin = readFileSync(0, 'utf8');
     payload = JSON.parse(stdin);
   } catch (error) {
-    safelyAppendTelemetry(
-      { eventName: 'Malformed', outcome: 'block', malformedCount: 1 },
-      telemetryDir,
-    );
+    if (!rootedInvocation) return;
+    let telemetryDir;
+    try {
+      telemetryDir = telemetryDirectory(verifiedProjectRoot());
+    } catch {
+      telemetryDir = undefined;
+    }
+    if (telemetryDir) {
+      safelyAppendTelemetry(
+        { eventName: 'Malformed', outcome: 'block', malformedCount: 1 },
+        telemetryDir,
+      );
+    }
     process.stderr.write(`[lifecycle-hook] blocked: malformed hook payload: ${error.message}\n`);
     process.exitCode = 2;
     return;
   }
   if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
+    if (!rootedInvocation) return;
+    const projectRoot = verifiedProjectRoot();
     safelyAppendTelemetry(
       { eventName: 'Malformed', outcome: 'block', malformedCount: 1 },
-      telemetryDir,
+      telemetryDirectory(projectRoot),
     );
     process.stderr.write('[lifecycle-hook] blocked: hook payload must be a JSON object\n');
     process.exitCode = 2;
     return;
   }
 
+  let projectRoot;
+  try {
+    projectRoot = rootedInvocation
+      ? verifiedProjectRoot()
+      : resolveGitRoot(payload.cwd ?? process.cwd());
+    if (!projectRoot) throw new Error('git worktree unavailable');
+  } catch (error) {
+    process.stderr.write(`[lifecycle-hook] blocked: ${error.message}\n`);
+    process.exitCode = 2;
+    return;
+  }
+  const telemetryDir = telemetryDirectory(projectRoot);
   await dispatchLifecyclePayload(payload, projectRoot, telemetryDir);
 }
 

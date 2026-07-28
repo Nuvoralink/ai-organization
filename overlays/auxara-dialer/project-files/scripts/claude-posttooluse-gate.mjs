@@ -30,17 +30,22 @@ function blockInvalidPayload(message) {
   process.exit(2);
 }
 
+const rootedInvocation = String(process.env.CLAUDE_PROJECT_DIR ?? '').trim().length > 0;
 let projectRoot;
 let payload;
 try {
   projectRoot = configuredProjectRoot();
   payload = JSON.parse(readFileSync(0, 'utf8'));
 } catch (error) {
+  if (!rootedInvocation) process.exit(0);
   blockInvalidPayload(`malformed or unrooted PostToolUse payload: ${error.message}`);
 }
-if (!['Edit', 'Write'].includes(payload?.tool_name)) process.exit(0);
+if (payload?.tool_name !== undefined && !['Edit', 'Write'].includes(payload.tool_name)) {
+  process.exit(0);
+}
 const filePath = payload?.tool_input?.file_path;
 if (typeof filePath !== 'string' || filePath.trim().length === 0) {
+  if (payload?.tool_name === undefined && !rootedInvocation) process.exit(0);
   blockInvalidPayload('invalid Edit/Write PostToolUse payload: tool_input.file_path is required');
 }
 
