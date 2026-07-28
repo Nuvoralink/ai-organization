@@ -3171,6 +3171,10 @@
       "class": "project-orchestration-overlay"
     },
     {
+      "path": "overlays/auxara-dialer/project-files/scripts/lib/boundedProcess.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
       "path": "overlays/auxara-dialer/project-files/scripts/lib/claudeGateRouter.mjs",
       "class": "project-orchestration-overlay"
     },
@@ -3900,6 +3904,10 @@
     },
     {
       "path": "skills/bootstrap-orchestrator/templates/lifecycle/claude-lifecycle-hook.mjs.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/lifecycle/lib/boundedProcess.mjs.template",
       "class": "reusable-skill"
     },
     {
