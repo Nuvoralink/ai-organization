@@ -24,6 +24,24 @@ Run `gitleaks git --redact` as the independent history-aware secret scan before 
 
 Do not hand-edit a generated destination and leave the change there. Promote the change to canonical source, reinstall it, and prove parity in the same task. Captured mappings are the explicit counterexample: install reports them as skipped-by-mode and must never write their live authority.
 
+## Locally evolved target reconciliation
+
+Every canonical and project-overlay install uses the same target-evolution guard. Once a runtime lock records a mapping, install refuses any overwrite or retirement when the current managed target state differs from that locked state and the incoming canonical state would replace it. The refusal names the mapping, destination token, current-target SHA-256, locked SHA-256, incoming SHA-256, and the exact reconciliation command. Hashes establish only that the target evolved locally; they do not prove that either side is semantically ahead.
+
+Review the current target and the canonical replacement before using the emitted command. For the global installer its form is:
+
+```powershell
+npm run control:install -- --mapping <id> --reconcile-target <id>:<current-target-sha256>
+```
+
+For a project overlay its form is:
+
+```powershell
+node scripts/project-overlay.mjs install <project> --root '<project-path>' --mapping <id> --reconcile-target <id>:<current-target-sha256>
+```
+
+`--reconcile-target` is valid only for explicitly selected mappings, cannot be combined with `--adopt-existing` or `--reconcile-installed`, and authorizes only the exact current target-state digest printed by the refusal. If the target moves after review, the stale digest refuses again and the installer emits a new exact command. A successful reconciliation records `reviewed-target-sha256` in the operation log and the install snapshot receipt. Captured-ownership mappings remain skipped-by-mode and never enter target reconciliation.
+
 ## Recovery and rollback
 
 Each successful install records an install ID in its lock and writes a pre-change snapshot beside that lock. To roll back the most recent eligible global install:
