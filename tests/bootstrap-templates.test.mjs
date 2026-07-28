@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { validateActionPolicySemantics } from '../core/authority/assess-action.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -291,6 +291,46 @@ test('Proves: ORG-COORD-CLI-007; Test type: shipped-template mutation; Surface: 
   assert.match(skill, /child-owned exit `125` is remapped to `3`/u);
 });
 
+test('Proves: ORG-HOOK-006; Test type: canonical source-contract mutation; Surface: bootstrap and Auxara lifecycle adapters; Authority: TaskCreated coordination and replacement lifecycle; Killer mutation: remove admission/refusal, claim release/reconciliation, or replacement-dispatch persistence from either managed hook; Gated command: npm test', () => {
+  const sources = {
+    bootstrap: read('templates/lifecycle/claude-lifecycle-hook.mjs.template'),
+    auxara: fs.readFileSync(
+      path.join(
+        root,
+        'overlays',
+        'auxara-dialer',
+        'project-files',
+        'scripts',
+        'claude-lifecycle-hook.mjs',
+      ),
+      'utf8',
+    ),
+  };
+  for (const [name, source] of Object.entries(sources)) {
+    for (const requiredSeam of [
+      'coordinationAdmissionDecision',
+      'coordinationRefusalMessage',
+      'registerClaim',
+      'releaseClaim',
+      'reconcileClaims',
+      'recordReplacementDispatch',
+      'replacementDispatchWouldStall',
+    ]) {
+      assert.match(source, new RegExp(`\\b${requiredSeam}\\b`, 'u'), `${name}: ${requiredSeam}`);
+    }
+    assert.match(
+      source,
+      /else if \(registration\?\.claimId\)[\s\S]*safelyReleaseTaskClaim/u,
+      `${name}: a claim acquired before lifecycle rejection must be released`,
+    );
+    assert.match(
+      source,
+      /result\.accepted\)[\s\S]*safelyReleaseTaskClaim/u,
+      `${name}: completion must release the task claim`,
+    );
+  }
+});
+
 test('Proves: ORG-LOOP-002; Test type: exact-literal authority sweep; Surface: global, bootstrap, and overlay Markdown; Authority: propagating exit sentinel; Killer mutation: restore cmd; echo without saving and re-exiting the command status; Gated command: npm test', () => {
   const loopDiscipline = path.join(root, 'global', 'claude', 'rules', 'loop-discipline.md');
   const authorityRoots = [
@@ -417,7 +457,7 @@ test('Proves: ORG-HOOK-003; Test type: runtime counterexample; Surface: Auxara a
   }
 });
 
-test('Proves: ORG-HOOK-003C; Test type: canonical-template runtime mutation; Surface: generated lifecycle adapter; Authority: script-derived project root and parse integrity; Killer mutation: trust CLAUDE_PROJECT_DIR or catch malformed JSON and exit zero; Gated command: npm test', (t) => {
+test('Proves: ORG-HOOK-003C and ORG-HOOK-006; Test type: canonical-template runtime mutation; Surface: generated lifecycle adapter; Authority: script-derived project root, parse integrity, coordination admission, and durable replacement state; Killer mutation: trust CLAUDE_PROJECT_DIR, catch malformed JSON and exit zero, bypass a proven enforce conflict, or remove the unchanged replacement-dispatch stop; Gated command: npm test', async (t) => {
   const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'bootstrap lifecycle verified root-'));
   const siblingRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'bootstrap lifecycle spoofed root-'));
   t.after(() => fs.rmSync(fixtureRoot, { recursive: true, force: true }));
@@ -505,6 +545,10 @@ test('Proves: ORG-HOOK-003C; Test type: canonical-template runtime mutation; Sur
     '### Output contract', 'Return command-owned evidence.',
     '### Boundaries', 'Do not publish.',
     '### Self-verifiable acceptance', 'The generated behavior decides the event.',
+    '### Authority path', 'TaskCreated -> lifecycle controller -> persisted task attempt.',
+    '### Lifecycle matrix', 'TaskCreated accepts; TaskCompleted proves; SubagentStop records.',
+    '### Runtime execution', 'The installed hook executes in the verified repository root.',
+    '### Proof matrix', 'TaskCreated status proves admission and persisted lifecycle state.',
     '### Completion tier', tier,
     `TASK_CONTRACT_JSON:${JSON.stringify(contract(taskId, tier))}`,
   ].filter((line) => line !== '').join('\n');
@@ -542,6 +586,63 @@ test('Proves: ORG-HOOK-003C; Test type: canonical-template runtime mutation; Sur
   assert.equal(checkpointed.status, 0, checkpointed.stderr);
   const readOnly = taskCreated('FIT-READ-ONLY', brief('FIT-READ-ONLY', { tier: 'read-only', delivery: '' }));
   assert.equal(readOnly.status, 0, readOnly.stderr);
+
+  const firstReplacementDispatch = taskCreated(
+    'FIT-REPLACEMENT-STALL',
+    brief('FIT-REPLACEMENT-STALL'),
+  );
+  assert.equal(firstReplacementDispatch.status, 0, firstReplacementDispatch.stderr);
+  const unchangedReplacementDispatch = taskCreated(
+    'FIT-REPLACEMENT-STALL',
+    brief('FIT-REPLACEMENT-STALL'),
+  );
+  assert.equal(unchangedReplacementDispatch.status, 2, unchangedReplacementDispatch.stderr);
+  assert.match(unchangedReplacementDispatch.stderr, /Unchanged replacement dispatch stalled/u);
+
+  const policyDirectory = path.join(fixtureRoot, '.ai-organization', 'policies');
+  fs.mkdirSync(policyDirectory, { recursive: true });
+  fs.writeFileSync(
+    path.join(policyDirectory, 'coordination-mode.v1.json'),
+    JSON.stringify({ mode: 'enforce', acceptNotReady: true }),
+  );
+  const coordinationRuntime = await import(
+    pathToFileURL(
+      path.join(
+        fixtureRoot,
+        '.ai-organization',
+        'runtime',
+        'core',
+        'coordination',
+        'register.mjs',
+      ),
+    ).href
+  );
+  const existingClaim = await coordinationRuntime.registerClaim({
+    repoRoot: fixtureRoot,
+    taskId: 'FIT-COORDINATION-OWNER',
+    attemptId: 'att-existing-owner',
+    agentKind: 'codex',
+    editPaths: ['README.md'],
+    readPaths: [],
+    ownerToken: 'existing-owner-token',
+    ownerPid: process.pid,
+    worktreePath: fixtureRoot,
+    persistReceipt: false,
+    admission: coordinationRuntime.coordinationAdmissionDecision({ repoRoot: fixtureRoot }),
+  });
+  assert.equal(typeof existingClaim.claimId, 'string', JSON.stringify(existingClaim));
+  const refusedCoordination = taskCreated(
+    'FIT-COORDINATION-REFUSED',
+    brief('FIT-COORDINATION-REFUSED'),
+  );
+  assert.equal(refusedCoordination.status, 2, refusedCoordination.stderr);
+  assert.match(refusedCoordination.stderr, /coordination.*refus|overlap/iu);
+  await coordinationRuntime.releaseClaim({
+    repoRoot: fixtureRoot,
+    claimId: existingClaim.claimId,
+    ownerToken: 'existing-owner-token',
+    fencingEpoch: existingClaim.fencingEpoch,
+  });
 
   const invalidDelivery = [
     ['FIT-MISSING', ''],

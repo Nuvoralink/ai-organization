@@ -5,11 +5,31 @@
 // replacement semantics and Windows paths are verified on the installed Claude version.
 import { appendFileSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  COORDINATION_DISPATCH_PATHS,
+  countDispatch,
+  recordCoordinationErrorCoverage,
+} from '../.ai-organization/runtime/core/coordination/coverage.mjs';
+import { coordinationMode } from '../.ai-organization/runtime/core/coordination/mode.mjs';
+import {
+  coordinationAdmissionDecision,
+  coordinationAdmissionWarning,
+  coordinationFailOpenWarning,
+  coordinationRefusalMessage,
+  reconcileClaims,
+  registerClaim,
+  releaseClaim,
+} from '../.ai-organization/runtime/core/coordination/register.mjs';
 import { acceptLifecycleTask, completeLifecycleTask, recordLifecycleCompletionReport, recordLifecycleReview } from '../.ai-organization/runtime/core/lifecycle/lifecycle-controller.mjs';
-import { defaultAssuranceStateDirectory, loadTaskAttempt } from '../.ai-organization/runtime/core/lifecycle/evidence-runtime.mjs';
+import {
+  defaultAssuranceStateDirectory,
+  loadTaskAttempt,
+  recordReplacementDispatch,
+  replacementDispatchWouldStall,
+} from '../.ai-organization/runtime/core/lifecycle/evidence-runtime.mjs';
 
 const INTEGRATION_BRANCH = '{{INTEGRATION_BRANCH}}';
 const TASK_COMPLETION_GATE = '{{TASK_COMPLETION_GATE}}';
@@ -21,6 +41,12 @@ const BRIEF_SECTIONS = [
   { name: 'Output contract', aliases: ['output contract'] },
   { name: 'Boundaries', aliases: ['boundaries'] },
   { name: 'Acceptance criteria', aliases: ['acceptance criteria', 'self-verifiable acceptance'] },
+];
+const IMPLEMENTATION_BRIEF_SECTIONS = [
+  { name: 'Authority path', aliases: ['authority path'] },
+  { name: 'Lifecycle matrix', aliases: ['lifecycle matrix'] },
+  { name: 'Runtime execution', aliases: ['runtime execution'] },
+  { name: 'Proof matrix', aliases: ['proof matrix'] },
 ];
 const REPORT_SECTIONS = [
   { name: 'Doctrine-loop findings', aliases: ['doctrine-loop findings'] },
@@ -60,6 +86,107 @@ function configuredProjectRoot() {
 
 function hash(value) {
   return createHash('sha256').update(String(value ?? ''), 'utf8').digest('hex');
+}
+
+function isProcessAlive(pid, killProcess = process.kill) {
+  try {
+    killProcess(pid, 0);
+    return true;
+  } catch (error) {
+    if (error?.code === 'ESRCH') return false;
+    if (error?.code === 'EPERM') return true;
+    throw error;
+  }
+}
+
+function coordinationOwnerToken(payload) {
+  return hash(`claude-session:${String(payload?.session_id ?? '')}`);
+}
+
+function warnCoordination(message) {
+  if (typeof message !== 'string' || message.length === 0) return;
+  try {
+    process.stderr.write(`${message}\n`);
+  } catch {
+    // A closed diagnostic stream cannot turn coordination into a lifecycle block.
+  }
+}
+
+async function safelyRegisterTaskClaim({
+  payload,
+  contract,
+  attemptId,
+  root,
+  admission,
+  modeEpoch,
+}) {
+  try {
+    if (!admission || admission.effectiveMode === 'off') return { skipped: 'mode-off' };
+    const editPaths = Array.isArray(contract?.paths?.edit) ? contract.paths.edit : [];
+    if (editPaths.length === 0) return { skipped: 'no-edit-paths' };
+    return await registerClaim({
+      repoRoot: root,
+      taskId: payload.task_id,
+      attemptId,
+      agentKind: 'claude',
+      editPaths,
+      readPaths: Array.isArray(contract?.paths?.read) ? contract.paths.read : [],
+      ownerToken: coordinationOwnerToken(payload),
+      ownerPid: process.ppid > 0 ? process.ppid : process.pid,
+      worktreePath: root,
+      persistReceipt: true,
+      admission,
+      modeEpoch,
+    });
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+async function safelyReleaseTaskClaim(payload, root, taskId = payload?.task_id) {
+  try {
+    if (!root || !taskId || coordinationMode(root) === 'off') return;
+    await releaseClaim({
+      repoRoot: root,
+      taskId,
+      ownerToken: coordinationOwnerToken(payload),
+    });
+  } catch {
+    // Reconciliation owns recovery; a release failure never changes lifecycle completion.
+  }
+}
+
+async function safelyReconcileCoordination(root) {
+  try {
+    if (!root || coordinationMode(root) === 'off') return;
+    await reconcileClaims({ repoRoot: root, isPidAlive: isProcessAlive });
+  } catch {
+    // Restart context remains available when coordination storage is unavailable.
+  }
+}
+
+function durableTaskStateFingerprint(root, taskId) {
+  const stateDirectory = defaultAssuranceStateDirectory(root);
+  const attempt = loadTaskAttempt(stateDirectory, taskId);
+  const head = gitText(['rev-parse', 'HEAD'], root).trim();
+  const branch = gitText(['rev-parse', '--abbrev-ref', 'HEAD'], root).trim();
+  return hash(JSON.stringify({
+    attempt: attempt
+      ? {
+          task_id: attempt.task_id,
+          attempt_id: attempt.attempt_id,
+          lifecycle: attempt.lifecycle,
+          state: attempt.state,
+          completion_mode: attempt.completion_mode,
+          accepted_head: attempt.repository?.head,
+          checkpoint_head: attempt.checkpoint?.head,
+          contract_sha256: attempt.contract_sha256,
+          branch: attempt.repository?.branch,
+          worktree_path: attempt.repository?.worktree_path,
+        }
+      : null,
+    worktree: { head, branch },
+  }));
 }
 
 function telemetryRoot(root) {
@@ -262,12 +389,13 @@ function runCompletionGate(root) {
   return spawnSync(executable, args, { cwd: root, encoding: 'utf8', timeout: 120_000, windowsHide: true, maxBuffer: 16 * 1024 * 1024 });
 }
 
-function handle(payload, root) {
+async function handle(payload, root) {
   const state = readState(root);
   const taskKey = payload?.task_id ? hash(payload.task_id) : null;
   const sessionKey = payload?.session_id ? hash(payload.session_id) : null;
   switch (payload?.hook_event_name) {
     case 'SessionStart': {
+      await safelyReconcileCoordination(root);
       if (sessionKey) state.sessions[sessionKey] = Date.now();
       writeState(root, state);
       recordEvent(root, payload);
@@ -280,8 +408,11 @@ function handle(payload, root) {
       return;
     case 'TaskCreated': {
       const description = typeof payload.task_description === 'string' ? payload.task_description : '';
-      const missing = missingSections(description, BRIEF_SECTIONS);
       const tier = tierFrom(description);
+      const requirements = tier === 'implementation'
+        ? [...BRIEF_SECTIONS, ...IMPLEMENTATION_BRIEF_SECTIONS]
+        : BRIEF_SECTIONS;
+      const missing = missingSections(description, requirements);
       if (!tier) missing.push('Completion tier');
       if (tier === 'implementation') {
         const deliveryFitFailure = implementationDeliveryFitFailure(description);
@@ -295,15 +426,94 @@ function handle(payload, root) {
         return;
       }
       if (!taskKey) return block('[lifecycle] TaskCreated blocked: task_id missing.');
-      const result = acceptLifecycleTask({
-        taskId: payload.task_id,
-        contract,
-        sessionId: payload.session_id,
-        implementerId: payload.agent_id ?? payload.agent_type ?? payload.session_id,
-        completionMode: tier,
-        cwd: root,
-        profileRegistry: profileRegistry(root),
+      let admission;
+      let admissionError;
+      try {
+        admission = coordinationAdmissionDecision({ repoRoot: root });
+        warnCoordination(coordinationAdmissionWarning(admission));
+      } catch (error) {
+        admissionError = error;
+        warnCoordination(coordinationFailOpenWarning(error));
+      }
+      const mode = admission?.effectiveMode ?? coordinationMode(root);
+      const editPaths = Array.isArray(contract?.paths?.edit) ? contract.paths.edit : [];
+      const dispatchCoverage = countDispatch(mode, {
+        repoRoot: root,
+        dispatchPath: COORDINATION_DISPATCH_PATHS.claudeTaskCreated,
+        skippedNoEditPaths: editPaths.length === 0,
       });
+      if (dispatchCoverage.error) {
+        warnCoordination(coordinationFailOpenWarning(dispatchCoverage.error));
+      }
+      if (admissionError) {
+        try {
+          recordCoordinationErrorCoverage({
+            repoRoot: root,
+            mode,
+            modeEpoch: dispatchCoverage.modeEpoch,
+          });
+        } catch (error) {
+          warnCoordination(coordinationFailOpenWarning(error));
+        }
+      }
+      const stateDirectory = defaultAssuranceStateDirectory(root);
+      const dispatchFingerprint = durableTaskStateFingerprint(root, payload.task_id);
+      let result = { accepted: false, failures: [] };
+      if (replacementDispatchWouldStall({
+        stateDirectory,
+        taskId: payload.task_id,
+        liveStateSha256: dispatchFingerprint,
+      })) {
+        result.failures.push(
+          'Unchanged replacement dispatch stalled: reconcile the existing durable attempt/worktree before redispatching this task.',
+        );
+      } else {
+        const registration = await safelyRegisterTaskClaim({
+          payload,
+          contract,
+          attemptId: `att-${randomBytes(16).toString('hex')}`,
+          root,
+          admission,
+          modeEpoch: dispatchCoverage.modeEpoch,
+        });
+        if (registration?.refused) {
+          result.failures.push('Coordination admission refused: overlapping task claim.');
+          try {
+            result.failures[0] = coordinationRefusalMessage(registration.conflicts);
+          } catch (error) {
+            try {
+              recordCoordinationErrorCoverage({
+                repoRoot: root,
+                mode,
+                modeEpoch: dispatchCoverage.modeEpoch,
+              });
+            } catch {
+              // The deterministic refusal above remains authoritative.
+            }
+            warnCoordination(coordinationFailOpenWarning(error));
+          }
+        } else {
+          if (registration?.error) warnCoordination(coordinationFailOpenWarning(registration.error));
+          result = acceptLifecycleTask({
+            taskId: payload.task_id,
+            contract,
+            sessionId: payload.session_id,
+            implementerId: payload.agent_id ?? payload.agent_type ?? payload.session_id,
+            completionMode: tier,
+            cwd: root,
+            profileRegistry: profileRegistry(root),
+          });
+        }
+        if (result.accepted) {
+          recordReplacementDispatch({
+            stateDirectory,
+            taskId: payload.task_id,
+            liveStateSha256: durableTaskStateFingerprint(root, payload.task_id),
+          });
+        } else if (registration?.claimId) {
+          await safelyReleaseTaskClaim(payload, root);
+        }
+      }
       recordEvent(root, payload, { outcome: result.accepted ? 'allow' : 'block', completionTier: tier, failedCheckCount: result.failures.length });
       if (!result.accepted) block(`[lifecycle] TaskCreated blocked: ${result.failures.join('; ')}`);
       return;
@@ -342,6 +552,7 @@ function handle(payload, root) {
         profileRegistry: profileRegistry(root),
       });
       recordEvent(root, payload, { outcome: result.accepted ? 'allow' : 'block', completionTier: accepted.completion_mode, changedFileCount: changed.files.length, gateCount: accepted.completion_mode === 'implementation' ? 1 : 0, failedCheckCount: result.failures.length });
+      if (result.accepted) await safelyReleaseTaskClaim(payload, root);
       if (!result.accepted) block(`[lifecycle] TaskCompleted blocked: ${result.failures.join('; ')}`);
       return;
     }
@@ -375,11 +586,15 @@ function handle(payload, root) {
       }
       const failures = [...missing, ...receiptFailures];
       recordEvent(root, payload, { outcome: failures.length ? 'block' : 'allow', missingSectionCount: failures.length });
+      if (completion?.task_id && failures.length === 0) {
+        await safelyReleaseTaskClaim(payload, root, completion.task_id);
+      }
       if (failures.length) block(`[lifecycle] SubagentStop blocked. ${receiptFailures.join('; ')} Add substantive sections for: ${missing.join(', ')}.`);
       return;
     }
     case 'PostCompact': {
       const summary = typeof payload.compact_summary === 'string' ? payload.compact_summary : '';
+      await safelyReconcileCoordination(root);
       recordEvent(root, payload, { summaryBytes: Buffer.byteLength(summary, 'utf8'), summaryHash: hash(summary) });
       return;
     }
@@ -415,6 +630,6 @@ if (!root) {
   if (BLOCKING_EVENTS.has(payload?.hook_event_name)) block(`[lifecycle] ${payload.hook_event_name} blocked: git worktree unavailable.`);
   process.exit();
 }
-try { handle(payload, root); } catch {
+try { await handle(payload, root); } catch {
   if (BLOCKING_EVENTS.has(payload?.hook_event_name)) block(`[lifecycle] ${payload.hook_event_name} blocked: lifecycle contract could not be evaluated safely.`);
 }
