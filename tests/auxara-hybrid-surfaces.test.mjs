@@ -1,10 +1,10 @@
 // Proves: AUXARA-HYBRID-COMPAT-001
 // Test type: canonical source-contract regression
-// Surface: Auxara Dialer managed HYBRID doc/code and decision-linkage gates
+// Surface: Auxara Dialer managed HYBRID doc/code, decision-linkage, and PostToolUse routing gates
 // Authority: overlays/auxara-dialer/project-files/scripts
 // Product statement: a scoped overlay delivery must retain the target gate APIs and resolved linkage behavior.
 // Killer mutations: remove a public validator export or aggregate call, re-add BUX-019, restore naive pipe splitting,
-// or allow an unclosed inline-code span.
+// allow an unclosed inline-code span, drop one evidence-integrity route, or run a gate from process.cwd().
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -28,6 +28,15 @@ const decisionGatePath = path.join(
   'project-files',
   'scripts',
   'check-decision-sprint-linkage.mjs',
+);
+const gateRouterPath = path.join(
+  repoRoot,
+  'overlays',
+  'auxara-dialer',
+  'project-files',
+  'scripts',
+  'lib',
+  'claudeGateRouter.mjs',
 );
 
 test('Auxara doc/code gate preserves its public validator contract and aggregate wiring', () => {
@@ -82,4 +91,25 @@ test('Auxara decision gate keeps resolved backlog out and parses inline-code pip
     null,
     'an unclosed inline-code span must fail closed',
   );
+});
+
+test('Auxara PostToolUse routing preserves every project evidence-integrity gate', async () => {
+  const router = await import(pathToFileURL(gateRouterPath).href);
+
+  assert.deepEqual(
+    router.gatesForFile('repo/.ai-organization/policies/action-authority.v1.json'),
+    ['gate:agent-control-plane', 'gate:organization-overlay', 'gate:task-assurance'],
+  );
+  assert.deepEqual(
+    router.gatesForFile('repo/.claude/rules/testing-guardrails.md'),
+    ['gate:rules-wiring', 'gate:rule-test-citations', 'gate:agent-context'],
+  );
+  assert.deepEqual(
+    router.gatesForFile('repo/docs/app-plan/auditability/decision-log.md'),
+    ['gate:decision-sprint-linkage', 'gate:project-ledger-drift', 'gate:doc-registry-refs'],
+  );
+
+  const source = fs.readFileSync(gateRouterPath, 'utf8');
+  assert.match(source, /const DEFAULT_GATE_CWD = fileURLToPath\(new URL\('\.\.\/\.\.'/u);
+  assert.match(source, /cwd = DEFAULT_GATE_CWD/u);
 });

@@ -113,6 +113,7 @@ const MIN_REDACTABLE_SECRET_LENGTH = 1;
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
+
 /**
  * Collect the concrete secret VALUES present in an environment, so output can be scrubbed by value
  * rather than by guessing at output shape.

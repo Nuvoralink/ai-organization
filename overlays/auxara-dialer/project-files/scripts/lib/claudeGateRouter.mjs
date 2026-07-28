@@ -5,13 +5,20 @@ import { fileURLToPath } from 'node:url';
 
 const GATE_OUTPUT_LIMIT = 3_000;
 const TOTAL_FAILURE_OUTPUT_LIMIT = 12_000;
+// Hook handlers inherit Claude's current shell directory, which may be `backend/`, `frontend/`, or
+// another subdirectory. Gate scripts are root-workspace npm commands, so derive their cwd from this
+// module's own stable repository location rather than the caller's mutable process.cwd().
+const DEFAULT_GATE_CWD = fileURLToPath(new URL('../..', import.meta.url));
 
 export const GATE_ORDER = Object.freeze([
   'gate:rules-wiring',
+  'gate:rule-test-citations',
   'gate:agent-context',
   'gate:agent-control-plane',
   'gate:organization-overlay',
+  'gate:task-assurance',
   'gate:decision-sprint-linkage',
+  'gate:project-ledger-drift',
   'check:ui-guardrails',
   'check:layout',
   'check:ui-source-of-truth',
@@ -45,6 +52,13 @@ export function gatesForFile(filePath) {
     gates.add('gate:agent-context');
   }
   if (
+    /\/\.claude\/rules\/testing-guardrails\.md$/.test(p) ||
+    /\/scripts\/check-rule-test-citations\.mjs$/.test(p) ||
+    /\/backend\/src\/__tests__\/rule-test-citations-gate\.test\.ts$/.test(p)
+  ) {
+    gates.add('gate:rule-test-citations');
+  }
+  if (
     /\/\.github\/ISSUE_TEMPLATE\/agent-slice\.yml$/.test(p) ||
     /\/\.github\/PULL_REQUEST_TEMPLATE\.md$/.test(p) ||
     /\/\.claude\/settings\.json$/.test(p) ||
@@ -60,6 +74,7 @@ export function gatesForFile(filePath) {
   if (/\/\.ai-organization\//.test(p) || /\/scripts\/check-organization-overlay\.mjs$/.test(p)) {
     gates.add('gate:agent-control-plane');
     gates.add('gate:organization-overlay');
+    gates.add('gate:task-assurance');
   }
   if (
     /\/docs\/app-plan\/auditability\/decision-log\.md$/.test(p) ||
@@ -67,6 +82,18 @@ export function gatesForFile(filePath) {
     /\/scripts\/check-decision-sprint-linkage\.mjs$/.test(p)
   ) {
     gates.add('gate:decision-sprint-linkage');
+  }
+  if (
+    /\/docs\/app-plan\/auditability\/decision-log\.md$/.test(p) ||
+    /\/docs\/app-plan\/implementation\/sprints\/sprint-[^/]+\.md$/.test(p) ||
+    /\/docs\/app-plan\/implementation\/project-ledgers\/.*\.project-ledger\.json$/.test(p) ||
+    /\/scripts\/check-project-ledger-drift\.test\.mjs$/.test(p) ||
+    /\/scripts\/(?:check-decision-sprint-linkage|check-project-ledger-drift|audit-project-ledger-live)\.mjs$/.test(
+      p,
+    ) ||
+    /\/scripts\/lib\/(?:project-ledger-contract|claudeGateRouter)\.mjs$/.test(p)
+  ) {
+    gates.add('gate:project-ledger-drift');
   }
   if (/\/frontend\/src\//.test(p)) {
     gates.add('check:ui-guardrails');
@@ -158,7 +185,7 @@ function tail(value, maxLength = GATE_OUTPUT_LIMIT) {
 export function runGatesForFiles(
   filePaths,
   {
-    cwd = process.cwd(),
+    cwd = DEFAULT_GATE_CWD,
     env = process.env,
     timeoutMs = 90_000,
     outputLimit = GATE_OUTPUT_LIMIT,
