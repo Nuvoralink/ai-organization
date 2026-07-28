@@ -352,7 +352,7 @@
     },
     {
       "path": "scripts/check-fleet-parity.mjs",
-      "sha256": "ca723711a827c0cb91f5a67af905f89f7c379d125df6c08d8ac5db8e74c312e7"
+      "sha256": "9ae98f28afd49792467e7e30e845a5e63bcccc3a1a29f5b1496a1317caf6469a"
     },
     {
       "path": "scripts/check-overlay-parity.mjs",
@@ -438,7 +438,7 @@
       "scripts.proof:changed": "4bfc520d777a10dc90733e32aadec7d92b0a9b7266227eb27a87f1de6816b82d",
       "scripts.test:organization-control-plane": "1c097a3b80598bc3bb156d3239afa4bb1f42bde973db652bcdc5168e62c5cb01",
       "scripts.test:evidence-integrity-mutation": "2b7ec9ebecd833ee23c906b81349d676eb418e18991b8517a1f1f3335723cbfb",
-      "scripts.gates:all": "a6523122c18e4862712b42164a12f16e20e5cd32fc30a39b99685239bbb0f93d",
+      "scripts.gates:all": "7da47e3b8d6591c39df4c6b84948d47244bdb8fc16a5ce0ad71814e4b100a098",
       "scripts.verify": "217cf314de5043c85b05401ecd1e3294077067f3b1f45edc3248d3c82d2ff46e",
       "scripts.verify:db": "2b1785002c0c3c7172446c78839c7bbc6b7967f283e37b1dd3178e4dd9db0a5b",
       "scripts.ci:local": "47db5601b61ff94cbd4ce34cd9a40217d0ffeec299b35d85321d747649f39a3b"
