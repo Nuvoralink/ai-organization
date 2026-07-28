@@ -3303,6 +3303,10 @@
       "class": "project-orchestration-overlay"
     },
     {
+      "path": "overlays/coachai/project-files/.ai-organization/policies/authority-domains.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
       "path": "overlays/coachai/project-files/.ai-organization/proof-profiles.json",
       "class": "project-orchestration-overlay"
     },
