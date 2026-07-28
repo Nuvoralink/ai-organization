@@ -405,6 +405,44 @@ function digestCollectedTree(files) {
   return { sha256: digest.digest('hex'), fileCount: entries.length };
 }
 
+function digestTargetState(entriesInput) {
+  const entries = [...entriesInput]
+    .map(([relative, hash]) => [normalizeRelative(relative), hash])
+    .sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0);
+  const digest = crypto.createHash('sha256');
+  digest.update(Buffer.from('nuvoralink-target-state-v1\0', 'utf8'));
+  digest.update(uint64Bytes(entries.length));
+  for (const [relative, hash] of entries) {
+    invariant(/^[a-f0-9]{64}$/u.test(hash), `Invalid target-state content hash: ${relative || '.'}`);
+    const relativeBytes = Buffer.from(relative, 'utf8');
+    const hashBytesValue = Buffer.from(hash, 'ascii');
+    digest.update(uint64Bytes(relativeBytes.length));
+    digest.update(relativeBytes);
+    digest.update(uint64Bytes(hashBytesValue.length));
+    digest.update(hashBytesValue);
+  }
+  return digest.digest('hex');
+}
+
+function currentTargetStateDigest(destinationFiles) {
+  return digestTargetState([...destinationFiles].map(([relative, file]) => [relative, hashFile(file)]));
+}
+
+function incomingTargetStateDigest(sourceFiles, roots, renderContentTokens) {
+  return digestTargetState([...sourceFiles].map(([relative, file]) => [
+    relative,
+    renderedHash(file, roots, renderContentTokens),
+  ]));
+}
+
+function lockedTargetStateDigest(lock, mapping, destinationTemplate) {
+  const prefix = `${mapping.id}:${destinationTemplate}:`;
+  const entries = Object.entries(lock.files ?? {})
+    .filter(([key, value]) => key.startsWith(prefix) && value?.destination === destinationTemplate)
+    .map(([, value]) => [value.relative ?? '', value.hash]);
+  return entries.length > 0 ? digestTargetState(entries) : undefined;
+}
+
 export function computeInstalledTreeDigest({ root, manifest, mapping, destinationTemplate = '.' }) {
   invariant(!rootIsLink(root), `Installed tree digest requires a physical destination: ${destinationTemplate}`);
   return digestCollectedTree(collectFiles(root, manifest, { ...mapping, allowRootLink: false }, {
@@ -421,7 +459,7 @@ export function parseControlPlaneArgs(argv) {
     validate: new Set(),
     check: new Set(['--mapping']),
     capture: new Set(['--dry-run', '--update-existing', '--mapping', '--file']),
-    install: new Set(['--dry-run', '--adopt-existing', '--mapping', '--reconcile-installed']),
+    install: new Set(['--dry-run', '--adopt-existing', '--mapping', '--reconcile-installed', '--reconcile-target']),
     digest: new Set(['--mapping']),
     inventory: new Set(),
     rollback: new Set(['--install-id']),
@@ -430,6 +468,7 @@ export function parseControlPlaneArgs(argv) {
   const mappingIds = [];
   const fileSelectors = [];
   const reconciliations = new Map();
+  const targetReconciliations = new Map();
   let dryRun = false;
   let adoptExisting = false;
   let updateExisting = false;
@@ -469,10 +508,18 @@ export function parseControlPlaneArgs(argv) {
       const [, mappingId, expectedDigest] = match;
       invariant(!reconciliations.has(mappingId), `Duplicate --reconcile-installed mapping: ${mappingId}`);
       reconciliations.set(mappingId, expectedDigest);
+    } else if (flag === '--reconcile-target') {
+      const match = /^([a-z0-9][a-z0-9-]+):([a-f0-9]{64})$/u.exec(value);
+      invariant(match, `Invalid --reconcile-target value: ${value}`);
+      const [, mappingId, expectedDigest] = match;
+      invariant(!targetReconciliations.has(mappingId), `Duplicate --reconcile-target mapping: ${mappingId}`);
+      targetReconciliations.set(mappingId, expectedDigest);
     }
   }
   if (command === 'digest') invariant(mappingIds.length === 1 && args.length === 2, 'digest requires exactly one --mapping ID and accepts no other options');
   const reconcileInstalled = reconciliations.size > 0 ? reconciliations : undefined;
+  const reconcileTarget = targetReconciliations.size > 0 ? targetReconciliations : undefined;
+  invariant(!(reconcileInstalled && reconcileTarget), '--reconcile-installed cannot be combined with --reconcile-target');
   if (reconcileInstalled) {
     invariant(!adoptExisting && !updateExisting && fileSelectors.length === 0 && installId === undefined,
       'Installed-tree reconciliation accepts only --mapping, --reconcile-installed, and optional --dry-run');
@@ -482,6 +529,15 @@ export function parseControlPlaneArgs(argv) {
     invariant(missing.length === 0 && unselected.length === 0,
       `Reconciliation mappings must exactly match selected mappings; missing: ${missing.join(', ') || 'none'}; unselected: ${unselected.join(', ') || 'none'}`);
   }
+  if (reconcileTarget) {
+    invariant(!adoptExisting && !updateExisting && fileSelectors.length === 0 && installId === undefined,
+      'Target reconciliation accepts only --mapping, --reconcile-target, and optional --dry-run');
+    invariant(mappingIds.length > 0, 'Target reconciliation requires explicit --mapping selections');
+    const missing = mappingIds.filter((id) => !targetReconciliations.has(id));
+    const unselected = [...targetReconciliations.keys()].filter((id) => !mappingIds.includes(id));
+    invariant(missing.length === 0 && unselected.length === 0,
+      `Target reconciliation mappings must exactly match selected mappings; missing: ${missing.join(', ') || 'none'}; unselected: ${unselected.join(', ') || 'none'}`);
+  }
   return {
     command,
     dryRun,
@@ -490,6 +546,7 @@ export function parseControlPlaneArgs(argv) {
     mappingIds: mappingIds.length > 0 ? mappingIds : undefined,
     fileSelectors: fileSelectors.length > 0 ? fileSelectors : undefined,
     reconcileInstalled,
+    reconcileTarget,
     installId,
   };
 }
@@ -738,7 +795,8 @@ function applyInstallTransaction({ operations, locks, repoRoot, failAfter = unde
       backup: existed ? backup : null,
       postExists: operation.type !== 'retire',
       postHash: operation.type === 'retire' ? null : operation.sourceHash,
-      postRawHash: operation.type === 'retire' ? null : operation.sourceRawHash
+      postRawHash: operation.type === 'retire' ? null : operation.sourceRawHash,
+      reviewedTargetDigest: operation.reviewedTargetDigest,
     });
   }
   for (const snapshot of snapshots.values()) writeAtomic(path.join(snapshot.directory, 'snapshot.json'), `${JSON.stringify(snapshot.data, null, 2)}\n`);
@@ -850,6 +908,56 @@ function validatedReconciliation({ manifest, mappingIds, adoptExisting, reconcil
   invariant(missing.length === 0 && unselected.length === 0,
     `Reconciliation mappings must exactly match selected mappings; missing: ${missing.join(', ') || 'none'}; unselected: ${unselected.join(', ') || 'none'}`);
   return reconcileInstalled;
+}
+
+function validatedTargetReconciliation({ manifest, mappingIds, adoptExisting, reconcileTarget, reconcileInstalled }) {
+  if (reconcileTarget === undefined) return undefined;
+  invariant(reconcileTarget instanceof Map && reconcileTarget.size > 0, 'Target reconciliation requires at least one mapping digest');
+  invariant(!adoptExisting, '--reconcile-target cannot be combined with --adopt-existing');
+  invariant(reconcileInstalled === undefined, '--reconcile-target cannot be combined with --reconcile-installed');
+  invariant(Array.isArray(mappingIds) && mappingIds.length > 0, 'Target reconciliation requires explicit --mapping selections');
+  const selectedIds = new Set(mappingIds);
+  invariant(selectedIds.size === mappingIds.length, 'Duplicate --mapping selection is not allowed during target reconciliation');
+  const knownIds = new Set(manifest.mappings.map((mapping) => mapping.id));
+  const unknownIds = [...reconcileTarget.keys()].filter((id) => !knownIds.has(id));
+  invariant(unknownIds.length === 0, `Unknown target reconciliation mapping(s): ${unknownIds.join(', ')}`);
+  for (const [mappingId, expectedDigest] of reconcileTarget) {
+    invariant(/^[a-z0-9][a-z0-9-]+$/u.test(mappingId), `Invalid target reconciliation mapping id: ${mappingId}`);
+    invariant(/^[a-f0-9]{64}$/u.test(expectedDigest), `Invalid reviewed target digest for ${mappingId}`);
+  }
+  const missing = [...selectedIds].filter((id) => !reconcileTarget.has(id));
+  const unselected = [...reconcileTarget.keys()].filter((id) => !selectedIds.has(id));
+  invariant(missing.length === 0 && unselected.length === 0,
+    `Target reconciliation mappings must exactly match selected mappings; missing: ${missing.join(', ') || 'none'}; unselected: ${unselected.join(', ') || 'none'}`);
+  return reconcileTarget;
+}
+
+function exactTargetReconciliationCommand(commandBuilder, mappingId, currentTargetDigest) {
+  if (typeof commandBuilder === 'function') return commandBuilder(mappingId, currentTargetDigest);
+  return `install --mapping ${mappingId} --reconcile-target ${mappingId}:${currentTargetDigest}`;
+}
+
+function locallyEvolvedRefusal({
+  mapping,
+  destinationTemplate,
+  currentTargetDigest,
+  lockedDigest,
+  incomingDigest,
+  reviewedTargetDigest,
+  reconcileTargetCommand,
+}) {
+  const stale = reviewedTargetDigest && reviewedTargetDigest !== currentTargetDigest
+    ? `stale-reviewed-target-sha256=${reviewedTargetDigest}; `
+    : '';
+  return [
+    `Locally evolved managed target refused: mapping=${mapping.id}`,
+    `destination=${destinationTemplate}`,
+    `current-target-sha256=${currentTargetDigest}`,
+    `locked-sha256=${lockedDigest}`,
+    `incoming-sha256=${incomingDigest};`,
+    `${stale}hashes prove local evolution, not semantic ordering.`,
+    `Exact reconciliation command: ${exactTargetReconciliationCommand(reconcileTargetCommand, mapping.id, currentTargetDigest)}`,
+  ].join(' ');
 }
 
 export function runCheck({
@@ -1028,9 +1136,27 @@ export function runCapture({ repoRoot, manifest, roots, dryRun = false, updateEx
   return operations;
 }
 
-export function runInstall({ repoRoot, manifest, roots, dryRun = false, adoptExisting = false, failAfter = undefined, mappingIds = undefined, reconcileInstalled = undefined }) {
+export function runInstall({
+  repoRoot,
+  manifest,
+  roots,
+  dryRun = false,
+  adoptExisting = false,
+  failAfter = undefined,
+  mappingIds = undefined,
+  reconcileInstalled = undefined,
+  reconcileTarget = undefined,
+  reconcileTargetCommand = undefined,
+}) {
   const mappings = selectedMappings(manifest, mappingIds, 'install');
   const reconciliation = validatedReconciliation({ manifest, mappingIds, adoptExisting, reconcileInstalled });
+  const targetReconciliation = validatedTargetReconciliation({
+    manifest,
+    mappingIds,
+    adoptExisting,
+    reconcileTarget,
+    reconcileInstalled,
+  });
   const reviewedLayouts = new Map();
   if (reconciliation) {
     for (const mapping of mappings) {
@@ -1061,10 +1187,16 @@ export function runInstall({ repoRoot, manifest, roots, dryRun = false, adoptExi
     const sourceFiles = collectFiles(sourceRoot, manifest, mapping, { inventoryLabel: mapping.source });
     invariant(sourceFiles.size > 0, `Canonical source is empty: ${mapping.id}`);
     const reviewedDigest = reconciliation?.get(mapping.id);
+    const reviewedTargetDigest = targetReconciliation?.get(mapping.id);
     const lockPath = resolveTokenPath(mapping.lock, roots);
     if (!locks.has(lockPath)) locks.set(lockPath, loadLock(lockPath));
     const lock = locks.get(lockPath);
     const layout = reviewedLayouts.get(mapping.id) ?? classifyInstalledLayout(mapping, roots, 'Install');
+    const incomingStateDigest = incomingTargetStateDigest(
+      sourceFiles,
+      roots,
+      mapping.renderContentTokens !== false,
+    );
     for (const { kind, destinationTemplate, destinationRoot } of layout.entries) {
       if (kind === 'junction') {
         operations.push({ type: 'retain-legacy-link', mapping: mapping.id, relative: '', target: destinationRoot });
@@ -1076,6 +1208,45 @@ export function runInstall({ repoRoot, manifest, roots, dryRun = false, adoptExi
         { ...mapping, allowRootLink: false },
         { installedInventory: true, rejectUnsafe: true, inventoryLabel: destinationTemplate },
       );
+      const currentStateDigest = currentTargetStateDigest(destinationFiles);
+      const lockedStateDigest = lockedTargetStateDigest(lock, mapping, destinationTemplate);
+      const targetEvolved = lockedStateDigest !== undefined
+        && currentStateDigest !== lockedStateDigest
+        && incomingStateDigest !== currentStateDigest;
+      if (reviewedTargetDigest && reviewedTargetDigest !== currentStateDigest) {
+        if (targetEvolved) {
+          conflicts.push(locallyEvolvedRefusal({
+            mapping,
+            destinationTemplate,
+            currentTargetDigest: currentStateDigest,
+            lockedDigest: lockedStateDigest,
+            incomingDigest: incomingStateDigest,
+            reviewedTargetDigest,
+            reconcileTargetCommand,
+          }));
+        } else {
+          conflicts.push([
+            `Target reconciliation refused: mapping=${mapping.id}`,
+            `destination=${destinationTemplate}`,
+            `current-target-sha256=${currentStateDigest}`,
+            `stale-reviewed-target-sha256=${reviewedTargetDigest};`,
+            `Exact reconciliation command: ${exactTargetReconciliationCommand(reconcileTargetCommand, mapping.id, currentStateDigest)}`,
+          ].join(' '));
+        }
+        continue;
+      }
+      const targetReconciliationApproved = targetEvolved && reviewedTargetDigest === currentStateDigest;
+      if (targetEvolved && !targetReconciliationApproved) {
+        conflicts.push(locallyEvolvedRefusal({
+          mapping,
+          destinationTemplate,
+          currentTargetDigest: currentStateDigest,
+          lockedDigest: lockedStateDigest,
+          incomingDigest: incomingStateDigest,
+          reconcileTargetCommand,
+        }));
+        continue;
+      }
       if (reviewedDigest) {
         const currentTree = digestCollectedTree(destinationFiles);
         invariant(currentTree.sha256 === reviewedDigest,
@@ -1086,7 +1257,7 @@ export function runInstall({ repoRoot, manifest, roots, dryRun = false, adoptExi
           if (sourceFiles.has(relative)) continue;
           const key = lockKey(mapping, destinationTemplate, relative);
           const installedRawHash = lock.files[key]?.rawHash;
-          if (reviewedDigest || (installedRawHash && hashRawFile(current) === installedRawHash)) {
+          if (reviewedDigest || targetReconciliationApproved || (installedRawHash && hashRawFile(current) === installedRawHash)) {
             operations.push({
               type: 'retire',
               mapping: mapping.id,
@@ -1095,7 +1266,8 @@ export function runInstall({ repoRoot, manifest, roots, dryRun = false, adoptExi
               destinationTemplate,
               lockPath,
               key,
-              sourceHash: null
+              sourceHash: null,
+              reviewedTargetDigest: targetReconciliationApproved ? reviewedTargetDigest : undefined,
             });
           } else {
             conflicts.push(`Local-only managed file: ${mapping.id}/${relative}`);
@@ -1120,14 +1292,21 @@ export function runInstall({ repoRoot, manifest, roots, dryRun = false, adoptExi
         }
         if (current) {
           const installedHash = lock.files[key]?.hash;
-          if ((!installedHash || hashFile(current) !== installedHash) && !adoptExisting && !reviewedDigest) {
+          if (
+            (!installedHash || hashFile(current) !== installedHash)
+            && !adoptExisting
+            && !reviewedDigest
+            && !targetReconciliationApproved
+          ) {
             conflicts.push(`Dirty managed target: ${mapping.id}/${relative || '.'}`);
             continue;
           }
         }
         operations.push({
           type: current
-            ? (reviewedDigest && (!lock.files[key] || hashFile(current) !== lock.files[key].hash)
+            ? (targetReconciliationApproved
+              ? 'reconcile-target-update'
+              : reviewedDigest && (!lock.files[key] || hashFile(current) !== lock.files[key].hash)
               ? 'reconcile-update'
               : adoptExisting && !lock.files[key] ? 'adopt-update' : 'update')
             : 'create',
@@ -1140,7 +1319,8 @@ export function runInstall({ repoRoot, manifest, roots, dryRun = false, adoptExi
           lockPath,
           key,
           sourceHash,
-          sourceRawHash
+          sourceRawHash,
+          reviewedTargetDigest: targetReconciliationApproved ? reviewedTargetDigest : undefined,
         });
       }
     }

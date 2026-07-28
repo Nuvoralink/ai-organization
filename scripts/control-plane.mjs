@@ -18,7 +18,12 @@ const entrypointPath = path.resolve(fileURLToPath(import.meta.url));
 const defaultRepoRoot = path.resolve(path.dirname(entrypointPath), '..');
 
 function printOperations(operations, dryRun, stdout) {
-  for (const operation of operations) stdout(`${operation.type}\t${operation.mapping}\t${operation.relative || '.'}`);
+  for (const operation of operations) {
+    const reviewedTarget = operation.reviewedTargetDigest
+      ? `\treviewed-target-sha256=${operation.reviewedTargetDigest}`
+      : '';
+    stdout(`${operation.type}\t${operation.mapping}\t${operation.relative || '.'}${reviewedTarget}`);
+  }
   stdout(`operations=${operations.length} dryRun=${dryRun}`);
 }
 
@@ -29,7 +34,17 @@ export function runControlPlaneCli(argv, context = {}) {
   const stdout = context.stdout ?? console.log;
   const stderr = context.stderr ?? console.error;
   try {
-    const { command, dryRun, adoptExisting, updateExisting, mappingIds, fileSelectors, reconcileInstalled, installId } = parseControlPlaneArgs(argv);
+    const {
+      command,
+      dryRun,
+      adoptExisting,
+      updateExisting,
+      mappingIds,
+      fileSelectors,
+      reconcileInstalled,
+      reconcileTarget,
+      installId,
+    } = parseControlPlaneArgs(argv);
     if (command === 'validate') {
       const problems = [...validateRegistries(repoRoot), ...validateCanonical({ repoRoot, manifest })];
       if (problems.length > 0) {
@@ -56,7 +71,18 @@ export function runControlPlaneCli(argv, context = {}) {
     } else if (command === 'capture') {
       printOperations(runCapture({ repoRoot, manifest, roots, dryRun, updateExisting, mappingIds, fileSelectors }), dryRun, stdout);
     } else if (command === 'install') {
-      printOperations(runInstall({ repoRoot, manifest, roots, dryRun, adoptExisting, reconcileInstalled, mappingIds }), dryRun, stdout);
+      printOperations(runInstall({
+        repoRoot,
+        manifest,
+        roots,
+        dryRun,
+        adoptExisting,
+        reconcileInstalled,
+        reconcileTarget,
+        mappingIds,
+        reconcileTargetCommand: (mappingId, digest) =>
+          `npm run control:install -- --mapping ${mappingId} --reconcile-target ${mappingId}:${digest}`,
+      }), dryRun, stdout);
     } else if (command === 'digest') {
       stdout(JSON.stringify(runDigest({ manifest, roots, mappingIds })));
     } else if (command === 'inventory') {
@@ -65,7 +91,7 @@ export function runControlPlaneCli(argv, context = {}) {
       const ids = runRollback({ manifest, roots, installId });
       stdout(`rolled back install ${[...new Set(ids)].join(', ')}`);
     } else {
-      stderr('Usage: node scripts/control-plane.mjs <validate|check|capture|install|digest|inventory|rollback> [--dry-run] [--update-existing] [--mapping ID] [--file MAPPING:RELATIVE] [--adopt-existing] [--reconcile-installed MAPPING:SHA256] [--install-id ID]');
+      stderr('Usage: node scripts/control-plane.mjs <validate|check|capture|install|digest|inventory|rollback> [--dry-run] [--update-existing] [--mapping ID] [--file MAPPING:RELATIVE] [--adopt-existing] [--reconcile-installed MAPPING:SHA256] [--reconcile-target MAPPING:SHA256] [--install-id ID]');
       return 2;
     }
     return 0;
