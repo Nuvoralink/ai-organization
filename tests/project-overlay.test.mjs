@@ -29,7 +29,7 @@ function fixture(project = 'auxara-dialer') {
   return { root, roots, manifest };
 }
 
-test('Proves: ORG-OVERLAY-002; Test type: install/parity; Surface: project overlay; Authority: overlay manifest; Killer mutations: change or add a managed file, or drop the reviewed digest/mapping while forwarding a project reconciliation; Gated command: npm test', () => {
+test('Proves: ORG-OVERLAY-002 and OVERLAY-HYBRID-COMPAT-001 shared chokepoint; Test type: install/parity and reviewed-target mutation; Surface: project overlay; Authority: overlay manifest plus shared installer; Killer mutations: change or add a managed file, drop a reviewed digest/mapping, bypass target evolution in the overlay entrypoint, or accept a stale target digest; Gated command: npm test', () => {
   const { root, roots, manifest } = fixture();
   fs.writeFileSync(path.join(root, 'PRODUCT.md'), 'project owned\n');
   runInstall({ repoRoot, manifest, roots });
@@ -52,9 +52,8 @@ test('Proves: ORG-OVERLAY-002; Test type: install/parity; Surface: project overl
     stdout: (value) => output.push(value),
     stderr: (value) => errors.push(value),
   };
-  assert.equal(runProjectOverlayCli(['install', 'coachai'], context), 0);
   const router = path.join(coachai.root, 'AGENTS.md');
-  fs.appendFileSync(router, '\nreviewed local divergence\n');
+  fs.writeFileSync(router, '# Reviewed pre-install authority\n');
   output.length = 0;
   assert.equal(
     runProjectOverlayCli(
@@ -83,7 +82,64 @@ test('Proves: ORG-OVERLAY-002; Test type: install/parity; Surface: project overl
     errors.join('\n'),
   );
   assert.ok(output.some((line) => line.startsWith('reconcile-update\tcoachai-project-agents-router\t.')));
-  assert.match(fs.readFileSync(router, 'utf8'), /reviewed local divergence/u, 'reviewed dry-run must not write');
+  assert.match(fs.readFileSync(router, 'utf8'), /Reviewed pre-install authority/u, 'reviewed dry-run must not write');
+  output.length = 0;
+  errors.length = 0;
+  assert.equal(
+    runProjectOverlayCli(
+      [
+        'install',
+        'coachai',
+        '--mapping',
+        'coachai-project-agents-router',
+        '--reconcile-installed',
+        `coachai-project-agents-router:${reviewed.sha256}`,
+      ],
+      context,
+    ),
+    0,
+    errors.join('\n'),
+  );
+  const canonicalRouter = fs.readFileSync(router, 'utf8');
+  fs.writeFileSync(router, `${canonicalRouter}\nreviewed local divergence\n`);
+  output.length = 0;
+  errors.length = 0;
+  assert.equal(
+    runProjectOverlayCli(
+      ['install', 'coachai', '--mapping', 'coachai-project-agents-router', '--adopt-existing'],
+      context,
+    ),
+    1,
+  );
+  const refusal = errors.join('\n');
+  const currentDigest = /current-target-sha256=([a-f0-9]{64})/u.exec(refusal)?.[1];
+  assert.match(currentDigest ?? '', /^[a-f0-9]{64}$/u, refusal);
+  assert.match(
+    refusal,
+    new RegExp(`Exact reconciliation command: node scripts/project-overlay\\.mjs install coachai --mapping coachai-project-agents-router --reconcile-target coachai-project-agents-router:${currentDigest}`, 'u'),
+  );
+  assert.match(fs.readFileSync(router, 'utf8'), /reviewed local divergence/u);
+  output.length = 0;
+  errors.length = 0;
+  assert.equal(
+    runProjectOverlayCli(
+      [
+        'install',
+        'coachai',
+        '--dry-run',
+        '--mapping',
+        'coachai-project-agents-router',
+        '--reconcile-target',
+        `coachai-project-agents-router:${currentDigest}`,
+      ],
+      context,
+    ),
+    0,
+    errors.join('\n'),
+  );
+  assert.ok(output.some((line) =>
+    line.includes(`reconcile-target-update\tcoachai-project-agents-router\t.\treviewed-target-sha256=${currentDigest}`)));
+  assert.match(fs.readFileSync(router, 'utf8'), /reviewed local divergence/u, 'reviewed target dry-run must not write');
   assert.throws(
     () =>
       parseProjectOverlayArgs([
