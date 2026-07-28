@@ -134,7 +134,7 @@ test('Proves: CAPTURED-DATA-LOSS-001 captured ownership can never overwrite its 
   assert.equal(fs.readFileSync(canonicalLivePath, 'utf8'), '# Canonical\n');
   fs.writeFileSync(canonicalLivePath, '# Changed locally\n');
   assert.ok(runCheck(canonical).some((problem) => problem.type === 'drift'));
-  assert.throws(() => runInstall(canonical), /Dirty managed target/);
+  assert.throws(() => runInstall(canonical), /Locally evolved managed target refused/u);
 });
 
 test('Proves: canonically retired managed files are transactionally removed and rollback-restorable; Test type: lifecycle mutation; Surface: installer retirement; Authority: prior install lock; Killer mutation: leave an obsolete locked file installed or delete it without snapshot recovery; Gated command: npm test', () => {
@@ -167,7 +167,7 @@ test('Proves: retirement never deletes a locally modified formerly managed file;
 
   fs.unlinkSync(canonicalRetired);
   fs.writeFileSync(installedRetired, '# Local improvement\n');
-  assert.throws(() => runInstall({ ...f, dryRun: false }), /Local-only managed file: claude-rules\/retired\.md/u);
+  assert.throws(() => runInstall({ ...f, dryRun: false }), /Locally evolved managed target refused/u);
   assert.equal(fs.readFileSync(installedRetired, 'utf8'), '# Local improvement\n');
 });
 
@@ -665,7 +665,7 @@ test('Proves: OVERLAY-HYBRID-COMPAT-001 row 2 target differs from lock and equal
   assert.deepEqual(runCheck(f), []);
 });
 
-test('Proves: OVERLAY-HYBRID-COMPAT-001 row 3 target differs from lock while incoming equals lock; Test type: state-matrix refusal; Surface: shared installer chokepoint; Authority: three-state target identity; Killer mutation: restore unconditional overwrite or adoption of a locally evolved target when canonical is unchanged; Gated command: npm test', () => {
+test('Proves: OVERLAY-HYBRID-COMPAT-001 row 3 target differs from lock while incoming equals lock; Test type: state-matrix refusal; Surface: shared installer chokepoint; Authority: three-state target identity; Killer mutation: restore unconditional overwrite, adoption, or installed-tree reconciliation of a locally evolved target when canonical is unchanged; Gated command: npm test', () => {
   for (const adoptExisting of [false, true]) {
     const f = fixture();
     const canonical = path.join(f.repoRoot, 'canonical', 'rules', 'base.md');
@@ -686,6 +686,24 @@ test('Proves: OVERLAY-HYBRID-COMPAT-001 row 3 target differs from lock while inc
     );
     assert.equal(fs.readFileSync(installed, 'utf8'), '# Local evolution\n');
   }
+
+  const reviewedTree = fixture();
+  const reviewedCanonical = path.join(reviewedTree.repoRoot, 'canonical', 'rules', 'base.md');
+  const reviewedInstalled = path.join(reviewedTree.home, '.claude', 'rules', 'base.md');
+  fs.writeFileSync(reviewedCanonical, '# Locked\n');
+  runInstall(reviewedTree);
+  fs.writeFileSync(reviewedInstalled, '# Local evolution\n');
+  const reviewedDigest = computeInstalledTreeDigest({
+    root: path.dirname(reviewedInstalled),
+    manifest: reviewedTree.manifest,
+    mapping: reviewedTree.manifest.mappings[0],
+  }).sha256;
+  assert.throws(() => runInstall({
+    ...reviewedTree,
+    mappingIds: ['claude-rules'],
+    reconcileInstalled: new Map([['claude-rules', reviewedDigest]]),
+  }), /Locally evolved managed target refused/u);
+  assert.equal(fs.readFileSync(reviewedInstalled, 'utf8'), '# Local evolution\n');
 });
 
 test('Proves: OVERLAY-HYBRID-COMPAT-001 row 4 target, lock, and incoming all differ; Test type: state-matrix refusal; Surface: shared installer chokepoint; Authority: three-state target identity; Killer mutation: restore unconditional overwrite or adoption when target and canonical both moved; Gated command: npm test', () => {

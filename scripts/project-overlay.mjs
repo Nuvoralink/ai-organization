@@ -216,7 +216,7 @@ function printFailures(failures, stderr = console.error) {
 export function parseProjectOverlayArgs(argv) {
   const [command, project, ...rest] = argv;
   if (!['validate', 'check', 'install', 'capture', 'digest', 'inventory', 'rollback'].includes(command) || !project) {
-    throw new Error('Usage: project-overlay.mjs <validate|check|install|capture|digest|inventory|rollback> <project> [--root PATH] [--dry-run] [--update-existing] [--mapping ID] [--file MAPPING:RELATIVE] [--adopt-existing] [--reconcile-installed MAPPING:SHA256] [--install-id ID]');
+    throw new Error('Usage: project-overlay.mjs <validate|check|install|capture|digest|inventory|rollback> <project> [--root PATH] [--dry-run] [--update-existing] [--mapping ID] [--file MAPPING:RELATIVE] [--adopt-existing] [--reconcile-installed MAPPING:SHA256] [--reconcile-target MAPPING:SHA256] [--install-id ID]');
   }
   let rootOverride;
   const forwarded = [];
@@ -252,6 +252,7 @@ export function runProjectOverlayCli(argv, context = {}) {
       fileSelectors,
       adoptExisting,
       reconcileInstalled,
+      reconcileTarget,
       installId,
     } = parseProjectOverlayArgs(argv);
     const loaded = loadOverlay(project, context.rootsOverride);
@@ -303,8 +304,28 @@ export function runProjectOverlayCli(argv, context = {}) {
     }
     const operations = command === 'capture'
       ? runCapture({ repoRoot, manifest: loaded.manifest, roots, dryRun, updateExisting, mappingIds, fileSelectors })
-      : runInstall({ repoRoot, manifest: loaded.manifest, roots, dryRun, adoptExisting, mappingIds, reconcileInstalled });
-    operations.forEach((operation) => stdout(`${operation.type}\t${operation.mapping}\t${operation.relative || '.'}`));
+      : runInstall({
+        repoRoot,
+        manifest: loaded.manifest,
+        roots,
+        dryRun,
+        adoptExisting,
+        mappingIds,
+        reconcileInstalled,
+        reconcileTarget,
+        reconcileTargetCommand: (mappingId, digest) => {
+          const rootOption = rootOverride === undefined
+            ? ''
+            : ` --root '${rootOverride.replaceAll("'", "''")}'`;
+          return `node scripts/project-overlay.mjs install ${project}${rootOption} --mapping ${mappingId} --reconcile-target ${mappingId}:${digest}`;
+        },
+      });
+    operations.forEach((operation) => {
+      const reviewedTarget = operation.reviewedTargetDigest
+        ? `\treviewed-target-sha256=${operation.reviewedTargetDigest}`
+        : '';
+      stdout(`${operation.type}\t${operation.mapping}\t${operation.relative || '.'}${reviewedTarget}`);
+    });
     stdout(`operations=${operations.length} dryRun=${dryRun}`);
     return 0;
   } catch (error) {

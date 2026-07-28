@@ -42,7 +42,7 @@ test('Proves: ORG-OVERLAY-002 and OVERLAY-HYBRID-COMPAT-001 shared chokepoint; T
   const managed = path.join(root, '.ai-organization', 'control-plane', 'project-profile.v1.json');
   fs.appendFileSync(managed, '\nchanged\n');
   assert.ok(runCheck({ repoRoot, manifest, roots }).some((finding) => finding.type === 'drift'));
-  assert.throws(() => runInstall({ repoRoot, manifest, roots }), /Dirty managed target/u);
+  assert.throws(() => runInstall({ repoRoot, manifest, roots }), /Locally evolved managed target refused/u);
 
   const coachai = fixture('coachai');
   const output = [];
@@ -106,7 +106,15 @@ test('Proves: ORG-OVERLAY-002 and OVERLAY-HYBRID-COMPAT-001 shared chokepoint; T
   errors.length = 0;
   assert.equal(
     runProjectOverlayCli(
-      ['install', 'coachai', '--mapping', 'coachai-project-agents-router', '--adopt-existing'],
+      [
+        'install',
+        'coachai',
+        '--root',
+        coachai.root,
+        '--mapping',
+        'coachai-project-agents-router',
+        '--adopt-existing',
+      ],
       context,
     ),
     1,
@@ -114,9 +122,11 @@ test('Proves: ORG-OVERLAY-002 and OVERLAY-HYBRID-COMPAT-001 shared chokepoint; T
   const refusal = errors.join('\n');
   const currentDigest = /current-target-sha256=([a-f0-9]{64})/u.exec(refusal)?.[1];
   assert.match(currentDigest ?? '', /^[a-f0-9]{64}$/u, refusal);
-  assert.match(
+  assert.ok(
+    refusal.includes(
+      `Exact reconciliation command: node scripts/project-overlay.mjs install coachai --root '${coachai.root}' --mapping coachai-project-agents-router --reconcile-target coachai-project-agents-router:${currentDigest}`,
+    ),
     refusal,
-    new RegExp(`Exact reconciliation command: node scripts/project-overlay\\.mjs install coachai --mapping coachai-project-agents-router --reconcile-target coachai-project-agents-router:${currentDigest}`, 'u'),
   );
   assert.match(fs.readFileSync(router, 'utf8'), /reviewed local divergence/u);
   output.length = 0;
@@ -126,6 +136,8 @@ test('Proves: ORG-OVERLAY-002 and OVERLAY-HYBRID-COMPAT-001 shared chokepoint; T
       [
         'install',
         'coachai',
+        '--root',
+        coachai.root,
         '--dry-run',
         '--mapping',
         'coachai-project-agents-router',
