@@ -13,7 +13,9 @@ function pathKey(value) {
 }
 
 function configuredProjectRoot() {
-  const scriptRoot = realpathSync.native(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'));
+  const scriptRoot = realpathSync.native(
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'),
+  );
   const configured = String(process.env.CLAUDE_PROJECT_DIR ?? '').trim();
   if (!configured) return scriptRoot;
   const configuredRoot = realpathSync.native(path.resolve(configured));

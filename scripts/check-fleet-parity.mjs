@@ -43,7 +43,11 @@ function projectionIds(relative, projection, problems) {
   const ids = new Set();
   const seen = new Set();
   if (relative.endsWith('agents.json')) {
-    if (!projection.orchestrator || typeof projection.orchestrator !== 'object' || Array.isArray(projection.orchestrator)) {
+    if (
+      !projection.orchestrator ||
+      typeof projection.orchestrator !== 'object' ||
+      Array.isArray(projection.orchestrator)
+    ) {
       problems.push(`${relative} must contain an orchestrator object`);
     } else {
       addProjectionId(ids, seen, projection.orchestrator.id, relative, problems);
@@ -51,7 +55,8 @@ function projectionIds(relative, projection, problems) {
     if (!Array.isArray(projection.agents)) {
       problems.push(`${relative} must contain an agents array`);
     } else {
-      for (const role of projection.agents) addProjectionId(ids, seen, role?.id, relative, problems);
+      for (const role of projection.agents)
+        addProjectionId(ids, seen, role?.id, relative, problems);
     }
     return ids;
   }
@@ -72,7 +77,9 @@ function projectAgentIds(problems) {
   try {
     entries = fs.readdirSync(agentsDir, { withFileTypes: true });
   } catch (error) {
-    problems.push(`project agent directory is missing or unreadable: .claude/agents (${error.message})`);
+    problems.push(
+      `project agent directory is missing or unreadable: .claude/agents (${error.message})`,
+    );
     return new Map();
   }
 
@@ -120,7 +127,8 @@ if (universal && projectExtension) {
 
 const effectiveById = new Map();
 for (const role of roles) {
-  if (effectiveById.has(role.id)) problems.push(`effective role inventory contains duplicate id: ${role.id}`);
+  if (effectiveById.has(role.id))
+    problems.push(`effective role inventory contains duplicate id: ${role.id}`);
   effectiveById.set(role.id, role);
 }
 const effectiveIds = new Set(effectiveById.keys());
@@ -131,11 +139,15 @@ const agentFileExceptions = new Set(
 const agents = projectAgentIds(problems);
 
 for (const [id, relative] of agents) {
-  if (!effectiveIds.has(id)) problems.push(`agent file has no effective-role row: ${relative} (${id})`);
+  if (!effectiveIds.has(id))
+    problems.push(`agent file has no effective-role row: ${relative} (${id})`);
 }
 for (const [id, role] of effectiveById) {
   if (agents.has(id)) {
-    if (agentFileExceptions.has(id)) problems.push(`project agent-file exception is redundant because the agent file exists: ${id}`);
+    if (agentFileExceptions.has(id))
+      problems.push(
+        `project agent-file exception is redundant because the agent file exists: ${id}`,
+      );
     continue;
   }
   if (projectRoleIds.has(id)) {
@@ -144,7 +156,9 @@ for (const [id, role] of effectiveById) {
   }
   if (universalNoAgentFileModes.has(role.mode)) continue;
   if (agentFileExceptions.has(id)) continue;
-  problems.push(`effective universal ${role.mode} role has no agent file or explicit project exception: ${id}`);
+  problems.push(
+    `effective universal ${role.mode} role has no agent file or explicit project exception: ${id}`,
+  );
 }
 
 const projections = [];
@@ -154,8 +168,20 @@ for (const relative of projectionCandidates) {
   if (value) projections.push({ relative, ids: projectionIds(relative, value, problems) });
 }
 if (projections.length === 2) {
-  compareSets(projections[0].relative, projections[0].ids, projections[1].relative, projections[1].ids, problems);
-  compareSets(projections[1].relative, projections[1].ids, projections[0].relative, projections[0].ids, problems);
+  compareSets(
+    projections[0].relative,
+    projections[0].ids,
+    projections[1].relative,
+    projections[1].ids,
+    problems,
+  );
+  compareSets(
+    projections[1].relative,
+    projections[1].ids,
+    projections[0].relative,
+    projections[0].ids,
+    problems,
+  );
 }
 for (const projection of projections) {
   compareSets(projection.relative, projection.ids, 'effective roles', effectiveIds, problems);
@@ -167,9 +193,10 @@ if (problems.length > 0) {
   process.exit(1);
 }
 
-const projectionLabel = projections.length === 0
-  ? 'none'
-  : projections.map((projection) => path.basename(projection.relative)).join('+');
+const projectionLabel =
+  projections.length === 0
+    ? 'none'
+    : projections.map((projection) => path.basename(projection.relative)).join('+');
 console.log(
   `fleet-parity: PASS — ${effectiveIds.size} effective roles, ${agents.size} project agent files, projection=${projectionLabel}`,
 );
