@@ -62,6 +62,26 @@ function cliContext(f) {
   };
 }
 
+function thrownError(operation) {
+  try {
+    operation();
+  } catch (error) {
+    return error;
+  }
+  assert.fail('expected operation to throw');
+}
+
+function targetStateDigests(error) {
+  const message = error?.message ?? '';
+  const current = /current-target-sha256=([a-f0-9]{64})/u.exec(message)?.[1];
+  const locked = /locked-sha256=([a-f0-9]{64})/u.exec(message)?.[1];
+  const incoming = /incoming-sha256=([a-f0-9]{64})/u.exec(message)?.[1];
+  assert.match(current ?? '', /^[a-f0-9]{64}$/u, message);
+  assert.match(locked ?? '', /^[a-f0-9]{64}$/u, message);
+  assert.match(incoming ?? '', /^[a-f0-9]{64}$/u, message);
+  return { current, locked, incoming };
+}
+
 test('Proves: capture and install are deterministic; Test type: mutation; Surface: portable control plane; Authority: manifest; Killer mutation: local-only file must fail check', () => {
   const f = fixture();
   fs.writeFileSync(path.join(f.home, '.claude', 'rules', 'base.md'), '# Base\r\n');
@@ -611,6 +631,169 @@ test('Proves: one-time baseline adoption is explicit; Test type: migration mutat
   assert.equal(fs.readFileSync(path.join(f.home, '.claude', 'rules', 'base.md'), 'utf8'), '# Canonical\n');
 });
 
+test('Proves: OVERLAY-HYBRID-COMPAT-001 row 1 target equals lock; Test type: state-matrix liveness; Surface: shared installer chokepoint; Authority: last-installed target state; Killer mutation: reject a clean target when incoming canonical changes; Gated command: npm test', () => {
+  const f = fixture();
+  const canonical = path.join(f.repoRoot, 'canonical', 'rules', 'base.md');
+  const installed = path.join(f.home, '.claude', 'rules', 'base.md');
+  fs.writeFileSync(canonical, '# Locked\n');
+  runInstall(f);
+  fs.writeFileSync(canonical, '# Incoming\n');
+
+  const operations = runInstall(f);
+
+  assert.ok(operations.some((operation) => operation.type === 'update' && operation.relative === 'base.md'));
+  assert.equal(fs.readFileSync(installed, 'utf8'), '# Incoming\n');
+  assert.deepEqual(runCheck(f), []);
+});
+
+test('Proves: OVERLAY-HYBRID-COMPAT-001 row 2 target differs from lock and equals incoming; Test type: state-matrix liveness; Surface: shared installer chokepoint; Authority: canonical target identity; Killer mutation: refuse an already-canonical target or rewrite it instead of refreshing only the lock; Gated command: npm test', () => {
+  const f = fixture();
+  const canonical = path.join(f.repoRoot, 'canonical', 'rules', 'base.md');
+  const installed = path.join(f.home, '.claude', 'rules', 'base.md');
+  fs.writeFileSync(canonical, '# Locked\n');
+  runInstall(f);
+  fs.writeFileSync(canonical, '# Incoming\n');
+  fs.writeFileSync(installed, '# Incoming\n');
+
+  const operations = runInstall(f);
+
+  assert.deepEqual(
+    operations.map(({ type, relative }) => ({ type, relative })),
+    [{ type: 'refresh-lock', relative: 'base.md' }],
+  );
+  assert.equal(fs.readFileSync(installed, 'utf8'), '# Incoming\n');
+  assert.deepEqual(runCheck(f), []);
+});
+
+test('Proves: OVERLAY-HYBRID-COMPAT-001 row 3 target differs from lock while incoming equals lock; Test type: state-matrix refusal; Surface: shared installer chokepoint; Authority: three-state target identity; Killer mutation: restore unconditional overwrite or adoption of a locally evolved target when canonical is unchanged; Gated command: npm test', () => {
+  for (const adoptExisting of [false, true]) {
+    const f = fixture();
+    const canonical = path.join(f.repoRoot, 'canonical', 'rules', 'base.md');
+    const installed = path.join(f.home, '.claude', 'rules', 'base.md');
+    fs.writeFileSync(canonical, '# Locked\n');
+    runInstall(f);
+    fs.writeFileSync(installed, '# Local evolution\n');
+
+    const error = thrownError(() => runInstall({ ...f, adoptExisting }));
+    const digests = targetStateDigests(error);
+
+    assert.equal(digests.locked, digests.incoming, error.message);
+    assert.notEqual(digests.current, digests.locked, error.message);
+    assert.match(error.message, /Locally evolved managed target refused: mapping=claude-rules/u);
+    assert.match(
+      error.message,
+      new RegExp(`Exact reconciliation command: install --mapping claude-rules --reconcile-target claude-rules:${digests.current}`, 'u'),
+    );
+    assert.equal(fs.readFileSync(installed, 'utf8'), '# Local evolution\n');
+  }
+});
+
+test('Proves: OVERLAY-HYBRID-COMPAT-001 row 4 target, lock, and incoming all differ; Test type: state-matrix refusal; Surface: shared installer chokepoint; Authority: three-state target identity; Killer mutation: restore unconditional overwrite or adoption when target and canonical both moved; Gated command: npm test', () => {
+  for (const adoptExisting of [false, true]) {
+    const f = fixture();
+    const canonical = path.join(f.repoRoot, 'canonical', 'rules', 'base.md');
+    const installed = path.join(f.home, '.claude', 'rules', 'base.md');
+    fs.writeFileSync(canonical, '# Locked\n');
+    runInstall(f);
+    fs.writeFileSync(canonical, '# Incoming\n');
+    fs.writeFileSync(installed, '# Local evolution\n');
+
+    const error = thrownError(() => runInstall({ ...f, adoptExisting }));
+    const digests = targetStateDigests(error);
+
+    assert.equal(new Set(Object.values(digests)).size, 3, error.message);
+    assert.match(error.message, /Locally evolved managed target refused: mapping=claude-rules/u);
+    assert.match(
+      error.message,
+      new RegExp(`Exact reconciliation command: install --mapping claude-rules --reconcile-target claude-rules:${digests.current}`, 'u'),
+    );
+    assert.equal(fs.readFileSync(installed, 'utf8'), '# Local evolution\n');
+  }
+});
+
+test('Proves: OVERLAY-HYBRID-COMPAT-001 row 5 exact target reconciliation proceeds and receipts the reviewed digest; Test type: state-matrix reviewed write; Surface: shared installer transaction; Authority: exact current target state; Killer mutation: ignore the reviewed digest, omit it from the operation log, or omit it from the snapshot receipt; Gated command: npm test', () => {
+  const f = fixture();
+  const canonical = path.join(f.repoRoot, 'canonical', 'rules', 'base.md');
+  const installed = path.join(f.home, '.claude', 'rules', 'base.md');
+  const lockPath = path.join(f.home, '.nuvoralink-control-plane', 'lock.json');
+  fs.writeFileSync(canonical, '# Locked\n');
+  runInstall(f);
+  fs.writeFileSync(canonical, '# Incoming\n');
+  fs.writeFileSync(installed, '# Local evolution\n');
+  const refused = thrownError(() => runInstall({ ...f, adoptExisting: true }));
+  const reviewedDigest = targetStateDigests(refused).current;
+
+  const operations = runInstall({
+    ...f,
+    mappingIds: ['claude-rules'],
+    reconcileTarget: new Map([['claude-rules', reviewedDigest]]),
+  });
+
+  assert.ok(operations.some((operation) =>
+    operation.type === 'reconcile-target-update'
+      && operation.relative === 'base.md'
+      && operation.reviewedTargetDigest === reviewedDigest));
+  assert.equal(fs.readFileSync(installed, 'utf8'), '# Incoming\n');
+  assert.deepEqual(runCheck(f), []);
+  const receipt = JSON.parse(fs.readFileSync(
+    path.join(path.dirname(lockPath), 'snapshots', operations.installId, 'snapshot.json'),
+    'utf8',
+  ));
+  assert.equal(receipt.entries[0].reviewedTargetDigest, reviewedDigest);
+});
+
+test('Proves: OVERLAY-HYBRID-COMPAT-001 row 6 a stale reviewed target digest refuses again; Test type: state-matrix stale-review mutation; Surface: shared installer preflight; Authority: exact current target state; Killer mutation: accept any SHA-256-shaped reconciliation value after the target moves; Gated command: npm test', () => {
+  const f = fixture();
+  const canonical = path.join(f.repoRoot, 'canonical', 'rules', 'base.md');
+  const installed = path.join(f.home, '.claude', 'rules', 'base.md');
+  fs.writeFileSync(canonical, '# Locked\n');
+  runInstall(f);
+  fs.writeFileSync(canonical, '# Incoming\n');
+  fs.writeFileSync(installed, '# Reviewed local evolution\n');
+  const firstRefusal = thrownError(() => runInstall({ ...f, adoptExisting: true }));
+  const reviewedDigest = targetStateDigests(firstRefusal).current;
+  fs.writeFileSync(installed, '# Moved after review\n');
+
+  const staleRefusal = thrownError(() => runInstall({
+    ...f,
+    mappingIds: ['claude-rules'],
+    reconcileTarget: new Map([['claude-rules', reviewedDigest]]),
+  }));
+  const currentDigest = targetStateDigests(staleRefusal).current;
+
+  assert.notEqual(currentDigest, reviewedDigest, staleRefusal.message);
+  assert.match(staleRefusal.message, new RegExp(`stale-reviewed-target-sha256=${reviewedDigest}`, 'u'));
+  assert.match(
+    staleRefusal.message,
+    new RegExp(`Exact reconciliation command: install --mapping claude-rules --reconcile-target claude-rules:${currentDigest}`, 'u'),
+  );
+  assert.equal(fs.readFileSync(installed, 'utf8'), '# Moved after review\n');
+});
+
+test('Proves: OVERLAY-HYBRID-COMPAT-001 captured memory mappings bypass target reconciliation and remain untouched; Test type: ownership counterexample; Surface: shared installer chokepoint; Authority: captured live state; Killer mutation: hash, lock, or write a captured mapping while evaluating target evolution; Gated command: npm test', () => {
+  const f = fixture();
+  const canonical = path.join(f.repoRoot, 'canonical', 'rules', 'base.md');
+  const live = path.join(f.home, '.claude', 'rules', 'base.md');
+  f.manifest.mappings[0].id = 'claude-project-memory-fixture';
+  f.manifest.mappings[0].ownership = 'captured';
+  fs.writeFileSync(canonical, '# Captured backup\n');
+  fs.writeFileSync(live, '# Newer live memory\n');
+  const before = fs.readFileSync(live);
+
+  const operations = runInstall({
+    ...f,
+    mappingIds: ['claude-project-memory-fixture'],
+    reconcileTarget: new Map([['claude-project-memory-fixture', 'a'.repeat(64)]]),
+  });
+
+  assert.deepEqual(operations.map(({ type, mapping }) => ({ type, mapping })), [{
+    type: 'skipped-by-mode',
+    mapping: 'claude-project-memory-fixture',
+  }]);
+  assert.deepEqual(fs.readFileSync(live), before);
+  assert.equal(fs.existsSync(path.join(f.home, '.nuvoralink-control-plane', 'lock.json')), false);
+});
+
 test('Proves: declared legacy junctions are verified and retained without being treated as writes; Test type: regression; Surface: installer apply phase; Authority: manifest link policy; Killer mutation: remove the retain-operation skip and attempt to write undefined bytes', () => {
   const f = fixture();
   fs.writeFileSync(path.join(f.repoRoot, 'canonical', 'rules', 'base.md'), '# Canonical\n');
@@ -872,6 +1055,33 @@ test('Proves: install reconciliation preserves exact mapping selections; Test ty
   assert.deepEqual(parsed.reconcileInstalled, new Map([['claude-rules', digest]]));
 });
 
+test('Proves: target reconciliation preserves exact mapping selections; Test type: parser liveness; Surface: control-plane install argument parser; Authority: argv-to-options contract; Killer mutation: omit or alter the reviewed target mapping/digest in parsed options; Gated command: npm test', () => {
+  const digest = 'a'.repeat(64);
+  const parsed = parseControlPlaneArgs(['install', '--dry-run', '--mapping', 'claude-rules', '--reconcile-target', `claude-rules:${digest}`]);
+  assert.equal(parsed.command, 'install');
+  assert.equal(parsed.dryRun, true);
+  assert.equal(parsed.adoptExisting, false);
+  assert.deepEqual(parsed.mappingIds, ['claude-rules']);
+  assert.deepEqual(parsed.reconcileTarget, new Map([['claude-rules', digest]]));
+});
+
+test('Proves: target reconciliation is exact-mapping, install-only, and mutually exclusive with blanket or installed-tree migration modes; Test type: parser boundary mutation; Surface: control-plane argument parser; Authority: reviewed-target command grammar; Killer mutation: accept a stale-shaped value broadly, omit explicit selection, or combine independent overwrite authorities; Gated command: npm test', () => {
+  const digest = 'a'.repeat(64);
+  const invalid = [
+    ['check', '--reconcile-target', `claude-rules:${digest}`],
+    ['install', '--reconcile-target'],
+    ['install', '--reconcile-target', 'claude-rules:ABC'],
+    ['install', `--reconcile-target=claude-rules:${digest}`],
+    ['install', '--reconcile-targetX', `claude-rules:${digest}`],
+    ['install', '--reconcile-target', `claude-rules:${digest}`, '--reconcile-target', `claude-rules:${digest}`],
+    ['install', '--reconcile-target', `claude-rules:${digest}`],
+    ['install', '--mapping', 'claude-rules', '--reconcile-target', `other-rules:${digest}`],
+    ['install', '--mapping', 'claude-rules', '--reconcile-target', `claude-rules:${digest}`, '--adopt-existing'],
+    ['install', '--mapping', 'claude-rules', '--reconcile-target', `claude-rules:${digest}`, '--reconcile-installed', `claude-rules:${digest}`],
+  ];
+  for (const argv of invalid) assert.throws(() => parseControlPlaneArgs(argv), undefined, argv.join(' '));
+});
+
 test('Proves: install reconciliation defaults adoption off; Test type: parser mode liveness; Surface: control-plane install argument parser; Authority: migration-mode contract; Killer mutation: force adoptExisting true when only reconciliation is requested; Gated command: npm test', () => {
   const digest = 'a'.repeat(64);
   assert.equal(parseControlPlaneArgs(['install', '--mapping', 'claude-rules', '--reconcile-installed', `claude-rules:${digest}`]).adoptExisting, false);
@@ -928,6 +1138,8 @@ test('Proves: every control-plane argument is consumed once by its command gramm
     ['install', '--mapping', 'claude-rules', '--reconcile-installed', `claude-rules:${digest}`, '--update-existing'],
     ['install', '--mapping', 'claude-rules', '--reconcile-installed', `claude-rules:${digest}`, '--install-id', 'id'],
     ['install', '--mapping', 'claude-rules', '--reconcile-installed', `other-rules:${digest}`],
+    ['install', '--mapping', 'claude-rules', '--reconcile-target', `claude-rules:${digest}`, '--adopt-existing'],
+    ['install', '--mapping', 'claude-rules', '--reconcile-target', `claude-rules:${digest}`, '--reconcile-installed', `claude-rules:${digest}`],
   ];
   for (const argv of invalid) assert.throws(() => parseControlPlaneArgs(argv), undefined, argv.join(' '));
 
@@ -939,6 +1151,39 @@ test('Proves: every control-plane argument is consumed once by its command gramm
   assert.deepEqual(parsed.mappingIds, ['claude-rules', 'other-rules']);
   assert.deepEqual(parsed.reconcileInstalled, new Map([['claude-rules', digest], ['other-rules', 'b'.repeat(64)]]));
   assert.equal(parsed.dryRun, true);
+});
+
+test('Proves: the executable target reconciliation refuses local evolution with an exact command, then forwards and logs the reviewed digest; Test type: entrypoint end-to-end mutation; Surface: scripts/control-plane.mjs runControlPlaneCli; Authority: shared target-evolution guard plus public command wiring; Killer mutation: drop reconcileTarget at the entrypoint, preserve --adopt-existing as a bypass, or omit the reviewed digest from output; Gated command: npm test', () => {
+  const f = fixture();
+  const canonical = path.join(f.repoRoot, 'canonical', 'rules', 'base.md');
+  const installed = path.join(f.home, '.claude', 'rules', 'base.md');
+  fs.writeFileSync(canonical, '# Locked\n');
+  runInstall(f);
+  fs.writeFileSync(canonical, '# Incoming\n');
+  fs.writeFileSync(installed, '# Local evolution\n');
+  const refusedIo = cliContext(f);
+
+  assert.equal(runControlPlaneCli(['install', '--adopt-existing'], refusedIo.context), 1);
+  const refusal = refusedIo.stderr.join('\n');
+  const reviewedDigest = targetStateDigests(new Error(refusal)).current;
+  assert.match(
+    refusal,
+    new RegExp(`Exact reconciliation command: npm run control:install -- --mapping claude-rules --reconcile-target claude-rules:${reviewedDigest}`, 'u'),
+  );
+  assert.deepEqual(refusedIo.stdout, []);
+  assert.equal(fs.readFileSync(installed, 'utf8'), '# Local evolution\n');
+
+  const reconciledIo = cliContext(f);
+  assert.equal(runControlPlaneCli([
+    'install',
+    '--mapping',
+    'claude-rules',
+    '--reconcile-target',
+    `claude-rules:${reviewedDigest}`,
+  ], reconciledIo.context), 0, reconciledIo.stderr.join('\n'));
+  assert.ok(reconciledIo.stdout.some((line) =>
+    line.includes(`reconcile-target-update\tclaude-rules\tbase.md\treviewed-target-sha256=${reviewedDigest}`)));
+  assert.equal(fs.readFileSync(installed, 'utf8'), '# Incoming\n');
 });
 
 test('Proves: executable reconciliation rejects incompatible or stray argv before changing bytes; Test type: entrypoint boundary mutation; Surface: scripts/control-plane.mjs runControlPlaneCli; Authority: consuming reconciliation grammar; Killer mutation: silently ignore one incompatible or stray CLI token; Gated command: npm test', () => {
