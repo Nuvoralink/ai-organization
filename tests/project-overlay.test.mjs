@@ -9,9 +9,11 @@ import {
   parseProjectOverlayArgs,
   runProjectOverlayCli,
   validateOverlay,
+  validateRunnerDeliveryContract,
 } from '../scripts/project-overlay.mjs';
 import { runCheck, runInstall } from '../scripts/lib/control-plane.mjs';
 import { validatePortableOverlayLock } from '../scripts/project-overlay.mjs';
+import { checkOverlayParity } from '../overlays/coachai/project-files/scripts/check-overlay-parity.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -107,6 +109,56 @@ test('Proves: ORG-OVERLAY-003; Test type: ownership counterexample; Surface: pro
 test('Proves: ORG-OVERLAY-004; Test type: registry mutation; Surface: overlay ownership; Authority: ownership.v1.json; Killer mutation: omit an installable mapping owner; Gated command: npm test', () => {
   assert.deepEqual(validateOverlay('auxara-dialer').map((failure) => failure.message ?? failure), []);
   assert.deepEqual(validateOverlay('coachai').map((failure) => failure.message ?? failure), []);
+});
+
+test('Proves: COORDINATION-RUNNER-DELIVERY-001; Test type: missing-mapping mutation; Surface: bootstrap project overlay and installed CoachAI organization parity; Authority: bounded runner ownership contract; Killer mutation: remove the runner mapping from an overlay copy; Gated command: npm test', () => {
+  for (const project of ['auxara-dialer', 'coachai']) {
+    const ownership = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, 'overlays', project, 'ownership.v1.json'), 'utf8'),
+    );
+    assert.deepEqual(validateRunnerDeliveryContract(project, ownership), []);
+    const mutated = structuredClone(ownership);
+    mutated.assets = mutated.assets.filter(
+      (row) => row.destination !== 'scripts/run-bounded-agent.mjs',
+    );
+    assert.match(
+      validateRunnerDeliveryContract(project, mutated).join('\n'),
+      /Bounded runner delivery mapping is missing/u,
+      `${project} must reject an overlay copy with no runner mapping`,
+    );
+  }
+
+  const coachai = fixture('coachai');
+  const mutatedManifest = structuredClone(coachai.manifest);
+  mutatedManifest.mappings = mutatedManifest.mappings.filter(
+    (mapping) => mapping.id !== 'coachai-project-bounded-runner',
+  );
+  const ownership = JSON.parse(
+    fs.readFileSync(
+      path.join(
+        repoRoot,
+        'overlays',
+        'coachai',
+        'project-files',
+        '.ai-organization',
+        'ownership.json',
+      ),
+      'utf8',
+    ),
+  );
+  const packageJson = { scripts: {} };
+  for (const dotted of ownership.managed_json_sections['package.json']) {
+    packageJson.scripts[dotted.slice('scripts.'.length)] = `fixture:${dotted}`;
+  }
+  fs.writeFileSync(path.join(coachai.root, 'package.json'), `${JSON.stringify(packageJson)}\n`);
+  runInstall({ repoRoot, manifest: mutatedManifest, roots: coachai.roots });
+  const installedParity = checkOverlayParity(coachai.root);
+  assert.equal(installedParity.ok, false);
+  assert.match(
+    installedParity.errors.join('\n'),
+    /managed file missing: scripts\/run-bounded-agent\.mjs/u,
+    'the installed organization gate must name the managed runner omitted by the mutated overlay',
+  );
 });
 
 test('Proves: portable overlay locks can contain only normalized paths and SHA-256 integrity hashes without secret-shaped path/hash pairs on one line; Test type: secret-boundary mutation; Surface: project overlay lock; Authority: portable lock schema; Killer mutation: restore a path-keyed hash map or hide a generic API key in a lock entry; Gated command: npm test', () => {

@@ -28,11 +28,15 @@
     },
     {
       "path": ".ai-organization/ownership.json",
-      "sha256": "a46dab7876c4b95e02de835701a2f02cb6bf13f09b1b2d08604981dde92cce1d"
+      "sha256": "6a2f8f97237ff9a0042b4251612657fc6adf70a82480345b68d190e2503849d5"
     },
     {
       "path": ".ai-organization/policies/action-authority.v1.json",
       "sha256": "12c4b0ed89d5fad68c727d84c6aeb1cd41dc21ecddaecf6d83b2c4d7afd4c580"
+    },
+    {
+      "path": ".ai-organization/policies/coordination-mode.v1.json",
+      "sha256": "8fd4da14876028fe59d02ac3cdca76d2c88cf1612c552732e03d038d403a2582"
     },
     {
       "path": ".ai-organization/policies/risk-controls.v1.json",
@@ -40,7 +44,7 @@
     },
     {
       "path": ".ai-organization/proof-profiles.json",
-      "sha256": "cce17302ff6e9f0260352cdfe5a1a304c69ea50a52c3e09ca1e78766ff1d5b10"
+      "sha256": "0e9cb4569046edcd7dcc51f8f0c3aa740634c4ea6bc288b417b036eee07b1b08"
     },
     {
       "path": ".ai-organization/registries/agent-roles.project.v1.json",
@@ -328,7 +332,7 @@
     },
     {
       "path": "AGENTS.md",
-      "sha256": "435a666deb6d7f314da79e9b55a75def0dbb65158fceb388a939ab1e737442e6"
+      "sha256": "02c9eeeac47ba6d40e7f5ff0357f3e5c39783e8523393767fbcd806707d2a4bd"
     },
     {
       "path": "CLAUDE.md",
@@ -375,6 +379,18 @@
       "sha256": "816ff7433cde5463bc81c95fe75fcee9601e84da4b2b192fb189d53322e8f939"
     },
     {
+      "path": "scripts/lib/boundedProcess.mjs",
+      "sha256": "f8599afaa689f4baa101ae0a314505e75fca13e89877c3659871d391e169a0f9"
+    },
+    {
+      "path": "scripts/lib/dispatchBoundary.mjs",
+      "sha256": "76f7e6fcbcd3627ab2f76a52947cc95ea83b34c47cec8e2378260a36d1ef87d7"
+    },
+    {
+      "path": "scripts/run-bounded-agent.mjs",
+      "sha256": "12ecf3073472c7d883d55729c75736944d454c70f559e8fb59a6206613673598"
+    },
+    {
       "path": "scripts/run-risk-selected-proof.mjs",
       "sha256": "e03663c6ab6f94556a7374a0cf386512623d3ee65253ddaccb641527312af3f5"
     },
@@ -392,7 +408,7 @@
     },
     {
       "path": "scripts/tests/fixture-helpers.mjs",
-      "sha256": "c289bbd0f95ef8f4facd00ada3d9f268ff7cab7498cdfbf76205a560cb1ea1e1"
+      "sha256": "21ee1c52a2e806845543b113817a51370d38d1aec14556e6e984adbbcd9d3785"
     },
     {
       "path": "scripts/tests/overlayParityRegression.mjs",
@@ -412,6 +428,7 @@
       "hooks": "ab8fb96e8a68a636eaf44d9fe274f1096dc8f641bdee7b87cff6a9e2ba7ff29f"
     },
     "package.json": {
+      "scripts.agent:run": "a8e3be98df0d5406d91588e1cefc5924397ce80fa742c893afddcea7a2e9a9d5",
       "scripts.gate:agent-context": "83eb407ace5d068cf5b56062e8ad67563294fee055375a78d5be8601f4627ed8",
       "scripts.gate:rules-wiring": "1201d76e9fd70ad4ddd74ab80998421ffac4ddde0cffad8f370ef3e595247b9b",
       "scripts.gate:agent-control-plane": "41571d360522ef6506e743f8a4e4fb3f59578b412ae970038907b080ab646e16",

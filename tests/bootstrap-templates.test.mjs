@@ -359,6 +359,42 @@ test('Proves: ORG-HOOK-006; Test type: canonical source-contract mutation; Surfa
   );
 });
 
+test('Proves: COORDINATION-RUNNER-DELIVERY-001; Test type: canonical-template and overlay byte-parity mutation; Surface: bounded runner bootstrap delivery; Authority: Dialer-proven runner union and package-script template; Killer mutations: omit the runner, process seam, boundary parser, package script, or fork either project overlay; Gated command: npm test', () => {
+  const templateSources = {
+    runner: read('templates/lifecycle/run-bounded-agent.mjs.template'),
+    process: read('templates/lifecycle/lib/boundedProcess.mjs.template'),
+    boundary: read('templates/lifecycle/lib/dispatchBoundary.mjs.template'),
+  };
+  const packageScripts = JSON.parse(
+    read('templates/lifecycle/package-scripts.json.template'),
+  );
+  assert.equal(packageScripts['agent:run'], 'node scripts/run-bounded-agent.mjs');
+  assert.match(templateSources.runner, /from '\.\/lib\/boundedProcess\.mjs';/u);
+  assert.match(templateSources.runner, /from '\.\/lib\/dispatchBoundary\.mjs';/u);
+  assert.match(templateSources.process, /export function isProcessAlive\(/u);
+  assert.match(templateSources.process, /export function runBounded\(/u);
+  assert.match(templateSources.boundary, /expected exactly one .* row/u);
+
+  for (const project of ['auxara-dialer', 'coachai']) {
+    const projectScripts = path.join(root, 'overlays', project, 'project-files', 'scripts');
+    assert.equal(
+      fs.readFileSync(path.join(projectScripts, 'run-bounded-agent.mjs'), 'utf8'),
+      templateSources.runner,
+      `${project} runner must remain byte-identical to the canonical template`,
+    );
+    assert.equal(
+      fs.readFileSync(path.join(projectScripts, 'lib', 'boundedProcess.mjs'), 'utf8'),
+      templateSources.process,
+      `${project} process seam must remain byte-identical to the deliberate union`,
+    );
+    assert.equal(
+      fs.readFileSync(path.join(projectScripts, 'lib', 'dispatchBoundary.mjs'), 'utf8'),
+      templateSources.boundary,
+      `${project} dispatch boundary parser must remain byte-identical to the canonical template`,
+    );
+  }
+});
+
 test('Proves: ORG-LOOP-002; Test type: exact-literal authority sweep; Surface: global, bootstrap, and overlay Markdown; Authority: propagating exit sentinel; Killer mutation: restore cmd; echo without saving and re-exiting the command status; Gated command: npm test', () => {
   const loopDiscipline = path.join(root, 'global', 'claude', 'rules', 'loop-discipline.md');
   const authorityRoots = [

@@ -14,7 +14,7 @@
       "id": "organization-control",
       "lane": "static",
       "risk": "control_plane",
-      "include": ["AGENTS.md", "CLAUDE.md", ".agents/skills/**", ".ai-organization/**", ".claude/agents/**", ".claude/settings.json", ".cursor/rules/**", ".github/**", "scripts/check-agent-*.mjs", "scripts/check-fleet-parity.mjs", "scripts/check-rules-wiring.mjs", "scripts/check-overlay-parity.mjs", "scripts/check-test-intent.mjs", "scripts/check-doc-code-drift.mjs", "scripts/task-governor.mjs", "scripts/claude-lifecycle-hook.mjs", "scripts/claude-posttooluse-gate.mjs", "scripts/run-risk-selected-proof.mjs", "scripts/ci-local.mjs", "scripts/tests/**", "package.json"],
+      "include": ["AGENTS.md", "CLAUDE.md", ".agents/skills/**", ".ai-organization/**", ".claude/agents/**", ".claude/settings.json", ".cursor/rules/**", ".github/**", "scripts/check-agent-*.mjs", "scripts/check-fleet-parity.mjs", "scripts/check-rules-wiring.mjs", "scripts/check-overlay-parity.mjs", "scripts/check-test-intent.mjs", "scripts/check-doc-code-drift.mjs", "scripts/task-governor.mjs", "scripts/claude-lifecycle-hook.mjs", "scripts/run-bounded-agent.mjs", "scripts/lib/boundedProcess.mjs", "scripts/lib/dispatchBoundary.mjs", "scripts/claude-posttooluse-gate.mjs", "scripts/run-risk-selected-proof.mjs", "scripts/ci-local.mjs", "scripts/tests/**", "package.json"],
       "commands": ["npm run gate:organization", "npm run test:organization-control-plane"],
       "assurance": {
         "version": 1,

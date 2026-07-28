@@ -22,6 +22,9 @@
     "scripts/check-overlay-parity.mjs",
     "scripts/task-governor.mjs",
     "scripts/claude-lifecycle-hook.mjs",
+    "scripts/run-bounded-agent.mjs",
+    "scripts/lib/boundedProcess.mjs",
+    "scripts/lib/dispatchBoundary.mjs",
     "scripts/run-risk-selected-proof.mjs",
     "scripts/claude-posttooluse-gate.mjs",
     "scripts/ci-local.mjs",
@@ -30,7 +33,7 @@
   ],
   "managed_json_sections": {
     ".claude/settings.json": ["hooks"],
-    "package.json": ["scripts.gate:agent-context", "scripts.gate:rules-wiring", "scripts.gate:agent-control-plane", "scripts.gate:fleet-parity", "scripts.gate:overlay-parity", "scripts.gate:organization", "scripts.proof:changed", "scripts.test:organization-control-plane", "scripts.test:evidence-integrity-mutation", "scripts.gates:all", "scripts.verify", "scripts.verify:db", "scripts.ci:local"]
+    "package.json": ["scripts.agent:run", "scripts.gate:agent-context", "scripts.gate:rules-wiring", "scripts.gate:agent-control-plane", "scripts.gate:fleet-parity", "scripts.gate:overlay-parity", "scripts.gate:organization", "scripts.proof:changed", "scripts.test:organization-control-plane", "scripts.test:evidence-integrity-mutation", "scripts.gates:all", "scripts.verify", "scripts.verify:db", "scripts.ci:local"]
   },
   "excluded_project_owned": [
     "backend/**",
