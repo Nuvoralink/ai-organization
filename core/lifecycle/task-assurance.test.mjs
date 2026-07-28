@@ -160,6 +160,23 @@ test('upgradeV2ToV3 preserves a real v2 contract, adds requires:[], and the gove
   );
 });
 
+test('the lifecycle README names the executable state directory and both accepted contract versions', () => {
+  const readme = fs.readFileSync(new URL('./README.md', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(
+    readme,
+    /tmp\/agent-assurance/u,
+    'KILLER MUTATION: restoring the retired repository-local assurance path must turn red',
+  );
+  assert.match(
+    readme,
+    /<absolute-git-common-dir>\/auxara-agent-assurance\/artifacts\//u,
+  );
+  assert.match(readme, /task-assurance\.v2\.schema\.json/u);
+  assert.match(readme, /task-assurance\.v3\.schema\.json/u);
+  for (const edgeType of DEPENDENCY_EDGE_TYPES) assert.match(readme, new RegExp(edgeType, 'u'));
+});
+
 test('validateRequires rejects invalid edge types and type-specific bound values', () => {
   assert.deepEqual(
     validateRequires([
