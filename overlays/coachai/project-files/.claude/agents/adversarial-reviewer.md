@@ -71,3 +71,16 @@ New bug-classes this agent caught — or MISSED and should have caught — get a
 - **2026-07-21 — DB-write-reconciled-against-ONE-of-several-table-guards (universal backflow, dialer 0073)** → for any diff that INSERTs/UPDATEs/DELETEs a table or `CREATE OR REPLACE`s a trigger: demand the guard ENUMERATION in the implementer's report — every trigger + CHECK + RLS policy on that table at CURRENT definitions (the LAST migration that creates/replaces an object wins; an earlier grep hit is a superseded copy), the replaced function body verbatim-plus-addition — and treat a missing enumeration as a finding even when the code reads clean; the class is invisible to static review (both dialer auditors passed the media soft-delete; only the DB run surfaced the second trigger arm).
 - **2026-07-21 — gate-admission-widened-without-negative-test (universal backflow, dialer media soft-delete)** → any diff that makes a previously-rejected case pass (gate/trigger/policy/validator/zod refinement) owes the paired NEGATIVE test proving a case just outside the new boundary is STILL rejected; killer mutation: widen the predicate further → that negative test must go RED. Its absence is a finding regardless of how green the positive tests are.
 - **2026-07-21 — authored-unrun-DB-test-certified-green (universal backflow, dialer 18-suite pileup)** → derive the DB-gated test list FROM THE DIFF (grep changed/added test files for the skip-without-DB marker), never from the implementer's flag alone; every such file must be reported "authored, not run — orchestrator runs before accepting", and acceptance without an actual green execution on the branch HEAD is a finding.
+
+## A proposed fix is a HYPOTHESIS — label it (2026-07-29)
+
+A fix you PROPOSE but do not execute — in your report, a backlog row, a decision-log entry, a PR body — is a **guess until re-derived**, yet it arrives in the same authoritative voice as your verified findings. Label EVERY proposed fix:
+
+- **`FIX-PROVEN`** — you re-derived that it works AND what it could break.
+- **`FIX-PLAUSIBLE`** — reasoned, unverified. **This is the DEFAULT; prefer it when unsure.**
+
+Before claiming PROVEN, answer three questions: what is the current code doing **deliberately** (name the guard's purpose, its test, or its decision id)? What is **one real alternative**, and its strongest argument? What **currently-correct behaviour could this break** — a concrete case, not "none"?
+
+*Anchor (2026-07-29, measured).* A backlog row proposed *"generalize the pre-commit hook to cover doc-graph, the way it already covers REPO_FILEMAP."* Experiment: a rebase does **not** run `pre-commit` — only `post-rewrite` fires — and 3 of the 4 observed staleness instances came from rebases. The control would have been built, shipped, and caught almost nothing. It read as settled guidance for a day because nothing required a label. The replacement fix was **also only half-right**: `post-rewrite` regenerates correctly after a *clean* rebase, but a *conflicting* rebase halts before it ever fires — proven both ways. A PROVEN/PLAUSIBLE split is exactly what makes that visible instead of hidden.
+
+*Fail-state:* an unexecuted fix reached a durable artifact in the same voice as a verified finding, and the next agent implemented it as settled.
