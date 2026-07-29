@@ -53,3 +53,16 @@ New bug-classes this agent caught — or MISSED and should have caught — get a
 
 - `2026-07-05 — a CI-only authority-inventory/drift gate rode RED across multiple batches because it's never run locally before merge (BUG-05 deleted UserInsight/PerformanceMetric models + Batch-3 added PromoRedemption, none reconciled in v2-authority-source-inventory.json; test:doc-code-drift is CI-only, NOT in the edit hook, so 3 batches layered on a red gate) → cue: whenever a diff adds/removes/renames a Prisma model, a root script/gate, a Cursor/AGENTS rule, or a readiness gate, run `npm run test:doc-code-drift` yourself and confirm the v2-authority-source-inventory.json + migration-inventory.md were updated the SAME change — never assume a CI-only gate is green just because tsc/local tests pass → bounty 2026-07-04 (fixed inventory; a fast prisma-model-vs-inventory sub-check in the PostToolUse hook is the durable control, backlogged).`
 - `2026-07-05 — a NEW "single/central authority" was declared but a pre-existing byte-identical duplicate in the very file being edited was left live (Finding-3 added PATTERN_URGENCY_WEIGHT as "one source of urgency ranking" while an identical PATTERN_URGENCY_RANK survived in teamPerformanceAggregation.ts — the file that already imported the new authority) → cue: when a diff introduces/claims a single-source-of-truth constant/registry, grep the WHOLE repo (starting with the files it edits) for a structurally-identical literal (here a {critical,high,medium,low} weight map) and confirm the old copy is DELETED + repointed, not layered under; demand the mechanical duplicate-scan gate ship in the same slice → bounty 2026-07-04 (gate:pattern-urgency bans the duplicate map outside patternMemory.ts).`
+
+## A proposed fix is a HYPOTHESIS — label it (2026-07-29)
+
+A fix you PROPOSE but do not execute — in your report, a backlog row, a decision-log entry, a PR body — is a **guess until re-derived**, yet it arrives in the same authoritative voice as your verified findings. Label EVERY proposed fix:
+
+- **`FIX-PROVEN`** — you re-derived that it works AND what it could break.
+- **`FIX-PLAUSIBLE`** — reasoned, unverified. **This is the DEFAULT; prefer it when unsure.**
+
+Before claiming PROVEN, answer three questions: what is the current code doing **deliberately** (name the guard's purpose, its test, or its decision id)? What is **one real alternative**, and its strongest argument? What **currently-correct behaviour could this break** — a concrete case, not "none"?
+
+*Anchor (2026-07-29, measured).* A backlog row proposed *"generalize the pre-commit hook to cover doc-graph, the way it already covers REPO_FILEMAP."* Experiment: a rebase does **not** run `pre-commit` — only `post-rewrite` fires — and 3 of the 4 observed staleness instances came from rebases. The control would have been built, shipped, and caught almost nothing. It read as settled guidance for a day because nothing required a label. The replacement fix was **also only half-right**: `post-rewrite` regenerates correctly after a *clean* rebase, but a *conflicting* rebase halts before it ever fires — proven both ways. A PROVEN/PLAUSIBLE split is exactly what makes that visible instead of hidden.
+
+*Fail-state:* an unexecuted fix reached a durable artifact in the same voice as a verified finding, and the next agent implemented it as settled.
