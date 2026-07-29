@@ -3647,6 +3647,10 @@
       "class": "control-plane-tooling"
     },
     {
+      "path": "scripts/sweep-merged-branches.mjs",
+      "class": "control-plane-tooling"
+    },
+    {
       "path": "skills-retired/README.md",
       "class": "retired-skill"
     },
@@ -3924,6 +3928,14 @@
     },
     {
       "path": "skills/bootstrap-orchestrator/templates/gates/gates-all-wiring.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/gates/repo-hygiene-and-verification-traps.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/gates/sweep-merged-branches.mjs.template",
       "class": "reusable-skill"
     },
     {
