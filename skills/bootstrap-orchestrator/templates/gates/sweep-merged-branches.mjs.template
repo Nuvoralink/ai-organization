@@ -179,14 +179,83 @@ function classify(branch) {
   return { verdict: 'SAFE', reason: 'every touched file landed or was retired', files: [] };
 }
 
+/**
+ * Branch refs currently checked out in ANY worktree of this repo.
+ *
+ * WHY (2026-07-29, measured): this tool answers "is the content landed", NOT "is
+ * anyone using this branch". A branch whose work HAS merged but that an agent is
+ * mid-slice on classifies SAFE — and `--apply` would delete it out from under
+ * them, including uncommitted work. Measured live on the Auxara Dialer: four
+ * branches were checked out in parallel worktrees, two with uncommitted changes,
+ * and every one was eligible for deletion.
+ *
+ * `git worktree list --porcelain` is EXACT — git knows and reports it in one
+ * command. Deliberately NOT a heuristic (running processes, file mtimes, dirty
+ * trees): "is this branch checked out" has a precise answer, and importing
+ * heuristics into a precise question only adds false positives and negatives. A
+ * sibling guard in the dialer answers the ADJACENT question — "is this DIRECTORY
+ * in use" — which genuinely does need heuristics. Different questions, kept in
+ * different tools on purpose; this stays inline here rather than becoming a
+ * second `worktree-*.mjs` module competing with that one.
+ */
+function checkedOutRefs() {
+  let out = '';
+  try {
+    // gitStrict, not git: an empty result here must mean "no worktrees", never
+    // "the command failed and I am reading its silence" — the precise false
+    // green this guard exists to prevent.
+    out = gitStrict(['worktree', 'list', '--porcelain']);
+  } catch {
+    console.error('sweep: `git worktree list` failed; cannot prove no branch is checked out.');
+    console.error('       Refusing to treat that as safe. Re-run where worktrees can be enumerated.');
+    process.exit(2);
+  }
+  const refs = new Set();
+  const dirs = new Map();
+  // Blocks are separated by a blank line; each carries `worktree <path>` and,
+  // when a branch (not a detached HEAD) is checked out, `branch refs/heads/<x>`.
+  for (const block of out.split(/\r?\n\r?\n/)) {
+    const dir = block.match(/^worktree (.+)$/m)?.[1]?.trim();
+    const ref = block.match(/^branch\s+refs\/heads\/(.+)$/m)?.[1]?.trim();
+    if (ref) {
+      refs.add(ref);
+      if (dir) dirs.set(ref, dir);
+    }
+  }
+  return { refs, dirs };
+}
+
+const { refs: CHECKED_OUT, dirs: WORKTREE_DIR } = checkedOutRefs();
+
 const branches = listBranches();
-const buckets = { SAFE: [], REVIEW: [], UNMERGED: [] };
+const buckets = { SAFE: [], REVIEW: [], UNMERGED: [], CHECKED_OUT: [] };
 
 for (const b of branches) {
-  const r = classify(b);
+  let r = classify(b);
+  // A checked-out branch gets its OWN verdict, never a silent exclusion: a
+  // refusal you cannot see is indistinguishable from a branch never considered.
+  // Carry the original verdict so the report explains which signal fired.
+  // `b` is `origin/feat/x` in remote mode but plain `feat/x` in --local mode, and
+  // a blind prefix-strip mangles the latter into `x`. Resolve the ref ONCE and
+  // reuse it, so the verdict and its diagnostic can never disagree — the first
+  // version stripped separately and the worktree path silently never printed,
+  // leaving a refusal with no stated location.
+  const wtRef = CHECKED_OUT.has(b) ? b : CHECKED_OUT.has(b.replace(/^[^/]+\//, '')) ? b.replace(/^[^/]+\//, '') : null;
+  if (wtRef) {
+    r = {
+      verdict: 'CHECKED_OUT',
+      reason: `checked out in a worktree (would otherwise be ${r.verdict})`,
+      files: [],
+    };
+  }
   buckets[r.verdict].push({ branch: b, ...r });
   const tag = r.verdict.padEnd(8);
   console.log(`${tag} ${b}${r.verdict === 'SAFE' ? '' : ` — ${r.reason}`}`);
+  if (r.verdict === 'CHECKED_OUT') {
+    const dir = WORKTREE_DIR.get(wtRef);
+    // A refusal must name WHERE, or it is only half-diagnosable.
+    console.log(`           worktree: ${dir ?? '(path unavailable)'}`);
+  }
   if (r.files.length && r.verdict !== 'SAFE') {
     for (const f of r.files.slice(0, 4)) console.log(`           ${f}`);
     if (r.files.length > 4) console.log(`           …and ${r.files.length - 4} more`);
@@ -198,6 +267,11 @@ console.log(`sweep-merged-branches: ${branches.length} branch(es) vs ${baseRef}`
 console.log(`  SAFE     ${buckets.SAFE.length}  (fully landed — deletable)`);
 console.log(`  REVIEW   ${buckets.REVIEW.length}  (touched files differ — human decides)`);
 console.log(`  UNMERGED ${buckets.UNMERGED.length}  (base never had these files)`);
+if (buckets.CHECKED_OUT.length) {
+  console.log(
+    `  CHECKED_OUT ${buckets.CHECKED_OUT.length}  (checked out in a worktree — NEVER deleted, whatever the content says)`,
+  );
+}
 
 if (!APPLY) {
   console.log('');
