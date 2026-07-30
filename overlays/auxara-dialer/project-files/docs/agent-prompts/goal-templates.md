@@ -61,6 +61,8 @@ is reported under not reached. `clean` is forbidden for any surface not inspecte
 ## Operating the control plane
 
 1. Put the full six-part brief in an Agent slice issue; link it from the goal.
-2. Launch or inspect isolated sessions with `claude agents`.
-3. For drift reconciliation, tell Claude: `Enter plan mode, then run the saved workflow named orchestration-drift-audit and return its raw evidence.`
-4. Attach evidence to the PR template. Leave every human irreversible gate unchecked for the human.
+2. Cut each mutating task around one authority handoff or irreversible lifecycle. Require the implementation authority/lifecycle/runtime/proof matrices, current consumer, and complexity stop condition.
+3. Dispatch a dependent child only after the parent has a durable completion/proof receipt; serialize the narrow DB/runtime proof after each high-risk handoff.
+4. Launch or inspect isolated sessions with `claude agents`. On restart, reconcile Git-common-dir attempts and registered worktrees before replacement; unchanged state means STOP, not redispatch.
+5. For drift reconciliation, tell Claude: `Enter plan mode, then run the saved workflow named orchestration-drift-audit and return its raw evidence.`
+6. Attach evidence to the PR template. Leave every human irreversible gate unchecked for the human.

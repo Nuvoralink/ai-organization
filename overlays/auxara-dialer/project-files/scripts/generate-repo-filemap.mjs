@@ -105,9 +105,16 @@ export function buildFilemap({ rootDir = process.cwd(), listTrackedFiles = gitLs
   lines.push('# or: node scripts/generate-repo-filemap.mjs');
   lines.push('```');
   lines.push('');
-  lines.push(
-    `_Generated from \`git ls-files\` filtered to existing paths — ${paths.length} paths._`,
-  );
+  // NO PATH COUNT HERE, deliberately (2026-07-26). A `— N paths.` suffix changes on EVERY branch that
+  // adds or removes ANY tracked file anywhere, so it is the one line two otherwise-unrelated branches
+  // are GUARANTEED to conflict on — and it conflicted on essentially every parallel branch this
+  // project ran. It is also duplicated derived state: the tree below IS the list, so the count only
+  // restates what the file already says and can only ever disagree with it. It has already caused one
+  // real corruption: regenerating mid-conflict baked a tripled path in, and the header read
+  // "1086 paths" against a true 1084 (see scripts/check-filemap.mjs's header). `gate:filemap` now
+  // byte-compares the whole file against a fresh in-memory build, so the count's diagnostic value is
+  // superseded by a strictly stronger check. For the number, `git ls-files | wc -l` is the source.
+  lines.push('_Generated from `git ls-files`, filtered to existing paths._');
   lines.push('');
   lines.push('```');
   lines.push(`${PROJECT_ROOT_LABEL}/`);

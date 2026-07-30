@@ -4,7 +4,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const DEFAULT_MAX_STARTUP_TOKENS = 10_000;
+// Startup-context budget for the always-loaded layer (CLAUDE.md + its `@` imports).
+//
+// Raised 10,000 -> 11,000 on 2026-07-27 by founder direction, to admit the AGENTS.md routing row
+// for parallel-agent coordination (the swarm engine had no startup-discoverable pointer, so an
+// orchestrator only found it by already reading the blast-radius doc). The budget exists to stop
+// silent startup bloat, not to block a deliberate routing addition — but it is still a HARD ceiling:
+// raise it only by an explicit decision like this one, never to make a failing gate go away. The
+// cheap alternative always comes first — give a rule `paths:` frontmatter so it loads on demand
+// instead of at startup.
+export const DEFAULT_MAX_STARTUP_TOKENS = 11_000;
 export const APPROXIMATE_CHARS_PER_TOKEN = 4;
 
 function parseArgs(argv) {

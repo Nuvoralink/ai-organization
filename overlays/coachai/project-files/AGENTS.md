@@ -8,6 +8,8 @@ This is the compact, cross-vendor startup router. It names authorities and tells
 - CoachAI coaches; the human decides. Do not let advice, scoring, patterns, or drills silently become autonomous employment, customer-contact, billing, or account actions.
 - Protect tenant isolation, authorization, PII/transcripts/recordings, metered AI/provider calls, source-to-screen authority, and persisted-derived-state lifecycle.
 - Verify from code, data, rendered output, and real command exits. A doc, status line, memory, or agent report is a lead, not proof.
+- An empty, zero, or capped result is a claim about your TOOL until the command is proven to have run. Two traps measured on this machine, 2026-07-29: (1) `git show <ref>:<dot/path>` is mangled by MSYS path conversion — `origin/main:.claude/x` becomes `origin\main;.claude\x`, git aborts, and a piped `grep -c` prints `0`, which is byte-identical to real absence. Use `git ls-tree <ref> -- <path>` or `git diff <ref> <ref> -- <path>`, or prefix `MSYS_NO_PATHCONV=1`. This aims squarely at the control plane, which is entirely dot-prefixed. (2) A trailing `| head`/`| tail`/`echo` replaces the exit code of the command you care about — capture `$?` before any pipe. Treat `-N` / `head -N` output as a CAP, never a total.
+- "Is this branch merged?" is not answerable by commit identity. SHA reachability, `git cherry` patch-id, and commit subjects are each defeated by rebase, squash, or conflict resolution, and raw file-presence conflates "the branch added it" with "the base deleted it". Use `npm run sweep:branches`, and delete merged branches at merge time.
 
 ## Organization contract
 
@@ -15,7 +17,7 @@ This is the compact, cross-vendor startup router. It names authorities and tells
 - Every task must pass the structured kickoff and completion contracts in `.ai-organization/`; proof is selected from changed paths and risk. A task cannot close on prose or a generic green status.
 - Coordination mode is OBSERVE (`.ai-organization/policies/coordination-mode.v1.json`): tasks created through the lifecycle contracts register their declared `paths.edit` as write-set claims in the shared coordination ledger, while bounded local dispatches use `npm run agent:run -- --timeout-ms <n> --label <task-id> --brief <path> -- <command> ...` so the brief's `edit_paths` register through the same authority; overlapping claims are logged — never blocked. Declare honest, narrow `paths.edit` in every task contract; a task or bounded dispatch with no declared edit paths registers no claim, is counted `skipped_no_editpaths`, and delays enforce readiness.
 - The premise-and-architecture challenger is read-only. It asks whether the task should exist, whether the premise is sound, and whether the proposed authority/seam is the durable one. It never dispatches or implements.
-- Agents may branch, commit, and open PRs. Push is conditional on live proof that it cannot trigger a preview/production deploy, publish or billed build, production write, or external contact; preview counts as deploy. Conditional merge is permitted only when every condition in `.ai-organization/policies/action-authority.v1.json` is true. Production-affecting push/merge, production/deploy/config/migration mutation, destructive or billed actions, external contact/messages, secrets, and product/design/material-architecture decisions require the human. Branch protection is deferred.
+- Agents may branch, commit, and open PRs. Push is conditional on live proof that it cannot trigger a preview/production deploy, publish or billed build, production write, or external contact; preview counts as deploy. Conditional merge is permitted only when every condition in `.ai-organization/policies/action-authority.v1.json` is true. Production-affecting push/merge, production/deploy/config/migration mutation, destructive or billed actions, external contact/messages, secrets, and product/design/material-architecture decisions require the human. PRE-CUSTOMER EXCEPTION (ORG-007, 2026-07-29): while CoachAI has zero customers the human has STANDING-authorized production-affecting merges, provided the repo gate is green and read from its own exit code and no billed action is taken. Nothing else is relaxed, and the shared authority runtime is unchanged — this is the human decision recorded once, not a weakened gate. It is revoked at the first paying customer. Branch protection is deferred.
 - Frontend is Claude-Design-first and approval-gated. Figma is not an active authority. No visible surface is implemented before the user approves the Claude Design reference.
 - Cross-agent truth travels through plans, issues, commits, PRs, decision records, and evidence artifacts—not user copy/paste.
 
@@ -59,6 +61,13 @@ Use the smallest proof profile that fully covers the risk:
 - `npm run gates:all` — static source-of-truth and organization gates.
 - `npm run verify` — normal local static verification plus changed-path proof.
 - `npm run verify:db` — the single DB-regression authority; CI calls the same command.
+- `npm run test:regression:static` — every backend regression that needs no database, run hermetically (unreachable DB, fake provider keys) and in parallel.
 - `npm run test:organization-control-plane` — killer mutations for organization gates.
+
+Backend regression lanes are DISCOVERY-driven: every `backend/scripts/*Regression*.{ts,mjs}` runs in the
+static lane by default. `backend/scripts/regression-lanes.json` records only the deviations — `db` (needs a
+database, run serially) and `quarantine` (skipped, and named on every run with a reason, disposition, owner,
+and date). Adding a regression requires no registry edit; forgetting the registry makes a script RUN, never
+silently skip. Do not reintroduce a hand-maintained chain of `test:regression:*` scripts.
 
 Do not claim deployed behavior from local or CI proof. Merge, deploy, publish, production writes, deletion, purchases, external messages, and other human-gated actions must obey `.ai-organization/policies/action-authority.v1.json`.

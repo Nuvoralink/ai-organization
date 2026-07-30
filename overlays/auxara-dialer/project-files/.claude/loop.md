@@ -10,11 +10,9 @@ explicitly authorized there. This loop never authorizes a new product initiative
 new issue merely because the queue is idle.
 
 `.ai-organization/policies/action-authority.v1.json` is the generated universal boundary. Inside the already-authorized task the
-loop may branch, commit, and open or update pull requests. Push is conditional on live proof of no
-preview/production deploy, publish or billed build, production write, or external contact; preview counts as
-deploy. Conditional merge is permitted only when
+loop may branch, commit, push, and open or update pull requests. Conditional merge is permitted only when
 the change is low-risk, additive or isolated, conflict-free, independently verified, and has no production
-or deploy effect. Production-affecting push/merge, production mutation/deploy/config/migrations, destructive or billed actions, external
+or deploy effect. Production mutation/deploy/config/migrations, destructive or billed actions, external
 messages/contact, secrets, and product/design/material-architecture decisions remain human-gated. Stop and
 hand any such proposed action to the human as a separate approval decision.
 

@@ -51,10 +51,33 @@ if (typeof filePath !== 'string' || filePath.trim().length === 0) {
 
 const p = filePath.replace(/\\/g, '/');
 const result = runGatesForFiles([filePath], { cwd: projectRoot });
+
 for (const failure of result.failures) {
   console.error(
     `[gate-hook] \`npm run ${failure.gate}\` FAILED after editing ${p}.\n` +
       `Fix the violation now — do not proceed or work around the gate.\n${failure.output}`,
   );
 }
+
+// A gate that could not RUN is reported as exactly that, never as a violation. Saying
+// "FAILED — fix the violation now" when the cause was ETIMEDOUT sends the agent hunting a defect
+// that does not exist; it happened twice on 2026-07-29, to two different agents, both on
+// `check:layout`, and both confirmed the gate exited 0 when run directly.
+//
+// It deliberately does NOT block. This hook is an early warning; the authoritative run is
+// `npm run verify` before merge, where the same gate runs without the CPU contention that caused
+// the timeout. Blocking here would halt every edit precisely when parallel agents load the machine
+// — which is exactly when timeouts occur — while adding no safety the real gate does not already
+// provide. It is printed loudly rather than swallowed, because an unrun check must never read as a
+// pass.
+for (const skipped of result.unrunnable) {
+  console.error(
+    `[gate-hook] \`npm run ${skipped.gate}\` COULD NOT RUN after editing ${p} (${skipped.reason}).\n` +
+      `This is NOT a violation — the gate produced no verdict, so there is nothing to fix from it.\n` +
+      `Common cause: a timeout under CPU contention from parallel agents.\n` +
+      `To get its verdict now, run \`npm run ${skipped.gate}\` directly and read its own exit code.\n` +
+      `${skipped.output}`,
+  );
+}
+
 process.exit(result.failures.length > 0 ? 2 : 0);

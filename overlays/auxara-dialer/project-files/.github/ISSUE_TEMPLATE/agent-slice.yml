@@ -7,7 +7,7 @@ body:
       value: |
         This issue is the durable handoff artifact. Quote settled decisions verbatim, pin the worktree,
         and require command-owned exit codes. An agent status is a lead; attach the output that proves it.
-        `.ai-organization/policies/action-authority.v1.json` is canonical: branch/commit/PR are task-authorized; push is conditional on live no-deploy/publish/billed-build/production-write/external-contact proof;
+        `.ai-organization/policies/action-authority.v1.json` is canonical: branch/commit/push/PR are task-authorized;
         conditional merge requires every low-risk criterion; human-gated actions never inherit approval.
 
   - type: dropdown
@@ -88,7 +88,7 @@ body:
         MUST NOT:
         - edit outside the allowlist or cross any human-gated action in action-authority.v1.json
         MAY:
-        - branch, commit, and open/update a PR inside this authorized task; push only with live no-side-effect proof
+        - branch, commit, push, and open/update a PR inside this authorized task
         CONDITIONAL MERGE:
         - only when low-risk, additive/isolated, conflict-free, independently verified, and with no
           production/deploy effect
@@ -108,6 +108,21 @@ body:
         - [ ] Positive liveness and negative fixture tests pass.
         - [ ] Named killer mutation fails.
         - [ ] Worktree scope and cleanliness are verified.
+    validations:
+      required: true
+
+  - type: textarea
+    id: implementation_authority_proof
+    attributes:
+      label: Implementation authority and proof matrices
+      description: Required for implementation; read-only tasks may state exempt. Name the current consumer and stop condition.
+      placeholder: |
+        Authority path: <producer -> transforms/transaction -> provider/effect -> reconciliation -> terminal consumer>
+        Lifecycle matrix: <source mutation/revoke/delete/interrupt/retry/rollback/terminal ownership>
+        Runtime execution: <writer; runtime DB role/RLS; scheduler/mount/route registration>
+        Proof matrix: <branch preconditions; neutralized guards; liveness; zero effect; terminal output; killer mutation>
+        Current consumer: <real flow consuming this seam/tool now>
+        Complexity budget: <hard stop if proof infrastructure grows without that consumer>
     validations:
       required: true
 

@@ -35,10 +35,6 @@
       "sha256": "12c4b0ed89d5fad68c727d84c6aeb1cd41dc21ecddaecf6d83b2c4d7afd4c580"
     },
     {
-      "path": ".ai-organization/policies/authority-domains.v1.json",
-      "sha256": "3de4b7aa0094e8a3fe01f0bde3032a8a2b32cf665ab7af32bf87fab40d259f28"
-    },
-    {
       "path": ".ai-organization/policies/coordination-mode.v1.json",
       "sha256": "8fd4da14876028fe59d02ac3cdca76d2c88cf1612c552732e03d038d403a2582"
     },
@@ -48,7 +44,7 @@
     },
     {
       "path": ".ai-organization/proof-profiles.json",
-      "sha256": "0e9cb4569046edcd7dcc51f8f0c3aa740634c4ea6bc288b417b036eee07b1b08"
+      "sha256": "5d7802875524bd312061ad04d0d6eb31f99d8938470f16654e019354de7b7df9"
     },
     {
       "path": ".ai-organization/registries/agent-roles.project.v1.json",
@@ -200,7 +196,7 @@
     },
     {
       "path": ".claude/agents/functionality-parity-auditor.md",
-      "sha256": "5a6db3f0254153e814d007e7d1d708cccb30fc1fae73b8ac999c1e2704e6e751"
+      "sha256": "6de19f8f2c4d9cba676084d1d8acf4fb11179f18242fc6415820e5d83facb930"
     },
     {
       "path": ".claude/agents/performance-auditor.md",
@@ -208,7 +204,7 @@
     },
     {
       "path": ".claude/agents/premise-and-architecture-challenger.md",
-      "sha256": "0a0fb7169382fc2101e143c3c7d0056ab5a38ed80ae27b3f5eef1855669d494d"
+      "sha256": "6802729c643e98cc00a7ff7a04734493bae64aae67b2c1d229bc023b2d8e6b6d"
     },
     {
       "path": ".claude/agents/release-verifier.md",
@@ -220,7 +216,7 @@
     },
     {
       "path": ".claude/agents/sprint-kickoff-auditor.md",
-      "sha256": "4f3496118f9b66dd0cfa1b1924662e5034b600ec9495b0a7b7b5770869a3ad50"
+      "sha256": "f0c04e9cd09d5b77ca74e303037d1fe44f1102f0109793fdc62559fbc5d6e533"
     },
     {
       "path": ".claude/agents/test-runner.md",
@@ -336,7 +332,7 @@
     },
     {
       "path": "AGENTS.md",
-      "sha256": "02c9eeeac47ba6d40e7f5ff0357f3e5c39783e8523393767fbcd806707d2a4bd"
+      "sha256": "6be4ff95e94986e1abb7710af42bcdea5ac398b52e35fba11999bd28a72fc6cc"
     },
     {
       "path": "CLAUDE.md",
@@ -348,7 +344,7 @@
     },
     {
       "path": "scripts/check-agent-control-plane.mjs",
-      "sha256": "cbd737d10a624bff4b217ace0d2ae21eb38619707df06c1c8311282bf834fa08"
+      "sha256": "80d5cd1e7470bcdaa18caaba10a2437ed0be1197bb99861d33555b846200a434"
     },
     {
       "path": "scripts/check-doc-code-drift.mjs",
@@ -356,7 +352,7 @@
     },
     {
       "path": "scripts/check-fleet-parity.mjs",
-      "sha256": "9ae98f28afd49792467e7e30e845a5e63bcccc3a1a29f5b1496a1317caf6469a"
+      "sha256": "37a614d159e1007c2d730fcb914fac502fcd4e3949b16a0b644b0e44b8a8bab6"
     },
     {
       "path": "scripts/check-overlay-parity.mjs",
@@ -412,7 +408,7 @@
     },
     {
       "path": "scripts/tests/fixture-helpers.mjs",
-      "sha256": "21ee1c52a2e806845543b113817a51370d38d1aec14556e6e984adbbcd9d3785"
+      "sha256": "1e5480e74b3b576b7bc022595d96d7d4cfc5a911b9d57bf611253bd3b0cc1075"
     },
     {
       "path": "scripts/tests/overlayParityRegression.mjs",
@@ -442,9 +438,9 @@
       "scripts.proof:changed": "4bfc520d777a10dc90733e32aadec7d92b0a9b7266227eb27a87f1de6816b82d",
       "scripts.test:organization-control-plane": "1c097a3b80598bc3bb156d3239afa4bb1f42bde973db652bcdc5168e62c5cb01",
       "scripts.test:evidence-integrity-mutation": "2b7ec9ebecd833ee23c906b81349d676eb418e18991b8517a1f1f3335723cbfb",
-      "scripts.gates:all": "7da47e3b8d6591c39df4c6b84948d47244bdb8fc16a5ce0ad71814e4b100a098",
+      "scripts.gates:all": "ae5fb040e36b9882665065f5f7b77208587b913c8e23f631ff2bb1305ffd5948",
       "scripts.verify": "217cf314de5043c85b05401ecd1e3294077067f3b1f45edc3248d3c82d2ff46e",
-      "scripts.verify:db": "2b1785002c0c3c7172446c78839c7bbc6b7967f283e37b1dd3178e4dd9db0a5b",
+      "scripts.verify:db": "2d3ccef8d9cccd97181a33d76be74f762a501883ce1533d54cd8ee80a7d421cb",
       "scripts.ci:local": "47db5601b61ff94cbd4ce34cd9a40217d0ffeec299b35d85321d747649f39a3b"
     }
   }
