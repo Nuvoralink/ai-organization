@@ -3,23 +3,20 @@ paths:
   - "**/*"
 ---
 
-# Decision Discipline — Research, Reason Structurally, Never Decide Silently
+# Decision Discipline — Dialer Adapter
 
-Purpose: stop mid-flight coin-flips. When implementation forces a choice the plan didn't settle, the quality of that unplanned decision is what separates durable work from drift. This rule is always-on for every agent (Claude or Codex, implementer or designer) and applies to ANY mid-task choice, not just architecture.
+**The universal `decision-discipline` rule governs in full** — it is always-on at user level for Claude (`~/.claude/rules/decision-discipline.md`, installed by the AI-Organization control plane), and Codex carries its compact twin in `~/.codex/AGENTS.md`. This adapter does not restate the universal ladder (authorities-first → research-before-inventing → visible structural reasoning → escalate-on-thin-evidence, nothing decided silently); it binds that ladder to the dialer's own authorities and escalation triggers. Read it WITH the universal rule, never instead of it.
 
-## 1. When this rule fires
+## Rung 1 — the dialer's authority set (check BEFORE deciding anything)
 
-Any choice not already settled by an authority: library/dependency selection, schema or contract shape, API design, algorithm or pattern choice, naming a new domain concept, error/retry semantics, storage/queue topology, security-posture details, test strategy for a new surface, UX micro-behavior the mock didn't specify, or any tradeoff with more than one defensible side.
+Most "decisions" are already made. The settled truth for this repo lives in: the decision log (`docs/app-plan/auditability/decision-log.md`), the ADRs (`docs/app-plan/architecture/adr/`), the app-plan product/architecture docs (`docs/app-plan/product/01-product-brief.md`, `02-prd.md`, `03-feature-scope.md`, `architecture/06-architecture.md`), the always-on rules, the central registries (centralization-doctrine §1), the blast-radius maps, and the brief itself. Implementing against these is not a decision, and deviating from them is a STOP, not a choice.
 
-## 2. The decision ladder (in order — skip no rung)
+## Rung 4 — escalation triggers specific to this product
 
-1. **Authorities first.** Check the repo's settled truth before "deciding" anything: the decision log (`docs/app-plan/auditability/decision-log.md`), ADRs, the app-plan product/architecture docs (`docs/app-plan/product/01-product-brief.md`, `02-prd.md`, `03-feature-scope.md`, `architecture/06-architecture.md`), the always-on rules, central registries (centralization-doctrine §1), blast-radius maps, and the brief itself. Most "decisions" are already made — implementing against them is not a decision, and deviating from them is a STOP, not a choice.
-2. **Research before inventing.** If genuinely unsettled, research how mature products and industry best practice handle it — web search when the harness provides it; otherwise state explicitly what knowledge the judgment rests on and name the uncertainty. Comparable-product prior art beats your first idea (this is Gate 8's "how do comparable products solve this?" applied mid-flight).
-3. **Reason structurally — visible, not vibes.** Work the choice through an explicit decision matrix (options × criteria: correctness, durability, security, compliance, tenant isolation, maintainability, doctrine fit, cost) or a written chain/tree-of-thought that weighs branches before committing. Minimum bar: at least two real options considered, and the rejected option's strongest argument stated honestly — a matrix with one row is theater.
-4. **Decide only with sufficient evidence — otherwise ESCALATE.** Escalate to the orchestrator (who researches and decides, or asks Amin) instead of deciding when ANY of these hold: the options stay close after research; the blast radius is high; the choice is one-way/hard to reverse; compliance, security, or billing is implicated; or the choice would contradict ANY settled authority. Hand over the matrix + your recommendation — an escalation with a good matrix costs minutes; a silent wrong guess costs a re-implementation.
+Beyond the universal triggers (options still close after research, high blast radius, one-way doors), the dialer adds domains where a silent guess is never acceptable: **compliance** (TCPA/CASL calling hours, DNC, recording disclosure, STIR/SHAKEN, 10DLC), **carrier/number state**, **billing**, and **tenant isolation**. Any choice implicating these escalates to the orchestrator with the decision matrix + your recommendation attached.
 
-## 3. Nothing is decided silently
+## §3 — recording
 
-Every non-trivial mid-task decision appears in the report-back: what was decided, the options considered, the basis (authority / research / matrix), and what would invalidate it later. Architectural decisions additionally go to the decision log / an ADR per sprint-rigor §2c. "I just picked one" is a bug even when the pick happens to be right — an unrecorded decision can't be reviewed, can't be reversed deliberately, and silently becomes load-bearing.
+Every non-trivial mid-task decision appears in the report-back (what was decided, options considered, basis, what would invalidate it later); architectural decisions additionally go to the decision log / an ADR per sprint-rigor §2c.
 
-*Fail-state:* an agent picked an approach mid-task without checking the authorities, without research or a visible matrix, and shipped it unannounced — the orchestrator discovered the choice only by reading the diff.
+*Fail-state:* an agent picked an approach mid-task without checking the dialer authorities above, without research or a visible matrix, and shipped it unannounced — the orchestrator discovered the choice only by reading the diff.
