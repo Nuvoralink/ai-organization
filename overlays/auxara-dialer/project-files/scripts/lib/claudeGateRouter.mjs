@@ -28,6 +28,7 @@ export const GATE_ORDER = Object.freeze([
   'gate:test-intent',
   'gate:doc-registry-refs',
   'gate:endpoint-wiring',
+  'gate:page-reachability',
 ]);
 
 export function normalizeGatePath(filePath) {
@@ -115,6 +116,17 @@ export function gatesForFile(filePath) {
   ) {
     gates.add('gate:endpoint-wiring');
   }
+  // Page reachability is decided by exactly three inputs: the two route authorities and the page tree
+  // itself. Routing it here is what makes it bite at EDIT time — the moment a new page file appears is
+  // the moment it is cheapest to route, and the moment the author still remembers where it belongs.
+  if (
+    /\/frontend\/src\/App\.tsx$/.test(p) ||
+    /\/frontend\/src\/app\/pageRegistry\.tsx$/.test(p) ||
+    /\/frontend\/src\/pages\//.test(p) ||
+    /\/scripts\/check-page-reachability\.mjs$/.test(p)
+  ) {
+    gates.add('gate:page-reachability');
+  }
 
   return GATE_ORDER.filter((gate) => gates.has(gate));
 }
@@ -194,6 +206,13 @@ export function runGatesForFiles(
 ) {
   const gates = gatesForFiles(filePaths);
   const failures = [];
+  /**
+   * Gates that COULD NOT RUN — a spawn error, a timeout, a missing executable. Kept separate from
+   * `failures` because they are a different claim: "the gate did not produce a verdict", not "the
+   * gate produced a failing verdict". `spawnSync` reports both through the same result shape, which
+   * is exactly how they got conflated.
+   */
+  const unrunnable = [];
   let remainingOutput = totalOutputLimit;
 
   for (const gate of gates) {
@@ -215,13 +234,29 @@ export function runGatesForFiles(
     }`;
     const bounded = tail(rawOutput, Math.min(outputLimit, Math.max(remainingOutput, 0)));
     remainingOutput = Math.max(remainingOutput - bounded.length, 0);
+
+    // A gate that COULD NOT RUN is not a gate that FAILED. Conflating them told two separate agents
+    // on 2026-07-29 that `check:layout` had FAILED and to "fix the violation now" — when the real
+    // cause was ETIMEDOUT under CPU contention from parallel agents. Running the gate directly
+    // exited 0 both times. A hook that reports a violation which does not exist sends agents hunting
+    // ghosts, and worse, teaches them to distrust the hook — at which point a REAL finding gets
+    // waved through too.
+    if (result.error) {
+      unrunnable.push({
+        gate,
+        reason: result.error.code ?? result.error.message,
+        output: bounded,
+      });
+      continue;
+    }
     failures.push({ gate, status: result.status, output: bounded });
   }
 
   return {
     gates,
     failures,
-    passedCount: gates.length - failures.length,
+    unrunnable,
+    passedCount: gates.length - failures.length - unrunnable.length,
   };
 }
 

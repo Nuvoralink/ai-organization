@@ -140,7 +140,17 @@ export function checkAgentControlPlane(root = process.cwd()) {
   for (const script of ['gate:agent-context', 'gate:rules-wiring', 'gate:agent-control-plane', 'gate:fleet-parity', 'gate:overlay-parity', 'gate:organization', 'proof:changed', 'test:organization-control-plane']) if (!pkg.scripts?.[script]) errors.push(`package script missing: ${script}`);
   if (!/npm run gate:fleet-parity/u.test(pkg.scripts?.['gate:organization'] ?? '')) errors.push('gate:organization must include gate:fleet-parity');
   if (!/npm run proof:changed/.test(pkg.scripts?.verify ?? '')) errors.push('verify must include changed-path proof');
-  if (!/auxara-sso/.test(pkg.scripts?.['verify:db'] ?? '')) errors.push('verify:db must include auxara-sso regression');
+  // verify:db is still the single DB-regression authority, but its membership now comes from the
+  // discovery-driven lane registry instead of a hand-maintained npm chain (the chain ran 12 scripts
+  // while 274 existed). Assert the new entrypoint AND the coverage the old sentinel protected.
+  const verifyDb = pkg.scripts?.['verify:db'] ?? '';
+  if (!/run-backend-regressions\.mjs --lane=db/.test(verifyDb)) errors.push('verify:db must delegate to the discovery-driven db lane (scripts/run-backend-regressions.mjs --lane=db)');
+  if (!/npm run test:regression:static/.test(readJson(root, '.ai-organization/proof-profiles.json').profiles.find((p) => p.id === 'backend-static')?.commands?.join(' ') ?? '')) errors.push('backend-static proof profile must run the static regression lane');
+  const laneRegistry = readJson(root, 'backend/scripts/regression-lanes.json');
+  for (const required of ['auxaraSsoRegression.ts', 'dialerIngestCallRegression.ts', 'tenantSecurityBlackBoxRegression.ts']) {
+    if (!(laneRegistry.db ?? []).includes(required)) errors.push(`regression-lanes.json db lane must include ${required}`);
+    if (laneRegistry.quarantine?.[required]) errors.push(`${required} must not be quarantined — it is a required DB-authority regression`);
+  }
 
   const uiWorkflow = read(root, '.github/workflows/ui-source-of-truth-gates.yml');
   const dbWorkflow = read(root, '.github/workflows/backend-db-regressions.yml');

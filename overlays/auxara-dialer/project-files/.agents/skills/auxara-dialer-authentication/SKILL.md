@@ -67,6 +67,16 @@ There is no Supabase `auth.users`, `profiles`, or Cloud Backend dependency in th
 ### Me / Rehydrate
 `GET /api/auth/me` uses `authMiddleware`, rehydrates from the httpOnly session cookie, checks `authTokenVersion`, sets `app.tenant_id` for RLS, and returns the current user plus role + tenant + permission set. Frontend `AuthProvider` rebuilds session/user state from this; it must not depend on browser-stored bearer tokens.
 
+### Final Mutation Revalidation
+Middleware authentication is not sufficient for a state-changing transaction that may wait before its final write. Pass the signed session's expected `authTokenVersion` from `req.auth` into the mutation service with no optional/default value. At the transaction's authorization fence, lock and re-read the actor's current status and `authTokenVersion`, require an exact match, and retain a lock that conflicts with status/version revocation through every later wait and write in that transaction. Acquire actor, permission, object, and policy locks in the repository's declared global order; changing lock strength to fix a deadlock must not reopen the revocation race.
+
+Fail closed before provider work, persistence, or audit creation when the actor is no longer active or the version differs. Prove the condition race, not only a sequential retry: pause the mutation before its actor fence, commit an `authTokenVersion` increment first, release the mutation, and require the route's established 401/403 response plus zero domain writes and zero success audit rows.
+
+- **Fail-state:** middleware accepts signed version N, a concurrent logout/password/session-revocation commits version N+1 while the mutation waits, and the stale request later writes because the service ignored or unlocked current actor state.
+- **Regression mutation:** remove either the exact version comparison or the actor lock; the condition-race test must fail by observing a successful stale mutation or persisted side effect.
+- **Counterexample:** a read-only route, or a mutation proven not to wait past middleware before its atomic authorization/write boundary, does not add a redundant long-lived actor lock.
+- **Completion evidence:** inspect the real HTTP result, domain tables, provider-call spy, and audit rows after the ordered race; a green status without those outputs is insufficient.
+
 ### Password
 Current implemented password flow is authenticated change-password, not email reset. Minimum length aligned with backend validation. If implementing forgot/reset password, design it for this JWT/Prisma multi-tenant app: reset-token table or signed one-time token, expiration, single-use invalidation, generic responses, email delivery, audit logging, tenant scoping.
 
@@ -116,6 +126,7 @@ Invite acceptance validates the token, rejects accepted/expired invites, creates
    - Do not break existing paid/internal stack behavior.
 5. Verify with targeted tests and smoke:
    - Backend auth route tests or regression scripts for changed behavior.
+   - Ordered stale-session mutation race when a state-changing transaction can wait after middleware.
    - Tenant-isolation black-box test for any new route returning object-scope data.
    - Frontend auth state/route tests if UI changed.
    - Browser smoke for login/logout/invite when practical.
@@ -138,6 +149,7 @@ Invite acceptance validates the token, rejects accepted/expired invites, creates
 - Stack boundaries are preserved for paid vs internal flows.
 - Passwords are hashed with existing password helper.
 - JWT secret, issuer, audience, and expiry behavior remain safe.
+- Long-waiting mutations carry the signed expected `authTokenVersion` into the service and revalidate locked current actor state before effects.
 - Cookie, CSRF, and frontend session-state transitions are consistent.
 - 401/403 UX is clear and does not loop.
 - Invite/signup/admin flows write all required user, tenant, membership, audit, and billing/trial state.
