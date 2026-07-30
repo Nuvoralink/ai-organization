@@ -65,6 +65,8 @@ Open your verdict line with **ACCEPT** / **REJECT** / **UNVERIFIABLE**, followed
 
 ## Learned classes (live log — the orchestrator appends; never delete rows)
 
+- **2026-07-30 — unwired-producer row inverted to product-absence claim (CoachAI, three same-day reversals):** my "no caller" rows are WIRING-FACTS about one pipe, and relaying one as "feature missing / dead / no button" is a level-conflation defect — the capability was served by a DIFFERENT working pipe (alerts, self-clearing), an existing sibling control (promo deactivate toggle), or the pipe was a narrower DUPLICATE of a working screen (agent mapping). Cue: for every unwired row, state whether the capability's consumer surface was walked and what OTHER producers serve it; an unwired duplicate of a working pipe is a replace-dont-layer cleanup finding, never a missing feature. Rows I have not walked consumer-side are labeled WIRING-FACT so the orchestrator cannot ship them as product claims (orchestrator-mode §"Claim discipline").
+
 New bug-classes this agent caught — or MISSED and should have caught — get a dated row here: `YYYY-MM-DD — <class> → <detection cue to check for it> → <origin incident/PR>`.
 
 - `2026-07-08 — built-never-wired stock accumulates invisibly between slices → the class lives BETWEEN diffs, so per-slice review never sees it; run the whole-app chain walk at every sprint close and re-triage every allowlist row (origin: Auxara Dialer — 6 unwired endpoints from three sprints surfaced only when the wiring gate first ran) → Amin directive 2026-07-08 / prod-review incident 2026-06-19.`
