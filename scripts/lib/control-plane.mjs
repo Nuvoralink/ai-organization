@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { validateJsonAgainstSchema, validateSchemaReferences } from '../../core/schema/validate-json-schema.mjs';
 import { validateActionPolicySemantics } from '../../core/authority/assess-action.mjs';
 import { validateProjectRoleExtensionSemantics } from '../../core/roles/agent-role-registry.mjs';
+import { rubricIsRequired, validateRubric } from '../../core/roles/verdict-rubric.mjs';
 
 const TEXT_EXTENSIONS = new Set([
   '', '.md', '.txt', '.json', '.jsonl', '.ndjson', '.yaml', '.yml', '.toml', '.mjs', '.cjs', '.js', '.ts', '.tsx',
@@ -1368,6 +1369,46 @@ export function validateAutomationSpecs(registry, projectSpecs) {
   return problems;
 }
 
+const MUTATING_TOOLS = Object.freeze(['Edit', 'Write', 'NotebookEdit']);
+
+/**
+ * Enforce the execution and verdict contract on one role row.
+ *
+ * A review or verify lens must carry a rubric, must run at the strongest tier (a critic
+ * weaker than the implementer it checks is not a check), and must deny the mutation tools
+ * its prose boundary already forbids. A role that issues no verdict must carry no rubric,
+ * so the two stay impossible to confuse.
+ */
+export function validateRoleExecutionContract(role, label) {
+  const problems = [];
+  const where = `${label} ${role?.id ?? '<unknown>'}`;
+  const needsRubric = rubricIsRequired(role);
+
+  if (needsRubric) {
+    if (role.verdict_rubric === undefined) {
+      problems.push(`${where} is a ${role.mode} lens and must declare a verdict_rubric`);
+    } else {
+      problems.push(...validateRubric(role.verdict_rubric, `${where} verdict_rubric`));
+    }
+    if (role.strength !== 'strongest_available') {
+      problems.push(`${where} is a ${role.mode} lens and must run at strongest_available, got ${role.strength}`);
+    }
+  } else if (role.verdict_rubric !== undefined) {
+    problems.push(`${where} has mode ${role.mode} and must not declare a verdict_rubric`);
+  }
+
+  // Every verdict-issuing lens is non-mutating, whether it reads source or drives a runtime.
+  const allow = role?.execution?.tools?.allow ?? [];
+  const deny = role?.execution?.tools?.deny ?? [];
+  if (needsRubric) {
+    for (const tool of MUTATING_TOOLS) {
+      if (allow.includes(tool)) problems.push(`${where} is a non-mutating lens and must not allow ${tool}`);
+      if (!deny.includes(tool)) problems.push(`${where} is a non-mutating lens and must explicitly deny ${tool}`);
+    }
+  }
+  return problems;
+}
+
 export function validateAgentRoleRegistries(repoRoot) {
   const problems = [];
   const universalSchema = path.join(repoRoot, 'schemas', 'agent-role-registry.v1.schema.json');
@@ -1385,6 +1426,7 @@ export function validateAgentRoleRegistries(repoRoot) {
     if (ids.has(role.id)) problems.push(`Duplicate agent role: ${role.id}`);
     ids.add(role.id);
     if (!Array.isArray(role.required_outputs) || role.required_outputs.length === 0) problems.push(`Agent role lacks output contract: ${role.id}`);
+    problems.push(...validateRoleExecutionContract(role, 'Agent role'));
   }
   if (!ids.has('premise-and-architecture-challenger')) problems.push('Premise challenger role is required');
 
@@ -1397,6 +1439,9 @@ export function validateAgentRoleRegistries(repoRoot) {
       continue;
     }
     problems.push(...validateJsonAgainstSchema(projectSchema, extension).map((failure) => `${project} role extension schema: ${failure}`));
+    for (const role of extension.roles ?? []) {
+      problems.push(...validateRoleExecutionContract(role, `${project} role`));
+    }
     if (Array.isArray(universal.roles) && Array.isArray(extension.roles)) {
       problems.push(...validateProjectRoleExtensionSemantics(universal, extension).map((failure) => `${project} role extension: ${failure}`));
     }

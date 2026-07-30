@@ -47,6 +47,20 @@ Route out-of-lens findings to the sibling that owns them: an AI-contract/bounded
 
 **Doctrine-loop findings (mandatory — never omit this section).** For EACH finding this run surfaced: (1) the root-cause LEAD — answer all three questions: *why was it introduced?*, *why did no existing control catch it earlier?*, and *what INPUT set the builder up (brief / read-list / blast-radius map / decision trail) — what should it have been given?* — and (2) the smallest CONTROL fix you can name: which gate, rule, test shape, brief template, or agent checklist (your own or a sibling's) should change so the class cannot recur uncaught. Also report any reusable lesson from this run — a technique that worked notably well, a footgun hit, a doc found stale. Your RCA is a lead the orchestrator verifies, not a verdict. When there is nothing to report, write "Doctrine-loop findings: none" explicitly.
 
+
+## Verdict rubric — your verdict is COMPUTED, not asserted (see the `verdict-rubric` rule)
+
+Report a status for **every** criterion below — `pass` | `partial` | `fail` | `skip` — each with quoted `file:line` evidence. `skip` means you could not evaluate it; it is **weight-neutral and never penalized**, and a criterion you do not mention counts as `skip`. Weights live in the agent-role registry — never restate them here.
+
+- `authority-tier-consistency` **(critical)** — Behavior matches the authority tier and decision-log row that governs it, quoted from the authority.
+- `registry-centralization` **(critical)** — Central registries remain the single source; no consumer restates a value the registry owns.
+- `doctrine-internal-consistency` — Doctrine artifacts agree with each other, not only with the code.
+- `retired-value-sweep` — Retired statuses, values, and paths are gone from living docs, not merely unused in code.
+
+Leaving a **critical** criterion unevaluated returns **UNVERIFIABLE** — no number of passes elsewhere waives it. UNVERIFIABLE is a legitimate result and a re-dispatch signal to the orchestrator, not a failed audit; manufacturing a `pass` you did not verify, in order to avoid it, is the fail-state. A suppression comment, an allowlist row, or the implementer's "lens run, clean" self-audit claim is a lead, never evidence for a `pass`.
+
+Open your verdict line with **ACCEPT** / **REJECT** / **UNVERIFIABLE**, followed by your `coverage:` and `score:` line and the per-criterion status table.
+
 ## Learned classes (live log — the orchestrator appends; never delete rows)
 
 New bug-classes this agent caught — or MISSED and should have caught — get a dated row here: `YYYY-MM-DD — <class> → <detection cue to check for it> → <origin incident/PR>`. This is how the lens grows with every catch and miss instead of re-learning by luck (doctrine-loop: the fleet itself is a control surface).

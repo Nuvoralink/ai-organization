@@ -1,6 +1,6 @@
 {
   "$schema": "https://nuvoralink.internal/schemas/agent-role-project-extension.v1.schema.json",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "agent_file_exceptions": [
     {
       "role_id": "security-auditor",
@@ -22,7 +22,21 @@
         "semantic and metering invariants checked and found clean",
         "surfaces and files not reached",
         "doctrine-loop findings"
-      ]
+      ],
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Bash"], "deny": ["Edit", "Write", "NotebookEdit"] },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.7,
+        "criteria": [
+          { "id": "ai-owns-semantic-verdict", "weight": 30, "critical": true, "summary": "A schema-valid AI meaning-verdict is authoritative; no deterministic path substitutes its own meaning." },
+          { "id": "guards-non-blocking", "weight": 25, "critical": true, "summary": "Grounding, speaker, window, and confidence guards signal or discount only; none rejects or overrides a valid verdict." },
+          { "id": "schema-and-provenance", "weight": 20, "critical": false, "summary": "Machine-consumed model output is schema-validated and carries provenance through to persistence." },
+          { "id": "repair-loop-bounded", "weight": 15, "critical": false, "summary": "Failed-field repair is bounded, tells the model what failed, and merges rather than silently rewriting." },
+          { "id": "metering-and-authz", "weight": 10, "critical": false, "summary": "Paid provider calls are metered and deduplicated, and no AI output decides authorization or billing." }
+        ]
+      }
     },
     {
       "id": "doctrine-drift-auditor",
@@ -37,7 +51,20 @@
         "doctrine artifacts and behaviors checked and found consistent",
         "surfaces and doctrine not reached",
         "doctrine-loop findings"
-      ]
+      ],
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Bash"], "deny": ["Edit", "Write", "NotebookEdit"] },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.7,
+        "criteria": [
+          { "id": "authority-tier-consistency", "weight": 30, "critical": true, "summary": "Behavior matches the authority tier and decision-log row that governs it, quoted from the authority." },
+          { "id": "registry-centralization", "weight": 25, "critical": true, "summary": "Central registries remain the single source; no consumer restates a value the registry owns." },
+          { "id": "doctrine-internal-consistency", "weight": 25, "critical": false, "summary": "Doctrine artifacts agree with each other, not only with the code." },
+          { "id": "retired-value-sweep", "weight": 20, "critical": false, "summary": "Retired statuses, values, and paths are gone from living docs, not merely unused in code." }
+        ]
+      }
     },
     {
       "id": "source-to-screen-auditor",
@@ -53,7 +80,21 @@
         "surfaces and files not reached",
         "doctrine-loop findings"
       ],
-      "extends": "functionality-parity-auditor"
+      "extends": "functionality-parity-auditor",
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Bash"], "deny": ["Edit", "Write", "NotebookEdit"] },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.7,
+        "criteria": [
+          { "id": "source-of-truth-traced", "weight": 30, "critical": true, "summary": "Every rendered claim traced back to the authoritative persisted evidence that produced it." },
+          { "id": "no-parallel-producer", "weight": 25, "critical": true, "summary": "Exactly one producer owns each derived value; no second path can disagree on some input." },
+          { "id": "surface-reaches-user", "weight": 20, "critical": false, "summary": "The derived value survives DTO and mapper to the surface the decision named." },
+          { "id": "lifecycle-and-replacement", "weight": 15, "critical": false, "summary": "Reanalysis replaces rather than layers, and stale rows cannot act after their source changed." },
+          { "id": "anti-fabrication", "weight": 10, "critical": false, "summary": "Ungrounded or unusable output is cut rather than shown behind a hedge." }
+        ]
+      }
     },
     {
       "id": "test-runner",
@@ -69,7 +110,20 @@
         "nonzero proof summary",
         "one root cause and suggested fix per failure",
         "doctrine-loop findings"
-      ]
+      ],
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Bash"], "deny": ["Edit", "Write", "NotebookEdit"] },
+        "budget": { "max_usd": 15, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.7,
+        "criteria": [
+          { "id": "real-exit-codes", "weight": 35, "critical": true, "summary": "Each command's own exit status captured before any pipe, never a tailed or echoed status." },
+          { "id": "nonzero-counts", "weight": 30, "critical": true, "summary": "Suites actually executed with nonzero file and case counts; a conditional skip reported as unrun." },
+          { "id": "sole-db-user", "weight": 20, "critical": false, "summary": "The test-database lease was held for the run with no concurrent worktree user." },
+          { "id": "failure-diagnosis", "weight": 15, "critical": false, "summary": "One root cause and suggested fix per failure, traced to the line rather than the summary." }
+        ]
+      }
     }
   ]
 }

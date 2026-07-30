@@ -98,6 +98,64 @@ function projectAgentIds(problems) {
   return agents;
 }
 
+const RUBRIC_HEADING = '## Verdict rubric';
+const CRITERION_LINE = /^- `([a-z0-9][a-z0-9-]+)`(\s+\*\*\(critical\)\*\*)?/u;
+
+/**
+ * Read the criterion ids and critical markers an agent file declares.
+ * Returns null when the file carries no rubric block at all.
+ */
+function declaredRubricCriteria(relative) {
+  const text = fs.readFileSync(path.join(projectRoot, relative), 'utf8');
+  const start = text.indexOf(RUBRIC_HEADING);
+  if (start === -1) return null;
+  const rest = text.slice(start + RUBRIC_HEADING.length);
+  const nextHeading = rest.indexOf('\n## ');
+  const section = nextHeading === -1 ? rest : rest.slice(0, nextHeading);
+
+  const declared = new Map();
+  for (const line of section.split('\n')) {
+    const match = CRITERION_LINE.exec(line.trim());
+    if (match) declared.set(match[1], Boolean(match[2]));
+  }
+  return declared;
+}
+
+/**
+ * A lens's agent file names its criteria so it is self-sufficient as a standing brief,
+ * but the registry owns the weights. This gate keeps the duplicated names honest: the id
+ * set and the critical markers must match the registry exactly, so a rubric can never
+ * drift into an agent file that quietly judges itself against different criteria.
+ */
+function rubricParityProblems(role, relative) {
+  const rubric = role?.verdict_rubric;
+  const declared = declaredRubricCriteria(relative);
+  if (!rubric) {
+    return declared === null
+      ? []
+      : [`agent file declares a verdict rubric but its role registers none: ${relative}`];
+  }
+  if (declared === null) return [`agent file lacks the required verdict rubric block: ${relative}`];
+
+  const problems = [];
+  const registered = new Map(rubric.criteria.map((c) => [c.id, c.critical === true]));
+  for (const [id, critical] of registered) {
+    if (!declared.has(id)) {
+      problems.push(`agent file omits registered criterion: ${relative} (${id})`);
+      continue;
+    }
+    if (declared.get(id) !== critical) {
+      problems.push(
+        `agent file disagrees with the registry on criticality: ${relative} (${id} declared ${declared.get(id) ? 'critical' : 'ordinary'})`,
+      );
+    }
+  }
+  for (const id of declared.keys()) {
+    if (!registered.has(id)) problems.push(`agent file declares an unregistered criterion: ${relative} (${id})`);
+  }
+  return problems;
+}
+
 function compareSets(leftLabel, left, rightLabel, right, problems) {
   for (const id of [...left].sort()) {
     if (!right.has(id)) problems.push(`${leftLabel} lists role absent from ${rightLabel}: ${id}`);
@@ -139,8 +197,11 @@ const agentFileExceptions = new Set(
 const agents = projectAgentIds(problems);
 
 for (const [id, relative] of agents) {
-  if (!effectiveIds.has(id))
+  if (!effectiveIds.has(id)) {
     problems.push(`agent file has no effective-role row: ${relative} (${id})`);
+    continue;
+  }
+  problems.push(...rubricParityProblems(effectiveById.get(id), relative));
 }
 for (const [id, role] of effectiveById) {
   if (agents.has(id)) {

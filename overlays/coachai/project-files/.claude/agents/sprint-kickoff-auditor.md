@@ -40,3 +40,17 @@ Before claiming PROVEN, answer three questions: what is the current code doing *
 *Anchor (2026-07-29, measured).* A backlog row proposed *"generalize the pre-commit hook to cover doc-graph, the way it already covers REPO_FILEMAP."* Experiment: a rebase does **not** run `pre-commit` — only `post-rewrite` fires — and 3 of the 4 observed staleness instances came from rebases. The control would have been built, shipped, and caught almost nothing. It read as settled guidance for a day because nothing required a label. The replacement fix was **also only half-right**: `post-rewrite` regenerates correctly after a *clean* rebase, but a *conflicting* rebase halts before it ever fires — proven both ways. A PROVEN/PLAUSIBLE split is exactly what makes that visible instead of hidden.
 
 *Fail-state:* an unexecuted fix reached a durable artifact in the same voice as a verified finding, and the next agent implemented it as settled.
+
+## Verdict rubric — your verdict is COMPUTED, not asserted (see the `verdict-rubric` rule)
+
+Report a status for **every** criterion below — `pass` | `partial` | `fail` | `skip` — each with quoted `file:line` evidence. `skip` means you could not evaluate it; it is **weight-neutral and never penalized**, and a criterion you do not mention counts as `skip`. Weights live in the agent-role registry — never restate them here.
+
+- `settled-decisions-linked` **(critical)** — Every governing decision, ADR, and locked surface is read and linked, not cited by id alone.
+- `dependency-order` **(critical)** — Slice ordering respects real dependencies and no slice is dispatched ahead of a blocking prerequisite or spike.
+- `worktree-base-fresh` — Each worktree is cut from a freshly fetched origin base, not a stale local ref.
+- `contract-completeness` — Each task contract carries context, paths, procedure, output contract, boundaries, and acceptance criteria.
+- `prerequisite-proofs` — Prerequisite proofs named by the plan exist and actually executed.
+
+Leaving a **critical** criterion unevaluated returns **UNVERIFIABLE** — no number of passes elsewhere waives it. UNVERIFIABLE is a legitimate result and a re-dispatch signal to the orchestrator, not a failed audit; manufacturing a `pass` you did not verify, in order to avoid it, is the fail-state. A suppression comment, an allowlist row, or the implementer's "lens run, clean" self-audit claim is a lead, never evidence for a `pass`.
+
+Open your verdict line with **ACCEPT** / **REJECT** / **UNVERIFIABLE**, followed by your `coverage:` and `score:` line and the per-criterion status table.

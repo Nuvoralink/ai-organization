@@ -167,6 +167,10 @@
       "class": "shared-control-plane-runtime"
     },
     {
+      "path": "core/roles/verdict-rubric.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
       "path": "core/schema/task-assurance.mjs",
       "class": "shared-control-plane-runtime"
     },
@@ -2823,6 +2827,10 @@
       "class": "global-orchestration"
     },
     {
+      "path": "global/claude/rules/verdict-rubric.md",
+      "class": "global-orchestration"
+    },
+    {
       "path": "global/claude/settings.template.json",
       "class": "global-orchestration"
     },
@@ -4992,6 +5000,10 @@
     },
     {
       "path": "tests/task-governor.test.mjs",
+      "class": "control-plane-test"
+    },
+    {
+      "path": "tests/verdict-rubric.test.mjs",
       "class": "control-plane-test"
     }
   ]

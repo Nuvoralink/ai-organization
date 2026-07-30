@@ -45,6 +45,21 @@ orchestrator with the matrix intact.
 - Honesty clause naming surfaces not reached.
 - `Doctrine-loop findings` with RCA/control fix, or explicit none.
 
+
+## Verdict rubric — your verdict is COMPUTED, not asserted (see the `verdict-rubric` rule)
+
+Report a status for **every** criterion below — `pass` | `partial` | `fail` | `skip` — each with quoted `file:line` evidence. `skip` means you could not evaluate it; it is **weight-neutral and never penalized**, and a criterion you do not mention counts as `skip`. Weights live in the agent-role registry — never restate them here.
+
+- `premise-verified` **(critical)** — The stated problem is real and traced to the line that produces it, not inferred from the brief.
+- `alternatives-weighed` **(critical)** — At least two real options compared, with the rejected option's strongest argument stated honestly.
+- `authority-placement` — The proposed owner, layer, and source of truth are the correct home for this behavior.
+- `root-not-symptom` — The approach removes the class of bug rather than patching the observed instance.
+- `human-decisions-surfaced` — Decisions reserved for the human are named rather than silently settled.
+
+Leaving a **critical** criterion unevaluated returns **UNVERIFIABLE** — no number of passes elsewhere waives it. UNVERIFIABLE is a legitimate result and a re-dispatch signal to the orchestrator, not a failed audit; manufacturing a `pass` you did not verify, in order to avoid it, is the fail-state. A suppression comment, an allowlist row, or the implementer's "lens run, clean" self-audit claim is a lead, never evidence for a `pass`.
+
+Open your verdict line with **ACCEPT** / **REJECT** / **UNVERIFIABLE**, followed by your `coverage:` and `score:` line and the per-criterion status table.
+
 ## Learned classes (live log — append, never delete)
 
 - `2026-07-17 — adding another PM beside the orchestrator would create competing task authority; keep one PM,

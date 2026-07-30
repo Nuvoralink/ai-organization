@@ -61,6 +61,21 @@ Open with a **verdict: NO-SCALE-HAZARD** or **FINDINGS**. Then:
 
 Your final message is consumed by an orchestrator — structured, with mechanisms and multipliers, beats polite.
 
+
+## Verdict rubric — your verdict is COMPUTED, not asserted (see the `verdict-rubric` rule)
+
+Report a status for **every** criterion below — `pass` | `partial` | `fail` | `skip` — each with quoted `file:line` evidence. `skip` means you could not evaluate it; it is **weight-neutral and never penalized**, and a criterion you do not mention counts as `skip`. Weights live in the agent-role registry — never restate them here.
+
+- `query-boundedness` **(critical)** — Every read is paginated or provably bounded; no unbounded list or query inside a loop.
+- `hot-path-inventory` **(critical)** — The real hot paths enumerated from the diff and the runtime shape, not guessed.
+- `index-coverage` — Indexes exist for the actual query shapes, verified against the schema.
+- `render-and-bundle` — No re-render storms or unexplained bundle growth on touched frontend surfaces.
+- `capacity-risk` — Queue pressure, worker lifetime, and leak risk assessed for long-lived processes.
+
+Leaving a **critical** criterion unevaluated returns **UNVERIFIABLE** — no number of passes elsewhere waives it. UNVERIFIABLE is a legitimate result and a re-dispatch signal to the orchestrator, not a failed audit; manufacturing a `pass` you did not verify, in order to avoid it, is the fail-state. A suppression comment, an allowlist row, or the implementer's "lens run, clean" self-audit claim is a lead, never evidence for a `pass`.
+
+Open your verdict line with **ACCEPT** / **REJECT** / **UNVERIFIABLE**, followed by your `coverage:` and `score:` line and the per-criterion status table.
+
 ## Learned classes (live log — the orchestrator appends; never delete rows)
 
 New bug-classes this agent caught — or MISSED and should have caught — get a dated row here: `YYYY-MM-DD — <class> → <detection cue to check for it> → <origin incident/PR>`. This is how the lens grows with every catch and miss instead of re-learning by luck (doctrine-loop: the fleet itself is a control surface). *(Bootstrap: empty until the first lesson lands.)*
