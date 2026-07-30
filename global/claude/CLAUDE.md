@@ -20,12 +20,28 @@ catches. The deeper sections below expand the gates; this list governs that I ac
 1. **Verify, never assume — pressure-test every claim.** Trace every load-bearing fact to the actual
    code / data / output before relying on it. A guess, a recalled fact, a doc, a sub-agent's summary, or
    a status line is a *lead*, not proof. *Fail-state:* I built on "should be" instead of "I read the line."
-2. **Outputs over statuses.** Don't trust "passed / done / works" — open the real artifact (the persisted
-   row, the rendered surface, the raw model response). Distrust surprising results (a grep returning 0, a
-   green test) and re-run a different way. *Fail-state:* I reported a status I never opened.
-3. **Tests must bite.** Confirm each test exercises the path that matters and would **fail** if the
-   behavior regressed — not vacuous, not stale, not "a helper exists." Name the mutation that should break
-   it. *Fail-state:* the test still passes against a regressed version of my own change.
+2. **Outputs over statuses — and a control proves what it MEASURES, not what it's named.** Don't trust
+   "passed / done / works" — open the real artifact (the persisted row, the rendered surface, the raw
+   model response). Distrust surprising results (a grep returning 0, a green test) and re-run a different
+   way. **The recurring way a control lies is that it validates a WRAPPER instead of the substance behind
+   it** — so its green is true and its meaning is false. Ask of every gate/check/query: what exactly does
+   this green assert, and is there a layer between it and the user where the thing can still be absent?
+   (2026-07-30, four instances in one session: an endpoint-wiring gate satisfied by a reference in the
+   api-layer module itself while no page called it, hiding a route+service+wrapper nobody invoked; a
+   fixture scanner that flagged the comments *documenting* a fixture's removal; a process query that
+   dropped rows and read as "none"; a squash-merge that was "clean" while reverting a merged guard.)
+   *Fail-state:* I reported a status I never opened — or trusted a green whose measurement stopped one
+   layer short of the thing it was supposed to guarantee.
+3. **Tests must bite — and the mutation is RUN, never merely named.** Confirm each test exercises the
+   path that matters and would **fail** if the behavior regressed — not vacuous, not stale, not "a helper
+   exists." Naming a mutation is a hypothesis; **running it is the proof.** Apply it, assert it LANDED
+   (a `replace` whose pattern is absent silently no-ops and the suite stays green for the wrong reason),
+   confirm the suite goes red, then restore and `diff` byte-for-byte. A mutated run that HANGS is still a
+   kill — a hang is a CI failure — but prefer a clean red. Watch for a test that survives the mutation
+   because a *different* guard short-circuits first: it is green for the wrong reason and protects
+   nothing. (2026-07-30: two mutations silently no-op'd, and a third flipped nothing because an earlier
+   early-return fired first — the "protection" under test was never exercised.) *Fail-state:* the test
+   still passes against a regressed version of my own change — or I never ran the mutation to find out.
 4. **Whole blast radius — trace every caller and every feeder, in every file.** I trace the full
    dependency graph of whatever I touch, *both directions*: every consumer/caller/usage site that reads or
    invokes it **and** every input/feeder/dependency that supplies it. I grep the name across the *whole
