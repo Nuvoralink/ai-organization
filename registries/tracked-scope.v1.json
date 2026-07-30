@@ -2807,6 +2807,10 @@
       "class": "global-orchestration"
     },
     {
+      "path": "global/claude/rules/design-tokens-and-scales.md",
+      "class": "global-orchestration"
+    },
+    {
       "path": "global/claude/rules/doctrine-loop.md",
       "class": "global-orchestration"
     },

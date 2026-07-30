@@ -145,14 +145,9 @@ something else, and don't leave machinery running just because it's already ther
 - **Surface it — don't silently keep or silently rip out.** If a piece can't clearly answer "why am I
   here, and am I still doing the job I was added for?", say so and ask — then bypass, remove, or keep
   it with a stated reason.
-- **Check prior art and placement (Gate 8).** Before adding or keeping a piece, ask: how do comparable
-  products solve this? Does it already exist somewhere in this codebase I haven't looked? And does it even
-  belong *here* — or would it serve the user better living elsewhere (a different surface, layer, or step)?
-  Reuse or relocate beats rebuild.
-- **Calibrate the engineering effort (Gate 8).** In the same breath ask both directions: am I
-  **over-engineering** — building machinery the product doesn't need yet — or being **too loose / sloppy**
-  — skipping the durability, security, or edge handling it genuinely needs? Aim for the durable-but-minimal
-  middle, and weigh security and the other load-bearing concerns explicitly rather than by reflex.
+- **Prior art, placement, and effort calibration are Gate 8 itself** — comparable products, does-it-
+  already-exist, does-it-belong-here (reuse or relocate beats rebuild), and the over-engineered vs
+  too-loose check: run the gate's own questions here; aim for the durable-but-minimal middle.
 
 ## Don't walk past problems — fix-small or flag, never pass silently
 
@@ -283,32 +278,14 @@ it assumed changes.
 
 ## Tokens & scales — extend the source, never inline a raw value at the leaf
 
-*(The **design-specific instance** of "Relational, never hardcoded" above — the same principle applied to
-color / px / shadow / font / motion / z-index.)*
-
-When a project has a token / scale / registry layer for a kind of value — design tokens (color,
-space, size, radius, shadow, motion, type, z-index, opacity), a config layer for thresholds, an
-enum/taxonomy for states — that layer is the **only** place raw literals of that kind may be born.
-Page / component / leaf code references a **named token**; it never inlines a raw value.
-
-- **Use the existing token first.** Before writing any literal — `#hex`, `oklch(…)`, `16px`,
-  `0 4px 14px …`, `200ms`, `cubic-bezier(…)`, a font name, a z-index number, a magic threshold —
-  find the token that already means it and reference that. Search the source before inventing.
-- **If none fits, create it at the source, then reference it.** Add the new primitive / semantic
-  token (or scale step, or registry row) to the central source, *then* point the leaf at it. Never
-  birth a one-off literal at the leaf "just this once" — that is exactly how a tokenized system rots
-  back into scattered magic values, one innocent inline at a time.
-- **Only the source files may hold raw values.** The token / primitive / registry definition files
-  are where literals legitimately live — that is their job. *Everywhere else, a raw literal of a
-  tokenized kind is a bug, even if it compiles and renders.*
-- **Wire the gate, not just the rule.** A discipline a human or agent must *remember* is a discipline
-  that erodes. When a project gains (or already has) a token layer, the same work adds or extends a
-  CI gate that **fails the build** on a raw literal of a tokenized kind outside the source — so the
-  rule bites automatically instead of relying on vigilance.
-
-*Fail-state:* a page or component carries a raw color / px / shadow / duration / easing / font /
-magic number where a token exists or should — or a new value was inlined at the leaf instead of
-added to the token source and referenced from there.
+The design-specific instance of "Relational, never hardcoded" above. Core: when a project has a
+token / scale / registry layer for a kind of value, that layer is the **only** birthplace of raw
+literals of that kind — leaves reference a named token; a missing token is added at the source and
+then referenced; and the same work wires a CI gate that fails the build on raw literals outside the
+source. **Full discipline: `~/.claude/rules/design-tokens-and-scales.md`** — path-scoped to styling
+and component surfaces, so it loads exactly when a style/component file is open. *Fail-state:* a
+leaf carries a raw color / px / shadow / duration / font / magic number where a token exists or
+should.
 
 ## Frontend changes are mockup-first and approval-gated (blocking)
 
@@ -333,12 +310,9 @@ instead of being mocked, approved, then built.
 Before creating, changing, mocking, prompting, or critiquing any visible frontend surface, load the
 user-level `frontend-design-director` skill first and announce its design register and specialist
 stack. A Claude Design prompt, visual brief, image mockup, or reference counts as design work. The
-director routes landing/marketing work to `design-taste-frontend`, dashboards/admin/analytics and
-product workflows to `product-ui-design-taste`, existing redesigns to their audit path, and approved
-references to implementation plus rendered verification. The product skill's domain/signature,
-visual-meaning, state, and rendered-quality gates are mandatory when product UI is described as basic,
-generic, card-heavy, bland, or AI-generated. Do not force landing-page rules onto application UI or
-stack contradictory design skills.
+director owns the routing to the specialist taste / audit / implementation skills and their quality
+gates — never pick a design skill directly, force landing-page rules onto application UI, or stack
+contradictory design skills.
 
 *Fail-state:* a visual deliverable bypassed the director because it was “only a prompt/mock,” a product
 dashboard skipped the product-taste pass, or implementation began before the required approval.
@@ -389,21 +363,17 @@ intelligence layer.
 
 ## AI / semantic work — decision matrices, not hardcoded rules
 
-- When a bug involves AI/semantic decisions, build a proper **decision matrix** (inputs, source
-  authority, allowed/disallowed outputs, provenance, examples, counterexamples). Don't hardcode a
-  one-off rule for the observed phrase.
-- AI owns the semantic judgment; **deterministic code validates** grounding, schema, policy,
-  provenance, persistence — it is a backstop, not the intelligence layer.
-- **Deterministic guards are non-blocking signals, never authoritative.** A schema-valid AI
-  meaning-verdict is authoritative. Grounding / speaker / window / confidence checks may attach a
-  confidence discount or an "unverified" provenance flag — they must **never reject, discard,
-  override, or substitute** the verdict. The moment a guard can overrule the AI it becomes the bug:
-  one upstream AI slip + a chain of authoritative guards cascades into a wrong user-visible verdict
-  **and** a wrong "limited"/degraded honesty state. Gate on schema + security; signal everything else.
-  Reserve a real block for exact policy/security/contract violations, not for meaning the model owns.
-- **Validation feeds back into generation:** on a failed field, run a bounded retry that tells the
-  model exactly what failed and why, send back only the failed fields, then merge the repaired
-  field into the previously-good payload. Don't let the validator silently rewrite output.
+- AI owns semantic judgment from a proper **decision matrix** (inputs, source authority,
+  allowed/disallowed outputs, examples + counterexamples) — never a one-off rule hardcoded for the
+  observed phrase. **Deterministic code validates** (grounding, schema, policy, provenance,
+  persistence) as a backstop, never the intelligence layer.
+- **Deterministic guards are non-blocking signals, never authoritative** — a schema-valid AI verdict
+  reaches the output; guards may only discount confidence or flag provenance. **Validation feeds back
+  into generation** via a bounded failed-field retry; the validator never silently rewrites output.
+- **The full contract — including the teach-intent-not-keywords rule, bounded-repair trace truth, and
+  the `SEMANTIC_DETERMINISM_ALLOW` escape hatch — is `~/.claude/rules/authority-boundary.md`**,
+  path-scoped so it loads whenever product code is being read or edited. This section is the
+  always-visible core; that rule is the authority.
 
 ## UI copy serves the user's task — never internal narrative
 
@@ -512,33 +482,14 @@ I run **OpenAI Codex alongside Claude Code** and want the same tooling in both, 
   (`https://mcp.railway.com`) — connected in Claude Code (parity gap closed 2026-06-11; verify in
   Codex). Also connected in Claude Code: Vercel and Stripe. Visible product work uses Claude Design;
   Figma is not part of the active workflow.
-- **Skills are installed user-level** — reach for the matching skill before improvising:
-  - Project setup: `bootstrap-orchestrator` (stand up the orchestrator/fleet/gates/living-docs
-    operating model in ANY new repo, adapted to its domain — invoke on "bootstrap this project").
-  - Planning / review: `full-slice-planner`, `plan-pressure-test`, `product-development-workflow`,
-    `implementation-review-against-plan`, `spider-debugging-methodology`, `source-to-screen-verification`,
-    `golden-mutation-trust-harness`, `persona-lens-product-audit`.
-  - Architecture / data / API: `architecture-saas-design`, `database-design-engineering`,
-    `api-interface-design`, `neon-postgres`, `persisted-derived-state-lifecycle`.
-  - Quality / security / ops: `code-review-quality`, `testing-strategy-and-tdd`,
-    `security-review-hardening`, `cookie-rbac-auth-hardening`, `observability-release-engineering`.
-  - AI decisions: `ai-decision-contract-builder`, `ai-output-source-truth-audit`.
-  - AI solutions / context layer: `context-engineering` (context-engineering fundamentals, enterprise
-    data/corpus readiness, RAG design + debugging, AI governance policies, client AI-solution
-    discovery/scoping — invoke when scoping or building a client AI solution or fixing RAG quality).
-  - Frontend / design: `frontend-design-director` (mandatory first router),
-    `product-ui-design-taste` (dashboards/admin/analytics/product-workflow taste lens),
-    `design-taste-frontend` (landing/marketing taste lens), `frontend-ui-engineering`, `impeccable`,
-    `redesign-existing-projects`, `ui-ux-pro-max`, `emil-design-eng` (motion feel).
-  - Style packs (explicit aesthetics only): `minimalist-skill`, `brutalist-skill`, `stitch-skill`
-    (Google Stitch).
-  - Image-gen: `imagegen-frontend-web`, `imagegen-frontend-mobile`, `image-to-code`, `brandkit`.
-  - Lessons / docs: `docs-rules-guardrail-promotion` (absorbs lessons capture).
-  - Skill maintenance: `skill-evolution-loop` (turns proven skill gaps into validated same-task improvements).
-  - Misc: `output-skill`, `github-project-work-tracking`, `persisted-artifact-reprocess`,
-    `find-skills`, `remotion-best-practices`.
-  - Multi-LLM tools: `council` (idea pressure-test memo), `studio` (marketing creative package) —
-    engine registered as `${DEPENDENCY:council-studio}` in the control-plane root registry.
+- **Skills are installed user-level — reach for the matching skill before improvising.** The resident
+  skill listing (every installed skill's name + description, always in context) is the routing
+  authority — search it before building anything a skill may already cover; this file does not
+  duplicate that inventory. Non-derivable routing facts only: `bootstrap-orchestrator` is the
+  entry point for standing up the orchestrator/fleet/gates model in any new repo ("bootstrap this
+  project"); `frontend-design-director` is the mandatory first router for any visible frontend work
+  (see the frontend section); and the `council` / `studio` multi-LLM engine is registered as
+  `${DEPENDENCY:council-studio}` in the control-plane root registry.
 
 ---
 
@@ -563,8 +514,9 @@ load only when the matching surface is read; read them explicitly when the topic
 large rule into `@` imports does not save context because imports are startup-loaded.
 
 *(Origin note: this orchestrator/implementer/auditor model was proven on the Nuvora CoachAI + Auxara
-Dialer builds; the dialer keeps its own self-contained copies under `.claude/rules/` + `.codex/rules/`
-— a candidate to later dedupe against this global layer.)*
+Dialer builds. The dialer's once self-contained rule copies were deduped 2026-07-30: its
+`decision-discipline` / `loop-discipline` / `doctrine-loop` files are now thin project adapters that
+bind THIS global layer to the dialer's authorities, not parallel restatements of it.)*
 
 ---
 
