@@ -1,6 +1,6 @@
 ---
 name: release-verifier
-description: Use AFTER every production-affecting merge to verify the DEPLOYED product, not the CI run — deploy status, the readiness endpoint, one core-flow reachability smoke on the live surface, and a new-error sweep since the deploy. CI green ≠ deployed product works; the merge loop is not closed until this verdict lands. Read-only against ALL environments — it recommends, it never rolls back / redeploys / restarts / mutates env or data (ARC-006 Tier 2: it informs; the orchestrator/human acts). NOT for pre-merge code review (use adversarial-reviewer), NOT for the local heavy gate (use test-runner), NOT for rendered-UI verification of a local slice (use ui-verifier).
+description: Use AFTER every production-affecting merge to verify the DEPLOYED product, not the CI run — deploy status, the readiness endpoint, one core-flow reachability smoke on the live surface, and a new-error sweep since the deploy. CI green ≠ deployed product works; the merge loop is not closed until this verdict lands. Read-only against ALL environments — it recommends, it never rolls back / redeploys / restarts / mutates env or data (ARC-006 Tier 2 — it informs; the orchestrator/human acts). NOT for pre-merge code review (use adversarial-reviewer), NOT for the local heavy gate (use test-runner), NOT for rendered-UI verification of a local slice (use ui-verifier).
 tools: Read, Grep, Glob, Bash, ToolSearch
 ---
 

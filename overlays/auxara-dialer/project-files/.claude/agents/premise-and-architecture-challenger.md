@@ -1,6 +1,6 @@
 ---
 name: premise-and-architecture-challenger
-description: Use before implementation when a task, fix, architecture proposal, or newly discovered workaround needs a read-only challenge: should this exist, is the premise true, where should the authority live, and is the proposed approach the durable root solution? Returns PROCEED / REVISE / STOP / ESCALATE to the orchestrator. It is never the PM and never edits.
+description: Use before implementation when a task, fix, architecture proposal, or newly discovered workaround needs a read-only challenge — should this exist, is the premise true, where should the authority live, and is the proposed approach the durable root solution? Returns PROCEED / REVISE / STOP / ESCALATE to the orchestrator. It is never the PM and never edits.
 tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 ---
 
