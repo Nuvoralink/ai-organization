@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/agent-role-registry.v1.schema.json",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "roles": [
     {
       "id": "orchestrator",
@@ -10,7 +10,11 @@
       "strength": "strongest_available",
       "vendor_preference": "either",
       "incompatible_with": ["sole-independent-reviewer-of-own-change"],
-      "required_outputs": ["task assurance contract", "decision log", "verified completion report", "doctrine-loop routing"]
+      "required_outputs": ["task assurance contract", "decision log", "verified completion report", "doctrine-loop routing"],
+      "execution": {
+        "tools": { "allow": ["*"] },
+        "budget": { "max_usd": 50, "enforcement": "dormant" }
+      }
     },
     {
       "id": "premise-and-architecture-challenger",
@@ -20,7 +24,21 @@
       "strength": "strongest_available",
       "vendor_preference": "either",
       "incompatible_with": ["implementer-for-same-slice"],
-      "required_outputs": ["premise verdict", "at least two options", "best rejected argument", "root-fix recommendation", "unresolved human decisions"]
+      "required_outputs": ["premise verdict", "at least two options", "best rejected argument", "root-fix recommendation", "unresolved human decisions"],
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Bash"], "deny": ["Edit", "Write", "NotebookEdit"] },
+        "budget": { "max_usd": 8, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.7,
+        "criteria": [
+          { "id": "premise-verified", "weight": 30, "critical": true, "summary": "The stated problem is real and traced to the line that produces it, not inferred from the brief." },
+          { "id": "alternatives-weighed", "weight": 25, "critical": true, "summary": "At least two real options compared, with the rejected option's strongest argument stated honestly." },
+          { "id": "authority-placement", "weight": 20, "critical": false, "summary": "The proposed owner, layer, and source of truth are the correct home for this behavior." },
+          { "id": "root-not-symptom", "weight": 15, "critical": false, "summary": "The approach removes the class of bug rather than patching the observed instance." },
+          { "id": "human-decisions-surfaced", "weight": 10, "critical": false, "summary": "Decisions reserved for the human are named rather than silently settled." }
+        ]
+      }
     },
     {
       "id": "codex-backend-implementer",
@@ -30,7 +48,11 @@
       "strength": "implementation",
       "vendor_preference": "codex",
       "incompatible_with": ["independent-reviewer-for-own-diff", "unapproved-visible-frontend"],
-      "required_outputs": ["actual diff", "real command exits", "proof artifacts", "unreached surfaces", "doctrine-loop findings"]
+      "required_outputs": ["actual diff", "real command exits", "proof artifacts", "unreached surfaces", "doctrine-loop findings"],
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Edit", "Write", "Bash"] },
+        "budget": { "max_usd": 25, "enforcement": "dormant" }
+      }
     },
     {
       "id": "claude-frontend-implementer",
@@ -40,7 +62,11 @@
       "strength": "implementation",
       "vendor_preference": "claude",
       "incompatible_with": ["implementation-before-design-approval", "independent-reviewer-for-own-diff"],
-      "required_outputs": ["design approval reference", "actual diff", "rendered breakpoint evidence", "state coverage", "doctrine-loop findings"]
+      "required_outputs": ["design approval reference", "actual diff", "rendered breakpoint evidence", "state coverage", "doctrine-loop findings"],
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Edit", "Write", "Bash"] },
+        "budget": { "max_usd": 25, "enforcement": "dormant" }
+      }
     },
     {
       "id": "sprint-kickoff-auditor",
@@ -50,7 +76,21 @@
       "strength": "strongest_available",
       "vendor_preference": "either",
       "incompatible_with": ["implementer-for-same-slice"],
-      "required_outputs": ["kickoff verdict", "dependency gaps", "decision linkage proof", "dispatch readiness"]
+      "required_outputs": ["kickoff verdict", "dependency gaps", "decision linkage proof", "dispatch readiness"],
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Bash"], "deny": ["Edit", "Write", "NotebookEdit"] },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.7,
+        "criteria": [
+          { "id": "settled-decisions-linked", "weight": 30, "critical": true, "summary": "Every governing decision, ADR, and locked surface is read and linked, not cited by id alone." },
+          { "id": "dependency-order", "weight": 25, "critical": true, "summary": "Slice ordering respects real dependencies and no slice is dispatched ahead of a blocking prerequisite or spike." },
+          { "id": "worktree-base-fresh", "weight": 20, "critical": false, "summary": "Each worktree is cut from a freshly fetched origin base, not a stale local ref." },
+          { "id": "contract-completeness", "weight": 15, "critical": false, "summary": "Each task contract carries context, paths, procedure, output contract, boundaries, and acceptance criteria." },
+          { "id": "prerequisite-proofs", "weight": 10, "critical": false, "summary": "Prerequisite proofs named by the plan exist and actually executed." }
+        ]
+      }
     },
     {
       "id": "adversarial-reviewer",
@@ -60,7 +100,23 @@
       "strength": "strongest_available",
       "vendor_preference": "either",
       "incompatible_with": ["implementer-for-same-slice"],
-      "required_outputs": ["findings by severity", "plan-to-diff coverage", "caller/feeder sweep", "test-bite assessment", "honesty clause"]
+      "required_outputs": ["findings by severity", "plan-to-diff coverage", "caller/feeder sweep", "test-bite assessment", "honesty clause"],
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Bash"], "deny": ["Edit", "Write", "NotebookEdit"] },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.7,
+        "criteria": [
+          { "id": "blast-radius", "weight": 22, "critical": true, "summary": "Every changed symbol grepped repo-wide in both directions; no untouched caller or feeder still expects the old shape." },
+          { "id": "replace-not-layer", "weight": 18, "critical": true, "summary": "Any new central version deleted or demoted the path it supersedes; no two producers race." },
+          { "id": "test-bite", "weight": 18, "critical": true, "summary": "Each test names the mutation that turns it red and would fail against a regressed version of the change." },
+          { "id": "proof-execution", "weight": 15, "critical": false, "summary": "Every claimed green opened at its raw output with nonzero counts; a conditional skip counted as unrun." },
+          { "id": "authority-boundary", "weight": 12, "critical": false, "summary": "Judging behavior leaves the semantic verdict to AI; acting behavior is not autonomous where a human gate applies." },
+          { "id": "relational-values", "weight": 8, "critical": false, "summary": "No inline literal at a leaf where a token, registry, or derivation is the source." },
+          { "id": "security-surface", "weight": 7, "critical": false, "summary": "Obvious authorization, tenancy, and redaction regressions flagged and routed to the security lens." }
+        ]
+      }
     },
     {
       "id": "functionality-parity-auditor",
@@ -70,7 +126,20 @@
       "strength": "strongest_available",
       "vendor_preference": "either",
       "incompatible_with": ["implementer-for-same-slice"],
-      "required_outputs": ["delivery-chain matrix", "unwired endpoints or jobs", "missing surfaces", "retirement gaps"]
+      "required_outputs": ["delivery-chain matrix", "unwired endpoints or jobs", "missing surfaces", "retirement gaps"],
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Bash"], "deny": ["Edit", "Write", "NotebookEdit"] },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.7,
+        "criteria": [
+          { "id": "delivery-chain-both-directions", "weight": 35, "critical": true, "summary": "Decided to reachable walked forward and backward: nothing decided is undelivered, nothing built is unreachable." },
+          { "id": "unwired-inventory", "weight": 25, "critical": true, "summary": "Every endpoint, job, and event enumerated against its caller; unwired rows named rather than assumed wired." },
+          { "id": "surface-parity", "weight": 20, "critical": false, "summary": "DTO fields and states reach every consumer surface that the decision requires." },
+          { "id": "retirement-gaps", "weight": 20, "critical": false, "summary": "Superseded paths, allowlist rows, and wiring deferrals re-triaged rather than left accumulating." }
+        ]
+      }
     },
     {
       "id": "ui-verifier",
@@ -80,7 +149,21 @@
       "strength": "strongest_available",
       "vendor_preference": "claude",
       "incompatible_with": ["unapproved-design"],
-      "required_outputs": ["approved Claude Design reference", "rendered evidence", "breakpoint/state matrix", "visual findings"]
+      "required_outputs": ["approved Claude Design reference", "rendered evidence", "breakpoint/state matrix", "visual findings"],
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Bash", "mcp__Claude_Browser__*"], "deny": ["Edit", "Write", "NotebookEdit"] },
+        "budget": { "max_usd": 15, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.7,
+        "criteria": [
+          { "id": "rendered-breakpoints", "weight": 30, "critical": true, "summary": "Computed styles and geometry checked at every named breakpoint on the real rendered surface, not jsdom." },
+          { "id": "state-coverage", "weight": 25, "critical": true, "summary": "Loading, empty, error, and populated states each rendered and inspected." },
+          { "id": "mock-fidelity", "weight": 20, "critical": false, "summary": "The rendered surface matches the approved design reference where one exists." },
+          { "id": "keyboard-focus", "weight": 15, "critical": false, "summary": "Keyboard traversal and focus-visible behavior verified on interactive elements." },
+          { "id": "reduced-motion", "weight": 10, "critical": false, "summary": "Reduced-motion preference honored by animated surfaces." }
+        ]
+      }
     },
     {
       "id": "security-auditor",
@@ -90,7 +173,24 @@
       "strength": "strongest_available",
       "vendor_preference": "either",
       "incompatible_with": ["implementer-for-same-slice"],
-      "required_outputs": ["threat-path findings", "cross-tenant probes", "redaction evidence", "remaining risk"]
+      "required_outputs": ["threat-path findings", "cross-tenant probes", "redaction evidence", "remaining risk"],
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Bash"], "deny": ["Edit", "Write", "NotebookEdit"] },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.7,
+        "criteria": [
+          { "id": "authorization-object-scope", "weight": 25, "critical": true, "summary": "Every route authorized server-side by capability and scope; every client-supplied identifier scope-verified." },
+          { "id": "tenant-isolation", "weight": 20, "critical": true, "summary": "Tenant predicate on every scoped query and the database backstop policy verified verbatim, not by comment." },
+          { "id": "authn-session", "weight": 15, "critical": false, "summary": "Cookie-first sessions, server-side revocation, CSRF binding, and account-existence non-disclosure." },
+          { "id": "input-validation", "weight": 12, "critical": false, "summary": "External input schema-validated before business logic; uploads and rendered content sanitized." },
+          { "id": "secrets-config", "weight": 10, "critical": false, "summary": "No hardcoded or committed secrets; webhook signatures verified; provider scopes minimal." },
+          { "id": "telemetry-pii", "weight": 8, "critical": false, "summary": "Logs, error envelopes, and telemetry routed through the shared redaction authority." },
+          { "id": "abuse-limits", "weight": 5, "critical": false, "summary": "Expensive and auth endpoints limited and cost-attributed to the billed principal, not IP alone." },
+          { "id": "ai-prompt-security", "weight": 5, "critical": false, "summary": "Model output never decides authorization or billing; user content treated as untrusted prompt input." }
+        ]
+      }
     },
     {
       "id": "performance-auditor",
@@ -100,7 +200,21 @@
       "strength": "strongest_available",
       "vendor_preference": "either",
       "incompatible_with": ["implementer-for-same-slice"],
-      "required_outputs": ["hot-path inventory", "boundedness proof", "capacity risks", "performance evidence"]
+      "required_outputs": ["hot-path inventory", "boundedness proof", "capacity risks", "performance evidence"],
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Bash"], "deny": ["Edit", "Write", "NotebookEdit"] },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.7,
+        "criteria": [
+          { "id": "query-boundedness", "weight": 30, "critical": true, "summary": "Every read is paginated or provably bounded; no unbounded list or query inside a loop." },
+          { "id": "hot-path-inventory", "weight": 25, "critical": true, "summary": "The real hot paths enumerated from the diff and the runtime shape, not guessed." },
+          { "id": "index-coverage", "weight": 20, "critical": false, "summary": "Indexes exist for the actual query shapes, verified against the schema." },
+          { "id": "render-and-bundle", "weight": 15, "critical": false, "summary": "No re-render storms or unexplained bundle growth on touched frontend surfaces." },
+          { "id": "capacity-risk", "weight": 10, "critical": false, "summary": "Queue pressure, worker lifetime, and leak risk assessed for long-lived processes." }
+        ]
+      }
     },
     {
       "id": "user-journey-auditor",
@@ -110,7 +224,21 @@
       "strength": "strongest_available",
       "vendor_preference": "either",
       "incompatible_with": ["implementer-for-same-slice"],
-      "required_outputs": ["persona-moment inventory", "journey gaps", "recovery and undo assessment", "decision candidates"]
+      "required_outputs": ["persona-moment inventory", "journey gaps", "recovery and undo assessment", "decision candidates"],
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"], "deny": ["Edit", "Write", "NotebookEdit"] },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.7,
+        "criteria": [
+          { "id": "day-zero-walked", "weight": 30, "critical": true, "summary": "The empty-state first-run journey walked first and end to end, as the product actually behaves." },
+          { "id": "dead-ends-and-silent-outcomes", "weight": 25, "critical": true, "summary": "Every job walked to completion; dead ends and outcomes the user never learns about are named." },
+          { "id": "recovery-and-undo", "weight": 20, "critical": false, "summary": "Mistake recovery, undo, and later modification paths exist or their absence is reported." },
+          { "id": "persona-moment-coverage", "weight": 15, "critical": false, "summary": "The persona-by-moment inventory extended and each covered moment attributed to a real surface." },
+          { "id": "benchmark-grounding", "weight": 10, "critical": false, "summary": "Improvement candidates grounded in cited comparable products, not preference." }
+        ]
+      }
     },
     {
       "id": "release-verifier",
@@ -120,7 +248,20 @@
       "strength": "strongest_available",
       "vendor_preference": "either",
       "incompatible_with": ["deployed-verified-with-skipped-required-proof"],
-      "required_outputs": ["deployment identity", "readiness output", "core-flow proof", "error/monitor evidence", "release verdict"]
+      "required_outputs": ["deployment identity", "readiness output", "core-flow proof", "error/monitor evidence", "release verdict"],
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Bash", "WebFetch"], "deny": ["Edit", "Write", "NotebookEdit"] },
+        "budget": { "max_usd": 15, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.7,
+        "criteria": [
+          { "id": "deployment-identity", "weight": 30, "critical": true, "summary": "The deployed commit is the reviewed commit, proven from the platform, not assumed from a green pipeline." },
+          { "id": "core-flow-proof", "weight": 30, "critical": true, "summary": "One real core flow exercised against the deployed surface, with its actual output read." },
+          { "id": "readiness-probe", "weight": 20, "critical": false, "summary": "The readiness endpoint probed and its semantics understood, not just its status code." },
+          { "id": "error-monitor-sweep", "weight": 20, "critical": false, "summary": "New errors since the deploy swept in the tracker, including a degraded or empty tracker reported honestly." }
+        ]
+      }
     }
   ]
 }

@@ -22,6 +22,10 @@ function role(id, extra = {}) {
     vendor_preference: 'either',
     incompatible_with: ['implementer-for-same-slice'],
     required_outputs: ['evidence-backed verdict'],
+    execution: {
+      tools: { allow: ['Read', 'Grep', 'Glob', 'Bash'], deny: ['Edit', 'Write', 'NotebookEdit'] },
+      budget: { max_usd: 10, enforcement: 'dormant' },
+    },
     ...extra,
   };
 }

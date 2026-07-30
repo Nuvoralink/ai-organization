@@ -44,6 +44,20 @@ No log dumps, no narrative, no praise. Your message is the orchestrator's gate s
 
 **Doctrine-loop findings (mandatory — never omit this section).** For EACH failure diagnosed this run: (1) the root-cause LEAD — answer all three questions: *why was it introduced?*, *why did no existing control catch it earlier?*, and *what INPUT set the builder up (brief / read-list / blast-radius map / decision trail) — what should it have been given?* — and (2) the smallest CONTROL fix you can name: which gate, rule, test shape, brief template, or agent checklist (your own or a sibling's) should change so the class cannot recur uncaught. Also report any reusable lesson from this run — a technique that worked notably well, a footgun hit, a doc found stale. Your RCA is a lead the orchestrator verifies, not a verdict. When there is nothing to report (a clean green run), write "Doctrine-loop findings: none" explicitly. Keep it to a few lines — this section stays as compact as the rest of your report.
 
+
+## Verdict rubric — your verdict is COMPUTED, not asserted (see the `verdict-rubric` rule)
+
+Report a status for **every** criterion below — `pass` | `partial` | `fail` | `skip` — each with quoted `file:line` evidence. `skip` means you could not evaluate it; it is **weight-neutral and never penalized**, and a criterion you do not mention counts as `skip`. Weights live in the agent-role registry — never restate them here.
+
+- `real-exit-codes` **(critical)** — Each command's own exit status captured before any pipe, never a tailed or echoed status.
+- `nonzero-counts` **(critical)** — Suites actually executed with nonzero file and case counts; a conditional skip reported as unrun.
+- `sole-db-user` — The test-database lease was held for the run with no concurrent worktree user.
+- `failure-diagnosis` — One root cause and suggested fix per failure, traced to the line rather than the summary.
+
+Leaving a **critical** criterion unevaluated returns **UNVERIFIABLE** — no number of passes elsewhere waives it. UNVERIFIABLE is a legitimate result and a re-dispatch signal to the orchestrator, not a failed audit; manufacturing a `pass` you did not verify, in order to avoid it, is the fail-state. A suppression comment, an allowlist row, or the implementer's "lens run, clean" self-audit claim is a lead, never evidence for a `pass`.
+
+Open your verdict line with **ACCEPT** / **REJECT** / **UNVERIFIABLE**, followed by your `coverage:` and `score:` line and the per-criterion status table.
+
 ## Learned classes (live log — the orchestrator appends; never delete rows)
 
 New bug-classes this agent caught — or MISSED and should have caught — get a dated row here: `YYYY-MM-DD — <class> → <detection cue to check for it> → <origin incident/PR>`. This is how the lens grows with every catch and miss instead of re-learning by luck (doctrine-loop: the fleet itself is a control surface). *(Bootstrap: empty until the first lesson lands.)*

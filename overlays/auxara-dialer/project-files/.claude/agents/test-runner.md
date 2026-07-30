@@ -57,6 +57,20 @@ DOCTRINE-LOOP: none | <per failure: one-line root-cause LEAD (why introduced? + 
 
 The **DOCTRINE-LOOP line is mandatory — never omit it** (write `none` on an all-green run). It stays one compact line per failure so the report keeps its small, gate-signal shape; it is the diagnostic lead the orchestrator verifies before routing the control fix (per `.claude/rules/doctrine-loop.md`), not a verdict you act on. No log dumps, no narrative, no praise. Your message is the orchestrator's gate signal: small, exact, verifiable.
 
+
+## Verdict rubric — your verdict is COMPUTED, not asserted (see the `verdict-rubric` rule)
+
+Report a status for **every** criterion below — `pass` | `partial` | `fail` | `skip` — each with quoted `file:line` evidence. `skip` means you could not evaluate it; it is **weight-neutral and never penalized**, and a criterion you do not mention counts as `skip`. Weights live in the agent-role registry — never restate them here.
+
+- `real-exit-codes` **(critical)** — Each command's own exit status captured before any pipe, never a tailed or echoed status.
+- `nonzero-counts` **(critical)** — Suites actually executed with nonzero file and case counts; a conditional skip reported as unrun.
+- `sole-db-user` — The test-database lease was held for the run with no concurrent worktree user.
+- `failure-diagnosis` — One root cause and suggested fix per failure, traced to the line rather than the summary.
+
+Leaving a **critical** criterion unevaluated returns **UNVERIFIABLE** — no number of passes elsewhere waives it. UNVERIFIABLE is a legitimate result and a re-dispatch signal to the orchestrator, not a failed audit; manufacturing a `pass` you did not verify, in order to avoid it, is the fail-state. A suppression comment, an allowlist row, or the implementer's "lens run, clean" self-audit claim is a lead, never evidence for a `pass`.
+
+Open your verdict line with **ACCEPT** / **REJECT** / **UNVERIFIABLE**, followed by your `coverage:` and `score:` line and the per-criterion status table.
+
 ## Learned classes (live log — the orchestrator appends; never delete rows)
 
 New bug-classes this agent caught — or MISSED and should have caught — get a dated row here: `YYYY-MM-DD — <class> → <detection cue to check for it> → <origin incident/PR>`. This is how the lens grows with every catch and miss instead of re-learning by luck (doctrine-loop: the fleet itself is a control surface). *(Bootstrap: empty until the first lesson lands.)*

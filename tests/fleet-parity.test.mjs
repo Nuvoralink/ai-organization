@@ -178,3 +178,86 @@ test('killer mutation: dropping effectiveRoles and using only universal roles tu
   assert.match(output(result), /agent file has no effective-role row: .*project-auditor\.md/u);
   assert.match(output(result), /roles\.json lists role absent from effective roles: project-auditor/u);
 });
+
+const FIXTURE_RUBRIC = {
+  coverage_floor: 0.7,
+  criteria: [
+    { id: 'must-reach', weight: 60, critical: true, summary: 'A criterion the lens may never leave unevaluated.' },
+    { id: 'nice-to-reach', weight: 40, critical: false, summary: 'An ordinary criterion carrying real weight.' },
+  ],
+};
+
+/** Give the universal reviewer a rubric and write the agent block the gate expects. */
+function rubricFixture(criteriaLines) {
+  const built = fixture();
+  built.universal.roles = built.universal.roles.map((entry) =>
+    entry.id === 'universal-reviewer' ? { ...entry, verdict_rubric: FIXTURE_RUBRIC } : entry,
+  );
+  writeJson(
+    path.join(built.root, '.ai-organization', 'registries', 'agent-roles.v1.json'),
+    built.universal,
+  );
+  const lines = criteriaLines ?? [
+    '- `must-reach` **(critical)** — A criterion the lens may never leave unevaluated.',
+    '- `nice-to-reach` — An ordinary criterion carrying real weight.',
+  ];
+  fs.writeFileSync(
+    path.join(built.root, '.claude', 'agents', 'universal-reviewer.md'),
+    `# Universal reviewer\n\n## Verdict rubric — computed, not asserted\n\n${lines.join('\n')}\n\n## Output\nA verdict.\n`,
+  );
+  return built;
+}
+
+test('an agent file whose declared criteria match its registered rubric passes, and every drift direction fails closed', () => {
+  const clean = rubricFixture();
+  const cleanResult = runGate(clean.root);
+  assert.equal(cleanResult.status, 0, output(cleanResult));
+
+  // A lens that registers a rubric but carries no block cannot be scored at all.
+  const noBlock = rubricFixture();
+  fs.writeFileSync(
+    path.join(noBlock.root, '.claude', 'agents', 'universal-reviewer.md'),
+    '# Universal reviewer\n\n## Output\nA verdict.\n',
+  );
+  const noBlockResult = runGate(noBlock.root);
+  assert.equal(noBlockResult.status, 1);
+  assert.match(output(noBlockResult), /lacks the required verdict rubric block: .*universal-reviewer\.md/u);
+
+  // Dropping a registered criterion would silently shrink what the lens judges itself against.
+  const omitted = rubricFixture(['- `nice-to-reach` — An ordinary criterion carrying real weight.']);
+  const omittedResult = runGate(omitted.root);
+  assert.equal(omittedResult.status, 1);
+  assert.match(output(omittedResult), /omits registered criterion: .*universal-reviewer\.md \(must-reach\)/u);
+
+  // Inventing a criterion the registry never weighted makes the score unreproducible.
+  const invented = rubricFixture([
+    '- `must-reach` **(critical)** — A criterion the lens may never leave unevaluated.',
+    '- `nice-to-reach` — An ordinary criterion carrying real weight.',
+    '- `self-invented` — A criterion no registry row weights.',
+  ]);
+  const inventedResult = runGate(invented.root);
+  assert.equal(inventedResult.status, 1);
+  assert.match(output(inventedResult), /declares an unregistered criterion: .*universal-reviewer\.md \(self-invented\)/u);
+
+  // Demoting a critical criterion in prose is how an unwaivable gate quietly becomes waivable.
+  const demoted = rubricFixture([
+    '- `must-reach` — A criterion the lens may never leave unevaluated.',
+    '- `nice-to-reach` — An ordinary criterion carrying real weight.',
+  ]);
+  const demotedResult = runGate(demoted.root);
+  assert.equal(demotedResult.status, 1);
+  assert.match(
+    output(demotedResult),
+    /disagrees with the registry on criticality: .*universal-reviewer\.md \(must-reach declared ordinary\)/u,
+  );
+
+  // The reverse orphan: a block in a file whose role registers no rubric.
+  const unregistered = fixture();
+  fs.writeFileSync(
+    path.join(unregistered.root, '.claude', 'agents', 'project-auditor.md'),
+    '# Project auditor\n\n## Verdict rubric — computed, not asserted\n\n- `stray` — Unbacked criterion.\n',
+  );
+  const unregisteredResult = runGate(unregistered.root);
+  assert.equal(unregisteredResult.status, 1);
+  assert.match(output(unregisteredResult), /declares a verdict rubric but its role registers none: .*project-auditor\.md/u);
+});

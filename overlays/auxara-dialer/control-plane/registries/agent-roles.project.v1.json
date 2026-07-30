@@ -1,6 +1,6 @@
 {
   "$schema": "https://nuvoralink.internal/schemas/agent-role-project-extension.v1.schema.json",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "roles": [
     {
       "id": "compliance-auditor",
@@ -16,7 +16,21 @@
         "honesty clause naming unreached surfaces",
         "doctrine-loop findings",
         "pressure-tested fix proposals (FIX-PROVEN or FIX-PLAUSIBLE, defaulting to PLAUSIBLE)"
-      ]
+      ],
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Bash"], "deny": ["Edit", "Write", "NotebookEdit"] },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.7,
+        "criteria": [
+          { "id": "calling-authority", "weight": 25, "critical": true, "summary": "Every dial, text, and recording action is gated by a verified authority tier at the source, not by a caller's claim." },
+          { "id": "consent-and-dnc", "weight": 25, "critical": true, "summary": "DNC state, consent, and TCPA/CASL calling hours are enforced before the action fires, per tenant and per jurisdiction." },
+          { "id": "recording-disclosure", "weight": 20, "critical": false, "summary": "Recording disclosure and retention obey the jurisdiction rule for the parties on the call." },
+          { "id": "carrier-identity", "weight": 15, "critical": false, "summary": "STIR/SHAKEN attestation and 10DLC registration integrity hold for the number actually used." },
+          { "id": "audit-honesty", "weight": 15, "critical": false, "summary": "The audit trail records what actually happened, including failures and suppressed attempts." }
+        ]
+      }
     },
     {
       "id": "doctrine-drift-auditor",
@@ -32,7 +46,20 @@
         "honesty clause naming unreached doctrine or code",
         "doctrine-loop findings",
         "pressure-tested fix proposals (FIX-PROVEN or FIX-PLAUSIBLE, defaulting to PLAUSIBLE)"
-      ]
+      ],
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Bash"], "deny": ["Edit", "Write", "NotebookEdit"] },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.7,
+        "criteria": [
+          { "id": "authority-tier-consistency", "weight": 30, "critical": true, "summary": "Behavior matches the ARC-006 tier and decision-log row that governs it, quoted from the authority." },
+          { "id": "registry-centralization", "weight": 25, "critical": true, "summary": "Central registries remain the single source; no consumer restates a value the registry owns." },
+          { "id": "doctrine-internal-consistency", "weight": 25, "critical": false, "summary": "Doctrine artifacts agree with each other, not only with the code." },
+          { "id": "retired-value-sweep", "weight": 20, "critical": false, "summary": "Retired statuses, values, and paths are gone from living docs, not merely unused in code." }
+        ]
+      }
     },
     {
       "id": "cybersecurity-auditor",
@@ -52,7 +79,25 @@
         "pressure-tested fix proposals (FIX-PROVEN or FIX-PLAUSIBLE, defaulting to PLAUSIBLE)"
       ],
       "extends": "security-auditor",
-      "supersedes_universal": true
+      "supersedes_universal": true,
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Bash"], "deny": ["Edit", "Write", "NotebookEdit"] },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.7,
+        "criteria": [
+          { "id": "authorization-object-scope", "weight": 22, "critical": true, "summary": "Every route authorized server-side by capability and scope; every client-supplied identifier scope-verified." },
+          { "id": "tenant-isolation", "weight": 20, "critical": true, "summary": "Tenant predicate on every scoped query and the RLS backstop verified verbatim against the canonical migration, not by comment." },
+          { "id": "authn-session", "weight": 14, "critical": false, "summary": "Cookie-first sessions, server-side revocation, CSRF binding, and account-existence non-disclosure." },
+          { "id": "input-validation", "weight": 11, "critical": false, "summary": "External input schema-validated before business logic; uploads and rendered content sanitized." },
+          { "id": "secrets-config", "weight": 10, "critical": false, "summary": "No hardcoded or committed secrets; webhook signatures verified timing-safe; provider scopes minimal." },
+          { "id": "telemetry-pii", "weight": 8, "critical": false, "summary": "Logs, error envelopes, and telemetry routed through the shared redaction authority; no prospect PII in any sink." },
+          { "id": "abuse-limits", "weight": 5, "critical": false, "summary": "Expensive and auth endpoints limited and cost-attributed to the billed principal, not IP alone." },
+          { "id": "ai-prompt-security", "weight": 5, "critical": false, "summary": "Model output never decides authorization or billing; user content treated as untrusted prompt input." },
+          { "id": "provider-boundary", "weight": 5, "critical": false, "summary": "Carrier and provider payloads treated as untrusted, and no credential or payload crosses a boundary it should not." }
+        ]
+      }
     },
     {
       "id": "test-runner",
@@ -68,7 +113,20 @@
         "compact pass-or-fail verdict",
         "one root cause and suggested fix per failure",
         "doctrine-loop findings"
-      ]
+      ],
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Bash"], "deny": ["Edit", "Write", "NotebookEdit"] },
+        "budget": { "max_usd": 15, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.7,
+        "criteria": [
+          { "id": "real-exit-codes", "weight": 35, "critical": true, "summary": "Each command's own exit status captured before any pipe, never a tailed or echoed status." },
+          { "id": "nonzero-counts", "weight": 30, "critical": true, "summary": "Suites actually executed with nonzero file and case counts; a conditional skip reported as unrun." },
+          { "id": "sole-db-user", "weight": 20, "critical": false, "summary": "The test-database lease was held for the run with no concurrent worktree user." },
+          { "id": "failure-diagnosis", "weight": 15, "critical": false, "summary": "One root cause and suggested fix per failure, traced to the line rather than the summary." }
+        ]
+      }
     },
     {
       "id": "sprint-implementer",
@@ -88,7 +146,11 @@
         "doctrine-loop findings"
       ],
       "extends": "claude-frontend-implementer",
-      "supersedes_universal": true
+      "supersedes_universal": true,
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Edit", "Write", "Bash"] },
+        "budget": { "max_usd": 25, "enforcement": "dormant" }
+      }
     }
   ]
 }

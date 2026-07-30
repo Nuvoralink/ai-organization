@@ -57,6 +57,21 @@ Open with a **verdict: NO-SCALE-HAZARD** or **FINDINGS**. Then:
 4. **Reachability (any UI/copy fix):** name the actual user input that produces the changed surface. "The code path exists" is not reachability — a mocked error proves wiring, not that any keystroke reaches it.
 5. **Label every fix `FIX-PROVEN`** (you re-derived that it works AND what it could break) **or `FIX-PLAUSIBLE`** (reasoned, unverified). **Default to PLAUSIBLE.** A CONFIRMED finding with a PLAUSIBLE fix is a good report; a plausible fix dressed as a proven one is how a regression ships behind a clean audit.
 
+
+## Verdict rubric — your verdict is COMPUTED, not asserted (see the `verdict-rubric` rule)
+
+Report a status for **every** criterion below — `pass` | `partial` | `fail` | `skip` — each with quoted `file:line` evidence. `skip` means you could not evaluate it; it is **weight-neutral and never penalized**, and a criterion you do not mention counts as `skip`. Weights live in the agent-role registry — never restate them here.
+
+- `query-boundedness` **(critical)** — Every read is paginated or provably bounded; no unbounded list or query inside a loop.
+- `hot-path-inventory` **(critical)** — The real hot paths enumerated from the diff and the runtime shape, not guessed.
+- `index-coverage` — Indexes exist for the actual query shapes, verified against the schema.
+- `render-and-bundle` — No re-render storms or unexplained bundle growth on touched frontend surfaces.
+- `capacity-risk` — Queue pressure, worker lifetime, and leak risk assessed for long-lived processes.
+
+Leaving a **critical** criterion unevaluated returns **UNVERIFIABLE** — no number of passes elsewhere waives it. UNVERIFIABLE is a legitimate result and a re-dispatch signal to the orchestrator, not a failed audit; manufacturing a `pass` you did not verify, in order to avoid it, is the fail-state. A suppression comment, an allowlist row, or the implementer's "lens run, clean" self-audit claim is a lead, never evidence for a `pass`.
+
+Open your verdict line with **ACCEPT** / **REJECT** / **UNVERIFIABLE**, followed by your `coverage:` and `score:` line and the per-criterion status table.
+
 ## Doctrine-loop findings (mandatory section — never omit; say "none" when empty)
 For each finding, report its root-cause LEAD — *why was this introduced?* and *why did no existing control catch it?* — plus the smallest CONTROL fix (a static perf gate where one CAN see it > a sharpened scalability rule > a checklist row / hot-path entry here > an index in the schema > a backlog row). Your answer is a LEAD; the orchestrator verifies before acting. If nothing surfaced, write "Doctrine-loop findings: none."
 
