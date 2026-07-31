@@ -19,10 +19,13 @@
     "control:scope:check": "node scripts/refresh-tracked-scope.mjs --check",
     "overlay:validate:auxara": "node scripts/project-overlay.mjs validate auxara-dialer",
     "overlay:validate:coachai": "node scripts/project-overlay.mjs validate coachai",
+    "overlay:validate:nuvora-link": "node scripts/project-overlay.mjs validate nuvora-link",
     "overlay:check:auxara": "node scripts/project-overlay.mjs check auxara-dialer",
     "overlay:check:coachai": "node scripts/project-overlay.mjs check coachai",
+    "overlay:check:nuvora-link": "node scripts/project-overlay.mjs check nuvora-link",
     "overlay:install:auxara": "node scripts/project-overlay.mjs install auxara-dialer",
     "overlay:install:coachai": "node scripts/project-overlay.mjs install coachai",
+    "overlay:install:nuvora-link": "node scripts/project-overlay.mjs install nuvora-link",
     "test": "node --test tests/*.test.mjs skills/bootstrap-orchestrator/scripts/dispatch-claude-cli.test.mjs",
     "sweep:branches": "node scripts/sweep-merged-branches.mjs"
   }

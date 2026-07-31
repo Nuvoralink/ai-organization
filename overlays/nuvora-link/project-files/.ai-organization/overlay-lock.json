@@ -1,0 +1,178 @@
+{
+  "version": 1,
+  "source": "universal-private-orchestrator/overlays/nuvora-link",
+  "files": [
+    {
+      "path": ".ai-organization/README.md",
+      "sha256": "fac27f9bd22374777b433e0889c2b5567e57d523ff2bcbf8383bd1e833b9df8f"
+    },
+    {
+      "path": ".ai-organization/context-budget.json",
+      "sha256": "ed1580aa2f7423b8fb8c27509bb4ff9b38aa8eed869657437aed3177e3d4d6a9"
+    },
+    {
+      "path": ".ai-organization/lifecycle-policy.json",
+      "sha256": "e68c0557a9d5553948ef752c537289c5b6ec2f752c7b2964532f31921b4e4000"
+    },
+    {
+      "path": ".ai-organization/ownership.json",
+      "sha256": "a99ef4d6189b4b8fe6fa375ada97b178c407f2df36b3fc9eec44658ebbecbf82"
+    },
+    {
+      "path": ".ai-organization/policies/authority-domains.v1.json",
+      "sha256": "051da54ad9a08f45cba10ac1176628219f16f8bf46450722123920c4249b0c5f"
+    },
+    {
+      "path": ".ai-organization/proof-profiles.json",
+      "sha256": "94dd8118ecdd843242d381fe3287754dd79df783fdfa7fcd5ec9a5f99f65def9"
+    },
+    {
+      "path": ".ai-organization/roles.json",
+      "sha256": "c725516f1957880a88c2f090f861e999d8b721d6241c09c754195e7ed42f94c7"
+    },
+    {
+      "path": ".claude/agents/adversarial-reviewer.md",
+      "sha256": "7760c35eaf72d210fb5ba8b3f97d09eab42fbf50a558db382d81209adc6cd6b0"
+    },
+    {
+      "path": ".claude/agents/doctrine-drift-auditor.md",
+      "sha256": "36025f6a248d10d59c1e70b1c97f300047a293307cc9f30a5595b28a7f21b6d0"
+    },
+    {
+      "path": ".claude/agents/functionality-parity-auditor.md",
+      "sha256": "fc6d5ed3fc24bc45dcceafd7d1b36bfa3c273fe8746c631086b27294705d788a"
+    },
+    {
+      "path": ".claude/agents/operations-integrity-auditor.md",
+      "sha256": "5fad4818923c2e95787164517076ad568312cb7abcac0314ab7ba0801fafdd9a"
+    },
+    {
+      "path": ".claude/agents/performance-auditor.md",
+      "sha256": "675c41784afa3a80757a40c51b0c9deae14867129ebea3d9c66f04d1c543b476"
+    },
+    {
+      "path": ".claude/agents/premise-and-architecture-challenger.md",
+      "sha256": "2ca5b889292c2ed1a41029c5e6b17bd09222767326621402b40cead45e9cb5c8"
+    },
+    {
+      "path": ".claude/agents/release-verifier.md",
+      "sha256": "ec7da97b0fe7be733d0f728de32c09dd5edcfba6f5ea9df65898431a7a3b32cf"
+    },
+    {
+      "path": ".claude/agents/sprint-kickoff-auditor.md",
+      "sha256": "780b284427c4adea689a9766930b94abacadeb68f4a5bdc44bbc6a31247f74ab"
+    },
+    {
+      "path": ".claude/agents/test-runner.md",
+      "sha256": "edb6696470a3e65af92eecc0fbd7819a136be2cb4a0510014bd7f6b93e2d07ff"
+    },
+    {
+      "path": ".claude/agents/ui-verifier.md",
+      "sha256": "1270ac1384e64ba1f47d63dc4375421c2b81daa1176a13e8338ef6dc61c7f990"
+    },
+    {
+      "path": ".claude/agents/user-journey-auditor.md",
+      "sha256": "b620a7c66d1a513b7121c053b6f1f882a6385f659de5b04281736cc42b1c08ba"
+    },
+    {
+      "path": ".claude/rules/centralization-doctrine.md",
+      "sha256": "ecdc9e5827e252db96fc465dc1c4f7f4f5ecd53bfc0c57979fa3c50320382cc9"
+    },
+    {
+      "path": ".claude/rules/frontend-rules.md",
+      "sha256": "e903aa1633c6c5a7a34890169ffa9578f604b7e6732c1f42ab96887842c1c7ea"
+    },
+    {
+      "path": ".claude/rules/nuvo-governance.md",
+      "sha256": "e1356f415a7641ed436015e5424fe9c7f27447e1d96b194ed9703c8dcb417ea7"
+    },
+    {
+      "path": ".claude/rules/operations-integrity.md",
+      "sha256": "c7a4dbf0f8b7de8a90eb3196734a5385e88b75c60e344044c16a1eb0c3be365c"
+    },
+    {
+      "path": ".claude/rules/security-rules.md",
+      "sha256": "9c511227a74e23142fca31304ac28d995fa8badb5d2392f0249ad9c065ee6609"
+    },
+    {
+      "path": ".claude/rules/test-intent.md",
+      "sha256": "9f7220ad25c59ad314c5509f801358802841dc2bbc17551d52a4923d9aceca04"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/agent-slice.yml",
+      "sha256": "72a3d4bad676c0bc7cadc0f6fdb77739fe1f23c3d34cd6c9f8582ba89c1eee76"
+    },
+    {
+      "path": ".github/pull_request_template.md",
+      "sha256": "7e3fbe29ac52fdd8f74c2c79fdc98d7be881b13edfe30e54baf3bda8e5a3a8fa"
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "9c4e003c5c399536339484c701af0a5c53ba5115260473a7d7effa5ad3168de8"
+    },
+    {
+      "path": "CLAUDE.md",
+      "sha256": "f1721c1b8d7cd06319634b77cab56a590693d1d35e002ad52c1cb4eb8d2dde8e"
+    },
+    {
+      "path": "scripts/check-agent-context.mjs",
+      "sha256": "c34a27b096274dd396b8ae596510c831ec932aa9db1db2f567cc2d1b53fc30bf"
+    },
+    {
+      "path": "scripts/check-agent-control-plane.mjs",
+      "sha256": "9ef46c10e4444e3ba154d8718ee5daf41a93477ca96fadeaded0e129feef0dc3"
+    },
+    {
+      "path": "scripts/check-fleet-parity.mjs",
+      "sha256": "b50fa182432fc5f90d8fdd7f54e3235c5698fa7d36fb69f33f08fbd102e81f70"
+    },
+    {
+      "path": "scripts/check-overlay-parity.mjs",
+      "sha256": "32f036230cf12ca5add25aef8d3f7ec5ee810ceaa0fc8379d1844d302bffd636"
+    },
+    {
+      "path": "scripts/check-rules-wiring.mjs",
+      "sha256": "1ecb035ac8bcbcfccba7eb585bfe23c643b7b97dfba19f0fac298508b70ba577"
+    },
+    {
+      "path": "scripts/check-test-intent.mjs",
+      "sha256": "2371f7a9b8c04f25a2d00aa38605ee8348f2d70f48a3167f7bade25375cee95b"
+    },
+    {
+      "path": "scripts/claude-lifecycle-hook.mjs",
+      "sha256": "a952e7ed74185ba5b680e4a30abb9af8dbdf25a78bf2ac458d12a5dfe93d8e03"
+    },
+    {
+      "path": "scripts/claude-posttooluse-gate.mjs",
+      "sha256": "25676a71d5af7212e1d340121245901e50ce7b69f6320158943c385b88af28db"
+    },
+    {
+      "path": "scripts/lib/boundedProcess.mjs",
+      "sha256": "f8599afaa689f4baa101ae0a314505e75fca13e89877c3659871d391e169a0f9"
+    },
+    {
+      "path": "scripts/lib/dispatchBoundary.mjs",
+      "sha256": "76f7e6fcbcd3627ab2f76a52947cc95ea83b34c47cec8e2378260a36d1ef87d7"
+    },
+    {
+      "path": "scripts/run-bounded-agent.mjs",
+      "sha256": "12ecf3073472c7d883d55729c75736944d454c70f559e8fb59a6206613673598"
+    }
+  ],
+  "json_sections": {
+    ".claude/settings.json": {
+      "hooks": "ab8fb96e8a68a636eaf44d9fe274f1096dc8f641bdee7b87cff6a9e2ba7ff29f"
+    },
+    "package.json": {
+      "scripts.agent:run": "a8e3be98df0d5406d91588e1cefc5924397ce80fa742c893afddcea7a2e9a9d5",
+      "scripts.gate:rules-wiring": "1201d76e9fd70ad4ddd74ab80998421ffac4ddde0cffad8f370ef3e595247b9b",
+      "scripts.gate:agent-context": "83eb407ace5d068cf5b56062e8ad67563294fee055375a78d5be8601f4627ed8",
+      "scripts.gate:agent-control-plane": "41571d360522ef6506e743f8a4e4fb3f59578b412ae970038907b080ab646e16",
+      "scripts.gate:fleet-parity": "0c52db346e952ce8a20715558c836c3b5a4468850482b642b69d83b62d653a5c",
+      "scripts.gate:overlay-parity": "1a8628d10ac232722aad9b376f7a2b1b957703716595b0e3f3ae294f316e5926",
+      "scripts.gate:test-intent": "a681675ab78e06daa7f6bbd1db7d1768a7fb508019029ae5c89a539ce3361761",
+      "scripts.gates:all": "fc7fde002f536598080a36802f9fc26935ecbdbcefcefd86fb63aacc1013c823",
+      "scripts.verify": "7d61b95763d0d303495c1779e62f81fee604cc3dbccc6a36c81d8af3e90c8315"
+    }
+  }
+}

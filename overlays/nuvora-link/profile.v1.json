@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "project": "nuvora-link",
+  "rootToken": "PROJECT:nuvora-link",
+  "integrationBranch": "develop",
+  "rulesAuthority": ".claude/rules",
+  "agentAuthority": ".claude/agents",
+  "designAuthority": "Claude Design",
+  "humanGates": "policies/action-authority.v1.json",
+  "productAuthorityMode": "project-owned-reference"
+}

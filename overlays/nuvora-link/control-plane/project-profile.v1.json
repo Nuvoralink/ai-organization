@@ -1,0 +1,11 @@
+{
+  "project": "nuvora-link",
+  "productDeploymentMode": "single-company-internal",
+  "organizationScopePurpose": "security-data-import-integrity-boundary-not-saas-tenancy",
+  "orchestrator": "single-pm",
+  "premiseChallenger": "required-for-material-work",
+  "productionEffectFromMainMerge": true,
+  "integrationBranch": "develop",
+  "autoMerge": false,
+  "branchProtection": "deferred"
+}

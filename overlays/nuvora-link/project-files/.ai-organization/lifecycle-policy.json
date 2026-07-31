@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "telemetry_directory": "tmp/agent-telemetry",
+  "telemetry_content_policy": "hashes_counts_and_outcomes_only",
+  "events": {
+    "SessionStart": "record_baseline",
+    "SubagentStart": "validate_role_and_brief",
+    "TaskCreated": "validate_kickoff_and_coordination_claim",
+    "TaskCompleted": "require_completion_evidence_and_risk_proof",
+    "SubagentStop": "capture_platform_receipt",
+    "PostCompact": "reconcile_claims_and_record_transition",
+    "SessionEnd": "record_outcome"
+  },
+  "post_tool_use": "separate_fail_closed_gate_router"
+}

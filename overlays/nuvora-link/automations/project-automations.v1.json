@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "project": "nuvora-link",
+  "updateExistingExactName": true,
+  "verifyAfterWrite": true,
+  "createAtBootstrap": [
+    {
+      "id": "nuvora-link-daily-orchestration-drift",
+      "name": "Nuvora Link daily orchestration drift",
+      "rrule": "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=10",
+      "reasoningTier": "medium",
+      "mode": "read-only",
+      "targetRoot": "${PROJECT:nuvora-link}",
+      "prompt": "Read-only Nuvora Link orchestration drift report. Inspect safe tracked git and GitHub status, AGENTS and CLAUDE routing, .claude rules and agents, lifecycle and PostToolUse hooks, generated ownership and portable-lock parity, gate output, accepted ADR and Nuvo governance freshness, and open orchestration or verification backlog items. Walk capability claims from the user's seat before calling anything missing; label PRODUCT-VERIFIED, WIRING-FACT, or RELAYED. Report evidence-backed discrepancies and exact next actions only. Never inspect .env files, credentials, tokens, logs, raw telemetry, histories, caches, customer/provider data, recordings, transcripts, node_modules, dist, or build output. Do not edit, mutate git, commit, push, modify GitHub state, deploy, publish, delete, purchase, mutate production, contact anyone, or register automations."
+    },
+    {
+      "id": "nuvora-link-weekly-fleet-doctrine-review",
+      "name": "Nuvora Link weekly fleet doctrine review",
+      "rrule": "FREQ=WEEKLY;BYDAY=MO;BYHOUR=9;BYMINUTE=25",
+      "reasoningTier": "high",
+      "mode": "read-only",
+      "targetRoot": "${PROJECT:nuvora-link}",
+      "prompt": "Read-only weekly Nuvora Link fleet and doctrine review. Inspect safe tracked commits and formal review findings from the prior seven days, project rules and agent learned classes, raw gate outputs, content-free telemetry summaries if present, accepted ADRs, Nuvo governance, capability-retirement proof, and open bug-backlog rows. Identify repeated failure classes, why introduced, why controls missed them, what brief or authority input was missing, and at most three deduplicated high-leverage control improvements. Propose only; do not implement. Never inspect an entire home directory, .env files, credentials, tokens, raw logs or telemetry, histories, caches, customer/provider data, recordings, transcripts, node_modules, dist, or build output. Do not edit, mutate git, commit, push, modify GitHub state, deploy, publish, delete, purchase, mutate production, contact anyone, or register automations."
+    }
+  ]
+}

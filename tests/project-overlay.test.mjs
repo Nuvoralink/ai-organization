@@ -11,10 +11,11 @@ import {
   validateOverlay,
   validateRunnerDeliveryContract,
 } from '../scripts/project-overlay.mjs';
-import { runCheck, runInstall } from '../scripts/lib/control-plane.mjs';
+import { discoverProjectOverlays, runCheck, runInstall } from '../scripts/lib/control-plane.mjs';
 import { validatePortableOverlayLock } from '../scripts/project-overlay.mjs';
 import { checkOverlayParity } from '../overlays/coachai/project-files/scripts/check-overlay-parity.mjs';
 import { findLayeredAuthorityMarkers } from '../overlays/auxara-dialer/project-files/scripts/check-decision-sprint-linkage.mjs';
+import { checkOverlayParity as checkNuvoraLinkOverlayParity } from '../overlays/nuvora-link/project-files/scripts/check-overlay-parity.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -24,7 +25,7 @@ function fixture(project = 'auxara-dialer') {
   const home = path.join(base, 'home');
   fs.mkdirSync(root, { recursive: true });
   fs.mkdirSync(home, { recursive: true });
-  const rootToken = project === 'coachai' ? 'PROJECT:coachai' : 'PROJECT:auxara-dialer';
+  const rootToken = `PROJECT:${project}`;
   const roots = { [rootToken]: root, HOME: home };
   const { manifest } = loadOverlay(project, roots);
   return { root, roots, manifest };
@@ -176,8 +177,11 @@ test('Proves: ORG-OVERLAY-003; Test type: ownership counterexample; Surface: pro
 });
 
 test('Proves: ORG-OVERLAY-004; Test type: registry mutation; Surface: overlay ownership; Authority: ownership.v1.json; Killer mutation: omit an installable mapping owner; Gated command: npm test', () => {
-  assert.deepEqual(validateOverlay('auxara-dialer').map((failure) => failure.message ?? failure), []);
-  assert.deepEqual(validateOverlay('coachai').map((failure) => failure.message ?? failure), []);
+  const discovered = discoverProjectOverlays(repoRoot);
+  assert.deepEqual(discovered, ['auxara-dialer', 'coachai', 'nuvora-link']);
+  for (const project of discovered) {
+    assert.deepEqual(validateOverlay(project).map((failure) => failure.message ?? failure), []);
+  }
 });
 
 test('Proves: AUXARA-DLR-014-CONTROL-001; Test type: stale-doctrine mutation; Surface: managed Auxara auditor and rule overlay; Authority: passive three-state AMD decision; Killer mutation: restore the blanket AMD ban, omit one mode, or make premium active; Gated command: npm test and overlay:validate:auxara', () => {
@@ -258,7 +262,7 @@ test('Proves: REQ-COACHAI-AUTHORITY-DOMAINS-001; Test type: parser and overlay-r
 });
 
 test('Proves: COORDINATION-RUNNER-DELIVERY-001; Test type: missing-mapping mutation; Surface: bootstrap project overlay and installed CoachAI organization parity; Authority: bounded runner ownership contract; Killer mutation: remove the runner mapping from an overlay copy; Gated command: npm test', () => {
-  for (const project of ['auxara-dialer', 'coachai']) {
+  for (const project of ['auxara-dialer', 'coachai', 'nuvora-link']) {
     const ownership = JSON.parse(
       fs.readFileSync(path.join(repoRoot, 'overlays', project, 'ownership.v1.json'), 'utf8'),
     );
@@ -307,7 +311,7 @@ test('Proves: COORDINATION-RUNNER-DELIVERY-001; Test type: missing-mapping mutat
   );
 });
 
-test('Proves: CONTROL-PLANE-LIFECYCLE-OVERLAY-DRIFT-001 and VERDICT-RUNTIME-OVERLAY-001; Test type: scoped overlay install; Surface: installed lifecycle runtime/schema and review adapters in both declared projects; Authority: shared-runtime and assurance-schema mappings; Killer mutation: exclude the current evidence schema/runtime, or restore reviewer-authored aggregate verdict forwarding in either adapter; Gated command: npm test', () => {
+test('Proves: CONTROL-PLANE-LIFECYCLE-OVERLAY-DRIFT-001 and VERDICT-RUNTIME-OVERLAY-001; Test type: scoped overlay install; Surface: installed lifecycle runtime/schema and review adapters in every declared project; Authority: shared-runtime and assurance-schema mappings; Killer mutation: exclude the current evidence schema/runtime, or restore reviewer-authored aggregate verdict forwarding in any adapter; Gated command: npm test', () => {
   const canonicalReadme = fs.readFileSync(
     path.join(repoRoot, 'core', 'lifecycle', 'README.md'),
     'utf8',
@@ -316,9 +320,9 @@ test('Proves: CONTROL-PLANE-LIFECYCLE-OVERLAY-DRIFT-001 and VERDICT-RUNTIME-OVER
     path.join(repoRoot, 'schemas', 'task-evidence.v3.schema.json'),
     'utf8',
   );
-  for (const project of ['auxara-dialer', 'coachai']) {
+  for (const project of ['auxara-dialer', 'coachai', 'nuvora-link']) {
     const target = fixture(project);
-    const prefix = project === 'coachai' ? 'coachai' : 'auxara';
+    const prefix = project === 'auxara-dialer' ? 'auxara' : project;
     runInstall({
       repoRoot,
       manifest: target.manifest,
@@ -355,6 +359,49 @@ test('Proves: CONTROL-PLANE-LIFECYCLE-OVERLAY-DRIFT-001 and VERDICT-RUNTIME-OVER
     assert.match(hook, /criterionStatuses:\s*review(?:Report)?\.criteria/u);
     assert.doesNotMatch(hook, /verdict:\s*review(?:Report)?\.verdict/u);
   }
+});
+
+test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and product-boundary mutation; Surface: Nuvora Link organization overlay; Authority: project profile, portable lock, and package script ownership; Killer mutations: describe generalized SaaS tenancy, drift a managed gate command, or omit a generated file; Gated command: npm test', () => {
+  const profile = JSON.parse(fs.readFileSync(path.join(repoRoot, 'overlays', 'nuvora-link', 'control-plane', 'project-profile.v1.json'), 'utf8'));
+  assert.equal(profile.productDeploymentMode, 'single-company-internal');
+  assert.match(profile.organizationScopePurpose, /not-saas-tenancy/u);
+  assert.doesNotMatch(
+    fs.readFileSync(path.join(repoRoot, 'overlays', 'nuvora-link', 'project-files', 'AGENTS.md'), 'utf8'),
+    /multi-tenant|tenant onboarding is required|generalized SaaS infrastructure is required/iu,
+  );
+
+  const target = fixture('nuvora-link');
+  const packageJson = {
+    scripts: {
+      'agent:run': 'node scripts/run-bounded-agent.mjs',
+      'gate:rules-wiring': 'node scripts/check-rules-wiring.mjs',
+      'gate:agent-context': 'node scripts/check-agent-context.mjs',
+      'gate:agent-control-plane': 'node scripts/check-agent-control-plane.mjs',
+      'gate:fleet-parity': 'node scripts/check-fleet-parity.mjs',
+      'gate:overlay-parity': 'node scripts/check-overlay-parity.mjs',
+      'gate:test-intent': 'node scripts/check-test-intent.mjs',
+      'gates:all': 'npm run gate:rules-wiring && npm run gate:agent-context && npm run gate:agent-control-plane && npm run gate:fleet-parity && npm run gate:overlay-parity && npm run gate:test-intent',
+      verify: 'npm run typecheck && npm run build && npm run -w @nuvora-link/api test && npm run gates:all',
+    },
+  };
+  fs.writeFileSync(path.join(target.root, 'package.json'), `${JSON.stringify(packageJson)}\n`);
+  runInstall({ repoRoot, manifest: target.manifest, roots: target.roots });
+  assert.deepEqual(runCheck({ repoRoot, manifest: target.manifest, roots: target.roots }), []);
+  const parity = checkNuvoraLinkOverlayParity(target.root);
+  assert.equal(parity.ok, true);
+  assert.deepEqual(parity.errors, []);
+  const portableLock = JSON.parse(
+    fs.readFileSync(path.join(target.root, '.ai-organization', 'overlay-lock.json'), 'utf8'),
+  );
+  assert.equal(parity.managedFileCount, portableLock.files.length);
+
+  packageJson.scripts['gate:agent-control-plane'] = 'node scripts/accept-everything.mjs';
+  fs.writeFileSync(path.join(target.root, 'package.json'), `${JSON.stringify(packageJson)}\n`);
+  const mutatedParity = checkNuvoraLinkOverlayParity(target.root);
+  assert.equal(mutatedParity.ok, false);
+  assert.deepEqual(mutatedParity.errors, [
+    'managed JSON section modified or missing: package.json#scripts.gate:agent-control-plane',
+  ]);
 });
 
 test('Proves: portable overlay locks can contain only normalized paths and SHA-256 integrity hashes without secret-shaped path/hash pairs on one line; Test type: secret-boundary mutation; Surface: project overlay lock; Authority: portable lock schema; Killer mutation: restore a path-keyed hash map or hide a generic API key in a lock entry; Gated command: npm test', () => {

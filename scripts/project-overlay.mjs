@@ -85,75 +85,38 @@ export function validatePortableOverlayLock(value) {
   return failures;
 }
 
-const RUNNER_DELIVERY_CONTRACT = Object.freeze({
-  'auxara-dialer': Object.freeze({
-    mappings: Object.freeze([
-      Object.freeze({
-        id: 'auxara-project-bounded-runner',
-        destination: 'scripts/run-bounded-agent.mjs',
-      }),
-      Object.freeze({
-        id: 'auxara-project-bounded-process-lib',
-        destination: 'scripts/lib/boundedProcess.mjs',
-      }),
-      Object.freeze({
-        id: 'auxara-project-dispatch-boundary-lib',
-        destination: 'scripts/lib/dispatchBoundary.mjs',
-      }),
-    ]),
-    packageMappingId: 'auxara-project-package-wiring',
-  }),
-  coachai: Object.freeze({
-    mappings: Object.freeze([
-      Object.freeze({
-        id: 'coachai-project-bounded-runner',
-        destination: 'scripts/run-bounded-agent.mjs',
-      }),
-      Object.freeze({
-        id: 'coachai-project-bounded-process-lib',
-        destination: 'scripts/lib/boundedProcess.mjs',
-      }),
-      Object.freeze({
-        id: 'coachai-project-dispatch-boundary-lib',
-        destination: 'scripts/lib/dispatchBoundary.mjs',
-      }),
-    ]),
-    packageMappingId: 'coachai-project-package-wiring',
-  }),
-});
-
 export function validateRunnerDeliveryContract(project, ownership) {
-  const contract = RUNNER_DELIVERY_CONTRACT[project];
-  if (!contract) return [];
-  const rows = new Map((ownership?.assets ?? []).map((row) => [row.id, row]));
+  const rows = ownership?.assets ?? [];
   const failures = [];
-  for (const expected of contract.mappings) {
-    const row = rows.get(expected.id);
+  for (const destination of [
+    'scripts/run-bounded-agent.mjs',
+    'scripts/lib/boundedProcess.mjs',
+    'scripts/lib/dispatchBoundary.mjs',
+  ]) {
+    const row = rows.find((candidate) => candidate.destination === destination);
     if (!row) {
-      failures.push(`Bounded runner delivery mapping is missing: ${expected.id}`);
+      failures.push(`Bounded runner delivery mapping is missing: ${project}/${destination}`);
       continue;
     }
     if (
       row.mode !== 'generated' ||
-      row.destination !== expected.destination ||
-      row.sourcePath !== expected.destination ||
+      row.sourcePath !== destination ||
       row.installMode !== 'file'
     ) {
       failures.push(
-        `Bounded runner delivery mapping is malformed: ${expected.id}/${expected.destination}`,
+        `Bounded runner delivery mapping is malformed: ${project}/${destination}`,
       );
     }
   }
-  const packageRow = rows.get(contract.packageMappingId);
+  const packageRow = rows.find((row) => row.destination === 'package.json#scripts');
   if (
     !packageRow ||
     packageRow.mode !== 'project-owned-reference' ||
-    packageRow.destination !== 'package.json#scripts' ||
     !Array.isArray(packageRow.managedSections) ||
     !packageRow.managedSections.includes('scripts.agent:run')
   ) {
     failures.push(
-      `Bounded runner package wiring is unmanaged: ${contract.packageMappingId}/scripts.agent:run`,
+      `Bounded runner package wiring is unmanaged: ${project}/scripts.agent:run`,
     );
   }
   return failures;

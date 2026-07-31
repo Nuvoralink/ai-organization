@@ -147,7 +147,8 @@ test('Proves: ORG-AUTH-004; Test type: authority-retirement mutation; Surface: b
   const files = [
     'templates/gates/check-agent-control-plane.mjs.template',
     path.join(root, 'overlays/auxara-dialer/project-files/scripts/check-agent-control-plane.mjs'),
-    path.join(root, 'overlays/coachai/project-files/scripts/check-agent-control-plane.mjs')
+    path.join(root, 'overlays/coachai/project-files/scripts/check-agent-control-plane.mjs'),
+    path.join(root, 'overlays/nuvora-link/project-files/scripts/check-agent-control-plane.mjs')
   ];
   for (const file of files) {
     const source = path.isAbsolute(file) ? fs.readFileSync(file, 'utf8') : read(file);
@@ -269,7 +270,7 @@ test('Proves: ORG-GOV-005; Test type: architecture; Surface: cross-vendor assura
   assert.match(lifecycleFixture, /execution:\s*\{ implementer_role:/u);
   assert.match(lifecycleFixture, /COMPLETION_REPORT_JSON:/u);
   assert.doesNotMatch(codexStatus, /acceptLifecycleTask|completeLifecycleTask|recordLifecycle/u);
-  for (const project of ['auxara-dialer', 'coachai']) {
+  for (const project of ['auxara-dialer', 'coachai', 'nuvora-link']) {
     const adapter = fs.readFileSync(path.join(root, 'overlays', project, 'project-files', 'scripts', 'claude-lifecycle-hook.mjs'), 'utf8');
     assert.match(adapter, /completeLifecycleTask\(/u, `${project} TaskCompleted must call the shared stateful lifecycle controller`);
     assert.doesNotMatch(adapter, /artifact_opened|killer_mutation_observed|AGENT_PROOF_COMMAND/u, `${project} must not synthesize or override proof truth`);
@@ -380,7 +381,7 @@ test('Proves: COORDINATION-RUNNER-DELIVERY-001; Test type: canonical-template an
   assert.match(templateSources.process, /export function runBounded\(/u);
   assert.match(templateSources.boundary, /expected exactly one .* row/u);
 
-  for (const project of ['auxara-dialer', 'coachai']) {
+  for (const project of ['auxara-dialer', 'coachai', 'nuvora-link']) {
     const projectScripts = path.join(root, 'overlays', project, 'project-files', 'scripts');
     assert.equal(
       fs.readFileSync(path.join(projectScripts, 'run-bounded-agent.mjs'), 'utf8'),
@@ -445,6 +446,7 @@ test('Proves: ORG-HOOK-001; Test type: mutation and path counterexample; Surface
     ['bootstrap', parseCommentedJson(read('templates/settings.json.template'))],
     ['auxara-dialer', JSON.parse(fs.readFileSync(path.join(root, 'overlays', 'auxara-dialer', 'project-files', '.claude', 'settings.json'), 'utf8'))],
     ['coachai', JSON.parse(fs.readFileSync(path.join(root, 'overlays', 'coachai', 'project-files', '.claude', 'settings.json'), 'utf8'))],
+    ['nuvora-link', JSON.parse(fs.readFileSync(path.join(root, 'overlays', 'nuvora-link', 'project-files', '.claude', 'settings.json'), 'utf8'))],
   ];
   for (const [name, settings] of settingsSources) {
     assert.deepEqual(rootedHookErrors(settings), [], `${name} must use rooted exec-form hooks`);

@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "domains": {
+    "operational-truth": {
+      "owns": ["apps/api/prisma/schema.prisma", "docs/adr/ADR-006-retire-built-in-dialer.md"],
+      "note": "Persisted appointment and callback ownership, measurement scope, and retired capability state are project-owned authorities."
+    },
+    "business-time-and-metrics": {
+      "owns": ["packages/agent-report", "packages/time-tracking", "AGENTS.md"],
+      "note": "Shared packages and project guardrails own business windows, metric provenance, and time tracking."
+    },
+    "nuvo-governance": {
+      "owns": ["docs/nuvo/NUVO_GOVERNANCE_RULEBOOK.md", "docs/nuvo/NUVO_PERMISSION_MATRIX.md", "docs/nuvo/NUVO_TOOL_REGISTRY.md"],
+      "note": "Nuvo permissions and tool authority remain project-owned and default-deny."
+    }
+  }
+}
