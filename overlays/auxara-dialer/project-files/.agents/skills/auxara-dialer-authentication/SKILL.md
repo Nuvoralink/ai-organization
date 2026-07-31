@@ -34,19 +34,22 @@ Until the scaffolding lands, treat these paths as the agreed locations:
 
 The browser auth contract is cookie-first with signed CSRF. Bearer auth, if retained, is an explicit non-browser integration compatibility boundary only (API integrations, mobile manager app for listen/barge). Do not reintroduce browser bearer propagation or persistent browser token storage.
 
-## Data Model Truths (target shape per `docs/app-plan/data-and-api/08-data-model-and-data-contracts.md` + ADR-AUTH-010/011)
+## Data Model Truths (target shape per `docs/app-plan/data-and-api/08-data-model-and-data-contracts.md` + DEC-001 + ADR-AUTH-002/010/011)
 
 - `tenants(id, name, plan, billing_status, dialing_hours_default, …)`
-- `users(id, tenant_id, email, role_id, status, authTokenVersion, passwordHash, …)`
+- `users(id, email, account_status, auth_token_version, password_hash, …)` — one global identity; no tenant or role authority
+- `tenant_memberships(id, tenant_id, user_id, status, …)` — the only user↔workspace membership/lifecycle authority; retained as historical evidence when removed
 - `roles(id, tenant_id?, name, is_system)` — system roles: `owner`, `tenant_admin`, `manager`, `supervisor`, `agent`, `compliance_viewer`, `api_integration`
 - `permissions(key PK, description, category)`
 - `role_permissions(role_id, permission_key, scope)` where scope ∈ `{self, team, tenant}`
-- `user_permissions(user_id, permission_key, scope)` — one-off grants
+- `user_permissions(tenant_id, user_id, permission_key, scope)` — tenant-scoped one-off grants
 - `teams(id, tenant_id, parent_id, name)` — recursive hierarchy
-- `role_assignments(id, tenant_id, user_id, role_id, team_id nullable)` — ADR-AUTH-011 (team_id NULL = tenant-wide, SET = pod-scoped; supersedes team_members)
+- `role_assignments(id, tenant_id, user_id, role_id, team_id nullable)` — the sole role/scope binding; membership never receives a role column (ADR-AUTH-011; `team_id` NULL = tenant-wide, SET = pod-scoped; supersedes `team_members`)
 - `audit_log(id, tenant_id, actor_id, action, target_type, target_id, payload, ts)`
 
 The combination `role × permission × scope` is the authorization source. Effective permissions are cached in Redis 60s TTL; UI hides forbidden actions using the same set.
+
+The authenticated workspace context is `(user_id, membership_id, tenant_id, auth_token_version)`. The server revalidates global account state, active membership state, and the membership→tenant relation before setting `app.tenant_id`. A request-controlled tenant id never selects or widens scope. Tenant offboarding changes only membership lifecycle; it must not disable the global identity, delete historical actor evidence, or revoke access to unrelated workspaces.
 
 There is no Supabase `auth.users`, `profiles`, or Cloud Backend dependency in this app.
 
@@ -59,13 +62,19 @@ There is no Supabase `auth.users`, `profiles`, or Cloud Backend dependency in th
 `POST /api/admin/signup` is internal-stack/admin-secret gated. Bootstrap-only with exactly one `INTERNAL_ADMIN`. `ADMIN_BOOTSTRAP_ENABLED=false` in steady state, temporarily true only for first-admin bootstrap. Strong `ADMIN_SECRET_KEY`, safe secret comparison, transactional audit. No product UI/routes for admin promotion or ownership transfer.
 
 ### Login
-`POST /api/auth/login` validates credentials, verifies the argon2id password hash, mints a stack-bound JWT in the httpOnly session cookie, sets a signed readable CSRF cookie, and returns the auth user + CSRF token for in-memory frontend use. Avoid production account enumeration. Login must also enforce active stack/tenant-kind compatibility (paid accepts only `CUSTOMER`, internal accepts only `INTERNAL`).
+`POST /api/auth/login` validates global credentials and account state, verifies the argon2id password hash, and loads active memberships without accepting a client tenant as authority. Avoid production account enumeration. Login must also enforce active stack/tenant-kind compatibility (paid accepts only `CUSTOMER`, internal accepts only `INTERNAL`). The membership count determines the next state:
+
+- Zero active memberships: return one generic unavailable result and mint no workspace session.
+- Exactly one: revalidate that membership and mint the normal stack-bound workspace JWT in the httpOnly session cookie.
+- Several: mint only a short-lived, purpose-bound httpOnly workspace-selection capability plus signed CSRF. Return the authenticated identity's allowed membership display projection; `POST /api/auth/select-workspace` must revalidate the selected membership against the capability and current database state before rotating cookies and minting a workspace JWT. Never guess a tenant or silently choose the first/last membership.
+
+The workspace JWT contains `user_id`, `membership_id`, `tenant_id`, `auth_token_version`, and standard stack/expiry claims. It contains no role or permission. `tenant_id` is a revalidated RLS bootstrap claim derived from `membership_id`, not an independent authority.
 
 ### Logout
 `POST /api/auth/logout` is a real server-side session revocation path. It increments the user's `authTokenVersion` so older JWT cookies fail rehydration, then clears the session and CSRF cookies.
 
 ### Me / Rehydrate
-`GET /api/auth/me` uses `authMiddleware`, rehydrates from the httpOnly session cookie, checks `authTokenVersion`, sets `app.tenant_id` for RLS, and returns the current user plus role + tenant + permission set. Frontend `AuthProvider` rebuilds session/user state from this; it must not depend on browser-stored bearer tokens.
+`GET /api/auth/me` uses `authMiddleware`, rehydrates from the httpOnly workspace-session cookie, checks global `auth_token_version` and account state, revalidates the selected membership and membership→tenant relation, sets `app.tenant_id` for RLS, and resolves the current role/permission set from role assignments. Frontend `AuthProvider` rebuilds session/user state from this; it must not depend on browser-stored bearer tokens.
 
 ### Final Mutation Revalidation
 Middleware authentication is not sufficient for a state-changing transaction that may wait before its final write. Pass the signed session's expected `authTokenVersion` from `req.auth` into the mutation service with no optional/default value. At the transaction's authorization fence, lock and re-read the actor's current status and `authTokenVersion`, require an exact match, and retain a lock that conflicts with status/version revocation through every later wait and write in that transaction. Acquire actor, permission, object, and policy locks in the repository's declared global order; changing lock strength to fix a deadlock must not reopen the revocation race.
@@ -78,10 +87,12 @@ Fail closed before provider work, persistence, or audit creation when the actor 
 - **Completion evidence:** inspect the real HTTP result, domain tables, provider-call spy, and audit rows after the ordered race; a green status without those outputs is insufficient.
 
 ### Password
-Current implemented password flow is authenticated change-password, not email reset. Minimum length aligned with backend validation. If implementing forgot/reset password, design it for this JWT/Prisma multi-tenant app: reset-token table or signed one-time token, expiration, single-use invalidation, generic responses, email delivery, audit logging, tenant scoping.
+Current implemented password flow is authenticated change-password, not email reset. Minimum length aligned with backend validation. Emailed self-service recovery is identity-global: `password_reset_tokens` binds to `user_id`, contains no `tenant_id`, expires, is single-use, uses generic anti-enumeration responses and rate limits, and is consumed only through narrowly registered auth services. A successful password change or reset increments global `users.auth_token_version` and intentionally revokes every workspace session.
+
+Tenant-admin reset authorization remains workspace-scoped: authorize the admin through their active membership and role/permission scope, and allow only an eligible target membership in that tenant. The resulting credential mutation is still global and records the authorizing tenant audit plus the global revocation outcome. Removing or suspending one membership never changes the password or disables the global identity.
 
 ### Invite Acceptance
-Invite acceptance validates the token, rejects accepted/expired invites, creates the user, adds role membership in the correct tenant, marks the invite accepted, audits the event, sets session + CSRF cookies, and returns tenant context. Preserve cross-stack invite-role guards (paid invite cannot land in internal stack).
+Invite acceptance validates the token, rejects accepted/expired invites, creates or reuses the global identity for the invited email, adds the tenant membership and role assignment in the correct tenant, marks the invite accepted, and audits the event in one transaction. It may select only the invite-bound active membership when it establishes session + CSRF cookies. Preserve cross-stack invite-role guards (paid invite cannot land in internal stack).
 
 ## Security Rules
 
@@ -134,7 +145,7 @@ Invite acceptance validates the token, rejects accepted/expired invites, creates
 
 ## Common Fix Patterns
 
-- Missing tenant membership: do not invent a fake tenant id. Return `TENANT_MEMBERSHIP_REQUIRED` and repair provisioning.
+- Missing tenant membership: do not invent a fake tenant id. Return one generic unavailable result at public login, or the established authenticated `TENANT_MEMBERSHIP_REQUIRED` error where enumeration is not exposed, and repair provisioning.
 - Role drift: centralize in `permissions.ts` or `authorize.ts`, not scattered frontend checks.
 - Cross-tenant leak: add `assertCanReadX` server-side AND confirm the RLS predicate covers the query (RLS is the backstop, not the only line of defense).
 - Invite bugs: validate invite role against active stack and write role membership in the same transaction as user creation.
@@ -143,6 +154,8 @@ Invite acceptance validates the token, rejects accepted/expired invites, creates
 ## Auth Checklist
 
 - Current architecture inspected before editing.
+- Global identity, membership lifecycle, and role-assignment authority remain separate; no scalar user tenant/role authority is introduced.
+- Zero/one/many membership login and explicit workspace selection are handled without guessing a tenant.
 - Backend route has authentication middleware where needed.
 - Authorization is server-side, relationship-scoped, and tenant-scoped.
 - Role and tenant kind come from the role/permission helpers.
@@ -154,5 +167,12 @@ Invite acceptance validates the token, rejects accepted/expired invites, creates
 - 401/403 UX is clear and does not loop.
 - Invite/signup/admin flows write all required user, tenant, membership, audit, and billing/trial state.
 - Browser flows use httpOnly session cookie + signed CSRF; bearer auth is not the browser authority.
+- Self-service recovery is identity-global and revokes all workspace sessions; tenant-admin reset authorization remains workspace-scoped.
 - Sensitive logs avoided.
 - Tests/build/smoke run or explicitly reported if blocked.
+
+## Authority-Boundary Regression Contract
+
+- **Fail-state:** a global user row again owns `tenant_id`, `role_id`, or tenant lifecycle, or a membership row becomes a second role/scope authority beside `role_assignments`.
+- **Regression mutation:** let a two-membership identity reset its password through a tenant-scoped token or trust/select one tenant during recovery; the global-revocation and membership-isolation tests must fail.
+- **Counterexample:** an admin-initiated reset is authorized only inside the admin's active tenant and against the target's membership there, while the successful credential mutation intentionally increments the one global `auth_token_version` and revokes sessions in every workspace.

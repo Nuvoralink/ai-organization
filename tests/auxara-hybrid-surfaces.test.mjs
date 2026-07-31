@@ -81,6 +81,41 @@ const auxaraCompletionProfilesPath = path.join(
   '.ai-organization',
   'completion-profiles.json',
 );
+const auxaraAuthenticationSkillPath = path.join(
+  repoRoot,
+  'overlays',
+  'auxara-dialer',
+  'project-files',
+  '.agents',
+  'skills',
+  'auxara-dialer-authentication',
+  'SKILL.md',
+);
+
+test('Auxara authentication skill preserves global identity and explicit workspace selection authority', () => {
+  // Proves: DEC-001, AUTH-002, AUTH-011
+  // Test type: canonical doctrine regression and negative contract mutation
+  // Surface: generated Auxara authentication implementation guidance
+  // Authority: DEC-001 plus ADR-AUTH-002/011
+  // Product statement: one identity may safely belong to several workspaces without reviving scalar tenant/role authority or tenant-scoped credentials.
+  // Killer mutations: put tenant_id/role_id back on users, put role on membership, choose the first membership, or tenant-scope password-reset tokens.
+  const source = fs.readFileSync(auxaraAuthenticationSkillPath, 'utf8');
+
+  assert.match(source, /`users\(id, email, account_status, auth_token_version, password_hash, …\)` — one global identity/u);
+  assert.match(source, /`tenant_memberships\(id, tenant_id, user_id, status, …\)` — the only user↔workspace membership\/lifecycle authority/u);
+  assert.match(source, /`role_assignments[^\n]+the sole role\/scope binding; membership never receives a role column/u);
+  assert.match(source, /Zero active memberships:[^\n]+mint no workspace session/u);
+  assert.match(source, /Exactly one:[^\n]+mint the normal stack-bound workspace JWT/u);
+  assert.match(source, /Several:[^\n]+workspace-selection capability/u);
+  assert.match(source, /`user_id`, `membership_id`, `tenant_id`, `auth_token_version`/u);
+  assert.match(source, /`password_reset_tokens` binds to `user_id`, contains no `tenant_id`/u);
+  assert.match(source, /Tenant-admin reset authorization remains workspace-scoped/u);
+  assert.match(source, /revokes every workspace session/u);
+
+  assert.doesNotMatch(source, /`users\(id, tenant_id,/u);
+  assert.doesNotMatch(source, /reset[^\n]{0,160}tenant scoping/u);
+  assert.doesNotMatch(source, /membership[^\n]{0,80}(?:role_id|role column)[^\n]{0,40}(?:authority|source)/iu);
+});
 
 test('Auxara doc/code gate preserves its public validator contract and aggregate wiring', () => {
   const source = fs.readFileSync(docCodeGatePath, 'utf8');
