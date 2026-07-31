@@ -7,7 +7,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "ci": "npm test && npm run control:validate && npm run overlay:validate:auxara && npm run overlay:validate:coachai",
+    "ci": "npm test && npm run control:scope:check && npm run control:validate && npm run overlay:validate:auxara && npm run overlay:validate:coachai",
     "control:check": "node scripts/control-plane.mjs check",
     "control:check:notify": "node scripts/control-check-notify.mjs",
     "control:validate": "node scripts/control-plane.mjs validate",
@@ -16,6 +16,7 @@
     "control:inventory": "node scripts/control-plane.mjs inventory",
     "control:rollback": "node scripts/control-plane.mjs rollback",
     "control:scope:refresh": "node scripts/refresh-tracked-scope.mjs",
+    "control:scope:check": "node scripts/refresh-tracked-scope.mjs --check",
     "overlay:validate:auxara": "node scripts/project-overlay.mjs validate auxara-dialer",
     "overlay:validate:coachai": "node scripts/project-overlay.mjs validate coachai",
     "overlay:check:auxara": "node scripts/project-overlay.mjs check auxara-dialer",
