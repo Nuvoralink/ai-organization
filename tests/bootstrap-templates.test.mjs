@@ -232,6 +232,10 @@ test('Proves: ORG-OVERLAY-001; Test type: mutation; Surface: existing-project bo
   assert.match(skill, /Existing-project overlay mode/u);
   assert.match(skill, /refuses dirty managed targets/u);
   assert.match(skill, /Never use copy-all discovery as authority/u);
+  assert.match(skill, /npm run control:scope:refresh/u);
+  assert.match(skill, /cached or untracked candidate/u);
+  assert.match(skill, /unclassified-tracked-path/u);
+  assert.match(skill, /remove `--others`/u);
   assert.match(skill, /project-owned product doc must remain outside overlay parity/u);
 });
 
