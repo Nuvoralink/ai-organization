@@ -12,6 +12,17 @@ Before any non-trivial frontend change, read `frontend/docs/FRONTEND_BLAST_RADIU
 - the **tenant admin** (number pool, 10DLC vetting, RBAC, billing)
 - the **internal admin** (cross-tenant visibility + ops tools)
 
+## Reuse before create — the design-artifact registry is the FIRST input to any visible frontend work (blocking)
+
+Before planning, mocking, prompting, or building ANY visible surface, element, or state, read the design-artifact registry FIRST and reuse what already exists — do not recreate a mock that already exists:
+- **`docs/design-system/locked-surfaces.md`** — the APPROVED + LOCKED surface mocks (the acceptance reference to build against).
+- **`docs/design-system/handoffs/`** (`mock-handoff.packages.json` indexes the M-packages) — the PENDING delta mocks awaiting founder approval; each M-package is a real, produced mock. A pending mock IS a mock — bring it for approval, don't re-mock it.
+- **`frontend/public/explorations/`** — the coded exploration mocks the two registries above point at.
+
+The registry is the source of truth for the question "does a mock exist for this surface, and is it approved or pending." **Never conflate "not built in React" with "not mocked":** a surface can be fully mocked (locked or pending) and simply not yet coded — that is a build task *against an existing mock*, not a re-mock. Producing a second mock for a surface that already has one is a parallel-system violation (`reuse before create`), burns an approval round, and risks contradicting the locked design. If an existing mock is stale versus a newer decision, RECONCILE it (update + re-approve in place), never silently recreate it.
+
+*Fail-state:* a plan or a mock-production task recreated — or set out to recreate — a surface/element/state that already had a locked or pending mock in the registry, because the registry was never read as the first input (Sprint-1.4 mock-reuse loophole, 2026-07-21).
+
 ## Design decisions consult the UX benchmarks (blocking)
 
 Before mocking or changing **any** dialer surface (power cockpit / softphone, manual dialer, wallboard, admin), read `docs/app-plan/product/31-dialer-ux-design-benchmarks.md` and run the relevant §5 per-surface checklist. That doc distills what 14 incumbents (Kixie, Dialpad, GoHighLevel, Convoso, Orum, Nooks, PhoneBurner, Aircall, CloudTalk, JustCall, MightyCall, …) do well **and the layout choices that caused real user complaints** — into `UX-DO-*` patterns to adopt and `UX-DONT-*` anti-patterns to avoid, each cited to the product + review evidence.
@@ -34,17 +45,37 @@ auto-scroll: off"), or roadmap/teaser text ("AI auto-suggest — later", "coming
 screen.** The booker sees the objection + rebuttal, the script, the call state — nothing about how we
 built it or what we'll ship next.
 
+- **Don't narrate the absence or immutability of a control — the control's absence IS the message
+  (Amin 2026-07-22).** If a setting can't be changed, do NOT show a toggle AND do NOT say "can't be
+  turned off" / "always on — automatic" / "this is enforced" — that reassurance narrates our internal
+  authority decision (ARC-006 Tier-1a) instead of doing the user's job. The rule the user actually
+  reads from the UI: **a control shown ⇒ "I can change this"; a control absent ⇒ "this is a given."**
+  So express immutability by *omitting the control*, not by captioning it. State only the task-relevant
+  fact the user must ACT on ("Blocks power dialing and texts; manual calls warn first"), never the
+  meta-fact that it's unchangeable. Same for its inverse: don't show a control for something that
+  isn't actually adjustable (a fake/no-op toggle implies tweakability that doesn't exist).
 - **Mockups are held to the same bar:** a mock *is* the real surface. Keep review/explanation text
   out of the rendered chrome — put it in a separate caption or in the chat, never as in-UI copy.
   Entitlement states (active / hidden / locked) get a terse label, not a paragraph explaining them.
+- **A mock of an EXISTING surface is grounded in the actual CODE, not the aspirational handoff (Amin
+  2026-07-22, the M07 booking miss).** When the surface already exists in React, read the real
+  component before speccing its mock — an M-package/handoff spec often describes a richer design that
+  was *never built*, and trusting it over the code invents UI "that is just not there" (M07's mock drew
+  a resolution-chain panel + appointment ledger + inline slot grid; the real `CallCard.tsx BookPane` is
+  one button → `Calendly.initPopupWidget`). The handoff is a *lead*; the shipped component + the app's
+  real integration pattern (here: the auxara.io site's own `[data-calendly]` popup) are the truth. A
+  "current-state" mock shows what the app does today + the minimal grounded delta — never invented
+  capability.
 - This is the copy-discipline sibling of ARC-005 (`check:ui-source-of-truth` — copy comes from the
   registry) and the agent-product-intent rule ("prefer value over output volume"): registry-sourced
   AND task-serving, not narration.
 
 *Fail-state:* a shipped or mocked surface carries a label / footer / note that explains a decision,
-names a future phase, or narrates the mechanic instead of just doing the user's job (the
-"tenant-authored · you pull it (no auto-pop)" + "AI auto-suggest — later" battlecard footer,
-2026-06-16, is the canonical offender).
+names a future phase, narrates the mechanic, **or narrates a control's absence/immutability
+("can't be turned off", "always on — automatic", "this is enforced")** instead of just doing the
+user's job (the "tenant-authored · you pull it (no auto-pop)" + "AI auto-suggest — later" battlecard
+footer, 2026-06-16, and the DNC "CAN'T BE TURNED OFF" banner, 2026-07-22, are the canonical offenders).
+The `check:ui-narrative` gate's pattern families must include this control-absence-narration shape.
 
 ## Show what serves the task — never carrier/platform plumbing in the name of "honesty" (blocking)
 
@@ -83,7 +114,7 @@ on" reassurance — justified as "transparency/honesty," instead of only what se
 
 ## Locked surfaces — match the approved mock, don't redesign it (blocking)
 
-Some surfaces are **user-approved and locked** in `docs/design-system/locked-surfaces.md` (today: the power dialer cockpit `softphone.html`, the manual dialer `manual-dial.html`, and the `_design.css` token system). When you implement or change a locked surface:
+Some surfaces are **user-approved and locked** in `docs/design-system/locked-surfaces.md` — read that registry for the current locked set (it is the source of truth; do not rely on a list restated here, which drifts stale). When you implement or change a locked surface:
 
 - The approved exploration mock is the **acceptance reference** — reproduce its layout/IA, its authority-boundary data set (what the lead shows), and its depth/glass token usage. Deviating from it is a bug, not a design choice.
 - A visible change to a locked surface is **mockup-first + re-approval** (update the mock, show the user, get sign-off, *then* code) and must pass the doc-31 §5 per-surface checklist + the ARC-006 authority boundary.

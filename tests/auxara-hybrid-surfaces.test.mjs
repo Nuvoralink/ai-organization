@@ -4,10 +4,12 @@
 // Authority: overlays/auxara-dialer/project-files/scripts
 // Product statement: a scoped overlay delivery must retain the target gate APIs and resolved linkage behavior.
 // Killer mutations: remove a public validator export or aggregate call, re-add BUX-019, restore naive pipe splitting,
-// allow an unclosed inline-code span, drop one evidence-integrity route, or run a gate from process.cwd().
+// allow an unclosed inline-code span, drop one evidence-integrity route, run a gate from process.cwd(),
+// or accept a cwd-relative Claude hook command instead of the rooted exec form.
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -37,6 +39,47 @@ const gateRouterPath = path.join(
   'scripts',
   'lib',
   'claudeGateRouter.mjs',
+);
+const organizationOverlayGatePath = path.join(
+  repoRoot,
+  'overlays',
+  'auxara-dialer',
+  'project-files',
+  'scripts',
+  'check-organization-overlay.mjs',
+);
+const agentControlPlaneGatePath = path.join(
+  repoRoot,
+  'overlays',
+  'auxara-dialer',
+  'project-files',
+  'scripts',
+  'check-agent-control-plane.mjs',
+);
+const hookSettingsValidatorPath = path.join(
+  repoRoot,
+  'overlays',
+  'auxara-dialer',
+  'project-files',
+  'scripts',
+  'lib',
+  'validateClaudeHookSettings.mjs',
+);
+const auxaraSettingsPath = path.join(
+  repoRoot,
+  'overlays',
+  'auxara-dialer',
+  'project-files',
+  '.claude',
+  'settings.json',
+);
+const auxaraCompletionProfilesPath = path.join(
+  repoRoot,
+  'overlays',
+  'auxara-dialer',
+  'project-files',
+  '.ai-organization',
+  'completion-profiles.json',
 );
 
 test('Auxara doc/code gate preserves its public validator contract and aggregate wiring', () => {
@@ -112,4 +155,84 @@ test('Auxara PostToolUse routing preserves every project evidence-integrity gate
   const source = fs.readFileSync(gateRouterPath, 'utf8');
   assert.match(source, /const DEFAULT_GATE_CWD = fileURLToPath\(new URL\('\.\.\/\.\.'/u);
   assert.match(source, /cwd = DEFAULT_GATE_CWD/u);
+});
+
+test('Auxara organization ownership refresh is dependency-free and ignores append-only learning', async () => {
+  // Proves: ORG-OVERLAY-APPEND-ONLY-001
+  // Test type: clean-worktree dependency and append-only hash mutation
+  // Surface: installed Auxara organization ownership writer
+  // Authority: .ai-organization/ownership.json appendOnlyMarkers
+  // Product statement: a clean checkout can refresh ownership without installed packages, and learned-class appends do not masquerade as structural overlay drift.
+  // Killer mutations: import Prettier in the writer, hash the full agent file, or ignore appendOnlyMarkers.
+  const source = fs.readFileSync(organizationOverlayGatePath, 'utf8');
+  assert.doesNotMatch(source, /(?:from\s+['"]prettier['"]|import\(['"]prettier['"]\))/u);
+
+  const gate = await import(pathToFileURL(organizationOverlayGatePath).href);
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'auxara-ownership-refresh-'));
+  const agentPath = path.join(root, '.claude', 'agents', 'auditor.md');
+  fs.mkdirSync(path.dirname(agentPath), { recursive: true });
+  fs.mkdirSync(path.join(root, '.ai-organization'), { recursive: true });
+  fs.writeFileSync(
+    agentPath,
+    '# Auditor\n\n## Learned classes\n\n2026-07-31 — first row\n',
+  );
+  fs.writeFileSync(
+    path.join(root, '.ai-organization', 'ownership.json'),
+    `${JSON.stringify({
+      schemaVersion: 1,
+      owner: 'test',
+      managedFiles: [{ path: '.claude/agents/auditor.md', sha256: '0'.repeat(64) }],
+      projectOwnedRoots: ['backend/'],
+      appendOnlyMarkers: ['## Learned classes'],
+    }, null, 2)}\n`,
+  );
+
+  await gate.writeOrganizationOverlay(root);
+  const first = JSON.parse(
+    fs.readFileSync(path.join(root, '.ai-organization', 'ownership.json'), 'utf8'),
+  ).managedFiles[0].sha256;
+  fs.appendFileSync(agentPath, '2026-08-01 — second row\n');
+  await gate.writeOrganizationOverlay(root);
+  const second = JSON.parse(
+    fs.readFileSync(path.join(root, '.ai-organization', 'ownership.json'), 'utf8'),
+  ).managedFiles[0].sha256;
+  assert.equal(second, first);
+});
+
+test('Auxara control-plane gate accepts only rooted exec-form Claude hooks', async () => {
+  // Proves: ORG-HOOK-ROOT-001
+  // Test type: canonical authority and negative contract mutation
+  // Surface: installed Auxara lifecycle and PostToolUse hook validation
+  // Authority: .claude/settings.json plus completion-profiles lifecycle timeout
+  // Product statement: Claude hooks execute from the verified project root and cannot silently regress to cwd-relative command strings.
+  // Killer mutations: accept "node scripts/..." as canonical, omit CLAUDE_PROJECT_DIR, or stop enforcing the PostToolUse matcher.
+  const gate = await import(pathToFileURL(hookSettingsValidatorPath).href);
+  const settingsSource = fs.readFileSync(auxaraSettingsPath, 'utf8');
+  const completionProfilesSource = fs.readFileSync(auxaraCompletionProfilesPath, 'utf8');
+  const controlPlaneSource = fs.readFileSync(agentControlPlaneGatePath, 'utf8');
+
+  assert.match(controlPlaneSource, /errors\.push\(\.\.\.validateHookSettings\(settingsSource, completionProfiles\)\)/u);
+  assert.deepEqual(gate.validateHookSettings(settingsSource, completionProfilesSource), []);
+
+  const legacySettings = JSON.parse(settingsSource);
+  legacySettings.hooks.TaskCreated[0].hooks[0] = {
+    type: 'command',
+    command: 'node scripts/claude-lifecycle-hook.mjs',
+    timeout: 10,
+  };
+  assert.match(
+    gate
+      .validateHookSettings(JSON.stringify(legacySettings), completionProfilesSource)
+      .join('\n'),
+    /TaskCreated must have exactly one rooted exec-form lifecycle hook command/u,
+  );
+
+  const unscopedPostToolUse = JSON.parse(settingsSource);
+  unscopedPostToolUse.hooks.PostToolUse[0].matcher = 'Write';
+  assert.match(
+    gate
+      .validateHookSettings(JSON.stringify(unscopedPostToolUse), completionProfilesSource)
+      .join('\n'),
+    /PostToolUse must be Edit\|Write/u,
+  );
 });

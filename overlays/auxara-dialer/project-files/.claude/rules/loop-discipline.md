@@ -11,6 +11,10 @@ paths:
 
 `.ai-organization/policies/action-authority.v1.json` is authoritative. Branch creation, commit, and pull-request creation/update are allowed inside the authorized task. **Push** requires live proof that it cannot trigger a preview/production deploy, publish or billed build, production write, or external contact — a preview counts as a deploy, and uncertainty stops for a human. **Merge** is allowed only when every conditional-merge criterion is independently proven; otherwise it stops for a human. Production-affecting push/merge, production mutation/deploy/config/migration, destructive, billed, external-message/contact, secrets, and product/design/material-architecture actions always stop for a human. No critic's unverified "clean" can satisfy an independent-verification condition, and the state-changing action lives in its own tool call after its sensor result has been read — never `check; act`.
 
+## Restart boundaries consume durable state
+
+At `SessionStart` and `PostCompact`, reconcile Git-common-dir task attempts plus every registered worktree before replacement dispatch. One-time pause/resume/status/verify/interruption prose is superseded by the latest durable state. A durable fingerprint already seen for that task within the retained window — attempt/checkpoint/lifecycle plus branch/HEAD, excluding ordinary working-tree dirtiness — is a stall even when it oscillates `S1 → S2 → S1`; dispatch no replacement until state advances or the human redirects. The implementation authority is `replacementDispatchWouldStall` plus the project's `durableTaskStateFingerprint`, and any claim is bounded to their retained history.
+
 ## Project anchors (why verify-the-critic is non-negotiable in this repo)
 
 - **Confidently-wrong critic** — PR #39 buy-cart footer (2026-06-13): a review mis-resolved a PR number, diffed only against `main`, and cleared a real blocker on a false premise.

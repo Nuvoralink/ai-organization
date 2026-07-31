@@ -19,6 +19,10 @@ import {
   validateLifecycleRoleModes,
   validateSafeProofProfile,
 } from '../.ai-organization/runtime/core/lifecycle/evidence-runtime.mjs';
+import {
+  AUXARA_HOOK_POLICY,
+  validateHookSettings,
+} from './lib/validateClaudeHookSettings.mjs';
 
 export const CONTROL_PLANE_POLICY = Object.freeze({
   artifacts: Object.freeze({
@@ -154,20 +158,7 @@ export const CONTROL_PLANE_POLICY = Object.freeze({
       'prompt text alone is not enforcement',
     ]),
   }),
-  settings: Object.freeze({
-    forbiddenAllowedToolFragments: Object.freeze(['9fab7e35-1142-425d-bd8f-1c7fdeba1c7e']),
-    lifecycleHookEvents: Object.freeze([
-      'SessionStart',
-      'SubagentStart',
-      'TaskCreated',
-      'TaskCompleted',
-      'SubagentStop',
-      'PostCompact',
-      'SessionEnd',
-    ]),
-    lifecycleCommand: 'node scripts/claude-lifecycle-hook.mjs',
-    postToolUseCommand: 'node scripts/claude-posttooluse-gate.mjs',
-  }),
+  settings: AUXARA_HOOK_POLICY,
 });
 
 const NEGATION_RE =
@@ -896,57 +887,7 @@ export function validateAgentControlPlane(root = process.cwd()) {
     playbook,
     CONTROL_PLANE_POLICY.playbook.requiredText,
   );
-  try {
-    const settings = JSON.parse(settingsSource);
-    const allowed = Array.isArray(settings?.permissions?.allow) ? settings.permissions.allow : [];
-    for (const fragment of CONTROL_PLANE_POLICY.settings.forbiddenAllowedToolFragments) {
-      if (allowed.some((tool) => typeof tool === 'string' && tool.includes(fragment))) {
-        errors.push(
-          `${CONTROL_PLANE_POLICY.artifacts.settings}: retired active tool allowlist fragment: ${fragment}`,
-        );
-      }
-    }
-    const lifecycleHooks = new Map();
-    for (const event of CONTROL_PLANE_POLICY.settings.lifecycleHookEvents) {
-      const hooks = settings.hooks?.[event]?.flatMap((entry) => entry.hooks ?? []) ?? [];
-      const canonical = hooks.filter(
-        (hook) =>
-          hook?.type === 'command' &&
-          hook.command === CONTROL_PLANE_POLICY.settings.lifecycleCommand,
-      );
-      if (hooks.length !== 1 || canonical.length !== 1) {
-        errors.push(
-          `${CONTROL_PLANE_POLICY.artifacts.settings}: ${event} must have exactly one canonical lifecycle hook command`,
-        );
-      }
-      lifecycleHooks.set(event, canonical);
-    }
-    const postToolUseHooks =
-      settings.hooks?.PostToolUse?.flatMap((entry) => entry.hooks ?? []) ?? [];
-    const canonicalPostToolUse = postToolUseHooks.filter(
-      (hook) =>
-        hook?.type === 'command' &&
-        hook.command === CONTROL_PLANE_POLICY.settings.postToolUseCommand,
-    );
-    if (postToolUseHooks.length !== 1 || canonicalPostToolUse.length !== 1) {
-      errors.push(
-        `${CONTROL_PLANE_POLICY.artifacts.settings}: PostToolUse must have exactly one canonical post-tool hook command`,
-      );
-    }
-    const completionTimeouts = (lifecycleHooks.get('TaskCompleted') ?? []).map(
-      (hook) => hook.timeout,
-    );
-    const profileRegistry = JSON.parse(completionProfiles);
-    if (
-      completionTimeouts.length !== 1 ||
-      completionTimeouts[0] * 1_000 !== profileRegistry.lifecycle_hook_timeout_ms
-    )
-      errors.push(
-        `${CONTROL_PLANE_POLICY.artifacts.settings}: TaskCompleted timeout must exactly match the completion profile authority`,
-      );
-  } catch (error) {
-    errors.push(`${CONTROL_PLANE_POLICY.artifacts.settings}: invalid JSON: ${error.message}`);
-  }
+  errors.push(...validateHookSettings(settingsSource, completionProfiles));
   return errors;
 }
 

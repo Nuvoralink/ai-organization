@@ -14,7 +14,7 @@ Before non-trivial architecture work, read `docs/app-plan/product/01-product-bri
 ## 1. Source of Truth — Telephony
 
 - **Telnyx is the source of truth for call state.** The local `calls` row is the projection of Call Control events. If they diverge, Telnyx wins and the projection is repaired (idempotently).
-- **Number lifecycle** (`active → cooling/rested → inbound_only → released`; DB enum `warming` is dormant legacy only) is the source of truth for whether a number can dial outbound, accept inbound, send SMS, or receive SMS. Never mutate `numbers.status` directly from a route handler or UI — **all transitions go through the single `numberLifecycle` service** (legality + RBAC + audit). The `number-health-monitor` and `number-retirement-sweeper` workers **feed signals/recommendations** only; there is no runtime warming promotion path. The **contested edges** (`active → cooling`, retirement, release) are driven by a **human** (per RBAC) or the tenant's **opt-in automation (default OFF)** — the system flags and recommends, the human decides (ARC-006, ADR-NUM-001). There is no system-imposed per-number dial cap (ADR-NUM-002).
+- **Number lifecycle** (`active → cooling/rested → inbound_only → released`; DB enum `warming` is dormant legacy only) is the source of truth for whether a number can dial outbound, accept inbound, send SMS, or receive SMS. Never mutate `numbers.status` directly from a route handler or UI — **all transitions go through the single `numberLifecycle` service** (legality + RBAC + audit). The `number-health-monitor` and `number-retirement-sweeper` workers **feed signals/recommendations** only; there is no runtime warming promotion path. The **contested edges** (`active → cooling`, retirement, release) are driven by a **human** (per RBAC) or the tenant's **opt-in automation (default OFF)** — the system flags and recommends, the human decides (ARC-006, ADR-NUM-001). There is no system-imposed per-number dial cap (ADR-NUM-002). <!-- doc-graph-ok: 2026-07-22 dropped dial-cap ADR is cited only as negative authority -->
 - **Conversations are keyed to lead, not number — _when a lead exists._** SMS threading must survive number rotation: a reply to a rotated-out number routes back to the lead-keyed conversation, not a new one. A raw/pasted number that matches NO lead gets a **contactless** conversation keyed to the number itself (`contact_e164`; COMPANION-RAW-DIAL-001) — operational dial-state, never a fabricated CRM lead (ARC-006). ADR-CONV-001 codifies both.
 - **DNC** is TWO distinct mechanisms (ADR-CMP-001) — do not conflate them. **(Tier-1a, always-on, never disableable)** on-list suppression: STOP / opt-out / terminal internal-DNC states (`opt_out`/`internal_dnc`/`scrubbed_dnc`) are excluded from the dial queue (the authority), and never reach the gate. **(Tier-1b, tenant-owned capability — safe-default ON, configurable + tenant-liable)** federal/state registry-scrub **freshness**: the freshness block is **provider-gated** — *when the capability is enabled* (`tenants.dnc_scrub_enabled`) **AND a scrub provider is configured** (`DNC_SCRUB_DRIVER !== 'none'`), a null or stale (>31d) scrub blocks the dial at dial time — fail-closed, never a silent allow (CMP-005/CMP-010). **With NO provider wired** (`DNC_SCRUB_DRIVER='none'`, the default pre-INT-DNC-PROVIDER-001) the enabled capability **allows + records an honest `dnc_provider_unavailable` audit basis** (`*_pass = null` + `{enforced:false, reason:'dnc_provider_unavailable'}`) — it does **not** block every dial, because there are no scrub timestamps to be fresh (the tenant is the liable caller; ToS + abuse-monitoring backstop). A tenant *may also disable it at their own liability*, and the audit then records `{enforced:false, reason:'tenant_disabled'}` — never a fabricated pass (ARC-004). Do **not** state the freshness block as an unconditional, no-override rule — that mis-states the Tier-1b capability as a Tier-1a gate (the exact doctrine-drift the doctrine-drift-auditor exists to catch).
 
@@ -23,7 +23,7 @@ Before non-trivial architecture work, read `docs/app-plan/product/01-product-bri
 The dialer ships ONE mode — **single-line power** (ADR-DLR-001). Parallel and predictive are **scrapped** (not deferred); do not build engine seams, AMD, or pacing for them.
 
 - **Power dialer (the only mode):** fetch next prospect → validate compliance gates (calling hours, DNC, recording disclosure, consent) → dial via Telnyx Call Control → on disposition save, fetch next. One line per agent; agent-initiated, so it **cannot abandon**.
-- **VM-drop is agent-triggered:** the agent hears voicemail and one-taps a pre-recorded drop (no AMD; ARC-006-clean). VM-drop of prerecorded marketing requires documented prior express written consent.
+- **VM-drop is agent-triggered:** passive premium AMD/beep may provide an advisory cue after the agent is already bridged, but it never hangs up, disposes, drops, or advances on its own. The agent hears/recognizes voicemail and explicitly starts playback of one of their own recorded/uploaded clips (DLR-014; ARC-006). VM-drop of prerecorded marketing requires documented prior express written consent.
 
 The stable cross-consumer contract is the ARC-002 `call_events` stream — manager wallboard / billing meter / compliance audit all read it. The power engine is concrete; there is no multi-mode interface (DLR-002 dropped).
 
@@ -31,15 +31,15 @@ The stable cross-consumer contract is the ARC-002 `call_events` stream — manag
 
 The line is **who is the legal actor**: the platform (we sign/register or the carrier enforces) vs the caller/tenant (we are a neutral conduit; safe-harbor).
 
-**Set A — platform/carrier-enforced, NO override** (neither tenant nor human can disable):
+**Set A — platform/carrier-enforced and non-disableable** (neither tenant nor human can turn the capability off):
 - **STIR/SHAKEN** A-attestation on US/CA DIDs (Telnyx-provisioned).
 - **10DLC** brand + ≥1 campaign per tenant before any **US** A2P SMS (US carriers block unregistered at the network); toll-free verified fallback. Vetting state visible + registered in-app (ADM-002). **Canada SMS needs no 10DLC** — it works immediately (CASL mechanics + attestation).
 - **CASL** SMS sender-ID + functional unsubscribe mechanics (≤10 business days) for SMS into/from Canada.
-- **STOP / opt-out** auto-suppression (always on; internal DNC).
+- **STOP / opt-out** auto-suppression (always on; one tenant-wide internal-DNC authority). Power/automatic/SMS stay blocked while active. Sprint-1.4 S14-PF-G permits only a separately authorized human manual-voice action: factual warning + effective `calls.dial_internal_dnc` + required reason + server-bound single-use challenge after all other gates recheck. It never clears DNC and records an exception, not a pass.
 
 **Set B — tenant-owned compliance capability, safe-default ON, tenant-configurable + tenant-liable** (we ship the capability + a safe default + log what the system did; the tenant owns the legal outcome):
-- **Calling-hours** by prospect-local TZ, **country-aware** (US default 8am–9pm + per-state stricter; **Canada** CRTC day-of-week windows Mon–Fri 9:00am–9:30pm / Sat–Sun 10:00am–6:00pm via `CANADA_CALLING_HOURS`, CMP-CA-WINDOW-001; tenant may narrow or disable at own risk). **Enforcement differs by dial mode (ADR-CMP-012 / CMP-012):** the power dialer **hard-blocks** out-of-window leads (skip/defer → next in-window); **manual / click-to-dial** is a per-tenant setting — **block / confirm** (default; a speed-bump popup states the prospect's local time + window, the human decides) **/ off**. The override is **calling-hours only** (DNC / STOP / consent never overridable), and **no reason is captured** from the operator (ARC-006 — don't police the human's decision); the audit logs any override honestly.
-- **DNC scrubbing** (CMP-005; default ON for dialer-owned lists; federal + internal + state; scrub-on-import + ≤31-day re-scrub + dial-time freshness).
+- **Calling-hours** by prospect-local TZ, **country-aware** (US default 8am–9pm + per-state stricter; **Canada** CRTC day-of-week windows Mon–Fri 9:00am–9:30pm / Sat–Sun 10:00am–6:00pm via `CANADA_CALLING_HOURS`, CMP-CA-WINDOW-001; tenant may narrow or disable at own risk). **Enforcement differs by dial mode (ADR-CMP-012 / CMP-012):** the power dialer **hard-blocks** out-of-window leads (skip/defer → next in-window); **manual / click-to-dial** is a per-tenant setting — **block / confirm** (default; a speed-bump popup states the prospect's local time + window, the human decides) **/ off**. This simple confirmation is **calling-hours only** and captures **no reason**. The distinct internal-DNC manual-voice exception above requires permission + reason + a one-call server challenge; consent/PEWC is never converted into a client bypass.
+- **External federal/state DNC scrubbing** (CMP-005; Sprint 2.0; default ON once tenant-configured; scrub-on-import + ≤31-day re-scrub + dial-time freshness). It is separate from the always-on Sprint-1 internal-DNC authority.
 - **Recording disclosure** at call start for all-party-consent states (CA, CT, DE, FL, IL, MD, MA, MI, MT, NV, NH, PA, WA, +VT) + a disclose-always option; **PIPEDA** → disclose on every Canadian call. Fail-safe = disclose when state uncertain.
 - **Per-recipient consent / PEWC** — tenant attestation only (`consent_attestations`); never per-lead tracked. VM-drop of prerecorded fires only when the tenant enabled the capability + attested PEWC.
 - *(No predictive-abandonment cap — predictive scrapped; a single-line, agent-initiated power dialer cannot abandon. ADR-DLR-001.)*
@@ -114,7 +114,7 @@ Anti-patterns:
 
 ## 11. Scalability
 
-- Do not rely on in-memory state for anything that must survive restarts or multiple instances. Dialer state, queue depth, and the dials-today counter (analytics; ADR-NUM-002) live in Redis/Postgres.
+- Do not rely on in-memory state for anything that must survive restarts or multiple instances. Dialer state, queue depth, and the dials-today counter (analytics; ADR-NUM-002) live in Redis/Postgres. <!-- doc-graph-ok: 2026-07-22 dropped dial-cap ADR is cited only as negative authority -->
 - Long-running work (VM drop, SMS sends, DNC scrub, recording rehoming, TCR sync, number-health checks, CRM webhook delivery) goes through BullMQ workers.
 - Keep pure transformation logic separate from HTTP route handlers and from Telnyx event handlers.
 
@@ -160,3 +160,25 @@ Anti-patterns:
 - Every tenant-scoped query includes `tenant_id`. Postgres RLS is the backstop, not the design.
 - Internal admin work that crosses tenants is a separately-audited code path. Never silently widen a tenant-scoped query for convenience.
 - Test for cross-tenant leak on every new read endpoint that returns object-scope data.
+
+## 19. Calibrate the threat model — build for proper usage, not for the determined bad actor
+
+**Amin directive 2026-07-28.** When designing a compliance-adjacent feature, spend the effort on **normal, correct usage** and on making the honest path easy. Do not build defenses against elaborate gaming scenarios.
+
+The founder's reasoning, which generalizes: *"If someone wants to game the system there are multiple ways to do it — they can even just sign up with a carrier who doesn't do DNC. We just need to be mindful of normal ways and proper usage. Gaming scenarios are rare and not worth the effort."*
+
+Two things make this correct rather than lax:
+
+1. **A determined bad actor routes around the product entirely.** Anti-gaming controls inside Auxara do not stop someone who simply uses a non-compliant carrier — they only add friction for the honest operator who is trying to do the right thing. A control that punishes the compliant majority to inconvenience a defector who has an easier exit is negative value.
+2. **The real enforcement is external and severe.** DNC/TCPA carries statutory per-call damages and personal liability; `ADR-CMP-001` puts that liability on the **caller (the initiator)**, not on Auxara as conduit. The market's own penalty structure does the deterring. And there is no business incentive to defect — an operator's time goes to finding willing buyers, not re-contacting someone who told them to stop.
+
+3. **Deliberate circumvention ABSOLVES the platform — it does not implicate it.** This is the safe-harbor argument and it is the strongest of the three. If Auxara ran the proper procedure — the gate fired, the honest default held, the audit row recorded what the system actually did — and the tenant then deliberately worked around it, that is the tenant committing a knowing violation, and the evidence trail shows Auxara doing its job. **Building an anti-gaming control can make this WORSE, not better:** a half-effective defense invites the argument that Auxara assumed a policing duty and then discharged it badly, converting a clean conduit posture into a negligence question. Run the correct procedure, log it honestly, and let the deliberate act be the defector's. (Amin: *"the fact that they gamed the system absolves us — we did the proper procedure, they deliberately did something illegal, not our problem."*)
+
+**What this means in practice:**
+
+- Build the Tier-1a gates so they fail closed on ORDINARY input — a mistyped number, a stale list, a missed opt-out, a bulk action with an unintended blast radius. That is where real harm happens: **by accident, not by scheme.**
+- Do NOT design laundering defenses, removal restrictions, or provenance fortresses on top of controls that already hold. (Anchor: an import-then-delete "laundering" defense was proposed for DNC import and dropped — `S14-PF-G` already makes carrier/consumer opt-outs non-revocable by the owner, so the entries that matter were protected regardless.)
+- Weigh a proposed control by asking: *does this stop an accident, or only a scheme?* An accident-stopper earns its complexity; a scheme-stopper usually does not, because the schemer has a cheaper route out of the product.
+- This does NOT relax fail-closed behavior, audit honesty, tenant isolation, or any Tier-1a gate. It narrows where **speculative adversarial modelling** is worth building — not where correctness is.
+
+*Fail-state:* effort went into an elaborate abuse scenario the market's own penalties already deter, while an ordinary-usage failure mode — the mistake a careful operator makes on a Tuesday — went unguarded.

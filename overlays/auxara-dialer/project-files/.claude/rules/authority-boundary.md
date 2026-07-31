@@ -40,9 +40,9 @@ The system enforces these autonomously and **neither tenant nor human can disabl
 - **STIR/SHAKEN attestation** (we sign as originating provider; Telnyx-provisioned DIDs only)
 - **10DLC Brand+Campaign registration gate** + **toll-free verification** (US carriers block unregistered **US** A2P SMS at the network level; **Canada SMS needs no 10DLC** — CASL mechanics + attestation only)
 - **CASL SMS sender-ID + functional unsubscribe** (platform-level SMS plumbing)
-- **STOP / opt-out auto-suppression** (carrier-recognized keyword; always on)
+- **STOP / opt-out auto-suppression** (carrier-recognized keyword; always on and projected into the tenant-wide internal-DNC authority)
 
-These are the **dialer-platform-specific legalities**. A human cannot bypass them; the system must enforce.
+These are the **dialer-platform-specific legalities**. They cannot be disabled or cleared as a side effect of contact. The one deliberately narrow exception is a **human manual voice call while internal DNC remains active** (S14-PF-G): power/automatic/SMS stay blocked; the caller must hold the tenant-assigned `calls.dial_internal_dnc` permission, acknowledge a factual warning, provide a reason, and consume a server-bound single-use challenge after every other gate is rechecked. The audit records `manual_internal_dnc_exception`, never a fabricated DNC pass. This exception does not weaken carrier 10DLC/CASL mechanics or create an SMS/automatic override.
 
 #### Tier 1b — Tenant-owned compliance capability: safe-default ON, configurable at the tenant's risk
 
@@ -89,7 +89,7 @@ The dialer **syncs to the CRM via webhook** (INT-001) and **surfaces context to 
 
 Before building any behavior that changes state or contacts a prospect, ask:
 
-1. **Is it a hard legal/carrier gate?** → Tier 1. Then split (ADR-CMP-001): is the *platform* the actor (STIR/SHAKEN, 10DLC/toll-free, CASL mechanics, STOP)? → **1a** — enforce, no override. Or is the *tenant* the liable caller (calling hours, DNC, recording disclosure, consent)? → **1b** — ship the capability with a safe default ON + log what the system did; the tenant configures it and owns the liability.
+1. **Is it a hard legal/carrier gate?** → Tier 1. Then split (ADR-CMP-001): is the *platform* the actor (STIR/SHAKEN, 10DLC/toll-free, CASL mechanics, STOP/internal-DNC persistence)? → **1a** — enforce and make non-disableable; only S14-PF-G's permissioned, reasoned, single-call **manual voice** exception may contact while the internal-DNC entry stays active. Or is the *tenant* the liable caller (calling hours, **external-registry DNC scrubbing**, recording disclosure, consent)? → **1b** — ship the capability with a safe default ON + log what the system did; the tenant configures it and owns the liability.
 2. **Is it operational (which number, whether to keep dialing a flagged number, what the disposition was)?** → Tier 2: system recommends + offers a capability; the human decides; autonomy only via explicit opt-in (default off).
 3. **Is it strategy or lead lifecycle (who to pursue, when to call back, pipeline stage)?** → Tier 3: not the dialer's job; sync to CRM, surface to human.
 
@@ -104,7 +104,8 @@ If a proposed feature has the system *autonomously deciding or acting* on a Tier
 - ❌ System decides which leads are "worth" calling.
 - ❌ A disposition "triggers" an internal scheduled action the human didn't choose (beyond a Tier-1 compliance consequence like DNC-on-stop).
 - ✅ System applies STIR/SHAKEN attestation + blocks unregistered A2P SMS, no override (Tier 1a — correct).
-- ✅ System ships calling-hours/DNC/disclosure ON by default, lets the tenant configure or disable at their own risk, and logs honestly what it did — including `tenant_disabled` (Tier 1b — correct).
+- ✅ System ships calling-hours/external-registry-DNC/disclosure ON by default, lets the tenant configure or disable at their own risk, and logs honestly what it did — including `tenant_disabled` (Tier 1b — correct).
+- ✅ Internal DNC remains active and blocks power/automatic/SMS; a specifically permitted human may make one reasoned manual voice call through a server-consumed challenge, recorded as an exception rather than a pass (Tier 1a persistence + Tier 2 human action — correct).
 - ❌ System fabricates `calling_hours_pass = true` (or silently "enforces" a Tier-1b gate the tenant disabled) instead of recording `tenant_disabled` (audit lie — bug).
 - ✅ System notifies "your number is flagged" and offers a one-click rest (Tier 2 — correct).
 - ✅ Disposition tagged "callback Tuesday" syncs to the CRM; CRM/human schedules (Tier 3 — correct).
@@ -112,6 +113,6 @@ If a proposed feature has the system *autonomously deciding or acting* on a Tier
 ## Relationship to other rules
 
 - **ARC-003 (AI Decision Boundary):** who *computes* a judgment. ARC-006: who has authority to *act*. Both apply: AI may draft a disposition (ARC-003), the booker accepts it (ARC-006 Tier 2), and STOP/opt-out suppression is enforced by the system (ARC-006 Tier 1a).
-- **Compliance responsibility model (ADR-CMP-001):** the source of the 1a/1b split — Set A (platform-enforced) vs Set B (tenant-owned capability) + the safe-defaults/ToS/abuse-monitoring posture + the in-app 10DLC ISV/CSP registration model.
+- **Compliance responsibility model (ADR-CMP-001):** the source of the 1a/1b split — Set A (platform-enforced and non-disableable, with S14-PF-G's narrow manual-voice exception that leaves internal DNC active) vs Set B (tenant-owned capability) + the safe-defaults/ToS/abuse-monitoring posture + the in-app 10DLC ISV/CSP registration model.
 - **Centralization Doctrine (ARC-005):** the tier of each action + each capability's default lives in a central registry, not hardcoded per surface.
 - **Persisted-derived-state lifecycle matrix (ARC-004):** any Tier-2 advisory row (a flag notification, a "safe to release?" recommendation) still gets a lifecycle matrix.
