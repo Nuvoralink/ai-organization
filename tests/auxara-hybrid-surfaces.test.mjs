@@ -98,8 +98,16 @@ test('Auxara authentication skill preserves global identity and explicit workspa
   // Surface: generated Auxara authentication implementation guidance
   // Authority: DEC-001 plus ADR-AUTH-002/011
   // Product statement: one identity may safely belong to several workspaces without reviving scalar tenant/role authority or tenant-scoped credentials.
-  // Killer mutations: put tenant_id/role_id back on users, put role on membership, choose the first membership, or tenant-scope password-reset tokens.
+  // Killer mutations: put tenant_id/role_id back on users, put role on membership, choose the first membership, tenant-scope password-reset tokens, or let a tenant admin mutate the global credential.
   const source = fs.readFileSync(auxaraAuthenticationSkillPath, 'utf8');
+  const assertDeliveryOnlyAdminRecovery = (candidate) => {
+    assert.match(candidate, /Tenant-admin recovery initiation remains workspace-scoped/u);
+    assert.match(candidate, /administrator may request the same generic recovery-link delivery/u);
+    assert.match(candidate, /never sees the token, creates a temporary password, mutates the global credential, or revokes sessions/u);
+    assert.match(candidate, /Only the identity owner changes the password/u);
+    assert.doesNotMatch(candidate, /Tenant-admin reset authorization remains workspace-scoped/u);
+    assert.doesNotMatch(candidate, /resulting credential mutation is still global/u);
+  };
 
   assert.match(source, /`users\(id, email, account_status, auth_token_version, password_hash, …\)` — one global identity/u);
   assert.match(source, /`tenant_memberships\(id, tenant_id, user_id, status, …\)` — the only user↔workspace membership\/lifecycle authority/u);
@@ -109,12 +117,22 @@ test('Auxara authentication skill preserves global identity and explicit workspa
   assert.match(source, /Several:[^\n]+workspace-selection capability/u);
   assert.match(source, /`user_id`, `membership_id`, `tenant_id`, `auth_token_version`/u);
   assert.match(source, /`password_reset_tokens` binds to `user_id`, contains no `tenant_id`/u);
-  assert.match(source, /Tenant-admin reset authorization remains workspace-scoped/u);
+  assertDeliveryOnlyAdminRecovery(source);
   assert.match(source, /revokes every workspace session/u);
 
   assert.doesNotMatch(source, /`users\(id, tenant_id,/u);
   assert.doesNotMatch(source, /reset[^\n]{0,160}tenant scoping/u);
   assert.doesNotMatch(source, /membership[^\n]{0,80}(?:role_id|role column)[^\n]{0,40}(?:authority|source)/iu);
+
+  const widenedAdminMutation = source.replace(
+    'never sees the token, creates a temporary password, mutates the global credential, or revokes sessions',
+    'may create a temporary password and mutate the global credential',
+  );
+  assert.throws(
+    () => assertDeliveryOnlyAdminRecovery(widenedAdminMutation),
+    /did not match/iu,
+    'widening tenant-admin recovery from delivery to credential mutation must fail the contract',
+  );
 });
 
 test('Auxara doc/code gate preserves its public validator contract and aggregate wiring', () => {
