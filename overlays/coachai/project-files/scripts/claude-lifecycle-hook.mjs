@@ -124,7 +124,7 @@ if (event === 'SubagentStop') {
       reviewerId: payload.agent_id,
       reviewerSessionId: payload.session_id,
       role: payload.agent_type,
-      verdict: reviewReport.verdict,
+      criterionStatuses: reviewReport.criteria,
       findingCount: reviewReport.finding_count,
       unresolvedFindingCount: reviewReport.unresolved_finding_count,
       cwd: root

@@ -31,6 +31,10 @@
       "sha256": "51c1e08d38a5ce040a81bf088ff40a2c27bfa39c3b5b62add3d415b43b37f002"
     },
     {
+      "path": ".ai-organization/schemas/task-evidence.v3.schema.json",
+      "sha256": "4843aa1c3ffc7de07947a79d0f738dc6e3b1b86d372f55137dd1c8189bcf171f"
+    },
+    {
       "path": ".ai-organization/runtime/core/authority/assess-action.mjs",
       "sha256": "c80793aa9f71dfb771930b22eac386333973beb1c184a3595bf004e6023d8747"
     },
@@ -43,8 +47,12 @@
       "sha256": "050a8c91b7c6808de9a13f5adf0d719eabe541cf07fade9b3a5666ffda8008e4"
     },
     {
+      "path": ".ai-organization/runtime/core/roles/agent-role-registry.mjs",
+      "sha256": "a32cbf3f79c69e90735e1aeccac70a44ef023d6330303a140e7c0ab1a62949cb"
+    },
+    {
       "path": ".ai-organization/runtime/core/roles/verdict-rubric.mjs",
-      "sha256": "e5a4e5247f24d38de4d8d54066c6cd2f852ec25f71f636e09f63127b73d778d3"
+      "sha256": "82ba40c8773b325f2f626906604d953cca6a7b53679c802f32a29c2d3d31e8be"
     },
     {
       "path": ".ai-organization/runtime/core/schema/task-assurance.mjs",
@@ -56,7 +64,7 @@
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/README.md",
-      "sha256": "da31327f145bdb6b690dff1f1dee667ac07759eb1d31598c983d6c13181a5edd"
+      "sha256": "a93506f699625e2521075bb102327341a558b081c2464edaca00530e29c9df33"
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/codex-task-status.mjs",
@@ -64,11 +72,11 @@
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/evidence-runtime.mjs",
-      "sha256": "fd81a79742c0a95c1d717ca197dfea09809d1d093ec2f7c78b0770600192406d"
+      "sha256": "e76271efa52397aae38ef040e5a0f0fdd2f03201812ef70b9076a32385ec62ed"
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/lifecycle-controller.mjs",
-      "sha256": "c2fd23ce28b794e5b5b705ca7b6533550f01408c95fd9cb08ab0f515e5557a44"
+      "sha256": "9a45752533e4a565b41bf6d166013f6a27e4a1d6982ad6d7b1fc7b85af816345"
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/run-evidence-integrity-mutation.mjs",
@@ -80,7 +88,7 @@
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/task-governor.mjs",
-      "sha256": "8b456ca18473d9597c150cac08873033f79687ac28700ec6cec981846a505774"
+      "sha256": "cbc51f25734f5c932e5844021d99ac1b686e85a98b4699c75caa57f9c8cce6de"
     },
     {
       "path": "scripts/check-agent-control-plane.mjs",
@@ -88,11 +96,11 @@
     },
     {
       "path": "scripts/check-organization-overlay.mjs",
-      "sha256": "87f807ab97ce1ac1afdf688919e8e936edae93dcc8db057fad34eb58b1ddd5d5"
+      "sha256": "df8aa16a506fc1832368b94b87137a23481583ed4814d2fabd2cd6faa54ea07a"
     },
     {
       "path": "scripts/claude-lifecycle-hook.mjs",
-      "sha256": "80690d9fc2360c4c49ca6b95e21db47684d76480359ce1595ff5aabfc1f1c59e"
+      "sha256": "6b5aee33d2107e37882a9ceded770aed30999206f89e7da1813513f2e69262bb"
     },
     {
       "path": "scripts/run-bounded-agent.mjs",

@@ -12,6 +12,9 @@
  * UNVERIFIABLE, which no amount of passing elsewhere can waive.
  */
 
+import crypto from 'node:crypto';
+import { registeredRole, roleRegistryAuthority } from './agent-role-registry.mjs';
+
 /** Status a lens may report per criterion. */
 export const STATUSES = Object.freeze(['pass', 'partial', 'fail', 'skip']);
 
@@ -22,6 +25,84 @@ export const STATUS_MULTIPLIER = Object.freeze({ pass: 1, partial: 0.5, fail: 0 
 export const ACCEPT_THRESHOLD = 0.9;
 
 export const VERDICTS = Object.freeze(['ACCEPT', 'REJECT', 'UNVERIFIABLE']);
+
+/** Persisted identity of the scoring algebra. Bump only for a deliberate receipt migration. */
+export const VERDICT_RUBRIC_ID = 'nuvoralink.agent-role-verdict';
+export const VERDICT_RUBRIC_VERSION = 1;
+
+function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map((item) => canonicalJson(item) ?? 'null').join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value)
+      .sort()
+      .flatMap((key) => {
+        const serialized = canonicalJson(value[key]);
+        return serialized === undefined ? [] : [`${JSON.stringify(key)}:${serialized}`];
+      })
+      .join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function digestObject(value) {
+  return crypto.createHash('sha256').update(canonicalJson(value)).digest('hex');
+}
+
+export function digestRoleRegistry(roleRegistry) {
+  if (!roleRegistry?.universal || !Array.isArray(roleRegistry.roles))
+    throw new TypeError('A loaded universal/effective agent-role registry is required');
+  return digestObject(roleRegistryAuthority(roleRegistry));
+}
+
+/** Bind the exact registered role rubric and algebra used to compute a review receipt. */
+export function reviewRubricBinding(roleRegistry, roleId) {
+  const role = registeredRole(roleRegistry, roleId);
+  if (!rubricIsRequired(role))
+    throw new Error(`Registered role does not issue rubric verdicts: ${roleId}`);
+  const rubricId = `${VERDICT_RUBRIC_ID}/${role.id}`;
+  return {
+    role,
+    rubric_id: rubricId,
+    rubric_version: VERDICT_RUBRIC_VERSION,
+    rubric_sha256: digestObject({
+      rubric_id: rubricId,
+      rubric_version: VERDICT_RUBRIC_VERSION,
+      accept_threshold: ACCEPT_THRESHOLD,
+      status_multiplier: STATUS_MULTIPLIER,
+      role_id: role.id,
+      verdict_rubric: role.verdict_rubric,
+    }),
+    role_registry_sha256: digestRoleRegistry(roleRegistry),
+  };
+}
+
+export function computeRegisteredReview(roleRegistry, roleId, criterionStatuses = {}) {
+  if (
+    criterionStatuses === null ||
+    typeof criterionStatuses !== 'object' ||
+    Array.isArray(criterionStatuses)
+  )
+    throw new TypeError('criterionStatuses must be an object keyed by registered criterion id');
+  const binding = reviewRubricBinding(roleRegistry, roleId);
+  const scored = scoreVerdict(binding.role.verdict_rubric, criterionStatuses);
+  return {
+    rubric_id: binding.rubric_id,
+    rubric_version: binding.rubric_version,
+    rubric_sha256: binding.rubric_sha256,
+    role_registry_sha256: binding.role_registry_sha256,
+    criterion_statuses: binding.role.verdict_rubric.criteria
+      .filter((criterion) => Object.hasOwn(criterionStatuses, criterion.id))
+      .map((criterion) => ({
+        criterion_id: criterion.id,
+        status: criterionStatuses[criterion.id],
+      })),
+    coverage: scored.coverage,
+    score: scored.score,
+    verdict: scored.verdict,
+    unevaluated_criteria: scored.unevaluated,
+    verdict_reasons: scored.reasons,
+  };
+}
 
 /**
  * Validate a rubric in isolation: ids unique, weights sum to 100, at least one critical.
@@ -65,7 +146,9 @@ export function scoreVerdict(rubric, statuses) {
   if (!statuses || typeof statuses !== 'object') throw new TypeError('statuses must be an object');
 
   const reported = new Map(Object.entries(statuses));
+  const knownIds = new Set(rubric.criteria.map((criterion) => criterion.id));
   for (const [id, status] of reported) {
+    if (!knownIds.has(id)) throw new Error(`Unknown criterion id: ${id}`);
     if (!STATUSES.includes(status)) throw new Error(`Unknown status for ${id}: ${String(status)}`);
   }
 

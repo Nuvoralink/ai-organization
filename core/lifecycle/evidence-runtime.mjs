@@ -482,6 +482,7 @@ export function acceptTaskAttempt({
   repository,
   worktree,
   profileRegistry,
+  roleRegistrySha256,
   riskPolicy,
   actionAuthority,
   repositoryBaseRef = 'origin/main',
@@ -500,6 +501,8 @@ export function acceptTaskAttempt({
   const implementerSha256 = sha256(implementerId);
   const implementerRoleSha256 = sha256(contract.execution?.implementer_role ?? '');
   const registrySha256 = digestObject(profileRegistry);
+  if (!/^[a-f0-9]{64}$/u.test(roleRegistrySha256 ?? ''))
+    throw new TypeError('TaskCreated requires a loaded agent-role registry digest.');
   const riskPolicySha256 = digestObject(riskPolicy);
   const actionAuthoritySha256 = digestObject(actionAuthority);
   if (fs.existsSync(file)) {
@@ -513,6 +516,7 @@ export function acceptTaskAttempt({
       existing.completion_mode === completionMode &&
       sameRepositoryBinding(existing.repository, repository) &&
       existing.profile_registry_sha256 === registrySha256 &&
+      existing.role_registry_sha256 === roleRegistrySha256 &&
       existing.risk_policy_sha256 === riskPolicySha256 &&
       existing.action_authority_sha256 === actionAuthoritySha256 &&
       existing.repository_base_ref === repositoryBaseRef;
@@ -523,7 +527,7 @@ export function acceptTaskAttempt({
   }
   const createdAt = now.toISOString();
   const attempt = {
-    schema_version: 2,
+    schema_version: 3,
     state: 'accepted',
     task_id: payloadTaskId,
     attempt_id: attemptId,
@@ -534,6 +538,7 @@ export function acceptTaskAttempt({
     worktree,
     completion_tier: contract.completion?.tier,
     profile_registry_sha256: registrySha256,
+    role_registry_sha256: roleRegistrySha256,
     risk_policy_sha256: riskPolicySha256,
     action_authority_sha256: actionAuthoritySha256,
     repository_base_ref: repositoryBaseRef,
@@ -1202,7 +1207,7 @@ export function recordReviewReceipt({
   reviewerSessionId,
   role,
   repository,
-  verdict,
+  computedReview,
   findingCount = 0,
   unresolvedFindingCount = 0,
 }) {
@@ -1223,7 +1228,6 @@ export function recordReviewReceipt({
       );
     if (
       !role ||
-      !['pass', 'findings'].includes(verdict) ||
       !Number.isInteger(findingCount) ||
       findingCount < 0 ||
       !Number.isInteger(unresolvedFindingCount) ||
@@ -1231,10 +1235,21 @@ export function recordReviewReceipt({
       unresolvedFindingCount > findingCount
     ) {
       throw new Error(
-        'Review receipt requires a role, valid verdict, and consistent non-negative finding counts.',
+        'Review receipt requires a role and consistent non-negative finding counts.',
       );
     }
+    if (attempt.schema_version !== 3 || !attempt.role_registry_sha256)
+      throw new Error('Legacy task attempts cannot accept current computed-verdict review receipts.');
+    if (attempt.role_registry_sha256 !== computedReview?.role_registry_sha256)
+      throw new Error('Agent-role registry changed after TaskCreated.');
+    if (
+      !computedReview ||
+      computedReview.verdict === undefined ||
+      !Array.isArray(computedReview.criterion_statuses)
+    )
+      throw new Error('Review receipt requires a controller-computed registered rubric result.');
     const unsigned = {
+      review_receipt_version: 2,
       review_id: `review-${crypto.randomBytes(16).toString('hex')}`,
       attempt_id: attempt.attempt_id,
       contract_sha256: attempt.contract_sha256,
@@ -1242,7 +1257,7 @@ export function recordReviewReceipt({
       reviewer_session_sha256: reviewerSessionSha256,
       role,
       repository,
-      verdict,
+      ...computedReview,
       finding_count: findingCount,
       unresolved_finding_count: unresolvedFindingCount,
       reviewed_at: new Date().toISOString(),
@@ -1352,7 +1367,7 @@ export function buildCompletionEvidence({
   proofReceipts,
 }) {
   return {
-    schema_version: 2,
+    schema_version: 3,
     task_id: contract.id,
     attempt_id: attempt.attempt_id,
     contract_sha256: attempt.contract_sha256,

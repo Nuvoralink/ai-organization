@@ -19,7 +19,6 @@ import {
   loadTaskAttempt,
   parseCommandOutput,
   recordCompletionReportReceipt,
-  recordReviewReceipt,
   runRequiredProofs,
   sha256,
   signAttestation,
@@ -30,6 +29,8 @@ import {
 } from '../core/lifecycle/evidence-runtime.mjs';
 import { acceptLifecycleTask, completeLifecycleTask } from '../core/lifecycle/lifecycle-controller.mjs';
 import { loadActionAuthority, loadRiskPolicy, validateCompletion, validateTaskContract, validateTaskEvidence } from '../core/lifecycle/task-governor.mjs';
+import { loadAgentRoleRegistry, registeredRole } from '../core/roles/agent-role-registry.mjs';
+import { digestRoleRegistry } from '../core/roles/verdict-rubric.mjs';
 
 const controlPlaneRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -48,6 +49,16 @@ function fixtureRepository() {
   const fixtureRuntime = path.join(root, '.ai-organization', 'runtime', 'core', 'lifecycle');
   fs.mkdirSync(fixtureRuntime, { recursive: true });
   for (const file of ['evidence-runtime.mjs', 'run-evidence-integrity-mutation.mjs']) fs.copyFileSync(path.join(controlPlaneRoot, 'core', 'lifecycle', file), path.join(fixtureRuntime, file));
+  const fixtureRoles = path.join(root, '.ai-organization', 'runtime', 'core', 'roles');
+  fs.mkdirSync(fixtureRoles, { recursive: true });
+  for (const file of ['agent-role-registry.mjs', 'verdict-rubric.mjs'])
+    fs.copyFileSync(path.join(controlPlaneRoot, 'core', 'roles', file), path.join(fixtureRoles, file));
+  const fixtureRegistries = path.join(root, '.ai-organization', 'registries');
+  fs.mkdirSync(fixtureRegistries, { recursive: true });
+  fs.copyFileSync(
+    path.join(controlPlaneRoot, 'registries', 'agent-roles.v1.json'),
+    path.join(fixtureRegistries, 'agent-roles.v1.json'),
+  );
   fs.writeFileSync(path.join(root, 'scripts', 'danger.mjs'), "require('node:fs').writeFileSync('sentinel-migrate', 'ran');\n");
   fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({
     private: true,
@@ -88,7 +99,7 @@ function contract() {
       output: ['tmp/agent-assurance/**']
     },
     risk: { level: 'high', classes: ['control_plane'], reasons: ['completion authority'] },
-    authorities: ['schemas/task-assurance.v2.schema.json', 'schemas/task-evidence.v2.schema.json'],
+    authorities: ['schemas/task-assurance.v2.schema.json', 'schemas/task-evidence.v3.schema.json'],
     blast_radius: {
       feeders: ['TaskCreated payload'],
       producers: ['Shared proof runner'],
@@ -166,6 +177,14 @@ function registry() {
   };
 }
 
+function reviewStatuses(root, transform = (status) => status) {
+  const roleRegistry = loadAgentRoleRegistry(root);
+  const role = registeredRole(roleRegistry, 'adversarial-reviewer');
+  return Object.fromEntries(
+    role.verdict_rubric.criteria.map((criterion) => [criterion.id, transform('pass', criterion)]),
+  );
+}
+
 // Simulates a receipt that has already been authenticated by a protected external
 // approval provider. Production runtime intentionally exposes no local issuer.
 function attachExternallyAuthenticatedHumanGateForTest({ stateDirectory, taskId, gateId, approverId = 'human-approver', approverSessionId = 'human-approval-session', repository }) {
@@ -192,6 +211,7 @@ function acceptedFixture({ riskPolicy = loadRiskPolicy(), humanGates = [], claim
   const stateDirectory = defaultAssuranceStateDirectory(root);
   const actionAuthority = loadActionAuthority();
   const profileRegistry = registry();
+  const roleRegistry = loadAgentRoleRegistry(root);
   const initial = collectRepositoryState(root);
   const attempt = acceptTaskAttempt({
     stateDirectory,
@@ -202,6 +222,7 @@ function acceptedFixture({ riskPolicy = loadRiskPolicy(), humanGates = [], claim
     completionMode: 'implementation',
     repository: initial.binding,
     profileRegistry,
+    roleRegistrySha256: digestRoleRegistry(roleRegistry),
     riskPolicy,
     actionAuthority
   });
@@ -216,14 +237,15 @@ function acceptedFixture({ riskPolicy = loadRiskPolicy(), humanGates = [], claim
     repository: current.binding,
     report: { task_id: 'ORG-001', unreached_surfaces: ['external signing service'], doctrine_loop: 'Replaced self-certified booleans with parsed, task-bound receipts.' }
   });
-  recordReviewReceipt({
+  lifecycleController.recordLifecycleReview({
     stateDirectory,
     taskId: 'ORG-001',
     reviewerId: 'independent-reviewer',
     reviewerSessionId: 'review-session',
     role: 'adversarial-reviewer',
-    repository: current.binding,
-    verdict: 'pass'
+    criterionStatuses: reviewStatuses(root),
+    cwd: root,
+    repositoryProvider: () => current,
   });
   for (const gateId of humanGates) {
     attachExternallyAuthenticatedHumanGateForTest({
@@ -238,7 +260,7 @@ function acceptedFixture({ riskPolicy = loadRiskPolicy(), humanGates = [], claim
   const currentAttempt = claim
     ? claimTaskAttempt({ stateDirectory, taskId: 'ORG-001', sessionId: 'implementer-session' }).attempt
     : loadTaskAttempt(stateDirectory, 'ORG-001');
-  return { root, stateDirectory, riskPolicy, actionAuthority, profileRegistry, attempt: currentAttempt, current };
+  return { root, stateDirectory, riskPolicy, actionAuthority, profileRegistry, roleRegistry, attempt: currentAttempt, current };
 }
 
 function generateValidCompletion(options = {}) {
@@ -262,6 +284,7 @@ function generateValidCompletion(options = {}) {
   const context = {
     attempt: fixture.attempt,
     profileRegistry: fixture.profileRegistry,
+    roleRegistry: fixture.roleRegistry,
     riskPolicy: fixture.riskPolicy,
     actionAuthority: fixture.actionAuthority,
     currentRepository: fixture.current.binding,
@@ -411,16 +434,17 @@ test('Proves: ORG-GOV-004A; Test type: reporter identity binding; Surface: Subag
 
 test('Proves: ORG-GOV-004C; Test type: convergent review loop; Surface: completion receipts; Authority: latest repository-bound implementer report and role review; Killer mutation: let an earlier findings receipt permanently poison a later fixed-and-passed state; Gated command: npm test', () => {
   const fixture = acceptedFixture({ claim: false });
-  recordReviewReceipt({
+  lifecycleController.recordLifecycleReview({
     stateDirectory: fixture.stateDirectory,
     taskId: 'ORG-001',
     reviewerId: 'independent-reviewer',
     reviewerSessionId: 'review-session',
     role: 'adversarial-reviewer',
-    repository: fixture.current.binding,
-    verdict: 'findings',
+    criterionStatuses: reviewStatuses(fixture.root, (status, criterion) =>
+      criterion.critical ? 'fail' : status),
     findingCount: 1,
-    unresolvedFindingCount: 1
+    unresolvedFindingCount: 1,
+    cwd: fixture.root
   });
   fs.writeFileSync(path.join(fixture.root, 'src', 'change.txt'), 'implementation after findings\n');
   const fixed = collectRepositoryState(fixture.root);
@@ -434,21 +458,216 @@ test('Proves: ORG-GOV-004C; Test type: convergent review loop; Surface: completi
     report: { task_id: 'ORG-001', unreached_surfaces: [], doctrine_loop: 'Fixed the review finding.' }
   });
   assert.ok(report.supersedes_report_id);
-  recordReviewReceipt({
+  lifecycleController.recordLifecycleReview({
     stateDirectory: fixture.stateDirectory,
     taskId: 'ORG-001',
     reviewerId: 'independent-reviewer',
     reviewerSessionId: 'review-session',
     role: 'adversarial-reviewer',
-    repository: fixed.binding,
-    verdict: 'pass'
+    criterionStatuses: reviewStatuses(fixture.root),
+    cwd: fixture.root
   });
   const state = loadTaskAttempt(fixture.stateDirectory, 'ORG-001');
   assert.equal(state.review_receipts.length, 1);
-  assert.equal(state.review_receipts[0].verdict, 'pass');
+  assert.equal(state.review_receipts[0].verdict, 'ACCEPT');
   assert.ok(state.review_receipts[0].supersedes_review_id);
   assert.equal(state.review_history.length, 2);
-  assert.equal(state.review_history.at(-1).verdict, 'findings');
+  assert.equal(state.review_history.at(-1).verdict, 'REJECT');
+});
+
+test('Proves: VERDICT-RUNTIME-CUTOVER-001; Test type: lifecycle authority integration; Surface: SubagentStop review receipt and TaskCompleted; Authority: registered role rubric plus scoreVerdict; Killer mutation: trust reviewer verdict=pass or default an omitted critical criterion to pass — UNVERIFIABLE becomes ACCEPT and this goes red; Gated command: npm test', () => {
+  const unverifiableFixture = acceptedFixture({ claim: false });
+  const omittedCritical = reviewStatuses(unverifiableFixture.root);
+  const criticalId = registeredRole(
+    unverifiableFixture.roleRegistry,
+    'adversarial-reviewer',
+  ).verdict_rubric.criteria.find((criterion) => criterion.critical).id;
+  delete omittedCritical[criticalId];
+  const receipt = lifecycleController.recordLifecycleReview({
+    taskId: 'ORG-001',
+    reviewerId: 'independent-reviewer',
+    reviewerSessionId: 'review-session',
+    role: 'adversarial-reviewer',
+    verdict: 'pass',
+    criterionStatuses: omittedCritical,
+    findingCount: 0,
+    unresolvedFindingCount: 0,
+    cwd: unverifiableFixture.root,
+    stateDirectory: unverifiableFixture.stateDirectory,
+    repositoryProvider: () => unverifiableFixture.current,
+  });
+  assert.equal(receipt.review_receipt_version, 2);
+  assert.equal(receipt.verdict, 'UNVERIFIABLE');
+  assert.equal(receipt.score, null);
+  assert.ok(receipt.unevaluated_criteria.includes(criticalId));
+  assert.match(receipt.rubric_id, /adversarial-reviewer$/u);
+  assert.match(receipt.rubric_sha256, /^[a-f0-9]{64}$/u);
+  assert.match(receipt.role_registry_sha256, /^[a-f0-9]{64}$/u);
+
+  const claimed = claimTaskAttempt({
+    stateDirectory: unverifiableFixture.stateDirectory,
+    taskId: 'ORG-001',
+    sessionId: 'implementer-session',
+  }).attempt;
+  const proofs = runRequiredProofs({
+    contract: contract(),
+    attempt: claimed,
+    profileRegistry: unverifiableFixture.profileRegistry,
+    actionAuthority: unverifiableFixture.actionAuthority,
+    cwd: unverifiableFixture.root,
+    stateDirectory: unverifiableFixture.stateDirectory,
+  });
+  assert.deepEqual(proofs.failures, []);
+  const evidence = buildCompletionEvidence({
+    contract: contract(),
+    attempt: claimed,
+    repository: unverifiableFixture.current.binding,
+    changedFiles: unverifiableFixture.current.changed_files,
+    proofReceipts: proofs.receipts,
+  });
+  assert.match(
+    validateCompletion(contract(), evidence, {
+      attempt: claimed,
+      profileRegistry: unverifiableFixture.profileRegistry,
+      roleRegistry: unverifiableFixture.roleRegistry,
+      riskPolicy: unverifiableFixture.riskPolicy,
+      actionAuthority: unverifiableFixture.actionAuthority,
+      currentRepository: unverifiableFixture.current.binding,
+      stateDirectory: unverifiableFixture.stateDirectory,
+    }).join('\n'),
+    /not an accepted resolved review.*UNVERIFIABLE/u,
+  );
+
+  const rejectFixture = acceptedFixture({ claim: false });
+  const rejected = lifecycleController.recordLifecycleReview({
+    taskId: 'ORG-001',
+    reviewerId: 'independent-reviewer',
+    reviewerSessionId: 'review-session',
+    role: 'adversarial-reviewer',
+    criterionStatuses: reviewStatuses(rejectFixture.root, (status, criterion) =>
+      criterion.id === criticalId ? 'partial' : status),
+    findingCount: 1,
+    unresolvedFindingCount: 1,
+    cwd: rejectFixture.root,
+    stateDirectory: rejectFixture.stateDirectory,
+    repositoryProvider: () => rejectFixture.current,
+  });
+  assert.equal(rejected.verdict, 'REJECT');
+
+  const malformedFixture = acceptedFixture({ claim: false });
+  assert.throws(
+    () => lifecycleController.recordLifecycleReview({
+      taskId: 'ORG-001',
+      reviewerId: 'independent-reviewer',
+      reviewerSessionId: 'review-session',
+      role: 'adversarial-reviewer',
+      criterionStatuses: { ...reviewStatuses(malformedFixture.root), 'invented-criterion': 'pass' },
+      cwd: malformedFixture.root,
+      stateDirectory: malformedFixture.stateDirectory,
+      repositoryProvider: () => malformedFixture.current,
+    }),
+    /Unknown criterion id: invented-criterion/u,
+  );
+});
+
+test('Proves: VERDICT-RUNTIME-CUTOVER-002; Test type: rubric drift and ACCEPT liveness; Surface: completion governor; Authority: signed computed receipt plus current role registry; Killer mutation: trust persisted score/hash fields without recomputing them or ignore registry drift after TaskCreated; Gated command: npm test', () => {
+  const generated = generateValidCompletion();
+  const acceptedReview = generated.evidence.review_receipts[0];
+  assert.equal(acceptedReview.verdict, 'ACCEPT');
+  assert.equal(acceptedReview.coverage, 1);
+  assert.equal(acceptedReview.score, 1);
+  assert.deepEqual(validateCompletion(contract(), generated.evidence, generated.context), []);
+
+  const controllerFixture = acceptedFixture({ claim: false });
+  const completed = completeLifecycleTask({
+    taskId: 'ORG-001',
+    sessionId: 'implementer-session',
+    cwd: controllerFixture.root,
+    stateDirectory: controllerFixture.stateDirectory,
+    profileRegistry: controllerFixture.profileRegistry,
+    riskPolicy: controllerFixture.riskPolicy,
+    actionAuthority: controllerFixture.actionAuthority,
+  });
+  assert.equal(completed.accepted, true, completed.failures.join('\n'));
+  assert.equal(completed.replay, false);
+  assert.equal(completed.evidence.schema_version, 3);
+  assert.equal(completed.evidence.review_receipts[0].verdict, 'ACCEPT');
+
+  const tampered = structuredClone(generated.evidence);
+  tampered.review_receipts[0].rubric_sha256 = 'f'.repeat(64);
+  const { attestation_hmac_sha256: _prior, ...unsigned } = tampered.review_receipts[0];
+  tampered.review_receipts[0].attestation_hmac_sha256 = signAttestation(
+    unsigned,
+    generated.attempt.secret_hex,
+  );
+  assert.match(
+    validateCompletion(contract(), tampered, generated.context).join('\n'),
+    /computed field drifted.*rubric_sha256/u,
+  );
+
+  const driftedContext = structuredClone(generated.context);
+  driftedContext.roleRegistry.universal.version = '99.0.0';
+  assert.match(
+    validateCompletion(contract(), generated.evidence, driftedContext).join('\n'),
+    /Agent-role registry changed after TaskCreated/u,
+  );
+});
+
+test('Proves: VERDICT-RUNTIME-CUTOVER-003; Test type: version-bound compatibility; Surface: evidence validation and completed replay; Authority: task-evidence schema version plus attempt state; Killer mutation: let a legacy manual pass authorize a current completion or reject replay of an already-stored legacy completion; Gated command: npm test', () => {
+  const generated = generateValidCompletion();
+  const currentReview = generated.evidence.review_receipts[0];
+  const legacyUnsigned = {
+    review_id: currentReview.review_id,
+    attempt_id: currentReview.attempt_id,
+    contract_sha256: currentReview.contract_sha256,
+    reviewer_id_sha256: currentReview.reviewer_id_sha256,
+    reviewer_session_sha256: currentReview.reviewer_session_sha256,
+    role: currentReview.role,
+    repository: currentReview.repository,
+    verdict: 'pass',
+    finding_count: 0,
+    unresolved_finding_count: 0,
+    reviewed_at: currentReview.reviewed_at,
+  };
+  const legacyEvidence = {
+    ...structuredClone(generated.evidence),
+    schema_version: 2,
+    review_receipts: [{
+      ...legacyUnsigned,
+      attestation_hmac_sha256: signAttestation(legacyUnsigned, generated.attempt.secret_hex),
+    }],
+  };
+  assert.deepEqual(validateTaskEvidence(legacyEvidence), []);
+  assert.match(
+    validateCompletion(contract(), legacyEvidence, generated.context).join('\n'),
+    /legacy evidence is replay-only/u,
+  );
+
+  const attemptFile = path.join(
+    generated.stateDirectory,
+    'attempts',
+    fs.readdirSync(path.join(generated.stateDirectory, 'attempts'))[0],
+  );
+  const legacyAttempt = JSON.parse(fs.readFileSync(attemptFile, 'utf8'));
+  legacyAttempt.schema_version = 2;
+  delete legacyAttempt.role_registry_sha256;
+  fs.writeFileSync(attemptFile, `${JSON.stringify(legacyAttempt)}\n`);
+  commitTaskCompletion({
+    stateDirectory: generated.stateDirectory,
+    taskId: 'ORG-001',
+    completionReceipt: legacyEvidence,
+  });
+  const replay = completeLifecycleTask({
+    taskId: 'ORG-001',
+    sessionId: 'implementer-session',
+    cwd: generated.root,
+    stateDirectory: generated.stateDirectory,
+    profileRegistry: generated.profileRegistry,
+    riskPolicy: generated.riskPolicy,
+    actionAuthority: generated.actionAuthority,
+  });
+  assert.equal(replay.accepted, true, replay.failures.join('\n'));
+  assert.equal(replay.replay, true);
 });
 
 test('Proves: ORG-GOV-004B; Test type: structural mutation receipt; Surface: mutation artifact; Authority: shared governor; Killer mutation: re-sign a receipt whose restore digest or diagnostic no longer matches the opened artifact; Gated command: npm test', () => {
@@ -670,6 +889,7 @@ test('Proves: ORG-GOV-007; Test type: collision; Surface: TaskCreated; Authority
     completionMode: 'implementation',
     repository: collectRepositoryState(root).binding,
     profileRegistry: registry(),
+    roleRegistrySha256: digestRoleRegistry(loadAgentRoleRegistry(root)),
     riskPolicy: loadRiskPolicy(),
     actionAuthority: loadActionAuthority()
   };

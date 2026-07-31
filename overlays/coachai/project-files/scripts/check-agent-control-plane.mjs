@@ -30,7 +30,7 @@ export function checkAgentControlPlane(root = process.cwd()) {
   const errors = [];
   const requiredFiles = [
     '.ai-organization/policies/action-authority.v1.json', '.ai-organization/roles.json', '.ai-organization/proof-profiles.json',
-    '.ai-organization/lifecycle-policy.json', '.ai-organization/schemas/task-assurance.v2.schema.json', '.ai-organization/schemas/task-evidence.v2.schema.json',
+    '.ai-organization/lifecycle-policy.json', '.ai-organization/schemas/task-assurance.v2.schema.json', '.ai-organization/schemas/task-evidence.v2.schema.json', '.ai-organization/schemas/task-evidence.v3.schema.json',
     '.ai-organization/ownership.json', '.claude/settings.json', '.github/CODEOWNERS', '.github/ISSUE_TEMPLATE/agent-slice.yml',
     '.github/pull_request_template.md', 'docs/app-plan/decision-log.md', 'docs/app-plan/adr/README.md', 'docs/app-plan/adr/000-template.md',
     'scripts/check-fleet-parity.mjs'
@@ -38,7 +38,7 @@ export function checkAgentControlPlane(root = process.cwd()) {
   for (const rel of requiredFiles) if (!exists(root, rel)) errors.push(`required control-plane artifact missing: ${rel}`);
   if (errors.length) return { ok: false, errors };
 
-  for (const rel of ['.ai-organization/schemas/task-assurance.v2.schema.json', '.ai-organization/schemas/task-evidence.v2.schema.json']) {
+  for (const rel of ['.ai-organization/schemas/task-assurance.v2.schema.json', '.ai-organization/schemas/task-evidence.v2.schema.json', '.ai-organization/schemas/task-evidence.v3.schema.json']) {
     try { readJson(root, rel); } catch (error) { errors.push(`invalid JSON authority ${rel}: ${error.message}`); }
   }
 

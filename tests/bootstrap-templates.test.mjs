@@ -549,6 +549,11 @@ test('Proves: ORG-HOOK-003C and ORG-HOOK-006; Test type: canonical-template runt
   fs.cpSync(path.join(root, 'core'), path.join(fixtureRoot, '.ai-organization', 'runtime', 'core'), { recursive: true });
   fs.cpSync(path.join(root, 'policies'), path.join(fixtureRoot, '.ai-organization', 'runtime', 'policies'), { recursive: true });
   fs.cpSync(path.join(root, 'schemas'), path.join(fixtureRoot, '.ai-organization', 'runtime', 'schemas'), { recursive: true });
+  fs.mkdirSync(path.join(fixtureRoot, '.ai-organization', 'registries'), { recursive: true });
+  fs.copyFileSync(
+    path.join(root, 'registries', 'agent-roles.v1.json'),
+    path.join(fixtureRoot, '.ai-organization', 'registries', 'agent-roles.v1.json'),
+  );
   const adapter = read('templates/lifecycle/claude-lifecycle-hook.mjs.template')
     .replaceAll('{{INTEGRATION_BRANCH}}', 'main')
     .replaceAll('{{TASK_COMPLETION_GATE}}', 'verify');

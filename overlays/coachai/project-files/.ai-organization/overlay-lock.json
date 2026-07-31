@@ -35,8 +35,8 @@
       "sha256": "12c4b0ed89d5fad68c727d84c6aeb1cd41dc21ecddaecf6d83b2c4d7afd4c580"
     },
     {
-      "path": ".ai-organization/policies/coordination-mode.v1.json",
-      "sha256": "8fd4da14876028fe59d02ac3cdca76d2c88cf1612c552732e03d038d403a2582"
+      "path": ".ai-organization/policies/authority-domains.v1.json",
+      "sha256": "3de4b7aa0094e8a3fe01f0bde3032a8a2b32cf665ab7af32bf87fab40d259f28"
     },
     {
       "path": ".ai-organization/policies/risk-controls.v1.json",
@@ -48,11 +48,11 @@
     },
     {
       "path": ".ai-organization/registries/agent-roles.project.v1.json",
-      "sha256": "d0185481ebfa98c04a775df7c5c6e8331a35b844879dc2223c5bee065bba6fe8"
+      "sha256": "d88bdcf2c434546d49e959e572f31c4f059e13b71bb83beddc0f29cfcd2596d9"
     },
     {
       "path": ".ai-organization/registries/agent-roles.v1.json",
-      "sha256": "f7c121ea5099e0ccf5202957bc5d44874b708765cf6e5a5b7d5456e3cc338425"
+      "sha256": "29dc87521e4e776bfb3852301f0c37446183cbfaccd74deebe8a0a3772dbe616"
     },
     {
       "path": ".ai-organization/roles.json",
@@ -112,7 +112,7 @@
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/README.md",
-      "sha256": "da31327f145bdb6b690dff1f1dee667ac07759eb1d31598c983d6c13181a5edd"
+      "sha256": "a93506f699625e2521075bb102327341a558b081c2464edaca00530e29c9df33"
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/codex-task-status.mjs",
@@ -120,11 +120,11 @@
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/evidence-runtime.mjs",
-      "sha256": "fd81a79742c0a95c1d717ca197dfea09809d1d093ec2f7c78b0770600192406d"
+      "sha256": "e76271efa52397aae38ef040e5a0f0fdd2f03201812ef70b9076a32385ec62ed"
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/lifecycle-controller.mjs",
-      "sha256": "c2fd23ce28b794e5b5b705ca7b6533550f01408c95fd9cb08ab0f515e5557a44"
+      "sha256": "9a45752533e4a565b41bf6d166013f6a27e4a1d6982ad6d7b1fc7b85af816345"
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/run-evidence-integrity-mutation.mjs",
@@ -136,11 +136,15 @@
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/task-governor.mjs",
-      "sha256": "8b456ca18473d9597c150cac08873033f79687ac28700ec6cec981846a505774"
+      "sha256": "cbc51f25734f5c932e5844021d99ac1b686e85a98b4699c75caa57f9c8cce6de"
     },
     {
       "path": ".ai-organization/runtime/core/roles/agent-role-registry.mjs",
-      "sha256": "16026a82a9f1ade1a8d9f0d4e0cf3474a534125c98cbe6e14a9e6b06fab8b4f7"
+      "sha256": "a32cbf3f79c69e90735e1aeccac70a44ef023d6330303a140e7c0ab1a62949cb"
+    },
+    {
+      "path": ".ai-organization/runtime/core/roles/verdict-rubric.mjs",
+      "sha256": "82ba40c8773b325f2f626906604d953cca6a7b53679c802f32a29c2d3d31e8be"
     },
     {
       "path": ".ai-organization/runtime/core/schema/task-assurance.mjs",
@@ -160,7 +164,7 @@
     },
     {
       "path": ".ai-organization/schemas/agent-role-registry.v1.schema.json",
-      "sha256": "456d7fd82037228cd677dd5a715753de84f3ffdeda429c5ca03d291a88221a94"
+      "sha256": "9610a4f8f5c9a4e14629375891469d78deba8b3bd7b768994e2868294f0e26e2"
     },
     {
       "path": ".ai-organization/schemas/control-plane-manifest.v1.schema.json",
@@ -183,52 +187,56 @@
       "sha256": "51c1e08d38a5ce040a81bf088ff40a2c27bfa39c3b5b62add3d415b43b37f002"
     },
     {
+      "path": ".ai-organization/schemas/task-evidence.v3.schema.json",
+      "sha256": "4843aa1c3ffc7de07947a79d0f738dc6e3b1b86d372f55137dd1c8189bcf171f"
+    },
+    {
       "path": ".claude/agents/adversarial-reviewer.md",
-      "sha256": "df62773147191fd827510d44bb39ba4b4a5f883a9552af228ba8d7f60ca80f13"
+      "sha256": "bb36b4098a14ef4a41a68e7a496c50715f7f38891cabf123e766782592ff9a40"
     },
     {
       "path": ".claude/agents/ai-decision-boundary-auditor.md",
-      "sha256": "b53c897a6779c2b451e34dbd690b6fefcd221c3f4784cbfc27d9a134ea792fa6"
+      "sha256": "39774beacd6e59f02e96914609c605e4314e7e42ec4ff77c5f11aa0a472e194e"
     },
     {
       "path": ".claude/agents/doctrine-drift-auditor.md",
-      "sha256": "c980f91b0c33c5407635994453fd21814495656ad5df2697ad8e5cf8e14f412a"
+      "sha256": "88325985f16ea0499b88e8f58238fbb92941e0f26bf57d1e5281602ac4d0e556"
     },
     {
       "path": ".claude/agents/functionality-parity-auditor.md",
-      "sha256": "6de19f8f2c4d9cba676084d1d8acf4fb11179f18242fc6415820e5d83facb930"
+      "sha256": "f874b9f868ca6fe45a6908ab33a10e746d140c35a4220154faaad213fca7fb3e"
     },
     {
       "path": ".claude/agents/performance-auditor.md",
-      "sha256": "df5f39c80d437ae86c2c799b73ed38c71dc621cf5ae3b34ef051baa6c2afd40f"
+      "sha256": "3b6508204f3ac53e2db833fc9728e632b07438ae37f16d89b9a15e6a147d9d95"
     },
     {
       "path": ".claude/agents/premise-and-architecture-challenger.md",
-      "sha256": "6802729c643e98cc00a7ff7a04734493bae64aae67b2c1d229bc023b2d8e6b6d"
+      "sha256": "f461e874daff98551239f6b6c252f3233e8f52fa33a7fb4e8b0c50bb10379e29"
     },
     {
       "path": ".claude/agents/release-verifier.md",
-      "sha256": "4f6bc3e5512259bbe8ebecb81c476575f148824946ff2fbd94dda55d860736b8"
+      "sha256": "91b25f2ff5df6136b4506746cf797e03dfdc04a00d753fda7e33799adcc3e6d5"
     },
     {
       "path": ".claude/agents/source-to-screen-auditor.md",
-      "sha256": "bda6cf9119a895710f99546426997003bc0ae786867c49a837b2f837f03f1ef5"
+      "sha256": "418b4e4f62f80de960573a0bea7dfe82a17ace6df70151fe64eb175123e91011"
     },
     {
       "path": ".claude/agents/sprint-kickoff-auditor.md",
-      "sha256": "f0c04e9cd09d5b77ca74e303037d1fe44f1102f0109793fdc62559fbc5d6e533"
+      "sha256": "9076b8a29097ef23a61624a89be4b30df3a16fdfe66367e8293d8c8f531576d1"
     },
     {
       "path": ".claude/agents/test-runner.md",
-      "sha256": "6595fecedf826f31e38929cb963e5f9154a4a726b2ca3698b552ac8d9f83f6a0"
+      "sha256": "7c29ab4e8ef3f970d3a1740cb5e55ec8eb4fa7cb2bc9c4a043dd97797966789c"
     },
     {
       "path": ".claude/agents/ui-verifier.md",
-      "sha256": "849901771a0edb764a9d9775ce64115359aa3961de3b8af28f44856c491ebfba"
+      "sha256": "5c4b3559acfe91c01e5ddffcc9bd378c50d55fb74ea65de39c95268b5dfb308e"
     },
     {
       "path": ".claude/agents/user-journey-auditor.md",
-      "sha256": "74f1e45b866fb3bc8f10a620a86d452e943b0ade41b13deb92301096d1cb00e0"
+      "sha256": "202dcce846eb2c2ff5c32bec198dd108c0c4389744bbc3008283be063fd004a7"
     },
     {
       "path": ".cursor/rules/agent-product-intent.mdc",
@@ -344,7 +352,7 @@
     },
     {
       "path": "scripts/check-agent-control-plane.mjs",
-      "sha256": "80d5cd1e7470bcdaa18caaba10a2437ed0be1197bb99861d33555b846200a434"
+      "sha256": "c05e573124d262483d07731e44dbdd6f2d5a711a1bd795da16ac9e93d3415531"
     },
     {
       "path": "scripts/check-doc-code-drift.mjs",
@@ -352,7 +360,7 @@
     },
     {
       "path": "scripts/check-fleet-parity.mjs",
-      "sha256": "37a614d159e1007c2d730fcb914fac502fcd4e3949b16a0b644b0e44b8a8bab6"
+      "sha256": "2eb13b8f279e764c6784d0766eb6189b5113ccdc15d12f49f2089ed8629c1130"
     },
     {
       "path": "scripts/check-overlay-parity.mjs",
@@ -372,7 +380,7 @@
     },
     {
       "path": "scripts/claude-lifecycle-hook.mjs",
-      "sha256": "b1ac95654bfa3588fcc7f737a03f2728d436f45fa01074d8166a4ee74e4ed66b"
+      "sha256": "cf7d0c7513ebcd499956709d13a795366974bfb911896c7a7d2cbb8945891473"
     },
     {
       "path": "scripts/claude-posttooluse-gate.mjs",

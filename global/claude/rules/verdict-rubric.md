@@ -52,6 +52,14 @@ coverage: 82%   score: 0.94
 
 Then the role's normal findings list, refutations-attempted, honesty clause, and doctrine-loop section. The honesty clause now **explains** every `skip` — it is no longer the only thing standing between an unreviewed surface and an ACCEPT.
 
+End a lifecycle-bound review with one machine-readable line containing the raw criterion statuses and finding counts — never an aggregate verdict:
+
+```text
+REVIEW_REPORT_JSON:{"task_id":"TASK-ID","criteria":{"registered-criterion":"pass","unreached-criterion":"skip"},"finding_count":0,"unresolved_finding_count":0}
+```
+
+The lifecycle controller loads the effective registered role, hashes that exact registry/rubric, and computes the authoritative verdict from `criteria`. A reviewer-written `verdict`, if present in prose or a legacy marker, is ignored and can never authorize completion. Missing criteria remain `skip`; unknown criteria or statuses fail closed.
+
 The orchestrator computes the authoritative verdict from your statuses via `core/roles/verdict-rubric.mjs`; your own arithmetic is a cross-check, not the source. If your stated verdict disagrees with the computed one, the computed one wins and the disagreement is itself a finding.
 
 *Fail-state:* a lens issued ACCEPT over criteria it never evaluated, marked a criterion `pass` on the strength of a comment or an implementer's claim rather than the code, or buried an unreached critical surface in prose instead of returning UNVERIFIABLE.

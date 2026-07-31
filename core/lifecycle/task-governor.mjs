@@ -13,6 +13,7 @@ import {
   sha256,
   verifyAttestation,
 } from './evidence-runtime.mjs';
+import { computeRegisteredReview, digestRoleRegistry } from '../roles/verdict-rubric.mjs';
 
 const moduleDirectory = path.dirname(fileURLToPath(import.meta.url));
 const RISK_CLASSES = new Set([
@@ -333,7 +334,12 @@ export function validateTaskContract(contract, { riskPolicy = loadRiskPolicy() }
 
 export function validateTaskEvidence(evidence) {
   if (!evidence || typeof evidence !== 'object') return ['Evidence must be an object'];
-  return validateJsonAgainstSchema(assuranceSchemaFile('task-evidence.v2.schema.json'), evidence);
+  const schema = {
+    2: 'task-evidence.v2.schema.json',
+    3: 'task-evidence.v3.schema.json',
+  }[evidence.schema_version];
+  if (!schema) return ['Evidence schema_version must be 2 or 3'];
+  return validateJsonAgainstSchema(assuranceSchemaFile(schema), evidence);
 }
 
 function profileMap(registry) {
@@ -433,25 +439,54 @@ function validateReviewReceipts(contract, evidence, context, policy) {
   const ids = new Set();
   const validRoles = new Set();
   for (const review of evidence.review_receipts ?? []) {
+    const reviewFailures = [];
     if (ids.has(review.review_id))
-      failures.push(`Duplicate review receipt id: ${review.review_id}`);
+      reviewFailures.push(`Duplicate review receipt id: ${review.review_id}`);
     ids.add(review.review_id);
     if (!verifyAttestation(review, context.attempt.secret_hex))
-      failures.push(`Review receipt attestation is invalid: ${review.review_id}`);
+      reviewFailures.push(`Review receipt attestation is invalid: ${review.review_id}`);
     if (
       review.attempt_id !== context.attempt.attempt_id ||
       review.contract_sha256 !== context.attempt.contract_sha256
     )
-      failures.push(`Review receipt is bound to another task attempt: ${review.review_id}`);
+      reviewFailures.push(`Review receipt is bound to another task attempt: ${review.review_id}`);
     if (review.reviewer_id_sha256 === evidence.completion_report_receipt?.reporter_id_sha256)
-      failures.push(`Independent review reused the implementer platform run: ${review.review_id}`);
+      reviewFailures.push(`Independent review reused the implementer platform run: ${review.review_id}`);
     if (!sameRepositoryBinding(review.repository, evidence.repository))
-      failures.push(
+      reviewFailures.push(
         `Review receipt is stale for the completed repository state: ${review.review_id}`,
       );
-    if (review.verdict !== 'pass' || review.unresolved_finding_count !== 0)
-      failures.push(`Review receipt has unresolved findings: ${review.review_id}`);
-    if (review.verdict === 'pass' && review.unresolved_finding_count === 0)
+
+    const statuses = {};
+    for (const row of review.criterion_statuses ?? []) {
+      if (Object.hasOwn(statuses, row?.criterion_id))
+        reviewFailures.push(`Review receipt repeats criterion status: ${review.review_id}/${row?.criterion_id}`);
+      else statuses[row?.criterion_id] = row?.status;
+    }
+    try {
+      const expected = computeRegisteredReview(context.roleRegistry, review.role, statuses);
+      for (const field of [
+        'rubric_id',
+        'rubric_version',
+        'rubric_sha256',
+        'role_registry_sha256',
+        'criterion_statuses',
+        'coverage',
+        'score',
+        'verdict',
+        'unevaluated_criteria',
+        'verdict_reasons',
+      ]) {
+        if (digestObject(review[field]) !== digestObject(expected[field]))
+          reviewFailures.push(`Review receipt computed field drifted: ${review.review_id}/${field}`);
+      }
+    } catch (error) {
+      reviewFailures.push(`Review receipt cannot be recomputed from the registered rubric: ${review.review_id} (${error.message})`);
+    }
+    if (review.verdict !== 'ACCEPT' || review.unresolved_finding_count !== 0)
+      reviewFailures.push(`Review receipt is not an accepted resolved review: ${review.review_id}/${review.verdict ?? '<missing>'}`);
+    failures.push(...reviewFailures);
+    if (reviewFailures.length === 0)
       validRoles.add(review.role);
   }
   for (const role of policy.roles)
@@ -520,6 +555,7 @@ export function validateCompletion(contract, evidence, context = {}) {
   if (
     !context.attempt ||
     !context.profileRegistry ||
+    !context.roleRegistry ||
     !context.actionAuthority ||
     !context.currentRepository ||
     !context.stateDirectory
@@ -530,6 +566,8 @@ export function validateCompletion(contract, evidence, context = {}) {
     return [...new Set(failures)];
   }
   const { attempt } = context;
+  if (attempt.schema_version !== 3 || evidence.schema_version !== 3)
+    failures.push('Current completion requires task-attempt schema 3 and task-evidence schema 3; legacy evidence is replay-only');
   if (!['completion_claimed', 'completed'].includes(attempt.state))
     failures.push(`Task attempt is not claimed for completion: ${attempt.state}`);
   if (
@@ -545,6 +583,8 @@ export function validateCompletion(contract, evidence, context = {}) {
     failures.push('Evidence task/attempt identity does not match the accepted contract');
   if (attempt.profile_registry_sha256 !== digestObject(context.profileRegistry))
     failures.push('Proof registry changed after TaskCreated');
+  if (attempt.role_registry_sha256 !== digestRoleRegistry(context.roleRegistry))
+    failures.push('Agent-role registry changed after TaskCreated');
   if (attempt.risk_policy_sha256 !== digestObject(riskPolicy))
     failures.push('Risk policy changed after TaskCreated');
   if (attempt.action_authority_sha256 !== digestObject(context.actionAuthority))
