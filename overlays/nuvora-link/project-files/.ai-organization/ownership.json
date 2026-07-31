@@ -20,6 +20,7 @@
     "scripts/check-overlay-parity.mjs",
     "scripts/check-rules-wiring.mjs",
     "scripts/check-test-intent.mjs",
+    "scripts/check-test-workspace-coverage.mjs",
     "scripts/claude-lifecycle-hook.mjs",
     "scripts/claude-posttooluse-gate.mjs",
     "scripts/run-bounded-agent.mjs",
@@ -36,6 +37,9 @@
       "scripts.gate:fleet-parity",
       "scripts.gate:overlay-parity",
       "scripts.gate:test-intent",
+      "scripts.gate:test-workspace-coverage",
+      "scripts.test:workspace-build-contracts",
+      "scripts.test:all",
       "scripts.gates:all",
       "scripts.verify"
     ]

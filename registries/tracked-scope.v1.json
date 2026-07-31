@@ -3759,6 +3759,10 @@
       "class": "project-orchestration-overlay"
     },
     {
+      "path": "overlays/nuvora-link/project-files/scripts/check-test-workspace-coverage.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
       "path": "overlays/nuvora-link/project-files/scripts/claude-lifecycle-hook.mjs",
       "class": "project-orchestration-overlay"
     },

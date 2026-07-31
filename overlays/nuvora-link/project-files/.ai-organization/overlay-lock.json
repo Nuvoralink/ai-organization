@@ -16,7 +16,7 @@
     },
     {
       "path": ".ai-organization/ownership.json",
-      "sha256": "a99ef4d6189b4b8fe6fa375ada97b178c407f2df36b3fc9eec44658ebbecbf82"
+      "sha256": "c551baa1cfd40751dd5d4fcbe8f43b7402ef1189d282fae013198cf1a55efd18"
     },
     {
       "path": ".ai-organization/policies/authority-domains.v1.json",
@@ -139,6 +139,10 @@
       "sha256": "2371f7a9b8c04f25a2d00aa38605ee8348f2d70f48a3167f7bade25375cee95b"
     },
     {
+      "path": "scripts/check-test-workspace-coverage.mjs",
+      "sha256": "7c49476fee14617f36407aeabb7cc42fdb55997a23f96b756a54ece94db24dda"
+    },
+    {
       "path": "scripts/claude-lifecycle-hook.mjs",
       "sha256": "8aa46c07b07fb5ef033e516985fc5b77b5761f4daa3bc832ca71571ac2389b7f"
     },
@@ -171,8 +175,11 @@
       "scripts.gate:fleet-parity": "0c52db346e952ce8a20715558c836c3b5a4468850482b642b69d83b62d653a5c",
       "scripts.gate:overlay-parity": "1a8628d10ac232722aad9b376f7a2b1b957703716595b0e3f3ae294f316e5926",
       "scripts.gate:test-intent": "a681675ab78e06daa7f6bbd1db7d1768a7fb508019029ae5c89a539ce3361761",
-      "scripts.gates:all": "fc7fde002f536598080a36802f9fc26935ecbdbcefcefd86fb63aacc1013c823",
-      "scripts.verify": "9b8ce849ab9c13553bcc21adb9b8a1a1982265d25e5da8d64cb65956c4c8e8ab"
+      "scripts.gate:test-workspace-coverage": "0784dcb195ff59b2adda18ad417305028f1d8e985fe180c3ce579ceea8c1825c",
+      "scripts.test:workspace-build-contracts": "b20baebaf2e064b51fd66bd4df9118004f2c6107af0ccc7db9881d8f8b9364e1",
+      "scripts.test:all": "8dd398c254ccceafd578194a206b283170e80a9781f9ca4c7c308ec32dafa382",
+      "scripts.gates:all": "a3c6368b8a2a377949d1a9a885b27e9eae32ba96331084601b2b7e2400ea003b",
+      "scripts.verify": "db578a61020c18c17bf1bbf6fce0eedc49dcd5e506d774255e353c405a02f9d3"
     }
   }
 }
