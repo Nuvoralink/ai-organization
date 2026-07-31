@@ -23,6 +23,8 @@ import {
   validateSafeProofProfile
 } from './evidence-runtime.mjs';
 import { classifyMinimumRiskPaths, loadActionAuthority, loadRiskPolicy, validateCompletion, validateTaskContract } from './task-governor.mjs';
+import { loadAgentRoleRegistry } from '../roles/agent-role-registry.mjs';
+import { computeRegisteredReview, digestRoleRegistry } from '../roles/verdict-rubric.mjs';
 
 function acceptedRepositoryBaseRef(attempt) {
   const baseRef = attempt?.repository_base_ref;
@@ -46,6 +48,9 @@ export function acceptLifecycleTask({
   repositoryProvider = collectRepositoryState
 }) {
   const failures = validateTaskContract(contract, { riskPolicy });
+  let roleRegistry;
+  try { roleRegistry = loadAgentRoleRegistry(cwd); }
+  catch (error) { failures.push(error.message); }
   if (contract?.id !== taskId) failures.push('Payload task id must exactly match the task contract id');
   const expectedMode = contract?.completion?.tier === 'analysis' ? 'read-only' : 'implementation';
   if (completionMode !== expectedMode) failures.push(`Completion mode must be ${expectedMode} for contract tier ${contract?.completion?.tier ?? '<missing>'}`);
@@ -78,6 +83,7 @@ export function acceptLifecycleTask({
       completionMode,
       repository: repository.binding,
       profileRegistry,
+      roleRegistrySha256: digestRoleRegistry(roleRegistry),
       riskPolicy,
       actionAuthority,
       repositoryBaseRef: baseRef
@@ -109,6 +115,12 @@ export function completeLifecycleTask({
     if (claimed.attempt.profile_registry_sha256 !== digestObject(profileRegistry)) replayFailures.push('Completed replay proof registry differs from the accepted attempt');
     if (claimed.attempt.risk_policy_sha256 !== digestObject(riskPolicy)) replayFailures.push('Completed replay risk policy differs from the accepted attempt');
     if (claimed.attempt.action_authority_sha256 !== digestObject(actionAuthority)) replayFailures.push('Completed replay action authority differs from the accepted attempt');
+    if (claimed.attempt.schema_version === 3) {
+      try {
+        const roleRegistry = loadAgentRoleRegistry(cwd);
+        if (claimed.attempt.role_registry_sha256 !== digestRoleRegistry(roleRegistry)) replayFailures.push('Completed replay agent-role registry differs from the accepted attempt');
+      } catch (error) { replayFailures.push(error.message); }
+    }
     try {
       const current = repositoryProvider(cwd, { baseRef: acceptedRepositoryBaseRef(claimed.attempt) });
       if (!sameRepositoryBinding(current.binding, claimed.attempt.completion_receipt?.repository)) replayFailures.push('Completed replay repository state differs from the stored completion receipt');
@@ -124,6 +136,15 @@ export function completeLifecycleTask({
   const attempt = claimed.attempt;
   let baseRef;
   const failures = [];
+  let roleRegistry;
+  if (attempt.schema_version !== 3 || !attempt.role_registry_sha256) {
+    failures.push('Legacy task attempts cannot authorize a current completion; start a new current task attempt');
+  } else {
+    try {
+      roleRegistry = loadAgentRoleRegistry(cwd);
+      if (attempt.role_registry_sha256 !== digestRoleRegistry(roleRegistry)) failures.push('Agent-role registry changed after TaskCreated');
+    } catch (error) { failures.push(error.message); }
+  }
   try { baseRef = acceptedRepositoryBaseRef(attempt); }
   catch (error) { failures.push(error.message); }
   if (!attempt.completion_report_receipt) failures.push('Completion requires a SubagentStop-bound completion report receipt; TaskCompleted does not carry report evidence');
@@ -160,6 +181,7 @@ export function completeLifecycleTask({
     failures.push(...validateCompletion(attempt.contract, evidence, {
       attempt,
       profileRegistry,
+      roleRegistry,
       riskPolicy,
       actionAuthority,
       currentRepository: finalRepository.binding,
@@ -182,12 +204,14 @@ export function recordLifecycleCompletionReport({ taskId, reporterId, reporterSe
   return recordCompletionReportReceipt({ stateDirectory, taskId, reporterId, reporterSessionId, reporterRole, repository: repository.binding, report });
 }
 
-export function recordLifecycleReview({ taskId, reviewerId, reviewerSessionId, role, verdict, findingCount, unresolvedFindingCount, cwd, stateDirectory = defaultAssuranceStateDirectory(cwd), repositoryProvider = collectRepositoryState, riskPolicy = loadRiskPolicy() }) {
+export function recordLifecycleReview({ taskId, reviewerId, reviewerSessionId, role, criterionStatuses, findingCount, unresolvedFindingCount, cwd, stateDirectory = defaultAssuranceStateDirectory(cwd), repositoryProvider = collectRepositoryState, riskPolicy = loadRiskPolicy() }) {
   const attempt = loadTaskAttempt(stateDirectory, taskId);
   if (!attempt) throw new Error(`No accepted task attempt exists for ${taskId}.`);
   const allowedRoles = new Set((attempt.contract?.risk?.classes ?? []).flatMap((risk) => riskPolicy.classes?.[risk]?.required_roles ?? []));
   if (!allowedRoles.has(role)) throw new Error(`Reviewer role is not required by the accepted contract risk policy: ${role}`);
   const repository = repositoryProvider(cwd, { baseRef: acceptedRepositoryBaseRef(attempt) });
+  const roleRegistry = loadAgentRoleRegistry(cwd);
+  const computedReview = computeRegisteredReview(roleRegistry, role, criterionStatuses);
   return recordReviewReceipt({
     stateDirectory,
     taskId,
@@ -195,7 +219,7 @@ export function recordLifecycleReview({ taskId, reviewerId, reviewerSessionId, r
     reviewerSessionId,
     role,
     repository: repository.binding,
-    verdict,
+    computedReview,
     findingCount,
     unresolvedFindingCount
   });

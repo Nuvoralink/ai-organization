@@ -18,7 +18,7 @@ Connect a clean machine to this private repository and begin safe, consistent Cl
 ## Authority seams
 
 - Policy: `policies/action-authority.v1.json` owns what agents may do autonomously.
-- Task assurance: `schemas/task-assurance.v2.schema.json`, `schemas/task-evidence.v2.schema.json`, and `core/lifecycle/` own the cross-vendor contract, runner evidence, attempt state, and completion authority.
+- Task assurance: `schemas/task-assurance.v2.schema.json`, current `schemas/task-evidence.v3.schema.json`, legacy replay-only `schemas/task-evidence.v2.schema.json`, and `core/lifecycle/` own the cross-vendor contract, runner evidence, attempt state, and completion authority.
 - Roles: `registries/agent-roles.v1.json` owns the universal fleet; each `overlays/<project>/control-plane/registries/agent-roles.project.v1.json` owns only that project's extensions, and `core/roles/agent-role-registry.mjs` owns fail-closed merge semantics.
 - Assets: `global`, `skills`, and `overlays` own portable files.
 - Location: `registries/project-roots.local.json` owns machine-specific paths and is never committed.

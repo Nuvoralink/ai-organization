@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nuvoralink.internal/schemas/task-evidence.v3.schema.json",
+  "title": "Runner-generated task completion evidence with computed review verdicts",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "attempt_id", "contract_sha256", "repository", "changed_files", "proof_receipts", "review_receipts", "human_gate_receipts", "completion_report_receipt", "unreached_surfaces", "doctrine_loop"],
+  "properties": {
+    "schema_version": { "const": 3 },
+    "task_id": { "type": "string", "minLength": 1 },
+    "attempt_id": { "type": "string", "pattern": "^att-[a-f0-9]{32}$" },
+    "contract_sha256": { "$ref": "task-evidence.v2.schema.json#/$defs/sha256" },
+    "repository": { "$ref": "task-evidence.v2.schema.json#/$defs/repository" },
+    "changed_files": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "proof_receipts": { "$ref": "task-evidence.v2.schema.json#/properties/proof_receipts" },
+    "review_receipts": { "type": "array", "items": { "$ref": "#/$defs/computedReviewReceipt" } },
+    "human_gate_receipts": { "type": "array", "items": { "$ref": "task-evidence.v2.schema.json#/$defs/humanGateReceipt" } },
+    "completion_report_receipt": { "$ref": "task-evidence.v2.schema.json#/$defs/completionReportReceipt" },
+    "unreached_surfaces": { "type": "array", "items": { "type": "string" } },
+    "doctrine_loop": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "computedReviewReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["review_receipt_version", "review_id", "attempt_id", "contract_sha256", "reviewer_id_sha256", "reviewer_session_sha256", "role", "repository", "rubric_id", "rubric_version", "rubric_sha256", "role_registry_sha256", "criterion_statuses", "coverage", "score", "verdict", "unevaluated_criteria", "verdict_reasons", "finding_count", "unresolved_finding_count", "reviewed_at", "attestation_hmac_sha256"],
+      "properties": {
+        "review_receipt_version": { "const": 2 },
+        "review_id": { "type": "string", "pattern": "^review-[a-f0-9]{32}$" },
+        "attempt_id": { "type": "string", "pattern": "^att-[a-f0-9]{32}$" },
+        "contract_sha256": { "$ref": "task-evidence.v2.schema.json#/$defs/sha256" },
+        "reviewer_id_sha256": { "$ref": "task-evidence.v2.schema.json#/$defs/sha256" },
+        "reviewer_session_sha256": { "$ref": "task-evidence.v2.schema.json#/$defs/sha256" },
+        "role": { "type": "string", "minLength": 1 },
+        "repository": { "$ref": "task-evidence.v2.schema.json#/$defs/repository" },
+        "rubric_id": { "type": "string", "minLength": 1 },
+        "rubric_version": { "type": "integer", "minimum": 1 },
+        "rubric_sha256": { "$ref": "task-evidence.v2.schema.json#/$defs/sha256" },
+        "role_registry_sha256": { "$ref": "task-evidence.v2.schema.json#/$defs/sha256" },
+        "criterion_statuses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["criterion_id", "status"],
+            "properties": {
+              "criterion_id": { "type": "string", "minLength": 1 },
+              "status": { "enum": ["pass", "partial", "fail", "skip"] }
+            }
+          }
+        },
+        "coverage": { "type": "number", "minimum": 0, "maximum": 1 },
+        "score": { "anyOf": [{ "type": "number", "minimum": 0, "maximum": 1 }, { "type": "null" }] },
+        "verdict": { "enum": ["ACCEPT", "REJECT", "UNVERIFIABLE"] },
+        "unevaluated_criteria": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "verdict_reasons": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "finding_count": { "type": "integer", "minimum": 0 },
+        "unresolved_finding_count": { "type": "integer", "minimum": 0 },
+        "reviewed_at": { "$ref": "task-evidence.v2.schema.json#/$defs/timestamp" },
+        "supersedes_review_id": { "type": "string", "pattern": "^review-[a-f0-9]{32}$" },
+        "attestation_hmac_sha256": { "$ref": "task-evidence.v2.schema.json#/$defs/sha256" }
+      }
+    }
+  }
+}

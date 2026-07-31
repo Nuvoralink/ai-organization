@@ -103,6 +103,19 @@ test('Proves: a criterion the lens never mentioned is treated as unevaluated rat
   assert.ok(result.unevaluated.includes('critical-two'), 'silence must register as unevaluated');
 });
 
+test('Proves: only statuses for criteria registered to the role may reach verdict computation; Test type: scoring contract; Surface: verdict scoring; Authority: role rubric criterion ids; Killer mutation: ignore unknown criterion ids — a malformed lifecycle report is silently accepted and this goes red; Gated command: npm test', () => {
+  assert.throws(
+    () => scoreVerdict(rubric(), {
+      'critical-one': 'pass',
+      'critical-two': 'pass',
+      'ordinary-one': 'pass',
+      'ordinary-two': 'pass',
+      'invented-criterion': 'pass',
+    }),
+    /Unknown criterion id: invented-criterion/u,
+  );
+});
+
 test('Proves: a critical criterion at partial or fail caps the verdict at REJECT regardless of the weighted score; Test type: scoring algebra; Surface: verdict scoring; Authority: verdict-rubric critical rule; Killer mutation: drop the critical shortfall check — the 0.85 score still clears nothing but the partial passes and this goes red; Gated command: npm test', () => {
   const partial = scoreVerdict(rubric(), {
     'critical-one': 'pass',

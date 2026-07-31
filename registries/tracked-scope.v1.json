@@ -3635,6 +3635,10 @@
       "class": "schema"
     },
     {
+      "path": "schemas/task-evidence.v3.schema.json",
+      "class": "schema"
+    },
+    {
       "path": "scripts/check-fleet-parity.mjs",
       "class": "control-plane-tooling"
     },

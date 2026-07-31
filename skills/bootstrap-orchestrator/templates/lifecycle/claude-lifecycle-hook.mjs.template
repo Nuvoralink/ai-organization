@@ -566,7 +566,7 @@ async function handle(payload, root) {
           reviewerId: payload.agent_id,
           reviewerSessionId: payload.session_id,
           role: payload.agent_type,
-          verdict: review.verdict,
+          criterionStatuses: review.criteria,
           findingCount: review.finding_count,
           unresolvedFindingCount: review.unresolved_finding_count,
           cwd: root,

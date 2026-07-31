@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 function rolesFrom(registry, label) {
   if (!registry || !Array.isArray(registry.roles)) throw new TypeError(`${label} must contain a roles array`);
   return registry.roles;
@@ -102,4 +105,46 @@ export function effectiveRoles(universal, projectExtension) {
     ...universalRoles.filter((role) => !supersededTargets.has(role.id)),
     ...projectRoles.map(normalizedProjectRole),
   ];
+}
+
+function firstExistingFile(candidates, label) {
+  const file = candidates.find((candidate) => fs.existsSync(candidate));
+  if (!file) throw new Error(`${label} is not installed under ${candidates[0]}`);
+  return file;
+}
+
+/**
+ * Load the canonical universal role registry and the optional project extension from a
+ * repository root. Installed overlays and this canonical repository deliberately use the
+ * same return shape so lifecycle scoring never needs a project-specific branch.
+ */
+export function loadAgentRoleRegistry(root) {
+  const resolvedRoot = path.resolve(root);
+  const universalFile = firstExistingFile(
+    [
+      path.join(resolvedRoot, '.ai-organization', 'registries', 'agent-roles.v1.json'),
+      path.join(resolvedRoot, 'registries', 'agent-roles.v1.json'),
+    ],
+    'Universal agent-role registry',
+  );
+  const projectFile = [
+    path.join(resolvedRoot, '.ai-organization', 'registries', 'agent-roles.project.v1.json'),
+    path.join(resolvedRoot, 'registries', 'agent-roles.project.v1.json'),
+  ].find((candidate) => fs.existsSync(candidate));
+  const universal = JSON.parse(fs.readFileSync(universalFile, 'utf8'));
+  const project = projectFile ? JSON.parse(fs.readFileSync(projectFile, 'utf8')) : null;
+  const roles = project ? effectiveRoles(universal, project) : rolesFrom(universal, 'universal registry');
+  return { universal, project, roles };
+}
+
+/** Only authored registries are hashed. The derived roles array is deterministic but redundant. */
+export function roleRegistryAuthority(registry) {
+  return { universal: registry?.universal, project: registry?.project ?? null };
+}
+
+export function registeredRole(registry, roleId) {
+  const matches = (registry?.roles ?? []).filter((role) => role.id === roleId);
+  if (matches.length !== 1)
+    throw new Error(`Reviewer role must resolve to exactly one registered role: ${roleId ?? '<missing>'}`);
+  return matches[0];
 }

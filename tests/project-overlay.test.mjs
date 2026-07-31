@@ -264,18 +264,23 @@ test('Proves: COORDINATION-RUNNER-DELIVERY-001; Test type: missing-mapping mutat
   );
 });
 
-test('Proves: CONTROL-PLANE-LIFECYCLE-OVERLAY-DRIFT-001; Test type: scoped overlay install; Surface: installed lifecycle README in both declared projects; Authority: shared-runtime mappings; Killer mutation: exclude core/lifecycle/README.md from either shared-runtime delivery; Gated command: npm test', () => {
+test('Proves: CONTROL-PLANE-LIFECYCLE-OVERLAY-DRIFT-001 and VERDICT-RUNTIME-OVERLAY-001; Test type: scoped overlay install; Surface: installed lifecycle runtime/schema and review adapters in both declared projects; Authority: shared-runtime and assurance-schema mappings; Killer mutation: exclude the current evidence schema/runtime, or restore reviewer-authored aggregate verdict forwarding in either adapter; Gated command: npm test', () => {
   const canonicalReadme = fs.readFileSync(
     path.join(repoRoot, 'core', 'lifecycle', 'README.md'),
     'utf8',
   );
+  const canonicalEvidenceSchema = fs.readFileSync(
+    path.join(repoRoot, 'schemas', 'task-evidence.v3.schema.json'),
+    'utf8',
+  );
   for (const project of ['auxara-dialer', 'coachai']) {
     const target = fixture(project);
+    const prefix = project === 'coachai' ? 'coachai' : 'auxara';
     runInstall({
       repoRoot,
       manifest: target.manifest,
       roots: target.roots,
-      mappingIds: [`${project === 'coachai' ? 'coachai' : 'auxara'}-shared-runtime`],
+      mappingIds: [`${prefix}-shared-runtime`, `${prefix}-assurance-schemas`],
     });
     assert.equal(
       fs.readFileSync(
@@ -292,6 +297,20 @@ test('Proves: CONTROL-PLANE-LIFECYCLE-OVERLAY-DRIFT-001; Test type: scoped overl
       canonicalReadme,
       `${project} shared-runtime mapping must deliver the canonical lifecycle README`,
     );
+    assert.equal(
+      fs.readFileSync(
+        path.join(target.root, '.ai-organization', 'schemas', 'task-evidence.v3.schema.json'),
+        'utf8',
+      ),
+      canonicalEvidenceSchema,
+      `${project} assurance mapping must deliver the current computed-verdict evidence schema`,
+    );
+    const hook = fs.readFileSync(
+      path.join(repoRoot, 'overlays', project, 'project-files', 'scripts', 'claude-lifecycle-hook.mjs'),
+      'utf8',
+    );
+    assert.match(hook, /criterionStatuses:\s*review(?:Report)?\.criteria/u);
+    assert.doesNotMatch(hook, /verdict:\s*review(?:Report)?\.verdict/u);
   }
 });
 
