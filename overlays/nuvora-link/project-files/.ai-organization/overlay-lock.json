@@ -124,7 +124,7 @@
     },
     {
       "path": "scripts/check-fleet-parity.mjs",
-      "sha256": "b50fa182432fc5f90d8fdd7f54e3235c5698fa7d36fb69f33f08fbd102e81f70"
+      "sha256": "2eb13b8f279e764c6784d0766eb6189b5113ccdc15d12f49f2089ed8629c1130"
     },
     {
       "path": "scripts/check-overlay-parity.mjs",

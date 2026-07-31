@@ -402,7 +402,7 @@ test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and p
   runInstall({ repoRoot, manifest: target.manifest, roots: target.roots });
   assert.deepEqual(runCheck({ repoRoot, manifest: target.manifest, roots: target.roots }), []);
   const parity = checkNuvoraLinkOverlayParity(target.root);
-  assert.equal(parity.ok, true);
+  assert.equal(parity.ok, true, `fresh Nuvora overlay parity failed:\n${parity.errors.join('\n')}`);
   assert.deepEqual(parity.errors, []);
   const portableLock = JSON.parse(
     fs.readFileSync(path.join(target.root, '.ai-organization', 'overlay-lock.json'), 'utf8'),
