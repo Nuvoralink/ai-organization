@@ -7,6 +7,7 @@
     "node": ">=20"
   },
   "scripts": {
+    "ci": "npm test && npm run control:validate && npm run overlay:validate:auxara && npm run overlay:validate:coachai",
     "control:check": "node scripts/control-plane.mjs check",
     "control:check:notify": "node scripts/control-check-notify.mjs",
     "control:validate": "node scripts/control-plane.mjs validate",
