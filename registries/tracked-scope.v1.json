@@ -15,10 +15,6 @@
       "class": "github-orchestration"
     },
     {
-      "path": ".github/workflows/control-plane.yml",
-      "class": "github-orchestration"
-    },
-    {
       "path": ".gitignore",
       "class": "repository-metadata"
     },

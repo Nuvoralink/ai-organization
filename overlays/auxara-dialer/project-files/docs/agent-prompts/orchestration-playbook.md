@@ -109,8 +109,8 @@ For Claude `TaskCreated`, an ENFORCE refusal is decided before lifecycle accepta
 implementer (worktree) → **local CI-equivalent proof when risk warrants** (`gate:audit`, `verify`,
 `test:integration`, Docker build) → **adversarial-reviewer** → (compliance/cybersecurity auditor when
 the surface warrants) → orchestrator verifies the verdict's evidence → **human-approved merge** → docs/board update.
-Ordinary pre-customer PRs use local proof; GitHub Actions is for `main`, important milestone/release
-tags, or manual dispatch. Implementer reports are treated as leads, not proof; "done" claims get
+All PRs use the complete local `npm run ci` proof; GitHub-hosted CI is intentionally retired to avoid
+paid remote runners. Implementer reports are treated as leads, not proof; "done" claims get
 re-verified against disk. If you ever see this loop skipped, call it — that's a bug in the orchestration,
 not a shortcut.
 

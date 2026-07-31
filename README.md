@@ -26,7 +26,7 @@ git clone https://github.com/Nuvoralink/ai-organization.git
 cd ai-organization
 Copy-Item registries/project-roots.example.json registries/project-roots.local.json
 # Edit only the project paths in the untracked local file.
-npm test
+npm run ci
 npm run control:check
 npm run control:install -- --dry-run
 npm run control:install
@@ -38,6 +38,8 @@ npm run overlay:check:auxara -- --root 'C:\path\to\Auxara Dialer'
 npm run overlay:install:coachai -- --root 'C:\path\to\Nuvora CoachAi'
 npm run overlay:check:coachai -- --root 'C:\path\to\Nuvora CoachAi'
 ```
+
+`npm run ci` is the portable merge gate: unit and killer-mutation tests, canonical validation, and both project-overlay validations. GitHub-hosted CI is intentionally retired to avoid paid remote-runner execution; PR status checks are not proof.
 
 The installer never reads excluded secret-bearing locations, snapshots every managed target before replacement, and never deletes unmanaged files by default. If an install must be reversed, use `npm run control:rollback -- --install-id <id>` or the matching project-overlay rollback command. See [Operations](docs/operations.md), [Ownership boundaries](docs/ownership-boundaries.md), and [Architecture](docs/architecture.md).
 
