@@ -89,7 +89,7 @@ Fail closed before provider work, persistence, or audit creation when the actor 
 ### Password
 Current implemented password flow is authenticated change-password, not email reset. Minimum length aligned with backend validation. Emailed self-service recovery is identity-global: `password_reset_tokens` binds to `user_id`, contains no `tenant_id`, expires, is single-use, uses generic anti-enumeration responses and rate limits, and is consumed only through narrowly registered auth services. A successful password change or reset increments global `users.auth_token_version` and intentionally revokes every workspace session.
 
-Tenant-admin reset authorization remains workspace-scoped: authorize the admin through their active membership and role/permission scope, and allow only an eligible target membership in that tenant. The resulting credential mutation is still global and records the authorizing tenant audit plus the global revocation outcome. Removing or suspending one membership never changes the password or disables the global identity.
+Tenant-admin recovery initiation remains workspace-scoped: authorize the admin through their active membership and role/permission scope, and allow only an eligible target membership in that tenant. The administrator may request the same generic recovery-link delivery and create a workspace audit row, but never sees the token, creates a temporary password, mutates the global credential, or revokes sessions. Only the identity owner changes the password through authenticated self-change or by consuming the emailed one-time token. Removing or suspending one membership never changes the password or disables the global identity.
 
 ### Invite Acceptance
 Invite acceptance validates the token, rejects accepted/expired invites, creates or reuses the global identity for the invited email, adds the tenant membership and role assignment in the correct tenant, marks the invite accepted, and audits the event in one transaction. It may select only the invite-bound active membership when it establishes session + CSRF cookies. Preserve cross-stack invite-role guards (paid invite cannot land in internal stack).
@@ -167,12 +167,12 @@ Invite acceptance validates the token, rejects accepted/expired invites, creates
 - 401/403 UX is clear and does not loop.
 - Invite/signup/admin flows write all required user, tenant, membership, audit, and billing/trial state.
 - Browser flows use httpOnly session cookie + signed CSRF; bearer auth is not the browser authority.
-- Self-service recovery is identity-global and revokes all workspace sessions; tenant-admin reset authorization remains workspace-scoped.
+- Identity-owner recovery is global and revokes all workspace sessions; tenant-admin recovery initiation is delivery-only and workspace-scoped.
 - Sensitive logs avoided.
 - Tests/build/smoke run or explicitly reported if blocked.
 
 ## Authority-Boundary Regression Contract
 
 - **Fail-state:** a global user row again owns `tenant_id`, `role_id`, or tenant lifecycle, or a membership row becomes a second role/scope authority beside `role_assignments`.
-- **Regression mutation:** let a two-membership identity reset its password through a tenant-scoped token or trust/select one tenant during recovery; the global-revocation and membership-isolation tests must fail.
-- **Counterexample:** an admin-initiated reset is authorized only inside the admin's active tenant and against the target's membership there, while the successful credential mutation intentionally increments the one global `auth_token_version` and revokes sessions in every workspace.
+- **Regression mutation:** let a two-membership identity reset its password through a tenant-scoped token, let a tenant administrator create a temporary password or mutate the global credential, or trust/select one tenant during recovery; the recovery-authority and membership-isolation tests must fail.
+- **Counterexample:** an administrator authorized inside their active tenant may trigger generic delivery for an eligible target membership and record that tenant audit without receiving the token or changing any identity-global credential/session state.
