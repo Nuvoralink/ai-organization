@@ -393,7 +393,7 @@ test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and p
       'gate:overlay-parity': 'node scripts/check-overlay-parity.mjs',
       'gate:test-intent': 'node scripts/check-test-intent.mjs',
       'gates:all': 'npm run gate:rules-wiring && npm run gate:agent-context && npm run gate:agent-control-plane && npm run gate:fleet-parity && npm run gate:overlay-parity && npm run gate:test-intent',
-      verify: 'npm run typecheck && npm run build && npm run -w @nuvora-link/api test && npm run gates:all',
+      verify: 'npm run test:workspace-build-contracts && npm run typecheck && npm run build && npm run -w @nuvora-link/api test && npm run gates:all',
     },
   };
   fs.writeFileSync(path.join(target.root, 'package.json'), `${JSON.stringify(packageJson)}\n`);
