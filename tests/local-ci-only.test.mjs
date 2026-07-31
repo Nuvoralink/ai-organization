@@ -2,7 +2,7 @@
  * Proves: ORG-LOCAL-CI-ONLY-001; Test type: retirement and executable-contract mutation;
  * Surface: repository merge gate; Authority: package.json local CI script;
  * Killer mutations: add a root GitHub Actions workflow, remove tracked-scope drift detection,
- * or remove any required local CI lane;
+ * remove any required local CI lane, or restore a documented lane-skip escape hatch;
  * Gated command: npm run ci.
  */
 import assert from 'node:assert/strict';
@@ -33,4 +33,27 @@ test('Proves: GitHub-hosted workflows stay retired and local CI retains every co
   ]) {
     assert.ok(localCi.includes(requiredLane), `local CI omitted ${requiredLane}`);
   }
+
+  const auxaraEngineeringRule = fs.readFileSync(
+    path.join(
+      repoRoot,
+      'overlays',
+      'auxara-dialer',
+      'project-files',
+      '.claude',
+      'rules',
+      'auxara-dialer-engineering-rules.md',
+    ),
+    'utf8',
+  );
+  assert.doesNotMatch(
+    auxaraEngineeringRule,
+    /--skip-docker/u,
+    'generated Auxara doctrine must not advertise a retired partial-CI option',
+  );
+  assert.match(
+    auxaraEngineeringRule,
+    /ci` command exposes no lane-skip option/u,
+    'generated Auxara doctrine must explicitly preserve the indivisible merge gate',
+  );
 });
