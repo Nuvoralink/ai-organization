@@ -8,9 +8,15 @@ import { validateJsonAgainstSchema } from '../.ai-organization/runtime/core/sche
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const requiredEvents = ['SessionStart', 'SubagentStart', 'TaskCreated', 'TaskCompleted', 'SubagentStop', 'PostCompact', 'SessionEnd', 'PostToolUse'];
+const requiredAssuranceSchemas = [
+  '.ai-organization/schemas/task-assurance.v2.schema.json',
+  '.ai-organization/schemas/task-evidence.v2.schema.json',
+  '.ai-organization/schemas/task-evidence.v3.schema.json',
+];
 const requiredFiles = [
   '.ai-organization/policies/action-authority.v1.json',
   '.ai-organization/schemas/action-authority.v1.schema.json',
+  ...requiredAssuranceSchemas,
   '.ai-organization/proof-profiles.json', '.ai-organization/roles.json', '.ai-organization/ownership.json',
   '.ai-organization/overlay-lock.json', 'scripts/claude-lifecycle-hook.mjs', 'scripts/claude-posttooluse-gate.mjs',
   'scripts/run-bounded-agent.mjs', 'scripts/lib/boundedProcess.mjs', 'scripts/lib/dispatchBoundary.mjs',
@@ -21,6 +27,13 @@ if (problems.length === 0) {
   const action = JSON.parse(fs.readFileSync(path.join(root, '.ai-organization', 'policies', 'action-authority.v1.json'), 'utf8'));
   problems.push(...validateJsonAgainstSchema(path.join(root, '.ai-organization', 'schemas', 'action-authority.v1.schema.json'), action).map((problem) => `action authority schema: ${problem}`));
   problems.push(...validateActionPolicySemantics(action).map((problem) => `action authority semantics: ${problem}`));
+  for (const relative of requiredAssuranceSchemas) {
+    try {
+      JSON.parse(fs.readFileSync(path.join(root, relative), 'utf8'));
+    } catch (error) {
+      problems.push(`invalid JSON authority ${relative}: ${error.message}`);
+    }
+  }
 }
 const settings = JSON.parse(fs.readFileSync(path.join(root, '.claude', 'settings.json'), 'utf8'));
 for (const event of requiredEvents) {

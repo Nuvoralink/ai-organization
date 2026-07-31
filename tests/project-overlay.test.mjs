@@ -372,7 +372,7 @@ test('Proves: CONTROL-PLANE-LIFECYCLE-OVERLAY-DRIFT-001 and VERDICT-RUNTIME-OVER
   }
 });
 
-test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and product-boundary mutation; Surface: Nuvora Link organization overlay; Authority: project profile, portable lock, and package script ownership; Killer mutations: describe generalized SaaS tenancy, drift a managed gate command, omit a generated file, or remove a required intent header from a managed runtime test; Gated command: npm test', (t) => {
+test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and product-boundary mutation; Surface: Nuvora Link organization overlay; Authority: project profile, portable lock, and package script ownership; Killer mutations: describe generalized SaaS tenancy, drift a managed gate command, remove or corrupt task-evidence v3, omit a generated file, or remove a required intent header from a managed runtime test; Gated command: npm test', (t) => {
   const profile = JSON.parse(fs.readFileSync(path.join(repoRoot, 'overlays', 'nuvora-link', 'control-plane', 'project-profile.v1.json'), 'utf8'));
   assert.equal(profile.productDeploymentMode, 'single-company-internal');
   assert.match(profile.organizationScopePurpose, /not-saas-tenancy/u);
@@ -415,6 +415,29 @@ test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and p
     0,
     `fresh Nuvora install gates:all failed\nstdout:\n${installedGates.stdout}\nstderr:\n${installedGates.stderr}`,
   );
+
+  const currentEvidenceSchema = path.join(
+    target.root,
+    '.ai-organization',
+    'schemas',
+    'task-evidence.v3.schema.json',
+  );
+  const currentEvidenceSchemaSource = fs.readFileSync(currentEvidenceSchema, 'utf8');
+  fs.rmSync(currentEvidenceSchema);
+  const missingEvidenceSchema = runNpm(target.root, ['run', 'gate:agent-control-plane']);
+  assert.notEqual(missingEvidenceSchema.status, 0, 'missing task-evidence v3 must fail gate:agent-control-plane');
+  assert.match(
+    `${missingEvidenceSchema.stdout}\n${missingEvidenceSchema.stderr}`,
+    /missing required control file: \.ai-organization\/schemas\/task-evidence\.v3\.schema\.json/u,
+  );
+  fs.writeFileSync(currentEvidenceSchema, '{\n');
+  const malformedEvidenceSchema = runNpm(target.root, ['run', 'gate:agent-control-plane']);
+  assert.notEqual(malformedEvidenceSchema.status, 0, 'malformed task-evidence v3 must fail gate:agent-control-plane');
+  assert.match(
+    `${malformedEvidenceSchema.stdout}\n${malformedEvidenceSchema.stderr}`,
+    /invalid JSON authority \.ai-organization\/schemas\/task-evidence\.v3\.schema\.json/u,
+  );
+  fs.writeFileSync(currentEvidenceSchema, currentEvidenceSchemaSource);
 
   const managedRuntimeTest = path.join(
     target.root,

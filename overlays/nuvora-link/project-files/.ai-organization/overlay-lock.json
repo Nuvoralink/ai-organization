@@ -120,7 +120,7 @@
     },
     {
       "path": "scripts/check-agent-control-plane.mjs",
-      "sha256": "9ef46c10e4444e3ba154d8718ee5daf41a93477ca96fadeaded0e129feef0dc3"
+      "sha256": "92006159e180086950ff78f2da0845a42c69bf048553e49173edd6296be8870c"
     },
     {
       "path": "scripts/check-fleet-parity.mjs",
@@ -140,7 +140,7 @@
     },
     {
       "path": "scripts/claude-lifecycle-hook.mjs",
-      "sha256": "a952e7ed74185ba5b680e4a30abb9af8dbdf25a78bf2ac458d12a5dfe93d8e03"
+      "sha256": "8aa46c07b07fb5ef033e516985fc5b77b5761f4daa3bc832ca71571ac2389b7f"
     },
     {
       "path": "scripts/claude-posttooluse-gate.mjs",
