@@ -4999,6 +4999,10 @@
       "class": "control-plane-test"
     },
     {
+      "path": "tests/local-ci-only.test.mjs",
+      "class": "control-plane-test"
+    },
+    {
       "path": "tests/project-overlay.test.mjs",
       "class": "control-plane-test"
     },

@@ -1,7 +1,8 @@
 /**
  * Proves: ORG-LOCAL-CI-ONLY-001; Test type: retirement and executable-contract mutation;
  * Surface: repository merge gate; Authority: package.json local CI script;
- * Killer mutations: add a root GitHub Actions workflow or remove any required local CI lane;
+ * Killer mutations: add a root GitHub Actions workflow, remove tracked-scope drift detection,
+ * or remove any required local CI lane;
  * Gated command: npm run ci.
  */
 import assert from 'node:assert/strict';
@@ -25,6 +26,7 @@ test('Proves: GitHub-hosted workflows stay retired and local CI retains every co
   assert.equal(typeof localCi, 'string', 'package.json must expose one portable local CI command');
   for (const requiredLane of [
     'npm test',
+    'npm run control:scope:check',
     'npm run control:validate',
     'npm run overlay:validate:auxara',
     'npm run overlay:validate:coachai',

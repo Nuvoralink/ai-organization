@@ -44,7 +44,13 @@ function cli(argv) {
     index += 1;
   }
   const registry = reconcileTrackedScope(files, existing, { approvals, prune: argv.includes('--prune') });
-  fs.writeFileSync(target, `${JSON.stringify(registry, null, 2)}\n`);
+  const serialized = `${JSON.stringify(registry, null, 2)}\n`;
+  if (argv.includes('--check')) {
+    const current = fs.readFileSync(target, 'utf8');
+    if (current !== serialized) throw new Error('Tracked-scope registry is not canonical; run npm run control:scope:refresh');
+  } else {
+    fs.writeFileSync(target, serialized);
+  }
   console.log(`tracked-scope: verified ${registry.files.length} reviewed exact classifications`);
 }
 
