@@ -3199,6 +3199,10 @@
       "class": "project-orchestration-overlay"
     },
     {
+      "path": "overlays/auxara-dialer/project-files/scripts/lib/validateClaudeHookSettings.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
       "path": "overlays/auxara-dialer/project-files/scripts/orchestration-state.mjs",
       "class": "project-orchestration-overlay"
     },

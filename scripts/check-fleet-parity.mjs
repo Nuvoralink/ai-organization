@@ -151,7 +151,8 @@ function rubricParityProblems(role, relative) {
     }
   }
   for (const id of declared.keys()) {
-    if (!registered.has(id)) problems.push(`agent file declares an unregistered criterion: ${relative} (${id})`);
+    if (!registered.has(id))
+      problems.push(`agent file declares an unregistered criterion: ${relative} (${id})`);
   }
   return problems;
 }

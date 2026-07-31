@@ -12,15 +12,15 @@
     },
     {
       "path": ".ai-organization/policies/action-authority.v1.json",
-      "sha256": "fd29b6e02e471a826c67dc01945d2931d076b957ff356da9cb18d9e60bf24d1d"
+      "sha256": "12c4b0ed89d5fad68c727d84c6aeb1cd41dc21ecddaecf6d83b2c4d7afd4c580"
     },
     {
       "path": ".ai-organization/policies/risk-controls.v1.json",
-      "sha256": "8b8c68af9f7c4b47eca1ce62c23d70d46cf9ed20b333ee6d0769a1adf9847b56"
+      "sha256": "a3c50ca96df3368ad28ccc60826e4151067c38e74e333d7407906dafd5fc852b"
     },
     {
       "path": ".ai-organization/schemas/task-assurance.v2.schema.json",
-      "sha256": "c928c530f0ff2deed85c3d387065b31cd90c66579dab0e9390bba51fbed76a35"
+      "sha256": "df1b4b7578c9d4cf909bdbbcec41b81196dfbaad44f9fa42d73d3b8ff618312e"
     },
     {
       "path": ".ai-organization/schemas/task-assurance.v3.schema.json",
@@ -28,7 +28,7 @@
     },
     {
       "path": ".ai-organization/schemas/task-evidence.v2.schema.json",
-      "sha256": "35cfc207d20e2cbdfe679b37c76dc5d842a3da0f089faf9ca154ade54f16413f"
+      "sha256": "51c1e08d38a5ce040a81bf088ff40a2c27bfa39c3b5b62add3d415b43b37f002"
     },
     {
       "path": ".ai-organization/runtime/core/authority/assess-action.mjs",
@@ -43,16 +43,20 @@
       "sha256": "050a8c91b7c6808de9a13f5adf0d719eabe541cf07fade9b3a5666ffda8008e4"
     },
     {
+      "path": ".ai-organization/runtime/core/roles/verdict-rubric.mjs",
+      "sha256": "e5a4e5247f24d38de4d8d54066c6cd2f852ec25f71f636e09f63127b73d778d3"
+    },
+    {
       "path": ".ai-organization/runtime/core/schema/task-assurance.mjs",
       "sha256": "a63568c084cb14f084c4ab74a048f2b0cff0d5fae350a479863897854ee4c734"
     },
     {
       "path": ".ai-organization/runtime/core/schema/validate-json-schema.mjs",
-      "sha256": "1d0b9d3a2a86a0e550b44bf4f3e885be5b9a22dd7c048f8d30ed59a4a54eef95"
+      "sha256": "70e98d860004091737bb589c009547fb4f5afed71d8793127bc585e6d2861a46"
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/README.md",
-      "sha256": "1f70fac2ac5581c907f7377dfa348c39c046adc845a57125031b4bf2032ea002"
+      "sha256": "da31327f145bdb6b690dff1f1dee667ac07759eb1d31598c983d6c13181a5edd"
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/codex-task-status.mjs",
@@ -72,7 +76,7 @@
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/task-assurance.test.mjs",
-      "sha256": "42362f27c43693743da386e17f6b4ff29ed900adbaea93abb1ae7f672bd89c59"
+      "sha256": "848e9a868bc5262df2a6200616657b717cfc24d365fb5aeae967306c10108720"
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/task-governor.mjs",
@@ -80,23 +84,39 @@
     },
     {
       "path": "scripts/check-agent-control-plane.mjs",
-      "sha256": "b51b05084b0b72937bf617d0efbb35c793f52cc78c3ba49660229a932793fc47"
+      "sha256": "8a04f67c9cff34b32fbeaeccaf70736cd80a409f172ebb02bd1e632611f1360b"
     },
     {
       "path": "scripts/check-organization-overlay.mjs",
-      "sha256": "35f5abe91b8fee4368587be2907663cf7a3ab04c1ae7c3c694495642df2fe356"
+      "sha256": "87f807ab97ce1ac1afdf688919e8e936edae93dcc8db057fad34eb58b1ddd5d5"
     },
     {
       "path": "scripts/claude-lifecycle-hook.mjs",
       "sha256": "80690d9fc2360c4c49ca6b95e21db47684d76480359ce1595ff5aabfc1f1c59e"
     },
     {
+      "path": "scripts/run-bounded-agent.mjs",
+      "sha256": "12ecf3073472c7d883d55729c75736944d454c70f559e8fb59a6206613673598"
+    },
+    {
       "path": "scripts/lib/agentTelemetry.mjs",
       "sha256": "10b7accd677e7a4078fd534406bb0e5606f7ad3cde6d9ad36e672f5ec85cf797"
     },
     {
+      "path": "scripts/lib/boundedProcess.mjs",
+      "sha256": "f8599afaa689f4baa101ae0a314505e75fca13e89877c3659871d391e169a0f9"
+    },
+    {
+      "path": "scripts/lib/dispatchBoundary.mjs",
+      "sha256": "76f7e6fcbcd3627ab2f76a52947cc95ea83b34c47cec8e2378260a36d1ef87d7"
+    },
+    {
+      "path": "scripts/lib/validateClaudeHookSettings.mjs",
+      "sha256": "8e4012b4c68210e4df47141bbc0bc880fc940be42e2817c778b0904d1d4500c7"
+    },
+    {
       "path": ".claude/agents/premise-and-architecture-challenger.md",
-      "sha256": "e26e013fe726ed8dc9ab25736598cbfe2c9fa4c75f7e0d48123a692e568d7bfc"
+      "sha256": "3cf92804bb5553c02261124c0f96d3315a97e6613165d7512c8116be944486a9"
     },
     {
       "path": ".claude/loop.md",

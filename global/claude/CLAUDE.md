@@ -335,7 +335,8 @@ philosophy/safety/approval changes still require user direction. Every final rep
 ## Replace, don't layer — when you consolidate, delete the path you replaced
 
 - When a change introduces a *new / central / unified / single* version of something — an authority, a
-  classifier, a source of truth, a helper, a validator, a code path — the **same change must delete or
+  classifier, a source of truth, a helper, a validator, a code path, a decision, a plan, or a Project
+  record — the **same change must delete or
   explicitly demote the old version it supersedes.** Dropping the new solution on top of the old one
   leaves two sources racing each other; they drift, and the wrong one wins on some input — a latent bug
   (a less-informed layer outranking the better-informed one).
@@ -343,6 +344,15 @@ philosophy/safety/approval changes still require user direction. Every final rep
   named, non-authoritative role with the reason stated — and you **grepped the old symbol/path to confirm
   it's gone, not orphaned.** After any consolidation there must be exactly **one authority** for the
   decision, and exactly one place that produces it.
+- **Decisions are mutable current-authority records, not append-only prose logs.** An approved change
+  rewrites the owning decision row/card/doc in place and updates every living projection in the same
+  change: ADR summary, PRD/sprint, source map, Project card/issue, backlog, brief, test, config, and
+  implementation. Delete the retired claim from live authority; Git history or a clearly isolated
+  archive preserves provenance. Never resolve a conflict with a precedence banner, “latest wins”
+  footnote, bracketed amendment trail, duplicate decision ID, or new parallel card. A genuinely
+  independent premise gets a new decision; an immutable legal/audit event log may remain append-only
+  but still derives one singular current projection. Finish with an old-claim sweep and reread every
+  mutated external card. *Fail-state:* a reader must reconstruct chronology to know the current policy.
 - Layering-on-top and calling it done is the sloppy default — it's how "we built a central X" silently
   becomes "X, Y and Z all still run and disagree," and how a new guard/soft-path gets added while the old
   blocking path keeps firing. Name it and resist it every time. This is the consolidation/architecture

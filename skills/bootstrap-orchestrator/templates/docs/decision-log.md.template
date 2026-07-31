@@ -1,7 +1,7 @@
 <!-- TEMPLATE: the decision authority. Save to {{DOCS_DIR}}/.../decision-log.md (the repo's decision-log location). Seed with the bootstrap row + the scrapped-scope section. -->
 # Decision Log — {{PROJECT}}
 
-The decision authority (below only ADRs in precedence: ADR > decision-log row > always-on rule > doc prose). Every non-trivial decision actually made lands here; architectural ones ALSO get an ADR. A scrapped decision goes to the "Scrapped & Dropped" section and is do-not-resurrect — re-expanding killed scope is a fresh explicit user decision, never a latent assumption.
+The decision authority (below only ADRs in precedence: ADR > decision-log row > always-on rule > doc prose). Every non-trivial decision actually made lands here; architectural ones ALSO get an ADR. Each row is the singular **current** decision, not an append-only event stream: an approved change rewrites the existing row and every live projection in the same change. Delete the retired claim from living docs and Project cards/issues; Git history or a clearly isolated archive preserves provenance. Do not add “latest wins” banners, bracketed amendment trails, duplicate IDs, or parallel cards that force readers to reconstruct chronology. A genuinely independent premise gets a new ID. A scrapped decision goes to the "Scrapped & Dropped" section and is do-not-resurrect — re-expanding killed scope is a fresh explicit user decision, never a latent assumption.
 
 _Last reviewed: {{BOOTSTRAP_DATE}}_
 

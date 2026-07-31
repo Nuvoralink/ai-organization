@@ -15,14 +15,20 @@ const REQUIRED_MANAGED_FILES = new Set([
   '.ai-organization/policies/action-authority.v1.json',
   '.ai-organization/policies/risk-controls.v1.json',
   '.ai-organization/schemas/task-assurance.v2.schema.json',
+  '.ai-organization/schemas/task-assurance.v3.schema.json',
   '.ai-organization/schemas/task-evidence.v2.schema.json',
   '.ai-organization/runtime/core/authority/assess-action.mjs',
+  '.ai-organization/runtime/core/coordination/coverage.mjs',
+  '.ai-organization/runtime/core/coordination/dependencyGraph.mjs',
+  '.ai-organization/runtime/core/roles/verdict-rubric.mjs',
+  '.ai-organization/runtime/core/schema/task-assurance.mjs',
   '.ai-organization/runtime/core/schema/validate-json-schema.mjs',
   '.ai-organization/runtime/core/lifecycle/README.md',
   '.ai-organization/runtime/core/lifecycle/codex-task-status.mjs',
   '.ai-organization/runtime/core/lifecycle/evidence-runtime.mjs',
   '.ai-organization/runtime/core/lifecycle/lifecycle-controller.mjs',
   '.ai-organization/runtime/core/lifecycle/run-evidence-integrity-mutation.mjs',
+  '.ai-organization/runtime/core/lifecycle/task-assurance.test.mjs',
   '.ai-organization/runtime/core/lifecycle/task-governor.mjs',
   'scripts/check-agent-control-plane.mjs',
   'scripts/check-organization-overlay.mjs',
@@ -31,13 +37,38 @@ const REQUIRED_MANAGED_FILES = new Set([
   'scripts/lib/boundedProcess.mjs',
   'scripts/lib/dispatchBoundary.mjs',
   'scripts/lib/agentTelemetry.mjs',
+  'scripts/lib/validateClaudeHookSettings.mjs',
 ]);
 
 const normalizePath = (value) =>
   String(value ?? '')
     .replace(/\\/g, '/')
     .replace(/^\.\//, '');
-const hashFile = (file) => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// Append-only project learning belongs to the installed project, while the overlay owns the
+// structural prefix. Hashing the whole file would make a legitimate learned-class append look
+// like structural control-plane drift.
+const stripAppendOnlyRegions = (text, markers) => {
+  for (const marker of markers) {
+    const match = new RegExp(`^${escapeRegex(marker)}`, 'm').exec(text);
+    if (match) return `${text.slice(0, match.index).replace(/\n+$/, '')}\n`;
+  }
+  return text;
+};
+const hashFile = (file, appendOnlyMarkers = []) => {
+  const buffer = fs.readFileSync(file);
+  if (!appendOnlyMarkers.length || buffer.includes(0))
+    return createHash('sha256').update(buffer).digest('hex');
+  const text = buffer.toString('utf8');
+  const stripped = stripAppendOnlyRegions(text, appendOnlyMarkers);
+  return stripped === text
+    ? createHash('sha256').update(buffer).digest('hex')
+    : createHash('sha256').update(stripped).digest('hex');
+};
+const readAppendOnlyMarkers = (manifest) =>
+  Array.isArray(manifest?.appendOnlyMarkers)
+    ? manifest.appendOnlyMarkers.filter((marker) => typeof marker === 'string')
+    : [];
 
 export function validateOrganizationOverlay(root = process.cwd()) {
   const errors = [];
@@ -67,6 +98,7 @@ export function validateOrganizationOverlay(root = process.cwd()) {
   const projectRoots = Array.isArray(manifest?.projectOwnedRoots)
     ? manifest.projectOwnedRoots.map(normalizePath)
     : [];
+  const appendOnlyMarkers = readAppendOnlyMarkers(manifest);
   const seen = new Set();
   for (const entry of Array.isArray(manifest?.managedFiles) ? manifest.managedFiles : []) {
     const relative = normalizePath(entry?.path);
@@ -97,30 +129,50 @@ export function validateOrganizationOverlay(root = process.cwd()) {
       errors.push(`${relative}: managed file is missing`);
       continue;
     }
-    const actual = hashFile(target);
+    const actual = hashFile(target, appendOnlyMarkers);
     if (actual !== entry.sha256) errors.push(`${relative}: managed file parity mismatch`);
   }
-  for (const required of REQUIRED_MANAGED_FILES) if (!seen.has(required)) errors.push(`${ORGANIZATION_MANIFEST}: required managed control is omitted: ${required}`);
+  for (const required of REQUIRED_MANAGED_FILES)
+    if (!seen.has(required))
+      errors.push(`${ORGANIZATION_MANIFEST}: required managed control is omitted: ${required}`);
   return errors;
 }
 
-export function writeOrganizationOverlay(root = process.cwd()) {
+export async function writeOrganizationOverlay(root = process.cwd()) {
   const manifestPath = path.join(root, ORGANIZATION_MANIFEST);
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  manifest.managedFiles = manifest.managedFiles.map((entry) => ({
-    ...entry,
-    sha256: hashFile(path.join(root, normalizePath(entry.path))),
-  }));
-  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  const manifestSource = fs.readFileSync(manifestPath, 'utf8');
+  const manifest = JSON.parse(manifestSource);
+  const appendOnlyMarkers = readAppendOnlyMarkers(manifest);
+  const hashes = manifest.managedFiles.map((entry) =>
+    hashFile(path.join(root, normalizePath(entry.path)), appendOnlyMarkers),
+  );
+  let hashIndex = 0;
+  const updatedSource = manifestSource.replace(
+    /("sha256"\s*:\s*")[a-f0-9]{64}(")/gu,
+    (_match, prefix, suffix) => {
+      if (hashIndex >= hashes.length) {
+        throw new Error(`${ORGANIZATION_MANIFEST}: more sha256 properties than managed files`);
+      }
+      const replacement = `${prefix}${hashes[hashIndex]}${suffix}`;
+      hashIndex += 1;
+      return replacement;
+    },
+  );
+  if (hashIndex !== hashes.length) {
+    throw new Error(
+      `${ORGANIZATION_MANIFEST}: expected ${hashes.length} sha256 properties, found ${hashIndex}`,
+    );
+  }
+  fs.writeFileSync(manifestPath, updatedSource);
   return manifestPath;
 }
 
-function main() {
+async function main() {
   const args = process.argv.slice(2);
   const rootArg = args.find((value) => !value.startsWith('--'));
   const root = rootArg ? path.resolve(rootArg) : process.cwd();
   if (args.includes('--write')) {
-    writeOrganizationOverlay(root);
+    await writeOrganizationOverlay(root);
     console.log(`check-organization-overlay: wrote ${ORGANIZATION_MANIFEST}`);
     return;
   }
@@ -135,4 +187,5 @@ function main() {
   );
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url))
+  await main();
