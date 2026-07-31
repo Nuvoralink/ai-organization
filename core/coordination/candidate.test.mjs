@@ -14,12 +14,13 @@
  * - Rebase conflict, moved target, proof on the source tree, unexpected proof failure, malformed CLI
  *   options, and every distinct operator exit all fail closed in os.tmpdir-only repositories.
  *
- * Killer mutations:
+ * Killer mutation:
  * - Skip worktree cleanup; drop or rewrite the lease base; prove the source branch instead of the
  *   candidate; skip the candidate dependency install; swallow a non-baseline failure; update main;
  *   remove the target side of the rebase; remove the retained candidate ref before forced GC; or
  *   collapse conflict/proof-failed/target-moved to one exit. Each mutation turns a named assertion
  *   red.
+ * Gated command: npm run gates:all
  *
  * Real `npm run verify` cascade fixture (captured verbatim):
  * check-agent-context-budget: FAILED

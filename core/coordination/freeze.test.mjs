@@ -20,6 +20,7 @@
  * - Change or remove the sha256: prefix -> v3 contract_digest_active parity turns red.
  * - Scan the live worktree or include out-of-bundle files -> isolation/scoped-validity assertions turn red.
  * - Swallow corrupt JSON or default it to an empty store -> corrupt-store assertions turn red.
+ * Gated command: npm run gates:all
  */
 
 import assert from 'node:assert/strict';

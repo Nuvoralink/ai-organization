@@ -166,6 +166,10 @@ test('Proves: ORG-PLAN-001; Test type: mutation; Surface: decision-log template;
 });
 
 test('Proves: ORG-TEST-001; Test type: executable gate mutation; Surface: generated check-test-intent.mjs; Authority: test-intent header contract; Killer mutation: remove Killer mutation or Gated command and keep the executable gate green; Gated command: npm test', (t) => {
+  const skill = read('SKILL.md');
+  assert.match(skill, /Every canonical runtime test installed beneath a scanned project root/u);
+  assert.match(skill, /fresh-install fixture as a Git repository/u);
+  assert.match(skill, /newly installed project's `gate:test-intent` rejects generated runtime tests/u);
   const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'test-intent executable gate-'));
   t.after(() => fs.rmSync(fixtureRoot, { recursive: true, force: true }));
   fs.mkdirSync(path.join(fixtureRoot, 'src'), { recursive: true });

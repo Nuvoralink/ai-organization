@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -29,6 +30,16 @@ function fixture(project = 'auxara-dialer') {
   const roots = { [rootToken]: root, HOME: home };
   const { manifest } = loadOverlay(project, roots);
   return { root, roots, manifest };
+}
+
+function runNpm(cwd, args) {
+  const npmCli = process.env.npm_execpath
+    ?? (process.platform === 'win32'
+      ? path.join(path.dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js')
+      : undefined);
+  return npmCli
+    ? spawnSync(process.execPath, [npmCli, ...args], { cwd, encoding: 'utf8', timeout: 60_000 })
+    : spawnSync('npm', args, { cwd, encoding: 'utf8', timeout: 60_000 });
 }
 
 test('Proves: ORG-OVERLAY-002 and OVERLAY-HYBRID-COMPAT-001 shared chokepoint; Test type: install/parity and reviewed-target mutation; Surface: project overlay; Authority: overlay manifest plus shared installer; Killer mutations: change or add a managed file, drop a reviewed digest/mapping, bypass target evolution in the overlay entrypoint, or accept a stale target digest; Gated command: npm test', () => {
@@ -361,7 +372,7 @@ test('Proves: CONTROL-PLANE-LIFECYCLE-OVERLAY-DRIFT-001 and VERDICT-RUNTIME-OVER
   }
 });
 
-test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and product-boundary mutation; Surface: Nuvora Link organization overlay; Authority: project profile, portable lock, and package script ownership; Killer mutations: describe generalized SaaS tenancy, drift a managed gate command, or omit a generated file; Gated command: npm test', () => {
+test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and product-boundary mutation; Surface: Nuvora Link organization overlay; Authority: project profile, portable lock, and package script ownership; Killer mutations: describe generalized SaaS tenancy, drift a managed gate command, omit a generated file, or remove a required intent header from a managed runtime test; Gated command: npm test', (t) => {
   const profile = JSON.parse(fs.readFileSync(path.join(repoRoot, 'overlays', 'nuvora-link', 'control-plane', 'project-profile.v1.json'), 'utf8'));
   assert.equal(profile.productDeploymentMode, 'single-company-internal');
   assert.match(profile.organizationScopePurpose, /not-saas-tenancy/u);
@@ -371,6 +382,7 @@ test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and p
   );
 
   const target = fixture('nuvora-link');
+  t.after(() => fs.rmSync(path.dirname(target.root), { recursive: true, force: true }));
   const packageJson = {
     scripts: {
       'agent:run': 'node scripts/run-bounded-agent.mjs',
@@ -385,6 +397,8 @@ test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and p
     },
   };
   fs.writeFileSync(path.join(target.root, 'package.json'), `${JSON.stringify(packageJson)}\n`);
+  assert.equal(spawnSync('git', ['init'], { cwd: target.root, encoding: 'utf8' }).status, 0);
+  assert.equal(spawnSync('git', ['add', 'package.json'], { cwd: target.root, encoding: 'utf8' }).status, 0);
   runInstall({ repoRoot, manifest: target.manifest, roots: target.roots });
   assert.deepEqual(runCheck({ repoRoot, manifest: target.manifest, roots: target.roots }), []);
   const parity = checkNuvoraLinkOverlayParity(target.root);
@@ -394,6 +408,31 @@ test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and p
     fs.readFileSync(path.join(target.root, '.ai-organization', 'overlay-lock.json'), 'utf8'),
   );
   assert.equal(parity.managedFileCount, portableLock.files.length);
+
+  const installedGates = runNpm(target.root, ['run', 'gates:all']);
+  assert.equal(
+    installedGates.status,
+    0,
+    `fresh Nuvora install gates:all failed\nstdout:\n${installedGates.stdout}\nstderr:\n${installedGates.stderr}`,
+  );
+
+  const managedRuntimeTest = path.join(
+    target.root,
+    '.ai-organization',
+    'runtime',
+    'core',
+    'coordination',
+    'candidate.test.mjs',
+  );
+  const managedRuntimeSource = fs.readFileSync(managedRuntimeTest, 'utf8');
+  fs.writeFileSync(
+    managedRuntimeTest,
+    managedRuntimeSource.replace(/^ \* Gated command:.*\r?\n/mu, ''),
+  );
+  const mutatedTestIntent = runNpm(target.root, ['run', 'gate:test-intent']);
+  assert.notEqual(mutatedTestIntent.status, 0, 'missing managed-runtime Gated command must fail gate:test-intent');
+  assert.match(`${mutatedTestIntent.stdout}\n${mutatedTestIntent.stderr}`, /candidate\.test\.mjs[\s\S]*missing "Gated command:"/u);
+  fs.writeFileSync(managedRuntimeTest, managedRuntimeSource);
 
   packageJson.scripts['gate:agent-control-plane'] = 'node scripts/accept-everything.mjs';
   fs.writeFileSync(path.join(target.root, 'package.json'), `${JSON.stringify(packageJson)}\n`);
