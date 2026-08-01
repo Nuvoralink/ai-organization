@@ -14,6 +14,7 @@ import {
 import { runCheck, runInstall } from '../scripts/lib/control-plane.mjs';
 import { validatePortableOverlayLock } from '../scripts/project-overlay.mjs';
 import { checkOverlayParity } from '../overlays/coachai/project-files/scripts/check-overlay-parity.mjs';
+import { findLayeredAuthorityMarkers } from '../overlays/auxara-dialer/project-files/scripts/check-decision-sprint-linkage.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -193,6 +194,32 @@ test('Proves: AUXARA-DLR-014-CONTROL-001; Test type: stale-doctrine mutation; Su
   assert.match(combined, /Standard is active; premium is a retained dormant option/u);
   assert.match(combined, /AMD-to-bridge/u);
   assert.doesNotMatch(combined, /parallel\/predictive dialing, AMD, per-number/u);
+});
+
+test('Proves: AUXARA-AUTHORITY-REPLACE-001 and REC-002; Test type: stale-authority mutation; Surface: managed Auxara decision gate and retention rule; Authority: replace-dont-layer plus 30-day offboarding policy; Killer mutation: restore a dated addendum or cancellation-plus-90-days claim; Gated command: npm test and overlay:validate:auxara', (t) => {
+  const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'auxara-current-authority-'));
+  t.after(() => fs.rmSync(fixtureRoot, { recursive: true, force: true }));
+  fs.writeFileSync(path.join(fixtureRoot, 'README.md'), '# Current authority\n\n## Addendum\n');
+  const issues = findLayeredAuthorityMarkers(fixtureRoot);
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].marker, 'heading');
+  fs.writeFileSync(path.join(fixtureRoot, 'README.md'), '# Current authority\n');
+  assert.deepEqual(findLayeredAuthorityMarkers(fixtureRoot), []);
+
+  const rule = fs.readFileSync(
+    path.join(
+      repoRoot,
+      'overlays',
+      'auxara-dialer',
+      'project-files',
+      '.claude',
+      'rules',
+      'auxara-dialer-project-rules.md',
+    ),
+    'utf8',
+  );
+  assert.match(rule, /30-day read-only export\/reactivation window/u);
+  assert.doesNotMatch(rule, /cancellation \+ 90 days/u);
 });
 
 test('Proves: REQ-COACHAI-AUTHORITY-DOMAINS-001; Test type: parser and overlay-registration mutation; Surface: installed CoachAI semantic resource folding; Authority: CoachAI authority-domain registry plus generated overlay ownership; Killer mutation: empty any domain owns array or remove the generated mapping; Gated command: npm test', () => {
