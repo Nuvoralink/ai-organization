@@ -45,29 +45,56 @@ const SPRINT_TARGET_RE = /(?<![\d.])(\d+\.\d+)(?![\d.])/g;
 const SPRINT_FILE_RE = /^sprint-(\d+)-(\d+)\.md$/;
 const REQUIRED_PENDING_FIELDS = ['id', 'reason', 'owner', 'addedAt', 'decision'];
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const LIVING_AUTHORITY_ROOTS = [
+  'README.md',
+  '.claude/agents',
+  'docs/agent-prompts',
+  'docs/app-plan/README.md',
+  'docs/app-plan/architecture/adr',
+  'docs/app-plan/auditability/decision-log.md',
+  'docs/app-plan/implementation/sprints',
+  'docs/app-plan/product',
+  'docs/app-plan/security',
+  'docs/design-system/locked-surfaces.md',
+  'frontend/docs/FRONTEND_BLAST_RADIUS.md',
+];
+const LAYERED_AUTHORITY_MARKERS = [
+  {
+    id: 'heading',
+    pattern: /^#{1,6}\s+(?:addendum|amendment|revision|correction)\b/i,
+  },
+  {
+    id: 'blockquote',
+    pattern: /^>\s+\*\*[^\n]*(?:amendment|correction|latest wins)\b/i,
+  },
+  {
+    id: 'bracket',
+    pattern: /\*\*\[(?:amended|corrected|retired|settled)\b/i,
+  },
+  {
+    id: 'metadata',
+    pattern: /\blast amended\b|\bamendments below\b/i,
+  },
+  {
+    id: 'dated-addendum',
+    pattern: /^\s*>?\s*\d{4}-\d{2}-\d{2}\s+addendum\s*:/i,
+  },
+  {
+    id: 'precedence',
+    pattern: /\bwhere (?:they|it) conflict[^\n]*\b(?:banner|newer|latest) wins\b/i,
+  },
+  {
+    id: 'stale-icp',
+    pattern:
+      /\b(?:PH-booker|Philippines-based booker|positioning banner|PH bookers? (?:off|dialing|calling)|Philippines bookers? (?:dialing|calling))\b/i,
+  },
+];
 
 /**
  * Honest, temporary product-fork deferrals. Rows are added only after the gate proves a real issue
  * and the fork is tracked durably in docs/BUG_BACKLOG.md. The live repo rows are populated in STEP 3.
  */
 export const PENDING_LINKAGE = [
-  {
-    id: 'CMP-011',
-    reason:
-      'The row names missing Sprint 3.4, its notes say pre-external-tenant, and Sprint 3.3 includes it.',
-    owner: 'Amin / sprint kickoff decision',
-    addedAt: '2026-07-15',
-    decision:
-      'Choose one concrete trigger/sprint authority and remove the other scheduling claims.',
-  },
-  {
-    id: 'MGR-004',
-    reason:
-      'The decision is explicitly Deferred and not Phase-3-committed, but Sprint 3.3 includes it.',
-    owner: 'Amin / sprint kickoff decision',
-    addedAt: '2026-07-15',
-    decision: 'Remove it from Sprint 3.3 or explicitly schedule/reactivate it.',
-  },
   {
     id: 'VOX-001',
     reason:
@@ -103,6 +130,34 @@ function readLines(root, relativePath) {
   const absolutePath = path.join(root, relativePath);
   if (!fs.existsSync(absolutePath)) return null;
   return fs.readFileSync(absolutePath, 'utf8').replace(/\r\n/g, '\n').split('\n');
+}
+
+function markdownFilesUnder(root, relativePath) {
+  const absolutePath = path.join(root, relativePath);
+  if (!fs.existsSync(absolutePath)) return [];
+  if (fs.statSync(absolutePath).isFile()) return [relativePath];
+  const files = [];
+  for (const entry of fs.readdirSync(absolutePath, { withFileTypes: true })) {
+    const child = norm(path.join(relativePath, entry.name));
+    if (entry.isDirectory()) files.push(...markdownFilesUnder(root, child));
+    else if (entry.isFile() && entry.name.endsWith('.md')) files.push(child);
+  }
+  return files;
+}
+
+export function findLayeredAuthorityMarkers(root) {
+  const files = [...new Set(LIVING_AUTHORITY_ROOTS.flatMap((entry) => markdownFilesUnder(root, entry)))];
+  const issues = [];
+  for (const file of files) {
+    const lines = readLines(root, file) ?? [];
+    for (const [index, line] of lines.entries()) {
+      for (const marker of LAYERED_AUTHORITY_MARKERS) {
+        if (!marker.pattern.test(line)) continue;
+        issues.push({ file, line: index + 1, marker: marker.id, text: line.trim() });
+      }
+    }
+  }
+  return issues;
 }
 
 /**
@@ -485,6 +540,7 @@ export function runDecisionSprintLinkageGate(
   const deadRows = [];
   const staleRows = [];
   const duplicateRows = [];
+  const layeredAuthority = findLayeredAuthorityMarkers(root);
   const seenPendingIds = new Set();
   const validPendingIds = new Set();
   if (!Array.isArray(pendingLinkage)) {
@@ -532,6 +588,7 @@ export function runDecisionSprintLinkageGate(
     staleRows,
     duplicateRows,
     formatErrors,
+    layeredAuthority,
     decisionCount: decisions.size,
     sprintCount: sprints.size,
   };
@@ -551,7 +608,8 @@ function main() {
     result.deadRows.length +
     result.staleRows.length +
     result.duplicateRows.length +
-    result.formatErrors.length;
+    result.formatErrors.length +
+    result.layeredAuthority.length;
   if (issueCount === 0) {
     console.log(
       `check-decision-sprint-linkage: OK — ${result.decisionCount} decisions and ${result.sprintCount} sprint docs are bidirectionally linked or explicitly pending.`,
@@ -592,6 +650,11 @@ function main() {
     console.error(`  - DUPLICATE PENDING_LINKAGE ${id} — keep exactly one row.`);
   }
   for (const error of result.formatErrors) console.error(`  - FORMAT   ${norm(error)}`);
+  for (const issue of result.layeredAuthority) {
+    console.error(
+      `  - LAYERED  ${issue.file}:${issue.line} [${issue.marker}] — rewrite the owning authority in place: ${issue.text}`,
+    );
+  }
   console.error(
     '\n  Reconcile a mechanical mismatch at its owning authority. If ownership/scheduling is a real',
   );
