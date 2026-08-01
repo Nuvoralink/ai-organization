@@ -835,6 +835,26 @@ test('Proves: ORG-REL-001; Test type: mutation; Surface: release-verifier templa
   assert.match(source, /If any required check is named here, the verdict cannot be DEPLOY-VERIFIED/u);
 });
 
+test('Proves: ORG-REL-002; Test type: stale-authority mutation; Surface: release-verifier template and managed project overlays; Authority: current deploy-CLI contract plus replace-dont-layer doctrine; Killer mutation: restore append-only learned advice or a Railway -d deployment-id example; Gated command: npm test', () => {
+  const sources = [
+    read('templates/agents/release-verifier.template.md'),
+    fs.readFileSync(
+      path.join(root, 'overlays', 'auxara-dialer', 'project-files', '.claude', 'agents', 'release-verifier.md'),
+      'utf8',
+    ),
+    fs.readFileSync(
+      path.join(root, 'overlays', 'coachai', 'project-files', '.claude', 'agents', 'release-verifier.md'),
+      'utf8',
+    ),
+  ];
+  for (const source of sources) {
+    assert.match(source, /Learned classes \(living current rules\)/u);
+    assert.match(source, /railway --version/u);
+    assert.doesNotMatch(source, /railway logs -d\s*<[^>]+>/u);
+    assert.doesNotMatch(source, /orchestrator (?:APPENDS|appends)|never delete rows/u);
+  }
+});
+
 test('Proves: ORG-UPTIME-001; Test type: mutation; Surface: uptime probe template; Authority: readiness contract; Killer mutation: treat any 2xx as ready; Gated command: npm test', () => {
   const source = read('templates/ci/uptime-probe.mjs.template');
   assert.match(source, /\{\{READINESS_JSON_ASSERTION\}\}/u);
