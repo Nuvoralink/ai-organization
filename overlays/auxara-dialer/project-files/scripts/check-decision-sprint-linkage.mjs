@@ -146,7 +146,9 @@ function markdownFilesUnder(root, relativePath) {
 }
 
 export function findLayeredAuthorityMarkers(root) {
-  const files = [...new Set(LIVING_AUTHORITY_ROOTS.flatMap((entry) => markdownFilesUnder(root, entry)))];
+  const files = [
+    ...new Set(LIVING_AUTHORITY_ROOTS.flatMap((entry) => markdownFilesUnder(root, entry))),
+  ];
   const issues = [];
   for (const file of files) {
     const lines = readLines(root, file) ?? [];
