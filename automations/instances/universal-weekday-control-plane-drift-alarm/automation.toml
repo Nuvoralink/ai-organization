@@ -1,0 +1,15 @@
+version = 1
+id = "universal-weekday-control-plane-drift-alarm"
+kind = "cron"
+name = "Universal weekday control-plane drift alarm"
+prompt = "Read-only weekday control-plane parity alarm. From the canonical checkout at C:\\dev\\AI Organization, run `node scripts/control-check-notify.mjs` and return its portable metadata report. On a non-zero result, recommend inspection and reconciliation of the named mapping-relative findings; never auto-capture or install. Do not edit files, mutate git refs, enable or modify scheduled tasks, open or modify issues or pull requests, merge, deploy, publish, delete, purchase, mutate production, or send external messages."
+status = "ACTIVE"
+rrule = "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0"
+model = "gpt-5.6-terra"
+reasoning_effort = "low"
+notification_policy = "failed_runs_only"
+execution_environment = "local"
+target = { type = "project", project_id = "local-25117aafc9baf60b12d81e5a39dea89c" }
+cwds = ["C:\\dev\\Nuvora Link"]
+created_at = 1785502641276
+updated_at = 1785502641276

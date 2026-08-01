@@ -128,6 +128,20 @@ export function classifyTrackedScope(relativeInput) {
   return undefined;
 }
 
+export function repositoryCandidatePaths(repoRoot) {
+  const result = spawnSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+  invariant(
+    result.status === 0 && !result.error,
+    result.error?.message ?? result.stderr ?? 'Unable to inventory repository files',
+  );
+  return [...new Set(result.stdout.split('\0').filter(Boolean).map(normalizeRelative))]
+    .filter((relative) => fs.existsSync(path.join(repoRoot, relative)))
+    .sort();
+}
+
 function renderedBytes(file, roots, renderContentTokens = true) {
   const bytes = fs.readFileSync(file);
   const ext = path.extname(file).toLowerCase();
@@ -671,8 +685,15 @@ export function validateCanonical({ repoRoot, manifest }) {
       if (portablePathFinding(source)) problems.push({ type: 'absolute-path', mapping: mapping.id, relative });
     }
   }
-  const tracked = spawnSync('git', ['ls-files', '-z'], { cwd: repoRoot, encoding: 'utf8' });
-  if (tracked.status === 0 && !tracked.error) {
+  let trackedPaths;
+  if (fs.existsSync(path.join(repoRoot, '.git'))) {
+    try {
+      trackedPaths = repositoryCandidatePaths(repoRoot);
+    } catch (error) {
+      problems.push({ type: 'tracked-scope-inventory', message: error.message });
+    }
+  }
+  if (trackedPaths) {
     const scopeRegistryPath = path.join(repoRoot, 'registries', 'tracked-scope.v1.json');
     let scopeEntries = [];
     try { scopeEntries = JSON.parse(fs.readFileSync(scopeRegistryPath, 'utf8')).files ?? []; }
@@ -684,7 +705,6 @@ export function validateCanonical({ repoRoot, manifest }) {
       else scopeByPath.set(normalized, entry.class);
     }
     const boundaryMapping = { allowedExtensions: [], exclude: [] };
-    const trackedPaths = tracked.stdout.split('\0').filter(Boolean).map(normalizeRelative);
     const trackedSet = new Set(trackedPaths);
     for (const normalized of trackedPaths) {
       const relative = normalized;

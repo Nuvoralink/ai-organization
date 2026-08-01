@@ -3,6 +3,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const skillRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const userRoot = path.resolve(skillRoot, '..', '..', '..');
+const localSkillRoots = [
+  path.join(userRoot, '.codex', 'skills'),
+  path.join(userRoot, '.agents', 'skills'),
+  path.join(userRoot, '.claude', 'skills'),
+];
 const markdownFiles = [
   path.join(skillRoot, 'SKILL.md'),
   ...fs
@@ -20,6 +26,16 @@ for (const file of markdownFiles) {
     // Skill references are package-root-relative, matching Codex skill resolution.
     const resolved = path.resolve(skillRoot, target.replaceAll('/', path.sep));
     if (!fs.existsSync(resolved)) missing.push(`${path.relative(skillRoot, file)} -> ${target}`);
+  }
+
+  for (const match of source.matchAll(/\bLoad\s+`([a-z0-9][a-z0-9-]*)`/g)) {
+    const dependency = match[1];
+    const installed = localSkillRoots.some((root) =>
+      fs.existsSync(path.join(root, dependency, 'SKILL.md')),
+    );
+    if (!installed) {
+      missing.push(`${path.relative(skillRoot, file)} -> unresolved companion skill ${dependency}`);
+    }
   }
 }
 

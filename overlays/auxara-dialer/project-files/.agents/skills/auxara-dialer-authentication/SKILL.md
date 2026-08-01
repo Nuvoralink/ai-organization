@@ -1,6 +1,6 @@
 ---
 name: auxara-dialer-authentication
-description: Implement, audit, or fix authentication and authorization in the Auxara Dialer app. Use for login, signup, logout, password changes, invite acceptance, admin signup, JWT cookie/session handling, AuthContext, ProtectedRoute, org membership, role gates (Owner/Admin/Manager/Supervisor/Agent/Compliance-Viewer), secure route middleware, Prisma auth schema, multi-tenant RLS, or auth browser smoke issues. This app uses Express, Prisma, argon2id (`@node-rs/argon2`) password hashing, stack-bound JWT cookies, signed CSRF, and tenant-scoped helpers; do not apply Supabase/Cloud Backend profiles, getSession patterns, or single-tenant assumptions.
+description: Implement, audit, or fix authentication and authorization in the Auxara Dialer app. Use for login, signup, logout, password changes/recovery, invite acceptance, workspace selection, JWT cookie/session handling, AuthContext, ProtectedRoute, membership, capability/scope gates, secure route middleware, Prisma auth schema, multi-tenant RLS, or auth browser smoke issues. This app uses Express, Prisma, argon2id (`@node-rs/argon2`) password hashing, stack-bound JWT cookies, signed CSRF, and tenant-scoped helpers; do not apply Supabase/Cloud Backend profiles, getSession patterns, or single-tenant assumptions.
 ---
 
 # Auxara Dialer Authentication
@@ -11,33 +11,40 @@ Auth in Auxara Dialer protects paid agency tenants (multi-tenant from day one), 
 
 When fixing auth, solve the root access-control or session-state problem across the full path: schema, token, backend middleware, authorization helper, API contract, frontend state, route gate, invite/payment/onboarding side effects, RLS predicate, and tests.
 
-## Current Architecture (target, per `docs/app-plan/architecture/06-architecture.md`)
+## Current Architecture (verify against the named live files before editing)
 
-Until the scaffolding lands, treat these paths as the agreed locations:
+These paths are implemented authorities, not future scaffolding:
 
 - Frontend auth context: `frontend/src/context/AuthContext.tsx`
 - Frontend route guard: `frontend/src/components/ProtectedRoute.tsx`
 - API client/session and CSRF handling: `frontend/src/lib/api.ts`
 - Frontend provider wrapping: `frontend/src/main.tsx`
-- Backend routes: `backend/src/routes/auth.ts` and `backend/src/routes/admin.ts`
+- Backend routes: `backend/src/routes/auth.ts`, `backend/src/routes/invites.ts`, and `backend/src/routes/people.ts` (workspace-admin recovery delivery)
 - Backend auth middleware: `backend/src/middleware/auth.ts` (sets `app.tenant_id` for RLS after JWT validation)
 - JWT mint/verify: `backend/src/lib/jwt.ts`
 - Auth and CSRF cookies: `backend/src/lib/authCookies.ts`
 - CSRF middleware: `backend/src/middleware/csrf.ts`
 - Password hashing: `backend/src/lib/password.ts`
-- Auth context and server-side authorization helpers: `backend/src/lib/authorize.ts`
-- Org / tenant / role helpers: `backend/src/lib/organizationRoles.ts`
-- Permission registry and effective-permissions cache: `backend/src/lib/permissions.ts`
-- Database source of truth: `backend/prisma/schema.prisma`
+- Identity/membership/recovery services: `backend/src/services/identityMembership.ts`, `backend/src/services/passwordRecovery.ts`, and `backend/src/services/invites.ts`
+- Server-side authorization helpers: `backend/src/lib/authorize.ts` and `backend/src/lib/teamMembership.ts`
+- Permission registry: `shared/src/taxonomy/permissions.ts`; effective grants resolve fresh from Postgres
+- Database source of truth: `backend/prisma/schema.prisma` plus migrations `0078_s15_identity_membership_expand` and guarded `0079_s15_identity_membership_activate`
+
+Backend and frontend completion are separate claims. Email recovery, invite delivery/acceptance, remember-me lifetimes, and zero/one/many workspace selection exist in the backend. The visible login/forgot/reset/workspace-selection/invite interactions remain approval-gated until the product repository proves their current wiring and rendered behavior. Never describe the backend as unimplemented because a page is unwired, and never describe the user flow as shipped because the backend exists.
+
+- **Fail-state:** the skill says auth scaffolding or email reset “has not landed” after the routes/services exist, or tells an agent the full flow is ready while the approved frontend interaction is still unwired.
+- **Regression mutation:** restore “until the scaffolding lands” or “not email reset”; the canonical Auxara skill contract test must fail.
+- **Counterexample:** an agent may truthfully report “backend implemented; production activation/frontend rendered proof pending” when those proof boundaries remain open.
+- **Completion evidence:** inspect the current backend route/service and the actual frontend handler/route before assigning an implementation status.
 
 ## Auth Source Of Truth
 
 The browser auth contract is cookie-first with signed CSRF. Bearer auth, if retained, is an explicit non-browser integration compatibility boundary only (API integrations, mobile manager app for listen/barge). Do not reintroduce browser bearer propagation or persistent browser token storage.
 
-## Data Model Truths (target shape per `docs/app-plan/data-and-api/08-data-model-and-data-contracts.md` + DEC-001 + ADR-AUTH-002/010/011)
+## Data Model Truths (current post-0079 authority per doc 08 + DEC-001 + ADR-AUTH-002/010/011)
 
 - `tenants(id, name, plan, billing_status, dialing_hours_default, …)`
-- `users(id, email, account_status, auth_token_version, password_hash, …)` — one global identity; no tenant or role authority
+- `users(id, email, account_status, auth_token_version, password_hash, …)` — one global identity; retained tenant/lifecycle/pause/E911 scalars are rollback projections only and have no runtime authority
 - `tenant_memberships(id, tenant_id, user_id, status, …)` — the only user↔workspace membership/lifecycle authority; retained as historical evidence when removed
 - `roles(id, tenant_id?, name, is_system)` — system roles: `owner`, `tenant_admin`, `manager`, `supervisor`, `agent`, `compliance_viewer`, `api_integration`
 - `permissions(key PK, description, category)`
@@ -47,19 +54,19 @@ The browser auth contract is cookie-first with signed CSRF. Bearer auth, if reta
 - `role_assignments(id, tenant_id, user_id, role_id, team_id nullable)` — the sole role/scope binding; membership never receives a role column (ADR-AUTH-011; `team_id` NULL = tenant-wide, SET = pod-scoped; supersedes `team_members`)
 - `audit_log(id, tenant_id, actor_id, action, target_type, target_id, payload, ts)`
 
-The combination `role × permission × scope` is the authorization source. Effective permissions are cached in Redis 60s TTL; UI hides forbidden actions using the same set.
+The combination `role × permission × scope` is the authorization source. Effective permissions resolve fresh from Postgres; a future Redis cache may only decorate that read. UI hides forbidden actions using the same set as UX, never authority.
 
 The authenticated workspace context is `(user_id, membership_id, tenant_id, auth_token_version)`. The server revalidates global account state, active membership state, and the membership→tenant relation before setting `app.tenant_id`. A request-controlled tenant id never selects or widens scope. Tenant offboarding changes only membership lifecycle; it must not disable the global identity, delete historical actor evidence, or revoke access to unrelated workspaces.
 
 There is no Supabase `auth.users`, `profiles`, or Cloud Backend dependency in this app.
 
-## Auth Flows (target behavior)
+## Auth Flows (implemented backend behavior; frontend proof called out separately)
 
 ### Public Tenant Signup
-`POST /api/auth/signup` creates a customer tenant, owner user, owner role membership, and Stripe customer; mints stack-bound JWT cookie + signed CSRF cookie.
+`POST /api/auth/signup` creates a customer tenant, global owner identity, active membership, and tenant-wide owner role assignment in one transaction; it mints a stack-bound JWT cookie + signed CSRF cookie. Billing/trial provisioning is a separate authority and must not be invented inside auth.
 
-### Admin Signup
-`POST /api/admin/signup` is internal-stack/admin-secret gated. Bootstrap-only with exactly one `INTERNAL_ADMIN`. `ADMIN_BOOTSTRAP_ENABLED=false` in steady state, temporarily true only for first-admin bootstrap. Strong `ADMIN_SECRET_KEY`, safe secret comparison, transactional audit. No product UI/routes for admin promotion or ownership transfer.
+### Internal admin boundary
+There is no current `/api/admin/signup` route. ADR-AUTH-004 schedules a deploy-secret-gated bootstrap seed for Sprint 2.0. Do not invent a customer-stack route or claim the deferred seed is implemented.
 
 ### Login
 `POST /api/auth/login` validates global credentials and account state, verifies the argon2id password hash, and loads active memberships without accepting a client tenant as authority. Avoid production account enumeration. Login must also enforce active stack/tenant-kind compatibility (paid accepts only `CUSTOMER`, internal accepts only `INTERNAL`). The membership count determines the next state:
@@ -87,7 +94,7 @@ Fail closed before provider work, persistence, or audit creation when the actor 
 - **Completion evidence:** inspect the real HTTP result, domain tables, provider-call spy, and audit rows after the ordered race; a green status without those outputs is insufficient.
 
 ### Password
-Current implemented password flow is authenticated change-password, not email reset. Minimum length aligned with backend validation. Emailed self-service recovery is identity-global: `password_reset_tokens` binds to `user_id`, contains no `tenant_id`, expires, is single-use, uses generic anti-enumeration responses and rate limits, and is consumed only through narrowly registered auth services. A successful password change or reset increments global `users.auth_token_version` and intentionally revokes every workspace session.
+Authenticated change-password and emailed self-service reset are both implemented backend flows. Minimum length is aligned with backend validation. Emailed recovery is identity-global: `password_reset_tokens` binds to `user_id`, contains no `tenant_id`, expires, is single-use, uses generic anti-enumeration responses and rate limits, and is consumed only through narrowly registered auth services. A successful password change or reset increments global `users.auth_token_version` and intentionally revokes every workspace session. The forgot/reset page submission, fragment stripping, and rendered completion remain separate approval-gated frontend proof.
 
 Tenant-admin recovery initiation remains workspace-scoped: authorize the admin through their active membership and role/permission scope, and allow only an eligible target membership in that tenant. The administrator may request the same generic recovery-link delivery and create a workspace audit row, but never sees the token, creates a temporary password, mutates the global credential, or revokes sessions. Only the identity owner changes the password through authenticated self-change or by consuming the emailed one-time token. Removing or suspending one membership never changes the password or disables the global identity.
 
@@ -108,14 +115,14 @@ Invite acceptance validates the token, rejects accepted/expired invites, creates
 
 ## Frontend Rules
 
-- `AuthProvider` owns `user`, `tenant`, `role`, `permissions`, session status, `isLoading`, `isAuthenticated`, `login`, `signup`, `adminSignup`, `logout`, `refreshUser`, `forceRefreshUser`.
+- `AuthProvider` currently owns `user`, `loading`, `login`, `signup`, `logout`, `changePassword`, `refresh`, and UX-only `can`.
 - Frontend auth state is session/user state only. The browser session itself lives in the httpOnly cookie.
 - `frontend/src/lib/api.ts` attaches `X-CSRF-Token` on unsafe cookie-authenticated requests.
 - Do not store browser auth in `localStorage`, `sessionStorage`, or persistent client-side token helpers.
 - Do not add normal browser `Authorization: Bearer` propagation.
 - 401 responses clear local session/user state and redirect only when appropriate; avoid redirect loops on login/signup/invite pages.
 - `ProtectedRoute` is UX only.
-- After auth mutations that replace the session cookie or CSRF token, update auth state and refresh from `/api/auth/me`.
+- After auth mutations that replace the session cookie or CSRF token, update auth state and refresh from `/api/auth/me`. A pending workspace-selection capability must preserve its own CSRF binding when `/api/auth/me` refreshes the readable token.
 - The softphone is a long-lived authenticated surface — token expiry mid-call must be handled gracefully (reconnect, prompt re-auth without dropping the WebRTC leg if possible).
 
 ## Implementation Workflow
@@ -139,6 +146,15 @@ Invite acceptance validates the token, rejects accepted/expired invites, creates
    - Backend auth route tests or regression scripts for changed behavior.
    - Ordered stale-session mutation race when a state-changing transaction can wait after middleware.
    - Tenant-isolation black-box test for any new route returning object-scope data.
+   - A migration that reads FORCE-RLS tables across tenants must require a SUPERUSER/BYPASSRLS
+     migrator before its first data read, set `row_security=off` so filtering errors instead of
+     silently returning partial data, stabilize every mutable feeder through validation/backfill,
+     and include a non-BYPASS migrator test that proves atomic failure before schema change.
+   - A staged expand/repoint/contract migration must account for writes arriving after the expand
+     snapshot. Choose one explicit bridge: transaction-local compatibility writes with a named
+     retirement, or a quiesced/old-instance-drained locked delta catch-up before activation. Prove
+     a row created after expand reaches exactly one final membership before the new authorizer runs.
+     A genuinely atomic, quiesced deploy is the counterexample; an undocumented gap is not.
    - Frontend auth state/route tests if UI changed.
    - Browser smoke for login/logout/invite when practical.
    - Backend build/typecheck.
@@ -163,6 +179,10 @@ Invite acceptance validates the token, rejects accepted/expired invites, creates
 - Passwords are hashed with existing password helper.
 - JWT secret, issuer, audience, and expiry behavior remain safe.
 - Long-waiting mutations carry the signed expected `authTokenVersion` into the service and revalidate locked current actor state before effects.
+- Cross-tenant FORCE-RLS migrations prove the migrator can bypass RLS, turn filtered reads into errors,
+  lock or otherwise stabilize every validated feeder, and fail atomically under a non-BYPASS role.
+- Staged identity migrations name the post-expand arrival bridge, activation order, compatibility
+  retirement point, and killer mutation that creates a user after expand but omits it at cutover.
 - Cookie, CSRF, and frontend session-state transitions are consistent.
 - 401/403 UX is clear and does not loop.
 - Invite/signup/admin flows write all required user, tenant, membership, audit, and billing/trial state.

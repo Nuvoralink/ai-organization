@@ -1,0 +1,14 @@
+version = 1
+id = "nuvora-link-weekday-orchestration-drift"
+kind = "cron"
+name = "Nuvora Link weekday orchestration drift"
+prompt = "Read-only Nuvora Link orchestration drift report. Inspect C:\\dev\\Nuvora Link and its canonical project overlay in C:\\dev\\AI Organization. Inspect live git branch/worktree status, origin divergence when safely fetchable, open GitHub PRs/issues and review/check state, current intent/decision/architecture docs, AGENTS/CLAUDE rule wiring, lifecycle hooks, gate/workflow/template presence, overlay parity, and orchestration-related backlog items. Run only existing safe read-only orchestration/context/rules gates and open their raw output; if a named gate does not exist, report that fact instead of inventing one. Treat Nuvora Link as a single-company internal system: organization scope is an authorization and imported-data boundary, not a SaaS-tenancy roadmap. Report evidence-backed discrepancies, blockers, stale handoffs, orphaned branches/worktrees, and exact next actions, deduplicated by root cause. Never inspect credentials, tokens, session logs, .env files, secret stores, customer or provider data, message bodies, transcripts, recordings, histories, caches, build output, or raw telemetry payloads. Do not edit files, create or switch branches, commit, push, open or modify issues or pull requests, merge, deploy, publish, delete, purchase, mutate production, or send external messages."
+status = "ACTIVE"
+rrule = "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=10"
+model = "gpt-5.6-sol"
+reasoning_effort = "high"
+execution_environment = "local"
+target = { type = "project", project_id = "local-25117aafc9baf60b12d81e5a39dea89c" }
+cwds = ["C:\\dev\\Nuvora Link"]
+created_at = 1785494214336
+updated_at = 1785547726963

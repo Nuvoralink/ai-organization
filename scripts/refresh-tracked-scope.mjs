@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { classifyTrackedScope } from './lib/control-plane.mjs';
+import { classifyTrackedScope, repositoryCandidatePaths } from './lib/control-plane.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -27,11 +26,7 @@ export function reconcileTrackedScope(files, existing, { approvals = new Map(), 
 }
 
 function cli(argv) {
-  const result = spawnSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { cwd: repoRoot, encoding: 'utf8' });
-  if (result.status !== 0 || result.error) throw result.error ?? new Error(result.stderr || 'Unable to inventory repository files');
-  const files = [...new Set(result.stdout.split('\0').filter(Boolean).map((value) => value.replaceAll('\\', '/')))]
-    .filter((relative) => fs.existsSync(path.join(repoRoot, relative)))
-    .sort();
+  const files = repositoryCandidatePaths(repoRoot);
   const target = path.join(repoRoot, 'registries', 'tracked-scope.v1.json');
   const existing = JSON.parse(fs.readFileSync(target, 'utf8'));
   const approvals = new Map();

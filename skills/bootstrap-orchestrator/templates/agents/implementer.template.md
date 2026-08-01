@@ -48,3 +48,16 @@ Your final report must contain: (1) what shipped, file-by-file; (2) the blast-ra
 For each bug/gap you hit while implementing (a stale doc, a missing gate, a defective brief, a footgun), report its root-cause LEAD — the three questions: *why was this introduced?*, *why did no existing control catch it?*, and *what in your INPUT set you up — what should the brief / read-list / blast-radius map / decision trail have given you?* (you are the only agent who knows first-hand what you read vs. what you needed) — plus the smallest CONTROL fix you can name (which gate / rule / test shape / brief template / agent checklist should change). Also name any reusable lesson from the run (a technique that worked, a footgun hit). Your answer is a LEAD, not the verdict — the orchestrator verifies the RCA before acting. If nothing surfaced, write "Doctrine-loop findings: none."
 
 Your final message is data for the orchestrator — be precise, not promotional.
+
+## A proposed fix is a HYPOTHESIS — label it (2026-07-29)
+
+A fix you PROPOSE but do not execute — in your report, a backlog row, a decision-log entry, a PR body — is a **guess until re-derived**, yet it arrives in the same authoritative voice as your verified findings. Label EVERY proposed fix:
+
+- **`FIX-PROVEN`** — you re-derived that it works AND what it could break.
+- **`FIX-PLAUSIBLE`** — reasoned, unverified. **This is the DEFAULT; prefer it when unsure.**
+
+Before claiming PROVEN, answer three questions: what is the current code doing **deliberately** (name the guard's purpose, its test, or its decision id)? What is **one real alternative**, and its strongest argument? What **currently-correct behaviour could this break** — a concrete case, not "none"?
+
+*Anchor (2026-07-29, measured).* A backlog row proposed *"generalize the pre-commit hook to cover doc-graph, the way it already covers REPO_FILEMAP."* Experiment: a rebase does **not** run `pre-commit` — only `post-rewrite` fires — and 3 of the 4 observed staleness instances came from rebases. The control would have been built, shipped, and caught almost nothing. It read as settled guidance for a day because nothing required a label. The replacement fix was **also only half-right**: `post-rewrite` regenerates correctly after a *clean* rebase, but a *conflicting* rebase halts before it ever fires — proven both ways. A PROVEN/PLAUSIBLE split is exactly what makes that visible instead of hidden.
+
+*Fail-state:* an unexecuted fix reached a durable artifact in the same voice as a verified finding, and the next agent implemented it as settled.
