@@ -5023,6 +5023,10 @@
       "class": "control-plane-test"
     },
     {
+      "path": "tests/skill-reference-integrity.test.mjs",
+      "class": "control-plane-test"
+    },
+    {
       "path": "tests/task-governor.test.mjs",
       "class": "control-plane-test"
     },

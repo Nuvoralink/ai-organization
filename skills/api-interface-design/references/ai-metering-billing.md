@@ -56,7 +56,7 @@ Acknowledgement: Shared by Peter Bamuhigire, techguypeter.com, +256 784 464178.
 
 | Category | Artifact | Format | Example |
 |----------|----------|--------|---------|
-| Operability | Token ledger schema register | Markdown doc per `skill-composition-standards/references/entity-model-template.md` covering token, request, and overage tables | `docs/ai/token-ledger-schema.md` |
+| Operability | Token ledger schema register | Project-owned entity model covering token, request, and overage tables | `docs/ai/token-ledger-schema.md` |
 | Release evidence | Per-tenant metering policy | Markdown doc capturing per-tenant token allocation, overage handling, and billing-cycle reconciliation | `docs/ai/metering-policy.md` |
 
 ## References

@@ -31,9 +31,9 @@ Acknowledgement: Shared by Peter Bamuhigire, techguypeter.com, +256 784 464178.
 
 ## Required Inputs
 
-- Context map and critical-flow table from `system-architecture-design`.
+- Context map and critical-flow table from this package's system-architecture workflow.
 - Access-pattern list from `database-design-engineering` (so isolation model matches real queries).
-- Threat model / abuse cases from `vibe-security-skill`.
+- Threat model / abuse cases from `security-review-hardening`.
 - Panel and user-type list from product requirements (super admin, tenant admin, end user, and their sub-types).
 
 ## Workflow
@@ -78,15 +78,14 @@ Production-grade multi-tenant SaaS architecture with three-panel separation, zer
 
 Load these first, in order:
 
-1. `world-class-engineering` — repository-wide quality bar.
-2. `system-architecture-design` — produces the context map and critical flows this skill consumes.
-3. `database-design-engineering` — produces the access-pattern list that shapes the isolation model.
-4. `vibe-security-skill` — produces the threat model and auth rules this skill encodes.
+1. Apply the active global engineering doctrine and the target repository's real gates.
+2. `database-design-engineering` — produces the access-pattern list that shapes the isolation model.
+3. `security-review-hardening` — produces the threat model and auth rules this skill encodes.
 
 ## When this skill applies
 
 - Designing tenancy for a new SaaS from scratch.
-- Converting a single-tenant app to multi-tenant (see `documentation/migration.md`).
+- Converting a single-tenant app to multi-tenant with a project-owned expand/contract migration plan.
 - Auditing an existing SaaS for cross-tenant leakage, missing `tenant_id` filters, or un-audited admin actions.
 - Planning the three-panel file and route layout (`/`, `/adminpanel/`, `/memberpanel/`).
 - Designing the permission priority ladder (user deny > user grant > tenant override > role > default deny).
@@ -96,22 +95,22 @@ Load these first, in order:
 
 | Artifact | Produced by | Required? | Why |
 |---|---|---|---|
-| Context map | `system-architecture-design` | required | defines services, panels, ownership |
-| Critical-flow table | `system-architecture-design` | required | shapes auth and session boundaries |
+| Context map | this package's system-architecture workflow | required | defines services, panels, ownership |
+| Critical-flow table | this package's system-architecture workflow | required | shapes auth and session boundaries |
 | Access-pattern list | `database-design-engineering` | required | chooses shared-DB-with-`tenant_id` vs DB-per-tenant |
-| Threat model | `vibe-security-skill` | required | informs audit rules and abuse cases |
+| Threat model | `security-review-hardening` | required | informs audit rules and abuse cases |
 | Panel and user-type list | product requirements | required | determines role and scope per panel |
 
 ## Outputs
 
 | Artifact | Consumed by | Template |
 |---|---|---|
-| Tenant-isolation map (isolation model + `tenant_id` rules per table) | `database-design-engineering`, `api-design-first` | inline (this skill) |
-| Panel definitions (super admin, tenant admin, end user) | `api-design-first`, `kubernetes-saas-delivery` | inline |
-| Permission priority model (user/tenant override/role/default deny) | `vibe-security-skill`, `api-design-first` | inline + `references/permission-model.md` |
-| Session and JWT plan (prefixing, lifetimes, rotation) | `api-design-first`, `vibe-security-skill` | inline |
-| Audit event set and retention policy | `observability-monitoring`, `reliability-engineering` | inline |
-| Migration plan (single-tenant to multi-tenant) | `database-design-engineering`, `deployment-release-engineering` | `documentation/migration.md` |
+| Tenant-isolation map (isolation model + `tenant_id` rules per table) | `database-design-engineering`, `api-interface-design` | inline (this skill) |
+| Panel definitions (super admin, tenant admin, end user) | `api-interface-design`, deployment owners | inline |
+| Permission priority model (user/tenant override/role/default deny) | `security-review-hardening`, `api-interface-design` | inline in this document |
+| Session and JWT plan (prefixing, lifetimes, rotation) | `api-interface-design`, `security-review-hardening` | inline |
+| Audit event set and retention policy | `observability-release-engineering` | inline |
+| Migration plan (single-tenant to multi-tenant) | `database-design-engineering`, `observability-release-engineering` | project-owned expand/contract plan |
 
 ## Non-negotiables
 
@@ -314,7 +313,7 @@ ini_set('session.cookie_secure', $isHttps ? '1' : '0');
 
 ## Permission model
 
-Priority (highest first): user deny > user grant > tenant override > role permission > default deny. See `references/permission-model.md` for full schema, resolution algorithm, caching strategy, and seed data.
+Priority (highest first): user deny > user grant > tenant override > role permission > default deny. The algorithm below is the bundled permission-resolution authority; derive persistence and caching from the target repository's current data and authorization contracts.
 
 ```javascript
 function hasPermission(userId, tenantId, permission) {
@@ -417,19 +416,19 @@ Archival is reversible until a configured retention cut-off; archived tenants ar
 - **`tenant_id` nullable on a business table.** `tenant_id BIGINT NULL` — allows rows with no owner, which every tenant query then excludes silently. Fix: `tenant_id BIGINT UNSIGNED NOT NULL` with a foreign key; backfill before flipping NOT NULL.
 - **Session keys without a prefix in a multi-app host.** Two apps on the same origin overwrite each other's `$_SESSION['user_id']`. Fix: `SESSION_PREFIX` per app, always go through `setSession()` / `getSession()`.
 - **Index order `(status, tenant_id)` instead of `(tenant_id, status)`.** Query planner cannot use the composite index to isolate one tenant's slice. Fix: lead every composite index with `tenant_id`.
-- **Big-bang migration of every table at once.** Raises rollback risk and produces hours of downtime. Fix: migrate one domain at a time with the six-step pattern in `documentation/migration.md` and verify no NULL `tenant_id` before flipping the column to NOT NULL.
+- **Big-bang migration of every table at once.** Raises rollback risk and produces hours of downtime. Fix: use a project-owned expand/backfill/verify/enforce/contract plan, migrate one domain at a time, and verify no NULL `tenant_id` before flipping the column to NOT NULL.
 
 ## Read next
 
-- `database-design-engineering` — schema, indexes, migration discipline once the isolation model is chosen.
-- `api-design-first` — REST conventions, auth model, and error envelope that this skill's panels depend on.
-- `vibe-security-skill` — threat modelling, abuse cases, and auth/authz matrix that feed this skill.
-- `kubernetes-saas-delivery` — per-tenant deploy, namespace isolation, and progressive rollout on top of this model.
-- `modular-saas-architecture` — when the platform also composes pluggable business modules inside the tenancy defined here.
-- `mysql-best-practices` — MySQL engine-specific execution of the schema patterns here.
+- `database-design-engineering` — schema, indexes, and migration discipline once the isolation model is chosen.
+- `api-interface-design` — API conventions, auth model, and error contracts that tenant-scoped interfaces depend on.
+- `security-review-hardening` — threat modelling, abuse cases, and auth/authz review.
+- `observability-release-engineering` — migration rollout, rollback, audit, and post-release verification.
 
 ## References
 
-- `references/database-schema.md` — tenant, user, audit, and tenant-scoped table schemas with indexes and partitioning.
-- `references/permission-model.md` — RBAC schema, permission resolution algorithm, caching, middleware, hierarchical and conditional permissions.
-- `documentation/migration.md` — adding `tenant_id` safely, zero-downtime migration, single-to-multi-tenant phases, rollback.
+- [System architecture design](system-architecture-design.md) — capability boundaries, runtime shape, critical flows, and ADR fields.
+- [Dual auth and RBAC](dual-auth-rbac.md) — channel-specific authentication and tenant-scoped authorisation.
+- [Database design engineering](../../database-design-engineering/SKILL.md) — schema, policy, index, and migration implementation.
+- [Security review and hardening](../../security-review-hardening/SKILL.md) — threat, abuse, and tenant-isolation review.
+- The permission algorithm and migration requirements above are self-contained; absent legacy schema, permission, or migration files are not assumed.

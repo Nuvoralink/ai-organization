@@ -294,7 +294,7 @@ function useToggleTask() {
 
 ## See Also
 
-For detailed accessibility requirements and testing tools, see `references/accessibility-checklist.md`.
+Use the accessibility requirements and verification checklist in this document, then verify version-specific behavior against the target framework and WCAG primary guidance. Do not assume an unbundled accessibility checklist exists.
 
 ## Common Rationalizations
 

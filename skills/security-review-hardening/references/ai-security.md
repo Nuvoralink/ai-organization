@@ -307,7 +307,7 @@ Before going live, verify:
 ---
 
 **See also:**
-- `ai-architecture-patterns` — Budget Guard, gate middleware
-- `vibe-security-skill` — General web app security baseline
-- `web-app-security-audit` — Full 8-layer security audit
-- `uganda-dppa-compliance` — DPPA 2019 full compliance skill
+- `architecture-saas-design` — provider, budget, metering, and system-boundary architecture.
+- `security-review-hardening` — general application-security baseline and full security audit.
+- `api-interface-design` — external-input, authentication, idempotency, and error contracts.
+- Use current primary legal and regulatory authorities for the applicable jurisdiction; no unbundled compliance skill is assumed.

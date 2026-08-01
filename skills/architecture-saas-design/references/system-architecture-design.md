@@ -56,13 +56,15 @@ Acknowledgement: Shared by Peter Bamuhigire, techguypeter.com, +256 784 464178.
 ## References
 
 - Use the `references/` directory for deep detail after reading the core workflow below.
-- [references/practical-architecture-knowledge.md](references/practical-architecture-knowledge.md) - book-distilled checks for DDD boundaries, scalability, architecture metrics, and executable architecture documentation.
+- [Multi-tenant SaaS architecture](multi-tenant-saas-architecture.md) for tenant boundaries, isolation, and SaaS capability ownership.
+- [Dual auth and RBAC](dual-auth-rbac.md) for channel-specific authentication and tenant-scoped authorisation.
+- [AI metering and billing](ai-metering-billing.md) for provider usage, budgets, and tenant billing aggregation.
 <!-- dual-compat-end -->
 Use this skill when the problem is bigger than a single component. Start here before committing to frameworks, service boundaries, data ownership, or integration patterns.
 
 ## Load Order
 
-1. Load `world-class-engineering`.
+1. Apply the active global engineering doctrine and the target repository's real gates.
 2. Use this skill to shape the architecture.
 3. Load stack-specific skills only after the structural decisions are clear.
 
@@ -119,7 +121,7 @@ Also define:
 - rollback or reconciliation path when dependencies disagree
 - release evidence needed before exposing the flow broadly
 
-For domain-heavy or scale-sensitive systems, load [references/practical-architecture-knowledge.md](references/practical-architecture-knowledge.md) and apply its bounded-context, scalable-systems, and architecture-metric checks.
+For domain-heavy or scale-sensitive systems, apply the bounded-context, runtime-shape, critical-flow, operability, and review checks in this document; add a stack specialist only when its canonical skill package actually exists.
 
 ### 5. Record Decisions
 
@@ -131,7 +133,7 @@ Use ADR logic for decisions that are expensive to reverse:
 - Tradeoffs
 - Consequences
 
-Use the template in [references/adr-template.md](references/adr-template.md).
+Use the five fields above as the minimum ADR template and store the decision in the target repository's owning decision authority.
 
 ### 6. Produce Executable Architecture Artifacts
 
@@ -229,6 +231,7 @@ Split a service or module when:
 
 ## References
 
-- [references/adr-template.md](references/adr-template.md): Decision record format and architecture review prompts.
-- [references/architecture-execution-model.md](references/architecture-execution-model.md): Architecture artifacts, release-aware boundaries, and flow design.
-- [../world-class-engineering/references/source-patterns.md](../world-class-engineering/references/source-patterns.md): Architecture review patterns derived from the supplied books.
+- [Multi-tenant SaaS architecture](multi-tenant-saas-architecture.md): Tenant isolation, permission priority, and SaaS boundary decisions.
+- [Dual auth and RBAC](dual-auth-rbac.md): Authentication-channel and tenant-scoped authorisation guidance.
+- [AI metering and billing](ai-metering-billing.md): Provider metering, quota, budget, and billing ownership.
+- The architecture workflow, ADR fields, executable-artifact list, heuristics, and review checklist above are self-contained; absent legacy source-pattern or template files are not assumed.

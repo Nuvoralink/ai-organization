@@ -57,9 +57,9 @@ Acknowledgement: Shared by Peter Bamuhigire, techguypeter.com, +256 784 464178.
 
 | Category | Artifact | Format | Example |
 |----------|----------|--------|---------|
-| Data safety | Migration plan | Markdown doc per `skill-composition-standards/references/migration-plan-template.md` | `docs/data/migration-2026-04-16-add-tenant-column.md` |
-| Data safety | Entity model | Markdown doc per `skill-composition-standards/references/entity-model-template.md` | `docs/data/entity-model-billing.md` |
-| Data safety | Access pattern register | Markdown doc per `skill-composition-standards/references/access-patterns-template.md` | `docs/data/access-patterns-billing.md` |
+| Data safety | Migration plan | Project-owned plan containing the migration, compatibility, verification, rollback, and retirement fields required below | `docs/data/migration-2026-04-16-add-tenant-column.md` |
+| Data safety | Entity model | Project-owned model containing entities, ownership, lifecycle, invariants, and relationships | `docs/data/entity-model-billing.md` |
+| Data safety | Access pattern register | Project-owned register containing callers, predicates, sort order, volume, consistency, and index needs | `docs/data/access-patterns-billing.md` |
 
 ## References
 
