@@ -179,6 +179,22 @@ test('Proves: ORG-OVERLAY-004; Test type: registry mutation; Surface: overlay ow
   assert.deepEqual(validateOverlay('coachai').map((failure) => failure.message ?? failure), []);
 });
 
+test('Proves: AUXARA-DLR-014-CONTROL-001; Test type: stale-doctrine mutation; Surface: managed Auxara auditor and rule overlay; Authority: passive three-state AMD decision; Killer mutation: restore the blanket AMD ban, omit one mode, or make premium active; Gated command: npm test and overlay:validate:auxara', () => {
+  const overlayRoot = path.join(repoRoot, 'overlays', 'auxara-dialer', 'project-files', '.claude');
+  const sources = [
+    ['agents', 'compliance-auditor.md'],
+    ['agents', 'doctrine-drift-auditor.md'],
+    ['rules', 'auxara-dialer-project-rules.md'],
+    ['rules', 'centralization-doctrine.md'],
+    ['rules', 'sprint-rigor.md'],
+  ].map((parts) => fs.readFileSync(path.join(overlayRoot, ...parts), 'utf8'));
+  const combined = sources.join('\n');
+  assert.match(combined, /exactly three states \(`off`, `standard`, `premium`\)/u);
+  assert.match(combined, /Standard is active; premium is a retained dormant option/u);
+  assert.match(combined, /AMD-to-bridge/u);
+  assert.doesNotMatch(combined, /parallel\/predictive dialing, AMD, per-number/u);
+});
+
 test('Proves: REQ-COACHAI-AUTHORITY-DOMAINS-001; Test type: parser and overlay-registration mutation; Surface: installed CoachAI semantic resource folding; Authority: CoachAI authority-domain registry plus generated overlay ownership; Killer mutation: empty any domain owns array or remove the generated mapping; Gated command: npm test', () => {
   const registryPath = path.join(
     repoRoot,
