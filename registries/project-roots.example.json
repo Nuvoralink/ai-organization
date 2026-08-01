@@ -8,6 +8,6 @@
   "DEPENDENCY:marketforge": "X:/example/dependencies/Skills/MarketForge",
   "DEPENDENCY:hormozi": "X:/example/dependencies/Skills/Hormozi",
   "WORKSPACE:dev": "X:/example/projects",
-  "PROJECT:control-plane": "X:/example/projects/AI Organization Control Plane",
+  "PROJECT:control-plane": "X:/example/projects/AI Organization",
   "PROJECT:nuvora-link": "X:/example/projects/Nuvora Link"
 }

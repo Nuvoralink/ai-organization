@@ -69,9 +69,12 @@ Use this skill when schema choices will shape correctness, performance, or futur
 
 ## Load Order
 
-1. Load `world-class-engineering`.
+1. Read the repository and user engineering authorities that govern the current project.
 2. Load this skill to design the data model and lifecycle.
-3. Load engine-specific skills such as `mysql-best-practices` or PostgreSQL skills afterward.
+3. Load an available engine-specific skill, such as a PostgreSQL skill, when its guidance is relevant.
+
+Do not require an uninstalled companion skill. A project without a separate general-engineering
+skill remains valid when its own engineering authority and this specialist workflow are available.
 
 ## Database Workflow
 

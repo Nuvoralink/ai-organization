@@ -3,7 +3,7 @@
 // Surface: Auxara Dialer managed HYBRID doc/code, decision-linkage, and PostToolUse routing gates
 // Authority: overlays/auxara-dialer/project-files/scripts
 // Product statement: a scoped overlay delivery must retain the target gate APIs and resolved linkage behavior.
-// Killer mutations: remove a public validator export or aggregate call, re-add BUX-019, restore naive pipe splitting,
+// Killer mutations: stale the authentication implementation boundary, remove a public validator export or aggregate call, re-add BUX-019, restore naive pipe splitting,
 // allow an unclosed inline-code span, drop one evidence-integrity route, run a gate from process.cwd(),
 // or accept a cwd-relative Claude hook command instead of the rooted exec form.
 
@@ -108,6 +108,17 @@ test('Auxara authentication skill preserves global identity and explicit workspa
     assert.doesNotMatch(candidate, /Tenant-admin reset authorization remains workspace-scoped/u);
     assert.doesNotMatch(candidate, /resulting credential mutation is still global/u);
   };
+  const assertCurrentImplementationBoundary = (candidate) => {
+    assert.match(candidate, /These paths are implemented authorities, not future scaffolding/u);
+    assert.match(candidate, /Email recovery, invite delivery\/acceptance, remember-me lifetimes, and zero\/one\/many workspace selection exist in the backend/u);
+    assert.match(candidate, /visible login\/forgot\/reset\/workspace-selection\/invite interactions remain approval-gated/u);
+    assert.match(candidate, /Authenticated change-password and emailed self-service reset are both implemented backend flows/u);
+    assert.doesNotMatch(candidate, /Until the scaffolding lands, treat these paths/iu);
+    assert.doesNotMatch(
+      candidate,
+      /Current implemented password flow is authenticated change-password, not email reset/iu,
+    );
+  };
 
   assert.match(source, /`users\(id, email, account_status, auth_token_version, password_hash, …\)` — one global identity/u);
   assert.match(source, /`tenant_memberships\(id, tenant_id, user_id, status, …\)` — the only user↔workspace membership\/lifecycle authority/u);
@@ -118,6 +129,7 @@ test('Auxara authentication skill preserves global identity and explicit workspa
   assert.match(source, /`user_id`, `membership_id`, `tenant_id`, `auth_token_version`/u);
   assert.match(source, /`password_reset_tokens` binds to `user_id`, contains no `tenant_id`/u);
   assertDeliveryOnlyAdminRecovery(source);
+  assertCurrentImplementationBoundary(source);
   assert.match(source, /revokes every workspace session/u);
 
   assert.doesNotMatch(source, /`users\(id, tenant_id,/u);
@@ -132,6 +144,16 @@ test('Auxara authentication skill preserves global identity and explicit workspa
     () => assertDeliveryOnlyAdminRecovery(widenedAdminMutation),
     /did not match/iu,
     'widening tenant-admin recovery from delivery to credential mutation must fail the contract',
+  );
+
+  const staleRecoveryClaim = source.replace(
+    'Authenticated change-password and emailed self-service reset are both implemented backend flows.',
+    'Current implemented password flow is authenticated change-password, not email reset.',
+  );
+  assert.throws(
+    () => assertCurrentImplementationBoundary(staleRecoveryClaim),
+    /did not match/iu,
+    'restoring the pre-recovery implementation claim must fail the contract',
   );
 });
 

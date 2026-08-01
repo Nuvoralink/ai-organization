@@ -1,0 +1,14 @@
+version = 1
+id = "nuvora-link-weekly-fleet-doctrine-review"
+kind = "cron"
+name = "Nuvora Link weekly fleet doctrine review"
+prompt = "Read-only weekly Nuvora Link fleet and doctrine review. Inspect C:\\dev\\Nuvora Link and its canonical Nuvora Link overlay in C:\\dev\\AI Organization. Review tracked commits and merged pull-request or review findings from the prior seven days, project agent rules and learned-classes logs, hook and gate failures, content-free telemetry summaries if present, journey lessons, architecture blast-radius updates, decision docs, and open audit or orchestration backlog rows. Inspect only safe installed global doctrine, rule, agent, skill, and bootstrap-template surfaces declared by the canonical private control-plane manifest; never search an entire home directory. Treat Nuvora Link as a single-company internal system: organization scope is an authorization and imported-data boundary, not a SaaS-tenancy roadmap. Identify recurring failure classes, why introduced, why controls missed them, and the smallest reusable gate, rule, brief, or test improvement. Deduplicate against existing doctrine; recommend at most three high-leverage changes and do not implement them. Never inspect credentials, tokens, session logs, raw telemetry payloads, .env files, secret stores, customer/provider data, message bodies, transcripts, recordings, histories, caches, or build output. Do not edit files, create or switch branches, commit, push, open or modify issues or pull requests, merge, deploy, publish, delete, purchase, mutate production, or send external messages."
+status = "ACTIVE"
+rrule = "FREQ=WEEKLY;BYDAY=MO;BYHOUR=9;BYMINUTE=25"
+model = "gpt-5.6-sol"
+reasoning_effort = "high"
+execution_environment = "local"
+target = { type = "project", project_id = "local-25117aafc9baf60b12d81e5a39dea89c" }
+cwds = ["C:\\dev\\Nuvora Link"]
+created_at = 1785494223444
+updated_at = 1785547728650

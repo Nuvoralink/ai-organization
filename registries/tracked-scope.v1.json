@@ -63,11 +63,23 @@
       "class": "automation-instance"
     },
     {
+      "path": "automations/instances/nuvora-link-weekday-orchestration-drift/automation.toml",
+      "class": "automation-instance"
+    },
+    {
+      "path": "automations/instances/nuvora-link-weekly-fleet-doctrine-review/automation.toml",
+      "class": "automation-instance"
+    },
+    {
       "path": "automations/instances/universal-biweekly-orchestration-backflow/automation.toml",
       "class": "automation-instance"
     },
     {
       "path": "automations/instances/universal-biweekly-orchestration-backflow/memory.md",
+      "class": "automation-instance"
+    },
+    {
+      "path": "automations/instances/universal-weekday-control-plane-drift-alarm/automation.toml",
       "class": "automation-instance"
     },
     {

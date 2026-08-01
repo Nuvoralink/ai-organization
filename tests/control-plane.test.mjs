@@ -469,6 +469,36 @@ test('Proves: allowed-extension overlay files require an explicit reviewed regis
   assert.deepEqual(approved.files.at(-1), { path: copiedSource, class: 'project-orchestration-overlay' });
 });
 
+test('Proves: an approved untracked orchestration file is validated before commit; Test type: repository-inventory mutation; Surface: canonical tracked-scope validation; Authority: shared repository candidate inventory; Killer mutation: remove --others from repositoryCandidatePaths and the approved untracked row becomes stale; Gated command: npm test', () => {
+  const f = fixture();
+  const registryRelative = 'registries/tracked-scope.v1.json';
+  const baseRelative = 'canonical/rules/base.md';
+  const freshRelative = 'docs/fresh-control-note.md';
+  fs.mkdirSync(path.join(f.repoRoot, 'registries'), { recursive: true });
+  fs.mkdirSync(path.join(f.repoRoot, 'docs'), { recursive: true });
+  fs.writeFileSync(path.join(f.repoRoot, baseRelative), '# Canonical\n');
+  fs.writeFileSync(path.join(f.repoRoot, freshRelative), '# Fresh control note\n');
+  fs.writeFileSync(path.join(f.repoRoot, registryRelative), `${JSON.stringify({
+    version: '1.0.0',
+    scope: 'orchestration-only',
+    files: [baseRelative, freshRelative, registryRelative].sort().map((relative) => ({
+      path: relative,
+      class: classifyTrackedScope(relative),
+    })),
+  }, null, 2)}\n`);
+  assert.equal(spawnSync('git', ['init'], { cwd: f.repoRoot }).status, 0);
+  assert.equal(
+    spawnSync('git', ['add', baseRelative, registryRelative], { cwd: f.repoRoot }).status,
+    0,
+  );
+
+  const findings = validateCanonical({ repoRoot: f.repoRoot, manifest: f.manifest });
+  assert.deepEqual(
+    findings.filter((finding) => ['stale-tracked-scope-entry', 'unclassified-tracked-path'].includes(finding.type)),
+    [],
+  );
+});
+
 test('Proves: ORG-BOUNDARY-DEPENDENCY-001; Test type: source-shape boundary; Surface: tracked dependency mirrors; Authority: orchestration dependency classifier; Killer mutation: remove an admitted marketplace format or broaden exact PDF/TSX assets to arbitrary dependency binaries/application source; Gated command: npm test', () => {
   const portableDependencyFiles = [
     'dependencies/specforge/skills/specforge/SKILL.md',
