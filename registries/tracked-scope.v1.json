@@ -4991,6 +4991,10 @@
       "class": "control-plane-test"
     },
     {
+      "path": "tests/ai-output-source-truth-audit.test.mjs",
+      "class": "control-plane-test"
+    },
+    {
       "path": "tests/automation-specs.test.mjs",
       "class": "control-plane-test"
     },

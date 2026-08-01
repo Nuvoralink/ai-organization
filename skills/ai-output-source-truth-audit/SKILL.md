@@ -24,6 +24,24 @@ These ten gates mirror the user's global engineering doctrine. They are **always
 9. **Stop before you quick-fix.** A bug found mid-audit runs the mid-task loop (verify → already-fixed/mis-wired or legacy → pressure-test purpose → hypothesize → verify the fix is best → the rest of the gauntlet → implement or flag), not a reflex patch.
 10. **Clean up after yourself — repoint or remove every trace of the old.** After any delete/replace/rename/change, grep the old name repo-wide: switch every dependent to the new thing (or migrate/remove it on delete), delete every now-orphaned dead path, and leave no dangling reference — in *all* files; nothing still points at the old thing (the reverse of Gate 4).
 
+## Safe First Inventory — before any recursive search
+
+Treat path enumeration as disclosure: ignored or untracked data-bearing paths are not safe merely because file contents remain unopened. Before the **first** repo-wide `rg`, `rg --files`, `git ls-files`, recursive filesystem walk, or equivalent inventory/search:
+
+1. Declare the complete safe source roots and root files for the task from project routers, manifests, and non-recursive top-level names. Cover every relevant code, docs, tests, configuration, template, skill, overlay, and generated-authority root; name every exclusion.
+2. Declare a data-bearing denylist. Apply the repository's authoritative policy when it is stricter, and always exclude at least env-like files (`.env`, `.env.*`), credential/secret roots, sessions/history, uploads, recordings/audio, logs, telemetry, caches, exports, live database files, and customer/provider payload roots.
+3. Declare any allowed scrubbed fixture roots separately. Allow only repository-owned, synthetic or verified-scrubbed test fixtures that are relevant to the task; an env-like, credential, key, or live-data file does not become safe because it sits under a fixture directory.
+4. Run recursive inventory/search only across **all** declared safe roots and files. Preserve Gate 4 inside that boundary: do not use `head`, capped output, a convenient subdirectory, or early filtering before the complete result set exists. If an additional authority root appears, classify and add it before searching it.
+5. If a required root cannot be classified safely, stop before recursive enumeration and escalate the boundary. Never fall back to a home/tool-directory scan or an unscoped repository-root walk.
+
+**Fail-state:** the first inventory starts at `.` or another broad root, prints a path such as `uploads/session/analysis.json`, or silently narrows the safe scan so a caller, feeder, template, test, doc, or overlay authority is missed.
+
+**Killer mutation:** replace the declared-safe-root inventory with a recursive repository-root inventory; the regression must fail when ignored upload, recording, log, telemetry, session, environment, database, export, or provider/customer-payload paths enter the result.
+
+**Counterexample:** a declared `tests/fixtures/scrubbed` root containing synthetic AI-output fixtures remains searchable and must not be rejected merely because it contains representative output shapes.
+
+**Required evidence:** report the declared safe roots/root files, deny classes, separately allowed scrubbed fixture roots, complete match count, and every deliberately excluded source-looking root.
+
 ## Workflow
 
 1. Restate the product intent in plain language.
