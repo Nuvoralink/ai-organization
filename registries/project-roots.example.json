@@ -2,6 +2,7 @@
   "HOME": "X:/example/home",
   "PROJECT:auxara-dialer": "X:/example/projects/Auxara Dialer",
   "PROJECT:coachai": "X:/example/projects/Nuvora CoachAi",
+  "DEPENDENCY:council-studio": "X:/example/dependencies/LLM Council",
   "DEPENDENCY:skills-root": "X:/example/dependencies/Skills",
   "DEPENDENCY:specforge": "X:/example/dependencies/Skills/Specforge",
   "DEPENDENCY:visualforge": "X:/example/dependencies/Skills/VisualForge",

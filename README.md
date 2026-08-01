@@ -26,6 +26,7 @@ git clone https://github.com/Nuvoralink/ai-organization.git
 cd ai-organization
 Copy-Item registries/project-roots.example.json registries/project-roots.local.json
 # Edit only the project paths in the untracked local file.
+# Linked Git worktrees automatically reuse this primary-checkout binding.
 npm run ci
 npm run control:check
 npm run control:install -- --dry-run
