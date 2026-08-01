@@ -20,10 +20,10 @@ Before non-trivial architecture work, read `docs/app-plan/product/01-product-bri
 
 ## 2. Dialer Engine Boundaries
 
-The dialer ships ONE mode — **single-line power** (ADR-DLR-001). Parallel and predictive are **scrapped** (not deferred); do not build engine seams, AMD, or pacing for them.
+The dialer ships ONE dialing mode — **single-line power** (ADR-DLR-001). Parallel and predictive are **scrapped** (not deferred); do not build pacing, multi-line, or AMD-to-bridge seams for them. DLR-014 separately owns the passive post-bridge AMD policy.
 
 - **Power dialer (the only mode):** fetch next prospect → validate compliance gates (calling hours, DNC, recording disclosure, consent) → dial via Telnyx Call Control → on disposition save, fetch next. One line per agent; agent-initiated, so it **cannot abandon**.
-- **VM-drop is agent-triggered:** passive premium AMD/beep may provide an advisory cue after the agent is already bridged, but it never hangs up, disposes, drops, or advances on its own. The agent hears/recognizes voicemail and explicitly starts playback of one of their own recorded/uploaded clips (DLR-014; ARC-006). VM-drop of prerecorded marketing requires documented prior express written consent.
+- **VM-drop is agent-triggered:** the centralized DLR-014 AMD policy has exactly three states (`off`, `standard`, `premium`). Standard is active; premium is a retained dormant option; off omits the provider AMD field and AMD usage. Any AMD fact may provide an advisory cue only after the agent is already bridged; it never hangs up, dispositions, drops, or advances on its own. The agent hears/recognizes voicemail and explicitly starts playback of one of their own recorded/uploaded clips (DLR-014; ARC-006). VM-drop of prerecorded marketing requires documented prior express written consent.
 
 The stable cross-consumer contract is the ARC-002 `call_events` stream — manager wallboard / billing meter / compliance audit all read it. The power engine is concrete; there is no multi-mode interface (DLR-002 dropped).
 
