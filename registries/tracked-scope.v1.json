@@ -3747,6 +3747,10 @@
       "class": "project-orchestration-overlay"
     },
     {
+      "path": "overlays/nuvora-link/project-files/scripts/check-documentation-authority.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
       "path": "overlays/nuvora-link/project-files/scripts/check-overlay-parity.mjs",
       "class": "project-orchestration-overlay"
     },

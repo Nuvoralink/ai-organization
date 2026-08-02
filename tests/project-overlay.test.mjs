@@ -393,15 +393,21 @@ test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and p
       'gate:overlay-parity': 'node scripts/check-overlay-parity.mjs',
       'gate:test-intent': 'node scripts/check-test-intent.mjs',
       'gate:test-workspace-coverage': 'node scripts/check-test-workspace-coverage.mjs',
-      'test:workspace-build-contracts': 'node --test scripts/check-workspace-build-contracts.test.mjs scripts/check-test-workspace-coverage.test.mjs scripts/clean-workspace-dist.test.mjs scripts/check-build-artifacts.test.mjs scripts/migrate-production.test.mjs',
+      'gate:documentation-authority': 'node scripts/check-documentation-authority.mjs',
+      'test:workspace-build-contracts': 'node --test scripts/check-workspace-build-contracts.test.mjs scripts/check-test-workspace-coverage.test.mjs scripts/clean-workspace-dist.test.mjs scripts/check-build-artifacts.test.mjs scripts/migrate-production.test.mjs scripts/check-documentation-authority.test.mjs',
       'test:all': 'npm run --workspaces --if-present test',
-      'gates:all': 'npm run gate:rules-wiring && npm run gate:agent-context && npm run gate:agent-control-plane && npm run gate:fleet-parity && npm run gate:overlay-parity && npm run gate:test-intent && npm run gate:test-workspace-coverage',
+      'gates:all': 'npm run gate:rules-wiring && npm run gate:agent-context && npm run gate:agent-control-plane && npm run gate:fleet-parity && npm run gate:overlay-parity && npm run gate:test-intent && npm run gate:test-workspace-coverage && npm run gate:documentation-authority',
       verify: 'npm run test:workspace-build-contracts && npm run typecheck && npm run build && npm run test:all && npm run gates:all',
     },
   };
   fs.writeFileSync(path.join(target.root, 'package.json'), `${JSON.stringify(packageJson)}\n`);
+  fs.mkdirSync(path.join(target.root, 'docs'), { recursive: true });
+  fs.writeFileSync(
+    path.join(target.root, 'docs', 'DOCUMENTATION_INDEX.md'),
+    '# Documentation authority\n\n| Document | Owner | Status | Purpose |\n|---|---|---|---|\n| `docs/DOCUMENTATION_INDEX.md` | Product engineering | living | Registry fixture |\n',
+  );
   assert.equal(spawnSync('git', ['init'], { cwd: target.root, encoding: 'utf8' }).status, 0);
-  assert.equal(spawnSync('git', ['add', 'package.json'], { cwd: target.root, encoding: 'utf8' }).status, 0);
+  assert.equal(spawnSync('git', ['add', 'package.json', 'docs/DOCUMENTATION_INDEX.md'], { cwd: target.root, encoding: 'utf8' }).status, 0);
   runInstall({ repoRoot, manifest: target.manifest, roots: target.roots });
   assert.deepEqual(runCheck({ repoRoot, manifest: target.manifest, roots: target.roots }), []);
   const parity = checkNuvoraLinkOverlayParity(target.root);
