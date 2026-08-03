@@ -9,7 +9,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { changedFiles, runSelectedProof, selectProof } from '../run-risk-selected-proof.mjs';
 import { tempFixture, writeJson } from './fixture-helpers.mjs';
 
@@ -32,6 +33,27 @@ test('clean changed path selects and runs its exact profile', () => {
   const selected = selectProof(root, ['src/good.ts']);
   assert.deepEqual(selected.profiles.map((p) => p.id), ['static']);
   assert.equal(runSelectedProof(root, ['src/good.ts'], { stdio: 'pipe' }).ok, true);
+});
+
+test('an explicit non-applicable lane passes only after every changed path remains mapped', () => {
+  const root = fixture();
+  const selected = runSelectedProof(root, ['src/good.ts'], { lane: 'db', dryRun: true });
+  assert.equal(selected.ok, true);
+  assert.deepEqual(selected.profiles, []);
+  assert.deepEqual(selected.commands, []);
+
+  const runner = fileURLToPath(new URL('../run-risk-selected-proof.mjs', import.meta.url));
+  const cli = spawnSync(process.execPath, [runner, '--file', 'src/good.ts', '--lane', 'db'], {
+    cwd: root,
+    encoding: 'utf8',
+  });
+  assert.equal(cli.status, 0, cli.stderr);
+  assert.match(cli.stdout, /profiles=none lane=db/u);
+  assert.match(cli.stdout, /PASS — no db profile applies; all 1 changed path\(s\) remain mapped/u);
+
+  const unknown = runSelectedProof(root, ['unknown/file.txt'], { lane: 'db', dryRun: true });
+  assert.equal(unknown.ok, false);
+  assert.match(unknown.errors.join('\n'), /unmapped changed paths/u);
 });
 
 test('CoachAI paths select semantic, DB, and supply-chain proof rather than generic status checks', () => {
