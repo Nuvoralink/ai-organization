@@ -210,7 +210,7 @@
         "criteria": [
           { "id": "query-boundedness", "weight": 25, "critical": true, "summary": "Every read is paginated or provably bounded; no unbounded list or query inside a loop." },
           { "id": "hot-path-inventory", "weight": 20, "critical": true, "summary": "The real hot paths enumerated from the diff and the runtime shape, not guessed." },
-          { "id": "idle-lifecycle", "weight": 20, "critical": true, "summary": "Idle runtimes issue no recurring database/provider work; retries are due-work driven, bounded, monotonic, and every growing DB, Redis, queue, or derived-state surface has an authoritative lifecycle." },
+          { "id": "idle-lifecycle", "weight": 20, "critical": true, "summary": "Idle runtimes issue no recurring database/provider work; retries are due-work driven, bounded, monotonic, every growing DB, Redis, queue, or derived-state surface has an authoritative lifecycle, and data-derived maintenance cardinality is policy-bounded per invocation." },
           { "id": "index-coverage", "weight": 15, "critical": false, "summary": "Indexes exist for the actual query shapes, verified against the schema and physical ORM mappings." },
           { "id": "render-and-bundle", "weight": 10, "critical": false, "summary": "No re-render storms or unexplained bundle growth on touched frontend surfaces." },
           { "id": "capacity-risk", "weight": 10, "critical": false, "summary": "Queue pressure, worker/client lifetime, provider deadlines, and leak risk assessed for long-lived processes." }
