@@ -39,6 +39,10 @@
       "sha256": "3de4b7aa0094e8a3fe01f0bde3032a8a2b32cf665ab7af32bf87fab40d259f28"
     },
     {
+      "path": ".ai-organization/policies/coordination-mode.v1.json",
+      "sha256": "8fd4da14876028fe59d02ac3cdca76d2c88cf1612c552732e03d038d403a2582"
+    },
+    {
       "path": ".ai-organization/policies/risk-controls.v1.json",
       "sha256": "a3c50ca96df3368ad28ccc60826e4151067c38e74e333d7407906dafd5fc852b"
     },
@@ -52,7 +56,7 @@
     },
     {
       "path": ".ai-organization/registries/agent-roles.v1.json",
-      "sha256": "29dc87521e4e776bfb3852301f0c37446183cbfaccd74deebe8a0a3772dbe616"
+      "sha256": "f6d8915c60894387a8090e4183c6f36b81c83194544fa7aef3584c7c8288beec"
     },
     {
       "path": ".ai-organization/roles.json",
@@ -68,11 +72,11 @@
     },
     {
       "path": ".ai-organization/runtime/core/coordination/candidate.test.mjs",
-      "sha256": "4e8330cff4c2aa44e0e323d7c6bfc2ce46f28a6dc08f167e86b93a8bc0b13164"
+      "sha256": "0a78f8be9a53e762a6500bc110b2a6ef4bed48c9e4256d97c0fc75d76431ed54"
     },
     {
       "path": ".ai-organization/runtime/core/coordination/coordination.test.mjs",
-      "sha256": "2373c8002240b6501720b2c582abf99e43cde937eeb5a068e550fc768838f2eb"
+      "sha256": "657cbe63159b5501e1cd64e2aa5748ac0194637567483aae918f616eeacc87a7"
     },
     {
       "path": ".ai-organization/runtime/core/coordination/coverage.mjs",
@@ -88,7 +92,7 @@
     },
     {
       "path": ".ai-organization/runtime/core/coordination/freeze.test.mjs",
-      "sha256": "fbd3f97c416407f26b4e6796f1ddcfe4057eaa676e59ddc2eb23d4fc10d43333"
+      "sha256": "f134ca53e1f024bd3405b988abb52a13955bffc7f838b4c73bf487a505fed2f3"
     },
     {
       "path": ".ai-organization/runtime/core/coordination/ledger.mjs",
@@ -132,7 +136,7 @@
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/task-assurance.test.mjs",
-      "sha256": "848e9a868bc5262df2a6200616657b717cfc24d365fb5aeae967306c10108720"
+      "sha256": "518f652d42c8e14f66fe607bcbb416f5a9024d09bd85c0896965a9c6662dbc3e"
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/task-governor.mjs",
@@ -204,11 +208,11 @@
     },
     {
       "path": ".claude/agents/functionality-parity-auditor.md",
-      "sha256": "f874b9f868ca6fe45a6908ab33a10e746d140c35a4220154faaad213fca7fb3e"
+      "sha256": "ce9f698e80e206f5308d0364a012a2a54e05ea21436dfdb3fc42dd562b48fbc4"
     },
     {
       "path": ".claude/agents/performance-auditor.md",
-      "sha256": "3b6508204f3ac53e2db833fc9728e632b07438ae37f16d89b9a15e6a147d9d95"
+      "sha256": "08036442511dd96689c33ec0954872ab8c9067537c3c829f2aed6ebd798d07c3"
     },
     {
       "path": ".claude/agents/premise-and-architecture-challenger.md",
@@ -216,7 +220,7 @@
     },
     {
       "path": ".claude/agents/release-verifier.md",
-      "sha256": "91b25f2ff5df6136b4506746cf797e03dfdc04a00d753fda7e33799adcc3e6d5"
+      "sha256": "c107f188ec88f50e3bb4820fbd30b486e30ea126067a3143a621453f4ebc4644"
     },
     {
       "path": ".claude/agents/source-to-screen-auditor.md",
@@ -360,7 +364,7 @@
     },
     {
       "path": "scripts/check-fleet-parity.mjs",
-      "sha256": "2eb13b8f279e764c6784d0766eb6189b5113ccdc15d12f49f2089ed8629c1130"
+      "sha256": "49a9bfa11e66dad10cf6157f693af02102ec526305760a4672def8c2de772ec1"
     },
     {
       "path": "scripts/check-overlay-parity.mjs",
