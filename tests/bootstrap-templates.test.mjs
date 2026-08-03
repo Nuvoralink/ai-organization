@@ -6,6 +6,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { validateActionPolicySemantics } from '../core/authority/assess-action.mjs';
+import { validateDispatchableAgentFrontmatter } from '../core/lifecycle/evidence-runtime.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const bootstrap = path.join(root, 'skills', 'bootstrap-orchestrator');
@@ -266,7 +267,7 @@ test('Proves: PERF-IDLE-LIFECYCLE-001; Test type: authority-propagation mutation
   }
 });
 
-test('Proves: FLEET-DISPATCHABLE-FRONTMATTER-001; Test type: control-wiring mutation; Surface: shared fleet-parity gate and CoachAI functionality-parity brief; Authority: registered agent files must be dispatchable and wiring claims must name their mechanical proof boundary; Killer mutation: count agent filenames without validating frontmatter, or restore the stale claim that CoachAI has no mechanical API-consumer gate; Gated command: npm test', () => {
+test('Proves: FLEET-DISPATCHABLE-FRONTMATTER-001; Test type: control-wiring mutation; Surface: shared fleet-parity gate, every canonical project agent, and CoachAI functionality-parity brief; Authority: registered agent files must be dispatchable and wiring claims must name their mechanical proof boundary; Killer mutation: make any canonical description an unquoted scalar containing colon-space, count filenames without validating frontmatter, or restore the stale claim that CoachAI has no mechanical API-consumer gate; Gated command: npm test', () => {
   const fleetGate = fs.readFileSync(path.join(root, 'scripts', 'check-fleet-parity.mjs'), 'utf8');
   const coachaiParity = fs.readFileSync(
     path.join(root, 'overlays', 'coachai', 'project-files', '.claude', 'agents', 'functionality-parity-auditor.md'),
@@ -274,6 +275,16 @@ test('Proves: FLEET-DISPATCHABLE-FRONTMATTER-001; Test type: control-wiring muta
   );
   assert.match(fleetGate, /assertDispatchableFrontmatter\(path\.join\(agentsDir, entry\.name\)/u);
   assert.match(fleetGate, /unquoted scalar containing a colon-space/u);
+  for (const overlay of ['auxara-dialer', 'coachai', 'nuvora-link']) {
+    const agentsDirectory = path.join(root, 'overlays', overlay, 'project-files', '.claude', 'agents');
+    for (const entry of fs.readdirSync(agentsDirectory, { withFileTypes: true })) {
+      if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
+      const relative = path.relative(root, path.join(agentsDirectory, entry.name));
+      const source = fs.readFileSync(path.join(agentsDirectory, entry.name), 'utf8');
+      const roleId = entry.name.slice(0, -'.md'.length);
+      assert.deepEqual(validateDispatchableAgentFrontmatter(source, relative, roleId), []);
+    }
+  }
   assert.match(coachaiParity, /gate:api-method-consumers/u);
   assert.match(coachaiParity, /backend mount .* API layer remains the complete manual cross-grep/u);
   assert.doesNotMatch(coachaiParity, /no mechanical wiring gate exists in this repo/iu);
