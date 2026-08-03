@@ -69,6 +69,21 @@ function repoRoot(cwd) {
   return result.status === 0 && !result.error ? path.resolve(result.stdout.trim()) : undefined;
 }
 
+function gitCommonDirKey(cwd) {
+  const result = git(['rev-parse', '--git-common-dir'], cwd, 3_000);
+  if (result.status !== 0 || result.error) return undefined;
+  const raw = result.stdout.trim();
+  if (!raw) return undefined;
+  const candidate = path.isAbsolute(raw) ? raw : path.resolve(cwd, raw);
+  let resolved;
+  try {
+    resolved = path.resolve(realpathSync.native(candidate));
+  } catch {
+    resolved = path.resolve(candidate);
+  }
+  return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+}
+
 function configuredProjectRoot() {
   const configured = String(process.env.CLAUDE_PROJECT_DIR ?? '').trim();
   const scriptCandidate = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -80,7 +95,11 @@ function configuredProjectRoot() {
   const configuredReal = path.resolve(realpathSync.native(configuredRoot));
   const key = (value) => process.platform === 'win32' ? value.toLowerCase() : value;
   if (key(configuredReal) !== key(scriptReal)) {
-    throw new Error('CLAUDE_PROJECT_DIR does not match the script-derived repository root');
+    const scriptCommon = gitCommonDirKey(scriptReal);
+    const configuredCommon = gitCommonDirKey(configuredReal);
+    if (!scriptCommon || !configuredCommon || scriptCommon !== configuredCommon) {
+      throw new Error('CLAUDE_PROJECT_DIR points to a different repository than the one containing this hook');
+    }
   }
   return scriptReal;
 }

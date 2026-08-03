@@ -840,70 +840,75 @@ test('Proves: ORG-HOOK-003C and ORG-HOOK-006; Test type: canonical-template runt
   assert.equal(deliveryGate('FIT-MUTATION-RESTORED'), 0);
 });
 
-test('Proves: ORG-HOOK-003B; Test type: sibling-worktree liveness plus spoofed-root runtime mutation; Surface: CoachAI lifecycle root; Authority: git common-directory repository identity; Killer mutations: reject a sibling worktree or trust a different repository in CLAUDE_PROJECT_DIR; Gated command: npm test', (t) => {
-  const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'coachai lifecycle verified root-'));
-  const siblingWorktreeRoot = path.join(
-    path.dirname(fixtureRoot),
-    `${path.basename(fixtureRoot)}-sibling-worktree`,
-  );
-  const foreignRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'coachai lifecycle foreign root-'));
-  t.after(() => {
-    spawnSync('git', ['worktree', 'remove', '--force', siblingWorktreeRoot], {
-      cwd: fixtureRoot,
-      encoding: 'utf8',
+test('Proves: ORG-HOOK-003B; Test type: sibling-worktree liveness plus spoofed-root runtime mutation; Surface: CoachAI and Nuvora Link lifecycle roots; Authority: git common-directory repository identity; Killer mutations: reject a sibling worktree or trust a different repository in CLAUDE_PROJECT_DIR; Gated command: npm test', (t) => {
+  for (const project of ['coachai', 'nuvora-link']) {
+    const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), `${project} lifecycle verified root-`));
+    const siblingWorktreeRoot = path.join(
+      path.dirname(fixtureRoot),
+      `${path.basename(fixtureRoot)}-sibling-worktree`,
+    );
+    const foreignRoot = fs.mkdtempSync(path.join(os.tmpdir(), `${project} lifecycle foreign root-`));
+    t.after(() => {
+      spawnSync('git', ['worktree', 'remove', '--force', siblingWorktreeRoot], {
+        cwd: fixtureRoot,
+        encoding: 'utf8',
+      });
+      fs.rmSync(fixtureRoot, { recursive: true, force: true });
+      fs.rmSync(siblingWorktreeRoot, { recursive: true, force: true });
+      fs.rmSync(foreignRoot, { recursive: true, force: true });
     });
-    fs.rmSync(fixtureRoot, { recursive: true, force: true });
-    fs.rmSync(siblingWorktreeRoot, { recursive: true, force: true });
-    fs.rmSync(foreignRoot, { recursive: true, force: true });
-  });
-  const sourceRoot = path.join(root, 'overlays', 'coachai', 'project-files');
-  fs.cpSync(path.join(sourceRoot, 'scripts'), path.join(fixtureRoot, 'scripts'), { recursive: true });
-  fs.cpSync(path.join(sourceRoot, '.ai-organization'), path.join(fixtureRoot, '.ai-organization'), { recursive: true });
-  fs.cpSync(path.join(root, 'core'), path.join(fixtureRoot, '.ai-organization', 'runtime', 'core'), { recursive: true });
+    const sourceRoot = path.join(root, 'overlays', project, 'project-files');
+    fs.cpSync(path.join(sourceRoot, 'scripts'), path.join(fixtureRoot, 'scripts'), { recursive: true });
+    fs.cpSync(path.join(sourceRoot, '.ai-organization'), path.join(fixtureRoot, '.ai-organization'), { recursive: true });
+    fs.cpSync(path.join(root, 'core'), path.join(fixtureRoot, '.ai-organization', 'runtime', 'core'), { recursive: true });
 
-  assert.equal(spawnSync('git', ['init', '-b', 'root-proof'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);
-  assert.equal(spawnSync('git', ['config', 'user.email', 'lifecycle@example.invalid'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);
-  assert.equal(spawnSync('git', ['config', 'user.name', 'Lifecycle Test'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);
-  assert.equal(spawnSync('git', ['add', '.'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);
-  assert.equal(spawnSync('git', ['commit', '-m', 'fixture'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);
-  assert.equal(
-    spawnSync('git', ['worktree', 'add', '-b', 'sibling-proof', siblingWorktreeRoot], {
+    assert.equal(spawnSync('git', ['init', '-b', 'root-proof'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);
+    assert.equal(spawnSync('git', ['config', 'user.email', 'lifecycle@example.invalid'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);
+    assert.equal(spawnSync('git', ['config', 'user.name', 'Lifecycle Test'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);
+    assert.equal(spawnSync('git', ['add', '.'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);
+    assert.equal(spawnSync('git', ['commit', '-m', 'fixture'], { cwd: fixtureRoot, encoding: 'utf8' }).status, 0);
+    assert.equal(
+      spawnSync('git', ['worktree', 'add', '-b', 'sibling-proof', siblingWorktreeRoot], {
+        cwd: fixtureRoot,
+        encoding: 'utf8',
+      }).status,
+      0,
+    );
+
+    const accepted = spawnSync(process.execPath, [path.join(fixtureRoot, 'scripts', 'claude-lifecycle-hook.mjs')], {
       cwd: fixtureRoot,
+      input: JSON.stringify({ hook_event_name: 'SessionEnd', session_id: 'sibling-worktree' }),
       encoding: 'utf8',
-    }).status,
-    0,
-  );
+      env: { ...process.env, CLAUDE_PROJECT_DIR: siblingWorktreeRoot },
+    });
+    assert.equal(accepted.status, 0, `${project}: ${accepted.stderr}`);
+    if (project === 'coachai') assert.match(accepted.stdout, /lifecycle SessionEnd: ACCEPTED/u);
+    const telemetryFile = project === 'coachai' ? 'lifecycle.jsonl' : 'events.jsonl';
+    assert.equal(
+      fs.existsSync(path.join(fixtureRoot, 'tmp', 'agent-telemetry', telemetryFile)),
+      true,
+      `${project}: the hook must persist telemetry below its own worktree`,
+    );
+    assert.equal(
+      fs.existsSync(path.join(siblingWorktreeRoot, 'tmp', 'agent-telemetry', telemetryFile)),
+      false,
+      `${project}: CLAUDE_PROJECT_DIR must not redirect runtime state`,
+    );
 
-  const accepted = spawnSync(process.execPath, [path.join(fixtureRoot, 'scripts', 'claude-lifecycle-hook.mjs')], {
-    cwd: fixtureRoot,
-    input: JSON.stringify({ hook_event_name: 'SessionEnd', session_id: 'sibling-worktree' }),
-    encoding: 'utf8',
-    env: { ...process.env, CLAUDE_PROJECT_DIR: siblingWorktreeRoot },
-  });
-  assert.equal(accepted.status, 0, accepted.stderr);
-  assert.match(accepted.stdout, /lifecycle SessionEnd: ACCEPTED/u);
-  assert.equal(
-    fs.existsSync(path.join(fixtureRoot, 'tmp', 'agent-telemetry', 'lifecycle.jsonl')),
-    true,
-  );
-  assert.equal(
-    fs.existsSync(path.join(siblingWorktreeRoot, 'tmp', 'agent-telemetry', 'lifecycle.jsonl')),
-    false,
-  );
-
-  assert.equal(spawnSync('git', ['init', '-b', 'foreign-proof'], { cwd: foreignRoot, encoding: 'utf8' }).status, 0);
-  const blocked = spawnSync(process.execPath, [path.join(fixtureRoot, 'scripts', 'claude-lifecycle-hook.mjs')], {
-    cwd: fixtureRoot,
-    input: JSON.stringify({ hook_event_name: 'SessionEnd', session_id: 'foreign-root' }),
-    encoding: 'utf8',
-    env: { ...process.env, CLAUDE_PROJECT_DIR: foreignRoot },
-  });
-  assert.equal(blocked.status, 2);
-  assert.match(
-    blocked.stderr,
-    /CLAUDE_PROJECT_DIR points to a different repository than the one containing this hook/iu,
-  );
-  assert.equal(fs.existsSync(path.join(foreignRoot, 'tmp', 'agent-telemetry', 'lifecycle.jsonl')), false);
+    assert.equal(spawnSync('git', ['init', '-b', 'foreign-proof'], { cwd: foreignRoot, encoding: 'utf8' }).status, 0);
+    const blocked = spawnSync(process.execPath, [path.join(fixtureRoot, 'scripts', 'claude-lifecycle-hook.mjs')], {
+      cwd: fixtureRoot,
+      input: JSON.stringify({ hook_event_name: 'SessionEnd', session_id: 'foreign-root' }),
+      encoding: 'utf8',
+      env: { ...process.env, CLAUDE_PROJECT_DIR: foreignRoot },
+    });
+    assert.equal(blocked.status, 2, project);
+    assert.match(
+      blocked.stderr,
+      /CLAUDE_PROJECT_DIR points to a different repository than the one containing this hook/iu,
+    );
+    assert.equal(fs.existsSync(path.join(foreignRoot, 'tmp', 'agent-telemetry', telemetryFile)), false);
+  }
 });
 
 test('Proves: ORG-HOOK-004; Test type: nested-cwd runtime mutation and root counterexample; Surface: universal, Auxara, and CoachAI PostToolUse gate children; Authority: configured project root; Killer mutation: spawn npm or node from process.cwd(); Gated command: npm test', (t) => {
