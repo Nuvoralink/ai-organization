@@ -1,0 +1,84 @@
+{
+  "$schema": "https://nuvoralink.internal/schemas/agent-role-project-extension.v1.schema.json",
+  "version": "1.1.0",
+  "agent_file_exceptions": [
+    {
+      "role_id": "security-auditor",
+      "source": "inherited_global_agent",
+      "reason": "Nuvora Link inherits the global security auditor; the project fleet does not duplicate that universal authority."
+    }
+  ],
+  "roles": [
+    {
+      "id": "operations-integrity-auditor",
+      "purpose": "Audit Nuvora Link's single-company appointment-setting and team-operations invariants, including organization-scoped security and data integrity, persisted measurement truth, business time, metric provenance, side-effect ownership, authoritative provider and money boundaries, governed Nuvo actions, and permanent absence of the retired built-in dialer.",
+      "trigger": ["before merging organization-boundary, role, appointment, callback, analytics, time, notification, accounting, provider, Nuvo, or capability-retirement changes"],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "claude",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": ["criterion-by-criterion evidence with exact file lines", "cross-organization-boundary and role-scope probes", "source-to-screen operational-truth trace", "surfaces not reached", "doctrine-loop findings"],
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Bash"], "deny": ["Edit", "Write", "NotebookEdit"] },
+        "budget": { "max_usd": 12, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.8,
+        "criteria": [
+          { "id": "organization-boundary-role-isolation", "weight": 20, "critical": true, "summary": "Every scoped action is server-authorized by organization and role, with MANAGER inheriting BOOKER behavior and no client-supplied identity authority; this boundary serves internal security and data integrity, not generalized SaaS tenancy." },
+          { "id": "operational-measurement-truth", "weight": 20, "critical": true, "summary": "Appointments and callbacks preserve entryOrigin, operational owner, and MeasurementScope so operational-only work never contaminates KPI truth." },
+          { "id": "business-time-and-metric-provenance", "weight": 18, "critical": true, "summary": "Organization-timezone exclusive windows and canonical dial, reach, book, show, and ratio sources drive every report and surface." },
+          { "id": "one-owner-idempotent-effects", "weight": 16, "critical": true, "summary": "Exactly one worker or outbox owner performs each external side effect, guarded by durable sequential and concurrent idempotency." },
+          { "id": "server-authoritative-actions", "weight": 14, "critical": true, "summary": "Money, provider, and Nuvo actions are resolved, scoped, confirmed, audited, and executed by server authorities rather than clients, prompts, or model output." },
+          { "id": "retired-dialer-absence", "weight": 12, "critical": true, "summary": "Telnyx and Dialpad calling, softphone, call-log, phone-number, reputation/cooling, and number-change capabilities remain absent while manual dispositions stay live." }
+        ]
+      }
+    },
+    {
+      "id": "doctrine-drift-auditor",
+      "purpose": "Find contradictions between Nuvora Link behavior and its accepted ADRs, Nuvo governance, role rules, timezone and metric policies, capability lifecycle, and source-of-truth declarations.",
+      "trigger": ["before merging behavior governed by an ADR, governance matrix, capability lifecycle, or project rule"],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "claude",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": ["governing-authority quotes", "code-to-doctrine findings", "internal doctrine contradictions", "surfaces not reached", "doctrine-loop findings"],
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Bash"], "deny": ["Edit", "Write", "NotebookEdit"] },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.7,
+        "criteria": [
+          { "id": "accepted-decisions-enforced", "weight": 35, "critical": true, "summary": "Code and living docs implement the latest accepted ADR and capability decision rather than a superseded design." },
+          { "id": "authority-centralization", "weight": 25, "critical": true, "summary": "Each decision and state has one authority and no competing producer, copied constant, or bypass." },
+          { "id": "doctrine-internal-consistency", "weight": 20, "critical": false, "summary": "Project rules, ADRs, Nuvo governance, and product capability docs agree with one another." },
+          { "id": "retirement-completeness", "weight": 20, "critical": false, "summary": "Retired code, configuration, schema, dependencies, tests, routes, and living documentation are absent or explicitly historical." }
+        ]
+      }
+    },
+    {
+      "id": "test-runner",
+      "purpose": "Run Nuvora Link's named local proof battery as the sole environment-sensitive test owner, preserve each command's real exit and nonzero counts, and report compact root-cause evidence without editing.",
+      "trigger": ["after a completed Nuvora Link slice requires the full verification battery"],
+      "mode": "verify_runtime",
+      "strength": "strongest_available",
+      "vendor_preference": "claude",
+      "incompatible_with": ["concurrent-database-user", "source-editor-for-same-run"],
+      "required_outputs": ["real command exits", "nonzero test file and case counts", "compact verdict", "one root cause per failure", "doctrine-loop findings"],
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Bash"], "deny": ["Edit", "Write", "NotebookEdit"] },
+        "budget": { "max_usd": 15, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.7,
+        "criteria": [
+          { "id": "real-exit-codes", "weight": 35, "critical": true, "summary": "Every command's own exit is captured before any output transform or pipe." },
+          { "id": "nonzero-counts", "weight": 30, "critical": true, "summary": "Every required test-bearing workspace executes nonzero files and cases; skips are reported as unrun." },
+          { "id": "environment-isolation", "weight": 20, "critical": false, "summary": "Database, Redis, and environment-sensitive runs use the intended local isolated resources without production credentials." },
+          { "id": "failure-diagnosis", "weight": 15, "critical": false, "summary": "Each failure is traced to an actual line and load-bearing cause rather than a status summary." }
+        ]
+      }
+    }
+  ]
+}

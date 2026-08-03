@@ -3583,6 +3583,210 @@
       "class": "project-orchestration-overlay"
     },
     {
+      "path": "overlays/nuvora-link/automations/project-automations.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/control-plane/action-authority.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/control-plane/project-profile.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/control-plane/registries/agent-roles.project.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/exclusions.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/manifest.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/migrations/import-baseline.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/ownership.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/profile.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.ai-organization/README.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.ai-organization/context-budget.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.ai-organization/lifecycle-policy.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.ai-organization/overlay-lock.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.ai-organization/ownership.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.ai-organization/policies/authority-domains.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.ai-organization/proof-profiles.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.ai-organization/roles.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.claude/agents/adversarial-reviewer.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.claude/agents/doctrine-drift-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.claude/agents/functionality-parity-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.claude/agents/operations-integrity-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.claude/agents/performance-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.claude/agents/premise-and-architecture-challenger.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.claude/agents/release-verifier.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.claude/agents/sprint-kickoff-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.claude/agents/test-runner.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.claude/agents/ui-verifier.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.claude/agents/user-journey-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.claude/rules/centralization-doctrine.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.claude/rules/frontend-rules.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.claude/rules/nuvo-governance.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.claude/rules/operations-integrity.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.claude/rules/security-rules.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.claude/rules/test-intent.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.claude/settings.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.github/ISSUE_TEMPLATE/agent-slice.yml",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/.github/pull_request_template.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/AGENTS.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/CLAUDE.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/scripts/check-agent-context.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/scripts/check-agent-control-plane.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/scripts/check-documentation-authority.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/scripts/check-overlay-parity.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/scripts/check-rules-wiring.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/scripts/check-test-intent.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/scripts/check-test-workspace-coverage.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/scripts/claude-lifecycle-hook.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/scripts/claude-posttooluse-gate.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/scripts/lib/boundedProcess.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/scripts/lib/dispatchBoundary.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/scripts/run-bounded-agent.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
       "path": "package.json",
       "class": "repository-metadata"
     },

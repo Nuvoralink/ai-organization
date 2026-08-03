@@ -1,6 +1,6 @@
 ---
 name: performance-auditor
-description: Use to audit a diff or subsystem of the Auxara Dialer for performance and scale hazards — N+1 queries, unbounded reads, missing indexes for the real query shapes, payload/DTO bloat, React re-render storms, bundle growth, and leaks/accumulation in long-lived workers. Static-first, evidence-based, read-only. Run it per slice that touches a hot path, and in every sprint-close whole-app sweep. This is the lens nothing else covers — the dialer is a real-time telephony product that has never once been audited for performance. NOT for correctness/doneness (use adversarial-reviewer), NOT for security/abuse (use cybersecurity-auditor), NOT for rendered visual jank (use ui-verifier), NOT for cost-metering compliance (use compliance-auditor / doctrine-drift-auditor).
+description: Use to audit a diff or subsystem of the Auxara Dialer for performance and scale hazards — N+1 queries, unbounded reads, missing indexes for the real query shapes, idle recurring work, retry/retention accumulation, payload/DTO bloat, React re-render storms, bundle growth, and leaks in long-lived workers. Static-first, evidence-based, read-only. Run it per slice that touches a hot path or scheduler/worker lifecycle, and in every sprint-close whole-app sweep. NOT for correctness/doneness (use adversarial-reviewer), NOT for security/abuse (use cybersecurity-auditor), NOT for rendered visual jank (use ui-verifier), NOT for cost-metering compliance (use compliance-auditor / doctrine-drift-auditor).
 tools: Read, Grep, Glob, Bash
 ---
 
@@ -23,6 +23,7 @@ These run at high frequency or per-dial/per-event — a hazard here multiplies b
 - **Conversations inbox queries** — list reads that can pull unbounded threads / messages.
 - **The per-dial compliance-gate path** — calling-hours TZ math + DNC lookup + disclosure state-map, run before every Call Control dial.
 - **BullMQ workers** (long-lived processes — VM drop, SMS sends, DNC scrub, recording rehoming, TCR sync, number-health checks, CRM webhook delivery) — accumulation/leaks in a long-lived process compound over days.
+- **Repeatable, recovery, and provider-poll paths** — schedulers, dial/provider polling, snapshots, disposition/stat projections, callback recovery, webhooks, and queue retries must run only for persisted due work or an actual event. Idle workspaces must stop querying long enough for Neon autosuspend.
 - **The cockpit render path** — `frontend/src/context/CallProvider.tsx` is the ONE shared owner of the live call (single `TelnyxRTC` client + single `/call-events` socket + single `callMachineReducer`); an identity-unstable context value (`value={{...}}` rebuilt each render) re-renders EVERY consumer on every call event.
 
 ## Static checklist — the exact greps + what to confirm
@@ -33,6 +34,9 @@ These run at high frequency or per-dial/per-event — a hazard here multiplies b
 5. **React re-render storms** — context provider `value={{ ... }}` object/array literals rebuilt each render (identity churn re-renders all consumers); missing `memo`/`useMemo`/`useCallback` on components in hot lists or high-frequency-event consumers; `useEffect` with missing or over-broad deps on a high-frequency event (fires every event). Grep `value={{` and `value={[` in context providers; read the CallProvider value object specifically.
 6. **Bundle growth** — new `dependencies` in a `package.json` diff. Name the added package + its cost (rough weight / whether it pulls transitive deps), and whether a lighter or already-present alternative exists.
 7. **Worker leaks / accumulation** — in a long-lived worker, arrays/maps/sets that are appended to without eviction, unbounded caches, timers/listeners added without cleanup, growing in-memory state (project-rules §11 says state that must survive restarts lives in Redis/Postgres, not memory).
+8. **Idle recurring work and retry progress** — inventory every interval, recursive timeout, BullMQ repeatable, startup/reconnect sweep, and provider poll. Each database/provider action requires an actual event or persisted due row; retries need stable identity, bounded backoff/horizon, and monotonic progress. No active dial/provider work means no recurring database load.
+9. **Persistence and queue lifecycle** — calls/events, appointments, callbacks, dispositions, stats/snapshots, webhook receipts, audit rows, Redis keys, and completed/failed jobs name retention/compaction/terminalization and rebuild rules. Flag per-reader fanout, queue-only truth, and full-history recomputation on routine reads.
+10. **Boundary and mapping integrity** — keep Redis/provider I/O outside DB transactions and deadline-bound; request clients fail fast instead of offline buffering. Raw SQL uses physical Prisma mappings and is covered by a real-database test.
 
 ## Severity calibration + the no-speculation rule
 - **Hot-path + per-dial/per-event** (the list above) → **major** or higher. Admin / one-off / setup path → **minor**.
@@ -68,9 +72,10 @@ Report a status for **every** criterion below — `pass` | `partial` | `fail` | 
 
 - `query-boundedness` **(critical)** — Every read is paginated or provably bounded; no unbounded list or query inside a loop.
 - `hot-path-inventory` **(critical)** — The real hot paths enumerated from the diff and the runtime shape, not guessed.
-- `index-coverage` — Indexes exist for the actual query shapes, verified against the schema.
+- `idle-lifecycle` **(critical)** — Idle operation performs no recurring database/provider work; retries are due-work driven, bounded, monotonic, and every growing persisted/queue surface has an authoritative lifecycle.
+- `index-coverage` — Indexes exist for the actual query shapes, verified against the schema and physical Prisma mappings.
 - `render-and-bundle` — No re-render storms or unexplained bundle growth on touched frontend surfaces.
-- `capacity-risk` — Queue pressure, worker lifetime, and leak risk assessed for long-lived processes.
+- `capacity-risk` — Queue pressure, worker/client lifetime, provider deadlines, and leak risk assessed for long-lived processes.
 
 Leaving a **critical** criterion unevaluated returns **UNVERIFIABLE** — no number of passes elsewhere waives it. UNVERIFIABLE is a legitimate result and a re-dispatch signal to the orchestrator, not a failed audit; manufacturing a `pass` you did not verify, in order to avoid it, is the fail-state. A suppression comment, an allowlist row, or the implementer's "lens run, clean" self-audit claim is a lead, never evidence for a `pass`.
 

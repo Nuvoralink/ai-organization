@@ -147,7 +147,8 @@ test('Proves: ORG-AUTH-004; Test type: authority-retirement mutation; Surface: b
   const files = [
     'templates/gates/check-agent-control-plane.mjs.template',
     path.join(root, 'overlays/auxara-dialer/project-files/scripts/check-agent-control-plane.mjs'),
-    path.join(root, 'overlays/coachai/project-files/scripts/check-agent-control-plane.mjs')
+    path.join(root, 'overlays/coachai/project-files/scripts/check-agent-control-plane.mjs'),
+    path.join(root, 'overlays/nuvora-link/project-files/scripts/check-agent-control-plane.mjs')
   ];
   for (const file of files) {
     const source = path.isAbsolute(file) ? fs.readFileSync(file, 'utf8') : read(file);
@@ -165,6 +166,10 @@ test('Proves: ORG-PLAN-001; Test type: mutation; Surface: decision-log template;
 });
 
 test('Proves: ORG-TEST-001; Test type: executable gate mutation; Surface: generated check-test-intent.mjs; Authority: test-intent header contract; Killer mutation: remove Killer mutation or Gated command and keep the executable gate green; Gated command: npm test', (t) => {
+  const skill = read('SKILL.md');
+  assert.match(skill, /Every canonical runtime test installed beneath a scanned project root/u);
+  assert.match(skill, /fresh-install fixture as a Git repository/u);
+  assert.match(skill, /newly installed project's `gate:test-intent` rejects generated runtime tests/u);
   const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'test-intent executable gate-'));
   t.after(() => fs.rmSync(fixtureRoot, { recursive: true, force: true }));
   fs.mkdirSync(path.join(fixtureRoot, 'src'), { recursive: true });
@@ -226,11 +231,44 @@ test('Proves: ORG-FLEET-001; Test type: mutation; Surface: bootstrap roster; Aut
   }
 });
 
+test('Proves: PERF-IDLE-LIFECYCLE-001; Test type: authority-propagation mutation; Surface: performance-auditor registry, bootstrap template, and managed project overlays; Authority: idle-cost and persisted-lifecycle doctrine; Killer mutation: remove the critical idle-lifecycle criterion or let any project auditor omit due-work admission, monotonic retry, retention, or physical-mapping checks; Gated command: npm test', () => {
+  const registry = JSON.parse(fs.readFileSync(path.join(root, 'registries', 'agent-roles.v1.json'), 'utf8'));
+  const performanceRole = registry.roles.find((role) => role.id === 'performance-auditor');
+  assert.ok(performanceRole, 'performance-auditor must remain registered');
+  const idleCriterion = performanceRole.verdict_rubric.criteria.find((criterion) => criterion.id === 'idle-lifecycle');
+  assert.equal(idleCriterion?.critical, true);
+  assert.match(idleCriterion?.summary ?? '', /Idle runtimes issue no recurring database\/provider work/u);
+  assert.equal(
+    performanceRole.verdict_rubric.criteria.reduce((sum, criterion) => sum + criterion.weight, 0),
+    100,
+    'performance verdict weights must remain normalized',
+  );
+
+  const sources = [
+    read('templates/agents/performance-auditor.template.md'),
+    ...['auxara-dialer', 'coachai', 'nuvora-link'].map((project) => fs.readFileSync(
+      path.join(root, 'overlays', project, 'project-files', '.claude', 'agents', 'performance-auditor.md'),
+      'utf8',
+    )),
+  ];
+  for (const source of sources) {
+    assert.match(source, /idle-lifecycle/u);
+    assert.match(source, /persisted due row|due business work|no due appointment/u);
+    assert.match(source, /monotonic/u);
+    assert.match(source, /retention/u);
+    assert.match(source, /physical (?:Prisma|ORM|identifier|mapping)/u);
+  }
+});
+
 test('Proves: ORG-OVERLAY-001; Test type: mutation; Surface: existing-project bootstrap; Authority: overlay ownership manifest; Killer mutation: permit copy-all or overwrite a dirty managed target; Gated command: npm test', () => {
   const skill = fs.readFileSync(path.join(root, 'skills', 'bootstrap-orchestrator', 'SKILL.md'), 'utf8');
   assert.match(skill, /Existing-project overlay mode/u);
   assert.match(skill, /refuses dirty managed targets/u);
   assert.match(skill, /Never use copy-all discovery as authority/u);
+  assert.match(skill, /npm run control:scope:refresh/u);
+  assert.match(skill, /cached or untracked candidate/u);
+  assert.match(skill, /unclassified-tracked-path/u);
+  assert.match(skill, /remove `--others`/u);
   assert.match(skill, /project-owned product doc must remain outside overlay parity/u);
 });
 
@@ -269,7 +307,7 @@ test('Proves: ORG-GOV-005; Test type: architecture; Surface: cross-vendor assura
   assert.match(lifecycleFixture, /execution:\s*\{ implementer_role:/u);
   assert.match(lifecycleFixture, /COMPLETION_REPORT_JSON:/u);
   assert.doesNotMatch(codexStatus, /acceptLifecycleTask|completeLifecycleTask|recordLifecycle/u);
-  for (const project of ['auxara-dialer', 'coachai']) {
+  for (const project of ['auxara-dialer', 'coachai', 'nuvora-link']) {
     const adapter = fs.readFileSync(path.join(root, 'overlays', project, 'project-files', 'scripts', 'claude-lifecycle-hook.mjs'), 'utf8');
     assert.match(adapter, /completeLifecycleTask\(/u, `${project} TaskCompleted must call the shared stateful lifecycle controller`);
     assert.doesNotMatch(adapter, /artifact_opened|killer_mutation_observed|AGENT_PROOF_COMMAND/u, `${project} must not synthesize or override proof truth`);
@@ -380,7 +418,7 @@ test('Proves: COORDINATION-RUNNER-DELIVERY-001; Test type: canonical-template an
   assert.match(templateSources.process, /export function runBounded\(/u);
   assert.match(templateSources.boundary, /expected exactly one .* row/u);
 
-  for (const project of ['auxara-dialer', 'coachai']) {
+  for (const project of ['auxara-dialer', 'coachai', 'nuvora-link']) {
     const projectScripts = path.join(root, 'overlays', project, 'project-files', 'scripts');
     assert.equal(
       fs.readFileSync(path.join(projectScripts, 'run-bounded-agent.mjs'), 'utf8'),
@@ -410,6 +448,13 @@ test('Proves: CONTROL-PLANE-LIFECYCLE-OVERLAY-DRIFT-001; Test type: canonical sk
   assert.match(
     skill,
     /tmp\/agent-assurance\/` ignore is only a defensive exclusion/u,
+  );
+});
+
+test('Proves: TEST-INVENTORY-001; Test type: canonical skill contract mutation; Surface: bootstrap test aggregation guidance; Authority: live test-file inventory; Killer mutation: remove the explicit-filename inventory requirement and allow a green aggregate to omit a test; Gated command: npm test', () => {
+  assert.match(
+    read('SKILL.md'),
+    /inventory gate that compares the live test-file set with that command and fails when one file is omitted/u,
   );
 });
 
@@ -445,6 +490,7 @@ test('Proves: ORG-HOOK-001; Test type: mutation and path counterexample; Surface
     ['bootstrap', parseCommentedJson(read('templates/settings.json.template'))],
     ['auxara-dialer', JSON.parse(fs.readFileSync(path.join(root, 'overlays', 'auxara-dialer', 'project-files', '.claude', 'settings.json'), 'utf8'))],
     ['coachai', JSON.parse(fs.readFileSync(path.join(root, 'overlays', 'coachai', 'project-files', '.claude', 'settings.json'), 'utf8'))],
+    ['nuvora-link', JSON.parse(fs.readFileSync(path.join(root, 'overlays', 'nuvora-link', 'project-files', '.claude', 'settings.json'), 'utf8'))],
   ];
   for (const [name, settings] of settingsSources) {
     assert.deepEqual(rootedHookErrors(settings), [], `${name} must use rooted exec-form hooks`);

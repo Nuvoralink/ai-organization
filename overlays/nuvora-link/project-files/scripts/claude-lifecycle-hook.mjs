@@ -1,0 +1,625 @@
+#!/usr/bin/env node
+// Claude Code lifecycle router for the Nuvora Link project overlay.
+// Keep
+// tmp/agent-telemetry and tmp/agent-assurance ignored. Do not add WorktreeCreate/WorktreeRemove until
+// replacement semantics and Windows paths are verified on the installed Claude version.
+import { appendFileSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { createHash, randomBytes } from 'node:crypto';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import {
+  COORDINATION_DISPATCH_PATHS,
+  countDispatch,
+  recordCoordinationErrorCoverage,
+} from '../.ai-organization/runtime/core/coordination/coverage.mjs';
+import { coordinationMode } from '../.ai-organization/runtime/core/coordination/mode.mjs';
+import {
+  coordinationAdmissionDecision,
+  coordinationAdmissionWarning,
+  coordinationFailOpenWarning,
+  coordinationRefusalMessage,
+  reconcileClaims,
+  registerClaim,
+  releaseClaim,
+} from '../.ai-organization/runtime/core/coordination/register.mjs';
+import { acceptLifecycleTask, completeLifecycleTask, recordLifecycleCompletionReport, recordLifecycleReview } from '../.ai-organization/runtime/core/lifecycle/lifecycle-controller.mjs';
+import {
+  defaultAssuranceStateDirectory,
+  loadTaskAttempt,
+  recordReplacementDispatch,
+  replacementDispatchWouldStall,
+} from '../.ai-organization/runtime/core/lifecycle/evidence-runtime.mjs';
+import { isProcessAlive } from './lib/boundedProcess.mjs';
+
+const INTEGRATION_BRANCH = 'develop';
+const TASK_COMPLETION_GATE = 'gates:all';
+const BLOCKING_EVENTS = new Set(['TaskCreated', 'TaskCompleted', 'SubagentStop']);
+const BRIEF_SECTIONS = [
+  { name: 'Context', aliases: ['context'] },
+  { name: 'Paths', aliases: ['paths', 'exact paths'] },
+  { name: 'Procedure', aliases: ['procedure', 'numbered procedure'], numbered: true },
+  { name: 'Output contract', aliases: ['output contract'] },
+  { name: 'Boundaries', aliases: ['boundaries'] },
+  { name: 'Acceptance criteria', aliases: ['acceptance criteria', 'self-verifiable acceptance'] },
+];
+const IMPLEMENTATION_BRIEF_SECTIONS = [
+  { name: 'Authority path', aliases: ['authority path'] },
+  { name: 'Lifecycle matrix', aliases: ['lifecycle matrix'] },
+  { name: 'Runtime execution', aliases: ['runtime execution'] },
+  { name: 'Proof matrix', aliases: ['proof matrix'] },
+];
+const REPORT_SECTIONS = [
+  { name: 'Doctrine-loop findings', aliases: ['doctrine-loop findings'] },
+  { name: 'Honesty clause', aliases: ['honesty clause'] },
+];
+
+function git(args, cwd, timeout = 10_000) {
+  return spawnSync('git', args, { cwd, encoding: 'utf8', timeout, windowsHide: true, maxBuffer: 64 * 1024 * 1024 });
+}
+
+function gitText(args, cwd) {
+  const result = git(args, cwd);
+  if (result.status !== 0 || result.error) throw new Error(`git ${args.join(' ')} failed`);
+  return result.stdout;
+}
+
+function repoRoot(cwd) {
+  const result = git(['rev-parse', '--show-toplevel'], cwd, 3_000);
+  return result.status === 0 && !result.error ? path.resolve(result.stdout.trim()) : undefined;
+}
+
+function configuredProjectRoot() {
+  const configured = String(process.env.CLAUDE_PROJECT_DIR ?? '').trim();
+  const scriptCandidate = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const scriptRoot = repoRoot(scriptCandidate) ?? scriptCandidate;
+  const scriptReal = path.resolve(realpathSync.native(scriptRoot));
+  if (!configured) return scriptReal;
+  const configuredCandidate = path.resolve(configured);
+  const configuredRoot = repoRoot(configuredCandidate) ?? configuredCandidate;
+  const configuredReal = path.resolve(realpathSync.native(configuredRoot));
+  const key = (value) => process.platform === 'win32' ? value.toLowerCase() : value;
+  if (key(configuredReal) !== key(scriptReal)) {
+    throw new Error('CLAUDE_PROJECT_DIR does not match the script-derived repository root');
+  }
+  return scriptReal;
+}
+
+function hash(value) {
+  return createHash('sha256').update(String(value ?? ''), 'utf8').digest('hex');
+}
+
+function coordinationOwnerToken(payload) {
+  return hash(`claude-session:${String(payload?.session_id ?? '')}`);
+}
+
+function warnCoordination(message) {
+  if (typeof message !== 'string' || message.length === 0) return;
+  try {
+    process.stderr.write(`${message}\n`);
+  } catch {
+    // A closed diagnostic stream cannot turn coordination into a lifecycle block.
+  }
+}
+
+async function safelyRegisterTaskClaim({
+  payload,
+  contract,
+  attemptId,
+  root,
+  admission,
+  modeEpoch,
+}) {
+  try {
+    if (!admission || admission.effectiveMode === 'off') return { skipped: 'mode-off' };
+    const editPaths = Array.isArray(contract?.paths?.edit) ? contract.paths.edit : [];
+    if (editPaths.length === 0) return { skipped: 'no-edit-paths' };
+    return await registerClaim({
+      repoRoot: root,
+      taskId: payload.task_id,
+      attemptId,
+      agentKind: 'claude',
+      editPaths,
+      readPaths: Array.isArray(contract?.paths?.read) ? contract.paths.read : [],
+      ownerToken: coordinationOwnerToken(payload),
+      ownerPid: process.ppid > 0 ? process.ppid : process.pid,
+      worktreePath: root,
+      persistReceipt: true,
+      admission,
+      modeEpoch,
+    });
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+async function safelyReleaseTaskClaim(payload, root, taskId = payload?.task_id) {
+  try {
+    if (!root || !taskId || coordinationMode(root) === 'off') return;
+    await releaseClaim({
+      repoRoot: root,
+      taskId,
+      ownerToken: coordinationOwnerToken(payload),
+    });
+  } catch {
+    // Reconciliation owns recovery; a release failure never changes lifecycle completion.
+  }
+}
+
+async function safelyReconcileCoordination(root) {
+  try {
+    if (!root || coordinationMode(root) === 'off') return;
+    await reconcileClaims({ repoRoot: root, isPidAlive: isProcessAlive });
+  } catch {
+    // Restart context remains available when coordination storage is unavailable.
+  }
+}
+
+function durableTaskStateFingerprint(root, taskId) {
+  const stateDirectory = defaultAssuranceStateDirectory(root);
+  const attempt = loadTaskAttempt(stateDirectory, taskId);
+  const head = gitText(['rev-parse', 'HEAD'], root).trim();
+  const branch = gitText(['rev-parse', '--abbrev-ref', 'HEAD'], root).trim();
+  return hash(JSON.stringify({
+    attempt: attempt
+      ? {
+          task_id: attempt.task_id,
+          attempt_id: attempt.attempt_id,
+          lifecycle: attempt.lifecycle,
+          state: attempt.state,
+          completion_mode: attempt.completion_mode,
+          accepted_head: attempt.repository?.head,
+          checkpoint_head: attempt.checkpoint?.head,
+          contract_sha256: attempt.contract_sha256,
+          branch: attempt.repository?.branch,
+          worktree_path: attempt.repository?.worktree_path,
+        }
+      : null,
+    worktree: { head, branch },
+  }));
+}
+
+function telemetryRoot(root) {
+  return path.join(root, 'tmp', 'agent-telemetry');
+}
+
+function readState(root) {
+  const file = path.join(telemetryRoot(root), 'lifecycle-state.json');
+  try {
+    const parsed = JSON.parse(readFileSync(file, 'utf8'));
+    return { sessions: parsed.sessions ?? {} };
+  } catch {
+    return { sessions: {} };
+  }
+}
+
+function writeState(root, state) {
+  const dir = telemetryRoot(root);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(path.join(dir, 'lifecycle-state.json'), `${JSON.stringify(state)}\n`, 'utf8');
+}
+
+function recordEvent(root, payload, additions = {}) {
+  try {
+    const dir = telemetryRoot(root);
+    mkdirSync(dir, { recursive: true });
+    const event = {
+      at: new Date().toISOString(),
+      eventName: String(payload?.hook_event_name ?? 'Malformed').slice(0, 32),
+      sessionHash: payload?.session_id ? hash(payload.session_id) : null,
+      taskHash: payload?.task_id ? hash(payload.task_id) : null,
+      outcome: additions.outcome ?? 'observe',
+      completionTier: additions.completionTier ?? null,
+      changedFileCount: additions.changedFileCount ?? 0,
+      gateCount: additions.gateCount ?? 0,
+      failedCheckCount: additions.failedCheckCount ?? 0,
+      missingSectionCount: additions.missingSectionCount ?? 0,
+      summaryBytes: additions.summaryBytes ?? 0,
+      summaryHash: additions.summaryHash ?? null,
+      durationMs: additions.durationMs ?? null,
+    };
+    appendFileSync(path.join(dir, 'events.jsonl'), `${JSON.stringify(event)}\n`, 'utf8');
+  } catch {
+    // Local observability is never an authority and never blocks work by itself.
+  }
+}
+
+function meaningfulLines(text) {
+  const lines = [];
+  let fence = null;
+  const withoutHtmlComments = String(text ?? '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<!--[\s\S]*$/g, '');
+  for (const line of withoutHtmlComments.split(/\r?\n/)) {
+    const marker = line.match(/^\s*(```|~~~)/)?.[1];
+    if (marker) {
+      fence = fence === marker ? null : fence ?? marker;
+      continue;
+    }
+    if (!fence && !/^\s*>/.test(line)) lines.push(line);
+  }
+  return lines;
+}
+
+function sectionLine(line, aliases) {
+  return aliases.some((alias) => {
+    const label = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`^\\s*(?:#{1,6}\\s+|\\d{1,2}[.)]\\s+|\\*\\*)?${label}(?:\\*\\*)?\\s*(?::|$)`, 'i').test(line);
+  });
+}
+
+function missingSections(text, requirements) {
+  const lines = meaningfulLines(text);
+  return requirements.filter((requirement) => {
+    const start = lines.findIndex((line) => sectionLine(line, requirement.aliases));
+    if (start < 0) return true;
+    const startHeadingLevel = lines[start].match(/^\s*(#{1,6})\s+/)?.[1].length;
+    const end = lines.findIndex((line, index) => index > start && (
+      requirements.some((candidate) => sectionLine(line, candidate.aliases)) ||
+      /^\s*(?:[-*+]\s+)?(?:\*\*)?Completion tier(?:\*\*)?\s*:/i.test(line) ||
+      (startHeadingLevel !== undefined &&
+        (line.match(/^\s*(#{1,6})\s+/)?.[1].length ?? Number.POSITIVE_INFINITY) <= startHeadingLevel)
+    ));
+    const heading = lines[start];
+    const body = lines.slice(start + 1, end < 0 ? lines.length : end);
+    const inline = heading.includes(':') ? heading.slice(heading.indexOf(':') + 1).replaceAll('*', '').trim() : '';
+    const substantive = inline.length > 0 || body.some((line) => line.replace(/^\s*(?:[-*+]\s+|\d{1,2}[.)]\s+)/, '').replaceAll('*', '').trim().length > 0);
+    if (!substantive) return true;
+    return Boolean(requirement.numbered) && !body.some((line) => /^\s*\d{1,2}[.)]\s+\S/.test(line));
+  }).map((requirement) => requirement.name);
+}
+
+function tierFrom(text) {
+  const lines = meaningfulLines(text);
+  for (let index = 0; index < lines.length; index += 1) {
+    const inline = lines[index].match(/^\s*(?:[-*+]\s+)?(?:\*\*)?Completion tier(?:\*\*)?\s*:\s*(read-only|implementation)\s*$/i)?.[1];
+    if (inline) return inline.toLowerCase();
+    if (/^\s*#{1,6}\s+(?:\*\*)?Completion tier(?:\*\*)?\s*$/i.test(lines[index])) {
+      const value = lines.slice(index + 1).find((candidate) => candidate.trim().length > 0)?.trim();
+      const headingValue = value?.match(/^(read-only|implementation)$/i)?.[1];
+      if (headingValue) return headingValue.toLowerCase();
+    }
+  }
+  return undefined;
+}
+
+function implementationDeliveryFitFailure(text) {
+  const lines = meaningfulLines(text);
+  const substantive = (value) => typeof value === 'string'
+    && value.trim().length > 0
+    && !/^(?:tbd|todo|placeholder|fill\s+later|unknown|n\/?a|none)(?:\b|$)/i.test(value.trim());
+  const fits = lines.flatMap((line, index) => {
+    const match = line.match(/^\s*(?:[-*+]\s+)?(?:\*\*)?Delivery fit(?:\*\*)?\s*:\s*(single-turn|checkpointed)\b/i);
+    return match ? [{ index, mode: match[1].toLowerCase() }] : [];
+  });
+  if (fits.length !== 1) return 'Delivery fit (choose exactly one of single-turn or checkpointed)';
+  const [{ index: fitIndex, mode }] = fits;
+  const nextHeading = lines.findIndex((line, index) => index > fitIndex && /^\s*#{1,6}\s+/.test(line));
+  const block = lines.slice(fitIndex, nextHeading < 0 ? lines.length : nextHeading);
+  if (mode === 'single-turn') {
+    const estimate = block.map((line) => line.match(/^\s*(?:[-*+]\s+)?(?:\*\*)?Estimated scope(?:\*\*)?\s*:\s*(.+)$/i)?.[1]).find((value) => value !== undefined);
+    const coherence = block.map((line) => line.match(/^\s*(?:[-*+]\s+)?(?:\*\*)?Coherence(?:\*\*)?\s*:\s*(.+)$/i)?.[1]).find((value) => value !== undefined);
+    const hasEstimate = substantive(estimate);
+    const hasCoherence = substantive(coherence);
+    return hasEstimate && hasCoherence ? undefined : 'Delivery fit (single-turn needs Estimated scope and Coherence)';
+  }
+  const checkpoints = block.flatMap((line) => {
+    const match = line.match(/^\s*(?:[-*+]\s+)?Checkpoint\s+(\d+)\s*:\s*(.+)$/i);
+    return match ? [{ number: Number(match[1]), body: match[2] }] : [];
+  });
+  const ordered = checkpoints.length >= 2 && checkpoints.every((checkpoint, index) => checkpoint.number === index + 1);
+  const safe = checkpoints.every((checkpoint) => {
+    const authorityState = checkpoint.body.match(/\bauthority state\s*:\s*([^|]+)/i)?.[1];
+    const verification = checkpoint.body.match(/\bverification\s*:\s*([^|]+)/i)?.[1];
+    return substantive(authorityState) && substantive(verification);
+  });
+  return ordered && safe ? undefined : 'Delivery fit (checkpointed needs ordered checkpoints with authority state and verification)';
+}
+
+function changedFiles(root) {
+  const upstream = `origin/${INTEGRATION_BRANCH}`;
+  const base = gitText(['merge-base', 'HEAD', upstream], root).trim();
+  const split = (value) => value.split('\0').filter(Boolean);
+  const files = new Set([
+    ...split(gitText(['diff', '--no-renames', '--name-only', '-z', `${base}...HEAD`], root)),
+    ...split(gitText(['diff', '--cached', '--no-renames', '--name-only', '-z'], root)),
+    ...split(gitText(['diff', '--no-renames', '--name-only', '-z'], root)),
+    ...split(gitText(['ls-files', '--others', '--exclude-standard', '-z'], root)),
+  ]);
+  return { base, files: [...files].sort() };
+}
+
+function block(message) {
+  process.stderr.write(`${String(message).slice(0, 12_000)}\n`);
+  process.exitCode = 2;
+}
+
+function emitContext(eventName, content) {
+  process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: eventName, additionalContext: content } })}\n`);
+}
+
+function structuredMarker(text, marker) {
+  const line = String(text ?? '').split(/\r?\n/u).find((candidate) => candidate.startsWith(marker));
+  if (!line) return null;
+  try { return JSON.parse(line.slice(marker.length).trim()); } catch { return null; }
+}
+
+function profileRegistry(root) {
+  return JSON.parse(readFileSync(path.join(root, '.ai-organization', 'proof-profiles.json'), 'utf8'));
+}
+
+function stateSummary(root) {
+  const branchResult = git(['rev-parse', '--abbrev-ref', 'HEAD'], root, 3_000);
+  const branchAvailable = branchResult.status === 0 && !branchResult.error && branchResult.stdout.trim();
+  const branch = branchAvailable ? branchResult.stdout.trim() : 'unknown';
+  const upstreamResult = branchAvailable
+    ? git(['for-each-ref', '--format=%(upstream:short)', `refs/heads/${branch}`], root, 3_000)
+    : undefined;
+  const tracking = !branchAvailable
+    ? 'tracking unknown (branch unavailable)'
+    : upstreamResult.error || upstreamResult.status !== 0
+      ? 'tracking unknown (command unavailable)'
+      : upstreamResult.stdout.trim()
+        ? `tracking ${upstreamResult.stdout.trim()}`
+        : 'no upstream';
+  const dirtyResult = git(['status', '--short'], root, 3_000);
+  const dirty = dirtyResult.status === 0 && !dirtyResult.error
+    ? String(dirtyResult.stdout.split(/\r?\n/).filter(Boolean).length)
+    : 'unknown (command unavailable)';
+  const worktreeResult = git(['worktree', 'list', '--porcelain'], root, 3_000);
+  const worktrees = worktreeResult.status === 0 && !worktreeResult.error
+    ? String(worktreeResult.stdout.split(/\r?\n/).filter((line) => line.startsWith('worktree ')).length)
+    : 'unknown (command unavailable)';
+  return `git: ${branch}; ${tracking}; dirty entries: ${dirty}; worktrees: ${worktrees}. State is live/read-only; no fetch or prompt body was persisted.`;
+}
+
+function runCompletionGate(root) {
+  const executable = process.platform === 'win32' ? (process.env.ComSpec ?? 'cmd.exe') : 'npm';
+  const args = process.platform === 'win32' ? ['/d', '/s', '/c', 'npm', 'run', TASK_COMPLETION_GATE] : ['run', TASK_COMPLETION_GATE];
+  return spawnSync(executable, args, { cwd: root, encoding: 'utf8', timeout: 120_000, windowsHide: true, maxBuffer: 16 * 1024 * 1024 });
+}
+
+async function handle(payload, root) {
+  const state = readState(root);
+  const taskKey = payload?.task_id ? hash(payload.task_id) : null;
+  const sessionKey = payload?.session_id ? hash(payload.session_id) : null;
+  switch (payload?.hook_event_name) {
+    case 'SessionStart': {
+      await safelyReconcileCoordination(root);
+      if (sessionKey) state.sessions[sessionKey] = Date.now();
+      writeState(root, state);
+      recordEvent(root, payload);
+      emitContext('SessionStart', `Live orchestration state:\n${stateSummary(root)}`);
+      return;
+    }
+    case 'SubagentStart':
+      recordEvent(root, payload);
+      emitContext('SubagentStart', `Use the six-part brief, stay in the assigned worktree, read command-owned exits, and report substantive Doctrine-loop findings plus Honesty clause sections.\n${stateSummary(root)}`);
+      return;
+    case 'TaskCreated': {
+      const description = typeof payload.task_description === 'string' ? payload.task_description : '';
+      const tier = tierFrom(description);
+      const requirements = tier === 'implementation'
+        ? [...BRIEF_SECTIONS, ...IMPLEMENTATION_BRIEF_SECTIONS]
+        : BRIEF_SECTIONS;
+      const missing = missingSections(description, requirements);
+      if (!tier) missing.push('Completion tier');
+      if (tier === 'implementation') {
+        const deliveryFitFailure = implementationDeliveryFitFailure(description);
+        if (deliveryFitFailure) missing.push(deliveryFitFailure);
+      }
+      const contract = structuredMarker(description, 'TASK_CONTRACT_JSON:');
+      if (!contract) missing.push('TASK_CONTRACT_JSON');
+      if (missing.length) {
+        recordEvent(root, payload, { outcome: 'block', missingSectionCount: missing.length });
+        block(`[lifecycle] TaskCreated blocked. Add explicit, substantive sections for: ${missing.join(', ')}. Procedure needs a numbered step; implementation work also needs a valid Delivery fit declaration.`);
+        return;
+      }
+      if (!taskKey) return block('[lifecycle] TaskCreated blocked: task_id missing.');
+      let admission;
+      let admissionError;
+      try {
+        admission = coordinationAdmissionDecision({ repoRoot: root });
+        warnCoordination(coordinationAdmissionWarning(admission));
+      } catch (error) {
+        admissionError = error;
+        warnCoordination(coordinationFailOpenWarning(error));
+      }
+      const mode = admission?.effectiveMode ?? coordinationMode(root);
+      const editPaths = Array.isArray(contract?.paths?.edit) ? contract.paths.edit : [];
+      const dispatchCoverage = countDispatch(mode, {
+        repoRoot: root,
+        dispatchPath: COORDINATION_DISPATCH_PATHS.claudeTaskCreated,
+        skippedNoEditPaths: editPaths.length === 0,
+      });
+      if (dispatchCoverage.error) {
+        warnCoordination(coordinationFailOpenWarning(dispatchCoverage.error));
+      }
+      if (admissionError) {
+        try {
+          recordCoordinationErrorCoverage({
+            repoRoot: root,
+            mode,
+            modeEpoch: dispatchCoverage.modeEpoch,
+          });
+        } catch (error) {
+          warnCoordination(coordinationFailOpenWarning(error));
+        }
+      }
+      const stateDirectory = defaultAssuranceStateDirectory(root);
+      const dispatchFingerprint = durableTaskStateFingerprint(root, payload.task_id);
+      let result = { accepted: false, failures: [] };
+      if (replacementDispatchWouldStall({
+        stateDirectory,
+        taskId: payload.task_id,
+        liveStateSha256: dispatchFingerprint,
+      })) {
+        result.failures.push(
+          'Unchanged replacement dispatch stalled: reconcile the existing durable attempt/worktree before redispatching this task.',
+        );
+      } else {
+        const registration = await safelyRegisterTaskClaim({
+          payload,
+          contract,
+          attemptId: `att-${randomBytes(16).toString('hex')}`,
+          root,
+          admission,
+          modeEpoch: dispatchCoverage.modeEpoch,
+        });
+        if (registration?.refused) {
+          result.failures.push('Coordination admission refused: overlapping task claim.');
+          try {
+            result.failures[0] = coordinationRefusalMessage(registration.conflicts);
+          } catch (error) {
+            try {
+              recordCoordinationErrorCoverage({
+                repoRoot: root,
+                mode,
+                modeEpoch: dispatchCoverage.modeEpoch,
+              });
+            } catch {
+              // The deterministic refusal above remains authoritative.
+            }
+            warnCoordination(coordinationFailOpenWarning(error));
+          }
+        } else {
+          if (registration?.error) warnCoordination(coordinationFailOpenWarning(registration.error));
+          result = acceptLifecycleTask({
+            taskId: payload.task_id,
+            contract,
+            sessionId: payload.session_id,
+            implementerId: payload.agent_id ?? payload.agent_type ?? payload.session_id,
+            completionMode: tier,
+            cwd: root,
+            profileRegistry: profileRegistry(root),
+          });
+        }
+        if (result.accepted) {
+          recordReplacementDispatch({
+            stateDirectory,
+            taskId: payload.task_id,
+            liveStateSha256: durableTaskStateFingerprint(root, payload.task_id),
+          });
+        } else if (registration?.claimId) {
+          await safelyReleaseTaskClaim(payload, root);
+        }
+      }
+      recordEvent(root, payload, { outcome: result.accepted ? 'allow' : 'block', completionTier: tier, failedCheckCount: result.failures.length });
+      if (!result.accepted) block(`[lifecycle] TaskCreated blocked: ${result.failures.join('; ')}`);
+      return;
+    }
+    case 'TaskCompleted': {
+      const stateDirectory = defaultAssuranceStateDirectory(root);
+      const accepted = taskKey ? loadTaskAttempt(stateDirectory, payload.task_id) : undefined;
+      if (!accepted) return block('[lifecycle] TaskCompleted blocked: no accepted TaskCreated state.');
+      if (payload.completion_report || structuredMarker(payload.task_description, 'COMPLETION_REPORT_JSON:')) {
+        return block('[lifecycle] TaskCompleted blocked: the official event has no completion-report field; use a platform SubagentStop report receipt.');
+      }
+      let changed = { files: [] };
+      let preflightFailures = 0;
+      let gateOutput = '';
+      if (accepted.state !== 'completed' && accepted.completion_mode === 'implementation') {
+        changed = changedFiles(root);
+        const diffChecks = [
+          git(['diff', '--check', `${changed.base}...HEAD`], root),
+          git(['diff', '--cached', '--check'], root),
+          git(['diff', '--check'], root),
+        ];
+        const gate = runCompletionGate(root);
+        gateOutput = `${gate.stdout ?? ''}${gate.stderr ?? ''}`.slice(-8_000);
+        preflightFailures = diffChecks.filter((result) => result.status !== 0 || result.error).length + (gate.status === 0 && !gate.error ? 0 : 1);
+      }
+      if (preflightFailures) {
+        recordEvent(root, payload, { outcome: 'block', completionTier: accepted.completion_mode, changedFileCount: changed.files.length, gateCount: 1, failedCheckCount: preflightFailures });
+        block(`[lifecycle] TaskCompleted blocked: changed-file completion checks failed.\n${gateOutput}`);
+        return;
+      }
+      const result = completeLifecycleTask({
+        taskId: payload.task_id,
+        sessionId: payload.session_id,
+        cwd: root,
+        stateDirectory,
+        profileRegistry: profileRegistry(root),
+      });
+      recordEvent(root, payload, { outcome: result.accepted ? 'allow' : 'block', completionTier: accepted.completion_mode, changedFileCount: changed.files.length, gateCount: accepted.completion_mode === 'implementation' ? 1 : 0, failedCheckCount: result.failures.length });
+      if (result.accepted) await safelyReleaseTaskClaim(payload, root);
+      if (!result.accepted) block(`[lifecycle] TaskCompleted blocked: ${result.failures.join('; ')}`);
+      return;
+    }
+    case 'SubagentStop': {
+      const report = typeof payload.last_assistant_message === 'string' ? payload.last_assistant_message : '';
+      const missing = missingSections(report, REPORT_SECTIONS);
+      const completion = structuredMarker(report, 'COMPLETION_REPORT_JSON:');
+      const review = structuredMarker(report, 'REVIEW_REPORT_JSON:');
+      const receiptFailures = [];
+      try {
+        if (completion) recordLifecycleCompletionReport({
+          taskId: completion.task_id,
+          reporterId: payload.agent_id,
+          reporterSessionId: payload.session_id,
+          reporterRole: payload.agent_type,
+          report: completion,
+          cwd: root,
+        });
+        if (review) recordLifecycleReview({
+          taskId: review.task_id,
+          reviewerId: payload.agent_id,
+          reviewerSessionId: payload.session_id,
+          role: payload.agent_type,
+          criterionStatuses: review.criteria,
+          findingCount: review.finding_count,
+          unresolvedFindingCount: review.unresolved_finding_count,
+          cwd: root,
+        });
+      } catch (error) {
+        receiptFailures.push(error.message);
+      }
+      const failures = [...missing, ...receiptFailures];
+      recordEvent(root, payload, { outcome: failures.length ? 'block' : 'allow', missingSectionCount: failures.length });
+      if (completion?.task_id && failures.length === 0) {
+        await safelyReleaseTaskClaim(payload, root, completion.task_id);
+      }
+      if (failures.length) block(`[lifecycle] SubagentStop blocked. ${receiptFailures.join('; ')} Add substantive sections for: ${missing.join(', ')}.`);
+      return;
+    }
+    case 'PostCompact': {
+      const summary = typeof payload.compact_summary === 'string' ? payload.compact_summary : '';
+      await safelyReconcileCoordination(root);
+      recordEvent(root, payload, { summaryBytes: Buffer.byteLength(summary, 'utf8'), summaryHash: hash(summary) });
+      return;
+    }
+    case 'SessionEnd': {
+      const started = sessionKey ? state.sessions[sessionKey] : undefined;
+      recordEvent(root, payload, { durationMs: started ? Math.max(0, Date.now() - started) : null });
+      return;
+    }
+    default:
+      recordEvent(root, payload);
+  }
+}
+
+let payload;
+try {
+  payload = JSON.parse(readFileSync(0, 'utf8'));
+} catch (error) {
+  process.stderr.write(`[lifecycle] blocked: malformed hook payload: ${error.message}\n`);
+  process.exit(2);
+}
+if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
+  process.stderr.write('[lifecycle] blocked: hook payload must be a JSON object\n');
+  process.exit(2);
+}
+let root;
+try {
+  root = configuredProjectRoot();
+} catch (error) {
+  block(`[lifecycle] blocked: ${error.message}`);
+  process.exit();
+}
+if (!root) {
+  if (BLOCKING_EVENTS.has(payload?.hook_event_name)) block(`[lifecycle] ${payload.hook_event_name} blocked: git worktree unavailable.`);
+  process.exit();
+}
+try { await handle(payload, root); } catch {
+  if (BLOCKING_EVENTS.has(payload?.hook_event_name)) block(`[lifecycle] ${payload.hook_event_name} blocked: lifecycle contract could not be evaluated safely.`);
+}

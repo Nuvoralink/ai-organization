@@ -121,16 +121,18 @@ test('Proves: effectiveRoles removes each superseded universal role and preserve
   );
 });
 
-test('Proves: the seeded dialer and CoachAI project registries validate through the control-plane registry gate; Test type: canonical integration; Surface: project role registries; Authority: control-plane validator; Killer mutation: remove a required output, duplicate a project id, or point extends at an absent universal role; Gated command: control:validate and npm test', () => {
+test('Proves: every discovered project registry validates through the control-plane registry gate; Test type: canonical integration; Surface: project role registries; Authority: control-plane validator; Killer mutation: remove a required output, duplicate a project id, or point extends at an absent universal role; Gated command: control:validate and npm test', () => {
   assert.deepEqual(validateAgentRoleRegistries(repoRoot), []);
 });
 
-test('Proves: the dialer specialization replaces generic security and frontend implementation while CoachAI retains universal security; Test type: canonical merge integration; Surface: effective project fleets; Authority: universal plus project registries; Killer mutation: ignore supersedes_universal or apply one project extension globally; Gated command: npm test', () => {
+test('Proves: project fleet specialization remains isolated while CoachAI and Nuvora Link retain universal security; Test type: canonical merge integration; Surface: effective project fleets; Authority: universal plus project registries; Killer mutation: ignore supersedes_universal or apply one project extension globally; Gated command: npm test', () => {
   const canonicalUniversal = JSON.parse(fs.readFileSync(path.join(repoRoot, 'registries', 'agent-roles.v1.json'), 'utf8'));
   const dialer = JSON.parse(fs.readFileSync(path.join(repoRoot, 'overlays', 'auxara-dialer', 'control-plane', 'registries', 'agent-roles.project.v1.json'), 'utf8'));
   const coachai = JSON.parse(fs.readFileSync(path.join(repoRoot, 'overlays', 'coachai', 'control-plane', 'registries', 'agent-roles.project.v1.json'), 'utf8'));
+  const nuvoraLink = JSON.parse(fs.readFileSync(path.join(repoRoot, 'overlays', 'nuvora-link', 'control-plane', 'registries', 'agent-roles.project.v1.json'), 'utf8'));
   const dialerIds = effectiveRoles(canonicalUniversal, dialer).map((entry) => entry.id);
   const coachaiIds = effectiveRoles(canonicalUniversal, coachai).map((entry) => entry.id);
+  const nuvoraLinkIds = effectiveRoles(canonicalUniversal, nuvoraLink).map((entry) => entry.id);
 
   assert.equal(dialerIds.includes('security-auditor'), false);
   assert.equal(dialerIds.includes('cybersecurity-auditor'), true);
@@ -138,10 +140,12 @@ test('Proves: the dialer specialization replaces generic security and frontend i
   assert.equal(dialerIds.includes('sprint-implementer'), true);
   assert.equal(coachaiIds.includes('security-auditor'), true);
   assert.equal(coachaiIds.includes('cybersecurity-auditor'), false);
+  assert.equal(nuvoraLinkIds.includes('security-auditor'), true);
+  assert.equal(nuvoraLinkIds.includes('operations-integrity-auditor'), true);
 });
 
 test('Proves: each overlay installs one project extension plus the same canonical fleet-parity gate beside the unchanged universal runtime; Test type: overlay contract; Surface: overlay manifests and ownership; Authority: project overlay mappings; Killer mutation: fork the gate source, drop the extension or gate mapping, change a destination, or omit an ownership row; Gated command: overlay validate and npm test', () => {
-  for (const [project, prefix] of [['auxara-dialer', 'auxara'], ['coachai', 'coachai']]) {
+  for (const [project, prefix] of [['auxara-dialer', 'auxara'], ['coachai', 'coachai'], ['nuvora-link', 'nuvora-link']]) {
     const overlayRoot = path.join(repoRoot, 'overlays', project);
     const manifest = JSON.parse(fs.readFileSync(path.join(overlayRoot, 'manifest.json'), 'utf8'));
     const ownership = JSON.parse(fs.readFileSync(path.join(overlayRoot, 'ownership.v1.json'), 'utf8'));

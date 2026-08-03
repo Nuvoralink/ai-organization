@@ -27,6 +27,7 @@
  *   failures; overwrite rather than increment a coverage row; or reuse one epoch across a mode
  *   change; or insert an enforce-refused claim. Each named mutation turns a corresponding assertion
  *   red.
+ * Gated command: npm run gates:all
  */
 
 import assert from 'node:assert/strict';

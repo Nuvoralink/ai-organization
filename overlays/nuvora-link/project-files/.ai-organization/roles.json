@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "dispatch_authority": "orchestrator",
+  "global_roles": [
+    {"name": "orchestrator", "kind": "orchestrator", "dispatch": true, "mutates_source": false},
+    {"name": "codex-backend-implementer", "kind": "global", "dispatch": false, "mutates_source": true},
+    {"name": "claude-frontend-implementer", "kind": "global", "dispatch": false, "mutates_source": true},
+    {"name": "security-auditor", "kind": "global", "dispatch": false, "mutates_source": false}
+  ],
+  "project_roles": [
+    {"name": "premise-and-architecture-challenger", "file": ".claude/agents/premise-and-architecture-challenger.md", "purpose": "challenge need, placement, alternatives, and root authority", "read_only": true, "dispatch": false},
+    {"name": "sprint-kickoff-auditor", "file": ".claude/agents/sprint-kickoff-auditor.md", "purpose": "prove a large slice is executable", "read_only": true, "dispatch": false},
+    {"name": "adversarial-reviewer", "file": ".claude/agents/adversarial-reviewer.md", "purpose": "attempt to refute completion from diff and evidence", "read_only": true, "dispatch": false},
+    {"name": "functionality-parity-auditor", "file": ".claude/agents/functionality-parity-auditor.md", "purpose": "trace decided through role-reachable surface", "read_only": true, "dispatch": false},
+    {"name": "ui-verifier", "file": ".claude/agents/ui-verifier.md", "purpose": "verify approved rendered frontend states", "read_only": true, "dispatch": false},
+    {"name": "performance-auditor", "file": ".claude/agents/performance-auditor.md", "purpose": "audit bounded scale and capacity", "read_only": true, "dispatch": false},
+    {"name": "user-journey-auditor", "file": ".claude/agents/user-journey-auditor.md", "purpose": "walk persona jobs and recovery", "read_only": true, "dispatch": false},
+    {"name": "release-verifier", "file": ".claude/agents/release-verifier.md", "purpose": "verify the deployed product", "read_only": true, "dispatch": false},
+    {"name": "operations-integrity-auditor", "file": ".claude/agents/operations-integrity-auditor.md", "purpose": "protect project crown jewels and retired capability absence", "read_only": true, "dispatch": false},
+    {"name": "doctrine-drift-auditor", "file": ".claude/agents/doctrine-drift-auditor.md", "purpose": "compare implementation with accepted decisions", "read_only": true, "dispatch": false},
+    {"name": "test-runner", "file": ".claude/agents/test-runner.md", "purpose": "run the heavy proof battery with real exits", "read_only": true, "dispatch": false}
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "excluded": [
+    ".env*", "**/secrets/**", "**/credentials/**", "**/logs/**", "**/telemetry/**", "**/cache/**",
+    "**/history/**", "**/sessions/**", "**/worktrees/**", "**/node_modules/**", "**/dist/**", "**/build/**",
+    "**/__pycache__/**", "**/*.pyc", "apps/**", "packages/**", "docs/**", "customer-data/**",
+    "provider-payloads/**", "recordings/**", "transcripts/**"
+  ],
+  "reason": "The overlay owns orchestration only; Nuvora Link application truth, product docs, runtime state, data, and secrets remain project-owned."
+}

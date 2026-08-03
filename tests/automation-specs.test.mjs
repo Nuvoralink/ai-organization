@@ -34,6 +34,14 @@ function fixtures() {
           { id: 'coachai-daily-orchestration-drift', rrule: 'daily', prompt: 'inspect drift', mode: 'read-only', targetRoot: '${PROJECT:coachai}' },
           { id: 'coachai-weekly-fleet-doctrine-review', rrule: 'weekly', prompt: 'inspect doctrine', mode: 'read-only', targetRoot: '${PROJECT:coachai}' }
         ]
+      },
+      'nuvora-link': {
+        updateExistingExactName: true,
+        verifyAfterWrite: true,
+        createAtBootstrap: [
+          { id: 'nuvora-link-daily-orchestration-drift', rrule: 'daily', prompt: 'inspect drift', mode: 'read-only', targetRoot: '${PROJECT:nuvora-link}' },
+          { id: 'nuvora-link-weekly-fleet-doctrine-review', rrule: 'weekly', prompt: 'inspect doctrine', mode: 'read-only', targetRoot: '${PROJECT:nuvora-link}' }
+        ]
       }
     }
   };

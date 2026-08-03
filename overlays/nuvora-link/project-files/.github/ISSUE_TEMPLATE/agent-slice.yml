@@ -1,0 +1,20 @@
+name: Agent slice
+description: Bounded Nuvora Link implementation or audit handoff
+title: "[slice] "
+body:
+  - type: textarea
+    id: intent
+    attributes: {label: Product intent}
+    validations: {required: true}
+  - type: textarea
+    id: decisions
+    attributes: {label: Settled decisions and authorities}
+    validations: {required: true}
+  - type: textarea
+    id: paths
+    attributes: {label: Exact read edit and never-modify paths}
+    validations: {required: true}
+  - type: textarea
+    id: proof
+    attributes: {label: Procedure output contract and acceptance proof}
+    validations: {required: true}

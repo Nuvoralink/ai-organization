@@ -12,9 +12,10 @@
  * Negative path covered:
  * - Unsupported schema versions, malformed edge types/bindings, self/cross-task cycles, and unknown task ids fail closed.
  *
- * Killer mutations:
+ * Killer mutation:
  * - Add `requires` to v2, reject v2 after adding the adapter, skip a bound-value check, return no cycle
  *   unconditionally, or ignore unknown task ids. Each mutation must make this file fail.
+ * Gated command: npm run gates:all
  */
 
 import assert from 'node:assert/strict';

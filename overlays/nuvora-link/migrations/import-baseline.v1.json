@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "status": "planned",
+  "knownGaps": [
+    "The legacy project has no canonical orchestration overlay.",
+    "The product-wide audit and retired dialer removal are separate application work.",
+    "The product package scripts must adopt the declared generated gate wiring during installation."
+  ],
+  "mustNotCanonizeAsCorrect": true
+}

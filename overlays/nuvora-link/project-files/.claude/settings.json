@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run gate:rules-wiring)",
+      "Bash(npm run gate:agent-context)",
+      "Bash(npm run gate:agent-control-plane)",
+      "Bash(npm run gate:fleet-parity)",
+      "Bash(npm run gate:overlay-parity)",
+      "Bash(npm run gate:test-intent)",
+      "Bash(npm run gates:all)",
+      "Bash(npm run typecheck)",
+      "Bash(npm run build)",
+      "Bash(npm run -w @nuvora-link/api test)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [{"matcher": "Edit|Write", "hooks": [{"type": "command", "command": "node", "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-posttooluse-gate.mjs"], "timeout": 120}]}],
+    "SessionStart": [{"hooks": [{"type": "command", "command": "node", "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"], "timeout": 30}]}],
+    "SubagentStart": [{"hooks": [{"type": "command", "command": "node", "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"], "timeout": 30}]}],
+    "TaskCreated": [{"hooks": [{"type": "command", "command": "node", "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"], "timeout": 30}]}],
+    "TaskCompleted": [{"hooks": [{"type": "command", "command": "node", "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"], "timeout": 1800}]}],
+    "SubagentStop": [{"hooks": [{"type": "command", "command": "node", "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"], "timeout": 30}]}],
+    "PostCompact": [{"hooks": [{"type": "command", "command": "node", "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"], "timeout": 30}]}],
+    "SessionEnd": [{"hooks": [{"type": "command", "command": "node", "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"], "timeout": 30}]}]
+  }
+}

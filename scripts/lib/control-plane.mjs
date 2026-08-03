@@ -17,7 +17,21 @@ const SECRET_PATTERNS = [
   /\b(?:gh[opusr]_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16})\b/,
   /\b(?:api[_-]?key|access[_-]?token|client[_-]?secret)\s*[:=]\s*["']?(?!\$\{|<|REDACTED|EXAMPLE|YOUR_|process\.env|Deno\.env|env\.|os\.environ|getenv\()[A-Za-z0-9_\-/.+=]{16,}/i
 ];
-const PROJECT_OVERLAYS = Object.freeze(['auxara-dialer', 'coachai']);
+export function discoverProjectOverlays(repoRoot) {
+  const overlaysRoot = path.join(repoRoot, 'overlays');
+  if (!fs.existsSync(overlaysRoot)) return [];
+  return fs.readdirSync(overlaysRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort()
+    .map((project) => {
+      invariant(/^[a-z0-9][a-z0-9-]+$/u.test(project), `Invalid project overlay directory: ${project}`);
+      for (const relative of ['manifest.json', 'ownership.v1.json', 'control-plane/registries/agent-roles.project.v1.json', 'automations/project-automations.v1.json']) {
+        invariant(fs.existsSync(path.join(overlaysRoot, project, relative)), `Malformed project overlay ${project}: missing ${relative}`);
+      }
+      return project;
+    });
+}
 
 function invariant(condition, message) {
   if (!condition) throw new Error(message);
@@ -1377,14 +1391,17 @@ export function validateAutomationSpecs(registry, projectSpecs) {
     if (!registry.forbiddenActions?.includes(action)) problems.push(`Automation forbidden action is missing: ${action}`);
   }
   for (const [project, spec] of Object.entries(projectSpecs)) {
-    const expected = new Set([`${project === 'coachai' ? 'coachai' : 'auxara'}-daily-orchestration-drift`, `${project === 'coachai' ? 'coachai' : 'auxara'}-weekly-fleet-doctrine-review`]);
+    const expectedSuffixes = new Set(['-daily-orchestration-drift', '-weekly-fleet-doctrine-review']);
+    const seenIds = new Set();
     if (!spec.updateExistingExactName || !spec.verifyAfterWrite) problems.push(`${project} automations must update exact IDs and verify stored state`);
     for (const automation of spec.createAtBootstrap ?? []) {
-      expected.delete(automation.id);
+      if (seenIds.has(automation.id)) problems.push(`${project} automation id is duplicated: ${automation.id}`);
+      seenIds.add(automation.id);
+      for (const suffix of [...expectedSuffixes]) if (automation.id.endsWith(suffix)) expectedSuffixes.delete(suffix);
       if (!automation.rrule || !automation.prompt || automation.mode !== 'read-only') problems.push(`${project} automation is not reconstructable/read-only: ${automation.id}`);
       if (automation.targetRoot !== `\${PROJECT:${project}}`) problems.push(`${project} automation target must use its registered root token: ${automation.id}`);
     }
-    for (const missing of expected) problems.push(`${project} bootstrap automation is missing: ${missing}`);
+    for (const missing of expectedSuffixes) problems.push(`${project} bootstrap automation is missing: *${missing}`);
   }
   return problems;
 }
@@ -1450,7 +1467,7 @@ export function validateAgentRoleRegistries(repoRoot) {
   }
   if (!ids.has('premise-and-architecture-challenger')) problems.push('Premise challenger role is required');
 
-  for (const project of PROJECT_OVERLAYS) {
+  for (const project of discoverProjectOverlays(repoRoot)) {
     let extension;
     try {
       extension = readJson(path.join(repoRoot, 'overlays', project, 'control-plane', 'registries', 'agent-roles.project.v1.json'));
@@ -1491,15 +1508,16 @@ export function validateRegistries(repoRoot) {
   const manifest = readJson(path.join(repoRoot, 'control-plane.manifest.json'));
   problems.push(...validateJsonAgainstSchema(path.join(repoRoot, 'schemas', 'control-plane-manifest.v1.schema.json'), manifest).map((failure) => `Control manifest schema: ${failure}`));
   for (const mapping of manifest.mappings) if (!artifactIds.has(mapping.id)) problems.push(`Mapping lacks artifact registry row: ${mapping.id}`);
-  for (const project of PROJECT_OVERLAYS) {
+  const projects = discoverProjectOverlays(repoRoot);
+  for (const project of projects) {
     const overlay = readJson(path.join(repoRoot, 'overlays', project, 'manifest.json'));
     problems.push(...validateJsonAgainstSchema(path.join(repoRoot, 'schemas', 'project-overlay.v1.schema.json'), overlay).map((failure) => `${project} overlay schema: ${failure}`));
   }
   const automationRegistry = readJson(path.join(repoRoot, 'automations', 'registry.v1.json'));
-  const automationSpecs = {
-    'auxara-dialer': readJson(path.join(repoRoot, 'overlays', 'auxara-dialer', 'automations', 'project-automations.v1.json')),
-    coachai: readJson(path.join(repoRoot, 'overlays', 'coachai', 'automations', 'project-automations.v1.json'))
-  };
+  const automationSpecs = Object.fromEntries(projects.map((project) => [
+    project,
+    readJson(path.join(repoRoot, 'overlays', project, 'automations', 'project-automations.v1.json')),
+  ]));
   problems.push(...validateAutomationSpecs(automationRegistry, automationSpecs));
   for (const schema of fs.readdirSync(path.join(repoRoot, 'schemas')).filter((file) => file.endsWith('.json'))) {
     problems.push(...validateSchemaReferences(path.join(repoRoot, 'schemas', schema)).map((failure) => `${schema}: ${failure}`));

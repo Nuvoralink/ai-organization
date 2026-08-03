@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "overlay_source": "universal-private-orchestrator/overlays/nuvora-link",
+  "managed_roots": [".claude/agents", ".claude/rules"],
+  "managed_files": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    ".ai-organization/README.md",
+    ".ai-organization/context-budget.json",
+    ".ai-organization/lifecycle-policy.json",
+    ".ai-organization/ownership.json",
+    ".ai-organization/policies/authority-domains.v1.json",
+    ".ai-organization/proof-profiles.json",
+    ".ai-organization/roles.json",
+    ".github/ISSUE_TEMPLATE/agent-slice.yml",
+    ".github/pull_request_template.md",
+    "scripts/check-agent-context.mjs",
+    "scripts/check-agent-control-plane.mjs",
+    "scripts/check-fleet-parity.mjs",
+    "scripts/check-overlay-parity.mjs",
+    "scripts/check-rules-wiring.mjs",
+    "scripts/check-test-intent.mjs",
+    "scripts/check-test-workspace-coverage.mjs",
+    "scripts/check-documentation-authority.mjs",
+    "scripts/claude-lifecycle-hook.mjs",
+    "scripts/claude-posttooluse-gate.mjs",
+    "scripts/run-bounded-agent.mjs",
+    "scripts/lib/boundedProcess.mjs",
+    "scripts/lib/dispatchBoundary.mjs"
+  ],
+  "managed_json_sections": {
+    ".claude/settings.json": ["hooks"],
+    "package.json": [
+      "scripts.agent:run",
+      "scripts.gate:rules-wiring",
+      "scripts.gate:agent-context",
+      "scripts.gate:agent-control-plane",
+      "scripts.gate:fleet-parity",
+      "scripts.gate:overlay-parity",
+      "scripts.gate:test-intent",
+      "scripts.gate:test-workspace-coverage",
+      "scripts.gate:documentation-authority",
+      "scripts.test:workspace-build-contracts",
+      "scripts.test:all",
+      "scripts.gates:all",
+      "scripts.verify"
+    ]
+  },
+  "excluded_project_owned": [
+    "apps/**",
+    "packages/**",
+    "docs/**",
+    "prisma/**",
+    "**/.env*",
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "tmp/**"
+  ],
+  "append_only_markers": ["## Learned classes"],
+  "lock_file": ".ai-organization/overlay-lock.json"
+}

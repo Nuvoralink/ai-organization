@@ -37,6 +37,8 @@ npm run overlay:install:auxara -- --root 'C:\path\to\Auxara Dialer'
 npm run overlay:check:auxara -- --root 'C:\path\to\Auxara Dialer'
 npm run overlay:install:coachai -- --root 'C:\path\to\Nuvora CoachAi'
 npm run overlay:check:coachai -- --root 'C:\path\to\Nuvora CoachAi'
+npm run overlay:install:nuvora-link -- --root 'C:\path\to\Nuvora Link'
+npm run overlay:check:nuvora-link -- --root 'C:\path\to\Nuvora Link'
 ```
 
 `npm run ci` is the portable merge gate: unit and killer-mutation tests, canonical validation, and both project-overlay validations. GitHub-hosted CI is intentionally retired to avoid paid remote-runner execution; PR status checks are not proof.
