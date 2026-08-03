@@ -231,7 +231,7 @@ test('Proves: ORG-FLEET-001; Test type: mutation; Surface: bootstrap roster; Aut
   }
 });
 
-test('Proves: PERF-IDLE-LIFECYCLE-001; Test type: authority-propagation mutation; Surface: performance-auditor registry, bootstrap template, and managed project overlays; Authority: idle-cost and persisted-lifecycle doctrine; Killer mutation: remove the critical idle-lifecycle criterion or let any project auditor omit due-work admission, monotonic retry, retention, or physical-mapping checks; Gated command: npm test', () => {
+test('Proves: PERF-IDLE-LIFECYCLE-001; Test type: authority-propagation mutation; Surface: performance-auditor registry, bootstrap template, and managed project overlays; Authority: idle-cost and persisted-lifecycle doctrine; Killer mutation: remove the critical idle-lifecycle criterion or let any project auditor omit due-work admission, liveness-readiness separation, monotonic retry, retention, or physical-mapping checks; Gated command: npm test', () => {
   const registry = JSON.parse(fs.readFileSync(path.join(root, 'registries', 'agent-roles.v1.json'), 'utf8'));
   const performanceRole = registry.roles.find((role) => role.id === 'performance-auditor');
   assert.ok(performanceRole, 'performance-auditor must remain registered');
@@ -254,6 +254,8 @@ test('Proves: PERF-IDLE-LIFECYCLE-001; Test type: authority-propagation mutation
   for (const source of sources) {
     assert.match(source, /idle-lifecycle/u);
     assert.match(source, /persisted due row|due business work|no due appointment/u);
+    assert.match(source, /dependency-free liveness/u);
+    assert.match(source, /dependency readiness/u);
     assert.match(source, /monotonic/u);
     assert.match(source, /retention/u);
     assert.match(source, /physical (?:Prisma|ORM|identifier|mapping)/u);
