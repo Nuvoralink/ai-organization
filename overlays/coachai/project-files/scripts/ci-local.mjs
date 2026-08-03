@@ -11,7 +11,12 @@ function run(label, command, env = {}) {
   console.log(`✓ ${label}`);
 }
 
-run('static CI authority', 'npm run verify', { DATABASE_URL: process.env.DATABASE_URL || placeholder, PROOF_LANE: 'static', CI: 'true' });
+run('static CI authority', 'npm run verify', {
+  DATABASE_URL: process.env.DATABASE_URL || placeholder,
+  JWT_SECRET: process.env.JWT_SECRET || 'ci-test-jwt-secret-value',
+  PROOF_LANE: 'static',
+  CI: 'true'
+});
 
 const dbUrl = process.env.CI_LOCAL_DB_URL || process.env.DIALER_INGEST_TEST_DATABASE_URL;
 if (dbUrl) {
@@ -19,6 +24,8 @@ if (dbUrl) {
     DATABASE_URL: dbUrl,
     DIALER_INGEST_TEST_DATABASE_URL: dbUrl,
     DIALER_INGEST_TEST_CONFIRM_DISPOSABLE_DB: '1',
+    TENANT_SECURITY_BLACKBOX_DATABASE_URL: dbUrl,
+    TENANT_SECURITY_BLACKBOX_CONFIRM_DISPOSABLE_DB: '1',
     APP_STACK: 'paid', NODE_ENV: 'test', QUEUE_DRIVER: 'memory', RATE_LIMIT_STORE: 'memory',
     GOOGLE_API_KEY: 'ci-test-google-key', OPENAI_API_KEY: 'ci-test-openai-key', GROQ_API_KEY: 'ci-test-groq-key',
     CREDENTIAL_ENCRYPTION_KEY: 'BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=',
