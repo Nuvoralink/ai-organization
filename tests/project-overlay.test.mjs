@@ -534,7 +534,7 @@ test('Proves: CONTROL-PLANE-LIFECYCLE-OVERLAY-DRIFT-001 and VERDICT-RUNTIME-OVER
   }
 });
 
-test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and product-boundary mutation; Surface: Nuvora Link organization overlay; Authority: project profile, portable lock, and package script ownership; Killer mutations: describe generalized SaaS tenancy, drift a managed gate command, remove or corrupt task-evidence v3, omit a generated file, remove a required intent header, or omit a test from an explicit workspace list; Gated command: npm test', (t) => {
+test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and product-boundary mutation; Surface: Nuvora Link organization overlay; Authority: project profile, portable lock, package script ownership, and local-only runtime state; Killer mutations: describe generalized SaaS tenancy, drift a managed gate command, remove a runtime-state ignore, remove or corrupt task-evidence v3, omit a generated file, remove a required intent header, or omit a test from an explicit workspace list; Gated command: npm test', (t) => {
   const profile = JSON.parse(
     fs.readFileSync(
       path.join(
@@ -598,12 +598,15 @@ test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and p
     path.join(target.root, 'docs', 'DOCUMENTATION_INDEX.md'),
     '# Documentation authority\n\n| Document | Owner | Status | Purpose |\n|---|---|---|---|\n| `docs/DOCUMENTATION_INDEX.md` | Product engineering | living | Registry fixture |\n',
   );
+  const gitignorePath = path.join(target.root, '.gitignore');
+  const runtimeStateIgnores = 'tmp/agent-telemetry/\ntmp/agent-assurance/\n';
+  fs.writeFileSync(gitignorePath, runtimeStateIgnores);
   assert.equal(
     spawnSync('git', ['init'], { cwd: target.root, encoding: 'utf8' }).status,
     0,
   );
   assert.equal(
-    spawnSync('git', ['add', 'package.json', 'docs/DOCUMENTATION_INDEX.md'], {
+    spawnSync('git', ['add', '.gitignore', 'package.json', 'docs/DOCUMENTATION_INDEX.md'], {
       cwd: target.root,
       encoding: 'utf8',
     }).status,
@@ -635,6 +638,25 @@ test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and p
     0,
     `fresh Nuvora install gates:all failed\nstdout:\n${installedGates.stdout}\nstderr:\n${installedGates.stderr}`,
   );
+
+  fs.writeFileSync(
+    gitignorePath,
+    runtimeStateIgnores.replace('tmp/agent-telemetry/\n', ''),
+  );
+  const exposedRuntimeState = runNpm(target.root, [
+    'run',
+    'gate:agent-control-plane',
+  ]);
+  assert.notEqual(
+    exposedRuntimeState.status,
+    0,
+    'removing a local runtime-state ignore must fail gate:agent-control-plane',
+  );
+  assert.match(
+    `${exposedRuntimeState.stdout}\n${exposedRuntimeState.stderr}`,
+    /local runtime state must remain gitignored: tmp\/agent-telemetry\/probe\.jsonl/u,
+  );
+  fs.writeFileSync(gitignorePath, runtimeStateIgnores);
 
   const currentEvidenceSchema = path.join(
     target.root,

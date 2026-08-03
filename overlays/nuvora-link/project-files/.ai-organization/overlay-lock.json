@@ -120,7 +120,7 @@
     },
     {
       "path": "scripts/check-agent-control-plane.mjs",
-      "sha256": "92006159e180086950ff78f2da0845a42c69bf048553e49173edd6296be8870c"
+      "sha256": "0d5df62fcf510ae78e206294f3194421b8276edcdc25523eb14d1ad66e737f7f"
     },
     {
       "path": "scripts/check-documentation-authority.mjs",

@@ -560,6 +560,16 @@ test('Proves: ORG-HOOK-002; Test type: telemetry-root mutation; Surface: lifecyc
   assert.doesNotMatch(sources.coachai, /const root = process\.cwd\(\);/u);
 });
 
+test('Proves: ORG-HOOK-002B; Test type: generated-state exclusion mutation; Surface: Nuvora Link control-plane gate; Authority: local-only lifecycle telemetry and assurance state; Killer mutation: remove either runtime directory from the git-ignore probe or stop invoking git check-ignore; Gated command: npm test', () => {
+  const gate = fs.readFileSync(
+    path.join(root, 'overlays', 'nuvora-link', 'project-files', 'scripts', 'check-agent-control-plane.mjs'),
+    'utf8',
+  );
+  assert.match(gate, /localRuntimeState[\s\S]*tmp\/agent-telemetry\/probe\.jsonl[\s\S]*tmp\/agent-assurance\/probe\.json/u);
+  assert.match(gate, /for \(const relative of localRuntimeState\)[\s\S]*spawnSync\('git', \['check-ignore', '--quiet', '--', relative\]/u);
+  assert.match(gate, /local runtime state must remain gitignored/u);
+});
+
 test('Proves: ORG-HOOK-003; Test type: runtime counterexample; Surface: Auxara and CoachAI lifecycle telemetry; Authority: configured project root; Killer mutation: derive telemetry from the nested launch cwd; Gated command: npm test', (t) => {
   for (const project of ['auxara-dialer', 'coachai']) {
     const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), `${project} hook runtime with spaces-`));

@@ -13,6 +13,10 @@ const requiredAssuranceSchemas = [
   '.ai-organization/schemas/task-evidence.v2.schema.json',
   '.ai-organization/schemas/task-evidence.v3.schema.json',
 ];
+const localRuntimeState = [
+  'tmp/agent-telemetry/probe.jsonl',
+  'tmp/agent-assurance/probe.json',
+];
 const requiredFiles = [
   '.ai-organization/policies/action-authority.v1.json',
   '.ai-organization/schemas/action-authority.v1.schema.json',
@@ -40,6 +44,16 @@ for (const event of requiredEvents) {
   const hooks = settings.hooks?.[event]?.flatMap((entry) => entry.hooks ?? []) ?? [];
   const script = event === 'PostToolUse' ? 'claude-posttooluse-gate.mjs' : 'claude-lifecycle-hook.mjs';
   if (hooks.length !== 1 || hooks[0].command !== 'node' || hooks[0].args?.[0] !== `\${CLAUDE_PROJECT_DIR}/scripts/${script}`) problems.push(`unrooted or malformed hook: ${event}`);
+}
+for (const relative of localRuntimeState) {
+  const ignored = spawnSync('git', ['check-ignore', '--quiet', '--', relative], {
+    cwd: root,
+    encoding: 'utf8',
+    windowsHide: true,
+  });
+  if (ignored.status !== 0 || ignored.error) {
+    problems.push(`local runtime state must remain gitignored: ${relative}`);
+  }
 }
 const proof = JSON.parse(fs.readFileSync(path.join(root, '.ai-organization', 'proof-profiles.json'), 'utf8'));
 if (proof.integration_branch !== 'develop') problems.push('proof registry integration branch must be develop');
