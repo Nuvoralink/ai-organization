@@ -48,7 +48,7 @@
     },
     {
       "path": ".claude/agents/performance-auditor.md",
-      "sha256": "15ad4124e1553604838a4b245a7a127afcfd577546cea521fa46a9e46f9ff200"
+      "sha256": "bfcb13eedccaaabcf5338d64e78a3e16b73d2b25a3cb6aea06c3ec8dda5b2c69"
     },
     {
       "path": ".claude/agents/premise-and-architecture-challenger.md",
@@ -128,7 +128,7 @@
     },
     {
       "path": "scripts/check-fleet-parity.mjs",
-      "sha256": "2eb13b8f279e764c6784d0766eb6189b5113ccdc15d12f49f2089ed8629c1130"
+      "sha256": "49a9bfa11e66dad10cf6157f693af02102ec526305760a4672def8c2de772ec1"
     },
     {
       "path": "scripts/check-overlay-parity.mjs",
