@@ -3,12 +3,13 @@
  * Test type: regression
  * Surface: CoachAI Claude TaskCreated and TaskCompleted adapter
  * Authority: accepted task-attempt controller and shared proof runner
- * What this test proves about the product: a CoachAI task cannot self-certify proof, replace its kickoff contract, mutate a read-only tree, or replay proof execution.
- * Killer mutation: restore caller-authored artifact/mutation booleans or the AGENT_PROOF_COMMAND override.
+ * What this test proves about the product: a CoachAI task cannot self-certify proof, replace its kickoff contract, mutate a read-only tree, replay proof execution, or redirect lifecycle state into a foreign repository while legitimate sibling worktrees remain usable.
+ * Killer mutations: restore caller-authored artifact/mutation booleans or the AGENT_PROOF_COMMAND override; reject a sibling worktree; trust a foreign Git repository in CLAUDE_PROJECT_DIR.
  * Gated command: npm run test:organization-control-plane
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
@@ -172,14 +173,47 @@ test('SessionEnd telemetry remains under the project root from a nested cwd with
   }
 });
 
-test('spoofed CLAUDE_PROJECT_DIR fails closed instead of redirecting lifecycle state', () => {
-  const sibling = fs.mkdtempSync(path.join(root, 'tmp', 'spoofed-project-root-'));
+test('sibling worktrees are accepted while a foreign CLAUDE_PROJECT_DIR fails closed', () => {
+  const sibling = path.join(os.tmpdir(), `coachai-lifecycle-sibling-${Date.now()}`);
+  const foreign = fs.mkdtempSync(path.join(os.tmpdir(), 'coachai-lifecycle-foreign-'));
   try {
-    const result = run({ hook_event_name: 'SessionEnd', session_id: `spoofed-${Date.now()}` }, root, sibling);
-    assert.equal(result.status, 2);
-    assert.match(result.stderr, /CLAUDE_PROJECT_DIR does not match/iu);
+    const worktree = spawnSync('git', ['worktree', 'add', '--detach', sibling, 'HEAD'], {
+      cwd: root,
+      encoding: 'utf8',
+    });
+    assert.equal(worktree.status, 0, worktree.stderr);
+
+    const accepted = run(
+      { hook_event_name: 'SessionEnd', session_id: `sibling-${Date.now()}` },
+      root,
+      sibling,
+    );
+    assert.equal(accepted.status, 0, accepted.stderr);
     assert.equal(fs.existsSync(path.join(sibling, 'tmp', 'agent-telemetry', 'lifecycle.jsonl')), false);
+
+    const initialized = spawnSync('git', ['init', '-b', 'foreign-proof'], {
+      cwd: foreign,
+      encoding: 'utf8',
+    });
+    assert.equal(initialized.status, 0, initialized.stderr);
+
+    const blocked = run(
+      { hook_event_name: 'SessionEnd', session_id: `foreign-${Date.now()}` },
+      root,
+      foreign,
+    );
+    assert.equal(blocked.status, 2);
+    assert.match(
+      blocked.stderr,
+      /CLAUDE_PROJECT_DIR points to a different repository than the one containing this hook/iu,
+    );
+    assert.equal(fs.existsSync(path.join(foreign, 'tmp', 'agent-telemetry', 'lifecycle.jsonl')), false);
   } finally {
+    spawnSync('git', ['worktree', 'remove', '--force', sibling], {
+      cwd: root,
+      encoding: 'utf8',
+    });
     fs.rmSync(sibling, { recursive: true, force: true });
+    fs.rmSync(foreign, { recursive: true, force: true });
   }
 });

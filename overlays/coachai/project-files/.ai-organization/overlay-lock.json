@@ -432,7 +432,7 @@
     },
     {
       "path": "scripts/tests/taskLifecycleRegression.mjs",
-      "sha256": "b7a34cbf9a0c9fe4820cb9f9c402a8fdd0281a83eda9185a080c48aaf3474025"
+      "sha256": "fa2787f75aef7abf20b13ef7e35ca756c680ed976360c7a449f7e9af574b49a8"
     }
   ],
   "json_sections": {
