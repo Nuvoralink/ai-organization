@@ -154,8 +154,17 @@ export function checkAgentControlPlane(root = process.cwd()) {
 
   const uiWorkflow = read(root, '.github/workflows/ui-source-of-truth-gates.yml');
   const dbWorkflow = read(root, '.github/workflows/backend-db-regressions.yml');
+  const ciLocal = read(root, 'scripts/ci-local.mjs');
   if (!/npm run verify\s*$|npm run verify\r?\n/m.test(uiWorkflow) || !/PROOF_LANE:\s*static/.test(uiWorkflow)) errors.push('static CI must run root verify with the static proof lane');
   if (!/npm run proof:changed/.test(dbWorkflow) || !/PROOF_LANE:\s*db/.test(dbWorkflow)) errors.push('DB CI must run the central changed-path proof DB lane');
+  if (!/JWT_SECRET:\s*ci-test-jwt-secret-value/.test(uiWorkflow)) errors.push('static CI must provide the non-secret test JWT import prerequisite');
+  if (!/TENANT_SECURITY_BLACKBOX_DATABASE_URL:\s*postgresql:\/\/test:test@localhost:5432\/test/.test(dbWorkflow)
+    || !/TENANT_SECURITY_BLACKBOX_CONFIRM_DISPOSABLE_DB:\s*["']?1["']?/.test(dbWorkflow)) {
+    errors.push('DB CI must explicitly bind tenant black-box tests to its disposable service database');
+  }
+  for (const marker of ['JWT_SECRET', 'TENANT_SECURITY_BLACKBOX_DATABASE_URL', 'TENANT_SECURITY_BLACKBOX_CONFIRM_DISPOSABLE_DB']) {
+    if (!ciLocal.includes(marker)) errors.push(`ci-local must mirror the workflow prerequisite ${marker}`);
+  }
 
   const combined = [read(root, 'AGENTS.md'), read(root, '.cursor/rules/coachai-frontend-rules.mdc'), read(root, '.claude/agents/ui-verifier.md')].join('\n');
   if (!/Claude Design/.test(combined) || !/approval/i.test(combined)) errors.push('Claude Design approval authority is not wired');

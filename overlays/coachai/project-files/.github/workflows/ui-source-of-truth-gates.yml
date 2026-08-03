@@ -37,6 +37,7 @@ jobs:
       - name: verify (static + changed-path risk proof)
         env:
           DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
+          JWT_SECRET: ci-test-jwt-secret-value
           PROOF_LANE: static
           CI: "true"
         run: npm run verify

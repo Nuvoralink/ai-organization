@@ -39,6 +39,8 @@ jobs:
       DATABASE_URL: postgresql://test:test@localhost:5432/test
       DIALER_INGEST_TEST_DATABASE_URL: postgresql://test:test@localhost:5432/test
       DIALER_INGEST_TEST_CONFIRM_DISPOSABLE_DB: "1"
+      TENANT_SECURITY_BLACKBOX_DATABASE_URL: postgresql://test:test@localhost:5432/test
+      TENANT_SECURITY_BLACKBOX_CONFIRM_DISPOSABLE_DB: "1"
       # Boot env the tests need at IMPORT time. Some (e.g. dialerIngestCallRegression) pull in the
       # analysis chain, which validates provider keys before the test's own env setup runs — so they
       # must come from the job env. All dummies: these tests make no real provider/network calls.
