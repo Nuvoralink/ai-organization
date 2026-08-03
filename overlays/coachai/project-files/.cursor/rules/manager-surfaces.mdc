@@ -67,15 +67,11 @@ Purpose: protect team boundaries, annotation integrity, and manager trust.
 ## 8. Multi-manager coordination (Phase K)
 
 - `PriorityQueueEntryDTO.fellowManagers` lists ONLY co-managers actively assigned to the same rep (active `ManagerAssignment` rows), and never includes the caller themselves. Owners see co-managers too so they can spot who else is engaging a rep.
-- `DrillEscalationClaim` holds a single active claim per `(repUserId, sessionId)`. Claim creation is transactional: a 409 response is the correct outcome when another manager already owns the escalation. The route must not silently override an existing claim.
-- Claim TTL lives in `DRILL_ESCALATION_CLAIM_TTL_HOURS` (shared config). Expired claims are treated as unclaimed on read; the row is kept for audit history (soft release via `releasedAt`, never hard delete).
-- Every `claim` / `release` writes an `AuditEvent` (`coaching.escalation_claim.claimed` / `.released`) including the session id and rep id. This is the provenance record for disputes (two managers each thought they owned it).
-- Cross-tenant safety: the session's `orgId` MUST be present before writing a claim; sessions with null `orgId` are legacy and must be rejected from Phase K coordination.
-- `escalationClaim.isSelf` is derived server-side based on the caller. Frontend must not flip this flag locally — the source of truth is always the latest GET.
+- The separate `DrillEscalationClaim` lifecycle was retired in DISP-006: it had no reachable writer or visible product surface. Do not restore claim/release routes, TTLs, DTOs, CSV columns, or rep-facing claim copy without a new approved product decision.
 
 ## 9. Export privacy (Phase R)
 
-- Manager exports (`coachingApi.exportPriorityQueueCsv`, `exportTeamObjectionsCsv`) must never carry transcripts, raw audio, prospect quotes, `manager_only` annotation content, or unapproved AI suggested lines. Only fields already safe-rendered to the manager UI may enter the export.
+- Manager exports (`coachingApi.exportTeamObjectionsCsv` and the API-only priority projection) must never carry transcripts, raw audio, prospect quotes, `manager_only` annotation content, or unapproved AI suggested lines. Only fields already safe-rendered to the manager UI may enter the export.
 - Free-text fields that MIGHT contain customer PII (currently only `approvedReplacementLine`) MUST be piped through `redactSensitiveText` before serialization. The in-product view still renders the unredacted text to authorized managers; the CSV is defense-in-depth because files are forwarded, attached to emails, and live outside the product boundary.
 - Rep names and manager names are internal identifiers, not customer PII, and remain in exports. Session IDs are opaque and safe to export.
 - Every export must write an `AuditEvent` (`coaching.export.priority_queue` / `coaching.export.team_objections`) with the acting manager, team size, and row count. This is the revocation / forensic trail if a CSV leaks.
@@ -85,14 +81,11 @@ Purpose: protect team boundaries, annotation integrity, and manager trust.
 
 - Manager surfaces (Dashboard Overview, TeamInsightsPage, ManagerPacketPage, ManagerNotificationBell) must render without horizontal page scroll at 360px viewport width. Wide artifacts (Rep × Objection matrix) are the exception and must be wrapped in a single `overflow-x-auto` container so the rest of the page stays in-flow.
 - Breakpoint pattern: 1-col mobile, 2-col tablet (`sm:`), full grid desktop (`lg:` / `xl:`). Do not introduce large multi-column layouts without a single-column mobile fallback.
-- Touch targets on manager actions (Claim / Release drill escalation, approval queue buttons, notification dropdown items) must clear a ~24px minimum. No `text-[10px]` + `px-2 py-0.5` action buttons.
+- Touch targets on manager actions (approval queue buttons and notification dropdown items) must clear a ~24px minimum. No `text-[10px]` + `px-2 py-0.5` action buttons.
 - Floating / absolute panels (notification dropdown, tooltips) must cap at `max-w-[90vw]` and `max-h-[60vh]` (or smaller) so they never exceed the mobile viewport.
 - Priority queue rows, packet cards, and header action rows must use `flex-wrap` — never a single-row `flex` that can push critical content offscreen.
 - Export CSV buttons (Phase J) are desktop-optional affordances. They must remain visible on mobile but may collapse into the wrap flow rather than occupying their own row.
 
 ## 11. Cross-persona bridges (Phase P)
 
-- `ImprovementPlanDTO.escalationCoach` is the booker-facing mirror of `DrillEscalationClaim` (Phase K). It surfaces ONLY the claiming manager's first name and `claimedAt`. Last names, emails, and manager user IDs are not exposed to the booker — the chip exists to reassure the rep ("someone is on it"), not to identify their reviewer beyond a first name.
-- The field is populated only when (a) the plan is escalated (`drillEscalated === true`), (b) `lastEscalatedSessionId` is set, AND (c) an active (unreleased, unexpired) claim exists for that exact session. Expired or released claims drop back to `null`.
-- The field fails closed: if the claiming manager record is missing a `firstName`, render `null` rather than a malformed "Your coach  is reviewing…" chip.
-- No transcript, quote, claim reason, or manager-only context may flow through this bridge — it is a one-field additive cross-persona signal.
+- `ImprovementPlanDTO.escalationCoach` and its claim-derived bridge are retired with `DrillEscalationClaim`. Booker coaching remains grounded in the improvement-plan and call-review authorities; no manager-identity claim chip is produced.

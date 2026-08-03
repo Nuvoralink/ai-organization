@@ -43,6 +43,21 @@ test('CoachAI paths select semantic, DB, and supply-chain proof rather than gene
   assert.ok(route.includes('backend-db'));
   const dependency = selectProof(process.cwd(), ['package-lock.json']).profiles.map((p) => p.id);
   assert.deepEqual(dependency, ['dependency-supply-chain']);
+  // Project-level gates and operational harnesses must select the proof for the
+  // behavior they govern. Killer mutation: remove any exact path from the
+  // owning profile and this matrix reports it as unmapped.
+  const projectGateCases = [
+    ['scripts/check-ui-guardrails.mjs', 'frontend'],
+    ['scripts/check-user-cascade-completeness.mjs', 'backend-db'],
+    ['scripts/ops/loadtest-debug.mjs', 'backend-static'],
+    ['scripts/ops/loadtest-run.mjs', 'backend-static'],
+    ['scripts/preflight-security-check.mjs', 'dependency-supply-chain'],
+  ];
+  for (const [changedPath, expectedProfile] of projectGateCases) {
+    const selection = selectProof(process.cwd(), [changedPath]);
+    assert.ok(selection.profiles.map((p) => p.id).includes(expectedProfile), `${changedPath} selects ${expectedProfile}`);
+    assert.equal(selection.unknown.length, 0, `${changedPath} must not fail closed as unmapped`);
+  }
   // Root-level product docs (not under docs/) are documentation, not unmapped fail-closed paths.
   // Killer mutation: drop "*.md" from the documentation profile's include and both assertions fail.
   const rootDocSelection = selectProof(process.cwd(), ['COACHING_ARCHITECTURE.md']);
