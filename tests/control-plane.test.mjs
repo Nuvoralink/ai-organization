@@ -9,6 +9,7 @@ import { validateJsonAgainstSchema } from '../core/schema/validate-json-schema.m
 import {
   classifyTrackedScope,
   computeInstalledTreeDigest,
+  loadRoots,
   parseControlPlaneArgs,
   runCapture,
   runCheck,
@@ -81,6 +82,54 @@ function targetStateDigests(error) {
   assert.match(incoming ?? '', /^[a-f0-9]{64}$/u, message);
   return { current, locked, incoming };
 }
+
+test('Proves: one machine root registry is reused by linked worktrees while an explicit worktree-local registry wins; Test type: resolution mutation; Surface: root-registry loader; Authority: primary checkout machine binding; Killer mutation: remove the git-common-directory fallback and the linked worktree loses every dependency token; Gated command: npm test', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'orgctl-worktree-roots-'));
+  t.after(() => fs.rmSync(root, { force: true, recursive: true }));
+  const primaryRoot = path.join(root, 'primary');
+  const linkedRoot = path.join(root, 'linked');
+  const primaryRegistryDirectory = path.join(primaryRoot, 'registries');
+  const linkedRegistryDirectory = path.join(linkedRoot, 'registries');
+  const gitCommonDirectory = path.join(primaryRoot, '.git');
+  fs.mkdirSync(primaryRegistryDirectory, { recursive: true });
+  fs.mkdirSync(linkedRegistryDirectory, { recursive: true });
+  fs.mkdirSync(gitCommonDirectory, { recursive: true });
+  fs.writeFileSync(
+    path.join(primaryRegistryDirectory, 'project-roots.local.json'),
+    JSON.stringify({ HOME: path.join(root, 'primary-home'), 'DEPENDENCY:example': path.join(root, 'dependency') }),
+  );
+
+  assert.deepEqual(loadRoots(linkedRoot, undefined, { gitCommonDirectory }), {
+    HOME: path.join(root, 'primary-home'),
+    'DEPENDENCY:example': path.join(root, 'dependency'),
+  });
+
+  fs.writeFileSync(
+    path.join(linkedRegistryDirectory, 'project-roots.local.json'),
+    JSON.stringify({ HOME: path.join(root, 'linked-home') }),
+  );
+  assert.deepEqual(loadRoots(linkedRoot, undefined, { gitCommonDirectory }), {
+    HOME: path.join(root, 'linked-home'),
+  });
+});
+
+test('Proves: the clean-machine example defines every root token required by the canonical manifest; Test type: bootstrap inventory mutation; Surface: example root registry; Authority: manifest path templates; Killer mutation: add a manifest token without adding its example binding and clean bootstrap becomes unresolvable; Gated command: npm test', () => {
+  const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const manifest = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'control-plane.manifest.json'), 'utf8'));
+  const example = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'registries', 'project-roots.example.json'), 'utf8'));
+  const requiredTokens = new Set();
+  for (const mapping of manifest.mappings) {
+    for (const template of [...(mapping.destinations ?? []), mapping.captureFrom, mapping.lock]) {
+      const token = /^\$\{([^}]+)\}/u.exec(template ?? '')?.[1];
+      if (token) requiredTokens.add(token);
+    }
+  }
+  assert.deepEqual(
+    [...requiredTokens].filter((token) => !(token in example)).sort(),
+    [],
+    'project-roots.example.json must bind every manifest path token',
+  );
+});
 
 test('Proves: capture and install are deterministic; Test type: mutation; Surface: portable control plane; Authority: manifest; Killer mutation: local-only file must fail check', () => {
   const f = fixture();

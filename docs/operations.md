@@ -3,7 +3,7 @@
 ## First machine or clean rebuild
 
 1. Clone this private repository and the product repositories you are authorized to use.
-2. Copy `registries/project-roots.example.json` to the ignored `registries/project-roots.local.json`; enter local checkout paths only.
+2. Copy `registries/project-roots.example.json` to the ignored `registries/project-roots.local.json`; enter local checkout paths only. Keep this single binding in the primary Git checkout: linked worktrees resolve it through Git's common directory. A deliberately present worktree-local registry is an explicit override.
 3. Run `npm test` and `npm run control:validate`.
 4. Run `npm run control:install -- --dry-run` and review every planned target.
 5. Run `npm run control:install`, then `npm run control:check`.

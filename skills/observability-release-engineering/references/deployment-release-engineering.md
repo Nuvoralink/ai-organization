@@ -57,8 +57,8 @@ Acknowledgement: Shared by Peter Bamuhigire, techguypeter.com, +256 784 464178.
 
 | Category | Artifact | Format | Example |
 |----------|----------|--------|---------|
-| Release evidence | Release plan | Markdown doc per `skill-composition-standards/references/release-plan-template.md` | `docs/releases/2026-04-16-release-plan.md` |
-| Release evidence | Rollback plan | Markdown doc per `skill-composition-standards/references/rollback-plan-template.md` | `docs/releases/2026-04-16-rollback-plan.md` |
+| Release evidence | Release plan | Project-owned plan containing classification, stages, migration, rollout, evidence, owners, and stop conditions | `docs/releases/2026-04-16-release-plan.md` |
+| Release evidence | Rollback plan | Project-owned plan containing triggers, owner, method, data posture, verification, and communication | `docs/releases/2026-04-16-rollback-plan.md` |
 | Release evidence | Change record | PR range or tagged commit list | `docs/releases/2026-04-16-change-record.md` |
 
 ## References
@@ -69,16 +69,16 @@ Use this skill when shipping software to real users. It turns implementation out
 
 ## Load Order
 
-1. Load `world-class-engineering`.
+1. Apply the active global engineering doctrine and the target repository's real release gates.
 2. Load this skill when a change affects deployment, migrations, operational risk, or production rollout.
-3. Pair it with `observability-monitoring` and `advanced-testing-strategy`.
-4. Pair it with `docker-development` when shipping, tagging, scanning, or promoting container images.
+3. Pair it with the current `testing-strategy-and-tdd` skill and this package's observability and reliability references.
+4. Use the target repository's verified container runbooks and primary platform documentation when shipping, tagging, scanning, or promoting container images.
 
 ## Release Workflow
 
 ### DevOps Source Lens
 
-Apply the DevOps operating model in [references/devops-book-patterns.md](references/devops-book-patterns.md) when the release touches production, operations, CI/CD, PHP runtime, infrastructure, Kubernetes, GitOps, observability, or incident response. Use the source lens to test flow, feedback, and learning before choosing tooling.
+When the release touches production, operations, CI/CD, runtime infrastructure, Kubernetes, GitOps, observability, or incident response, test flow, feedback, and learning before choosing tooling. Verify platform-specific mechanics against the target repository's runbooks and primary vendor documentation.
 
 ### 1. Classify The Release
 
@@ -142,7 +142,7 @@ Post-deploy verification should confirm:
 - no unexpected saturation, queue growth, or cost surge
 - release markers visible in dashboards and traces
 
-See [references/release-checklist.md](references/release-checklist.md).
+Use the review checklist and deliverables below as the bundled release checklist.
 
 ### 7. Learn From The Release
 
@@ -211,8 +211,8 @@ For significant releases, produce:
 
 ## References
 
-- [references/deployment-pipeline.md](references/deployment-pipeline.md): Stage model, release packet, and rollout heuristics.
-- [references/release-checklist.md](references/release-checklist.md): Pre-deploy and post-deploy checks.
-- [references/rollout-selection.md](references/rollout-selection.md): Choosing rolling, blue-green, or canary.
-- [references/devops-book-patterns.md](references/devops-book-patterns.md): Value-stream, pipeline, observability, DevSecOps, PHP, cloud-native, and GitOps patterns from the supplied DevOps books.
-- [../docker-development/references/php-python-js-container-delivery.md](../docker-development/references/php-python-js-container-delivery.md): Docker image, Compose, CI, registry, and runtime promotion standards for PHP, Python, and JavaScript services.
+- [CI/CD and automation](ci-cd-and-automation.md): Pipeline automation and verification guidance.
+- [Observability monitoring](observability-monitoring.md): Release markers, telemetry, SLOs, and alert design.
+- [Reliability engineering](reliability-engineering.md): Failure, retry, degradation, and recovery design.
+- [Shipping and launch](shipping-and-launch.md): Exposure, launch, and post-release coordination.
+- The classification, stage model, rollout choices, rollback requirements, post-deploy checks, and review checklist above are self-contained; absent legacy deployment or container references are not assumed.

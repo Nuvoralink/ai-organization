@@ -59,7 +59,7 @@ Acknowledgement: Shared by Peter Bamuhigire, techguypeter.com, +256 784 464178.
 
 | Category | Artifact | Format | Example |
 |----------|----------|--------|---------|
-| Operability | Database SLO record | Markdown doc per `skill-composition-standards/references/slo-template.md` covering query latency, availability, and replication-lag SLOs | `docs/data/db-slo.md` |
+| Operability | Database SLO record | Project-owned SLO record covering query latency, availability, replication lag, windows, budgets, owners, and actions | `docs/data/db-slo.md` |
 | Operability | Backup verification log | Markdown doc tracking restore-test runs and recovery-time measurements | `docs/data/backup-verify-log.md` |
 
 ## References

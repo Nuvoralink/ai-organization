@@ -2,9 +2,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadRoots } from './lib/control-plane.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const roots = JSON.parse(fs.readFileSync(path.join(repoRoot, 'registries', 'project-roots.local.json'), 'utf8'));
+const roots = loadRoots(repoRoot);
 const allowedExtensions = ['', '.md', '.txt', '.json', '.yaml', '.yml', '.mjs', '.js', '.ts', '.tsx', '.py', '.ps1', '.sh', '.css', '.html', '.csv', '.toml', '.lock', '.template'];
 
 function directories(root, excluded = []) {

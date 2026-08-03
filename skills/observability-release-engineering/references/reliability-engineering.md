@@ -57,8 +57,8 @@ Acknowledgement: Shared by Peter Bamuhigire, techguypeter.com, +256 784 464178.
 
 | Category | Artifact | Format | Example |
 |----------|----------|--------|---------|
-| Operability | Runbook | Markdown doc per `skill-composition-standards/references/runbook-template.md` | `docs/runbooks/payment-failures.md` |
-| Operability | Rollback plan | Markdown doc per `skill-composition-standards/references/rollback-plan-template.md` | `docs/releases/2026-04-16-rollback.md` |
+| Operability | Runbook | Project-owned runbook containing trigger, impact, investigation, mitigation, verification, escalation, and recovery | `docs/runbooks/payment-failures.md` |
+| Operability | Rollback plan | Project-owned plan containing trigger, owner, method, data posture, and verification | `docs/releases/2026-04-16-rollback.md` |
 | Operability | Failure-mode catalogue | Markdown doc listing known failure modes and mitigations | `docs/reliability/failure-modes-checkout.md` |
 
 ## References
@@ -69,9 +69,9 @@ Use this skill when correctness under ideal conditions is not enough. The goal i
 
 ## Load Order
 
-1. Load `world-class-engineering`.
+1. Apply the active global engineering doctrine and the target repository's real reliability gates.
 2. Load this skill when the system has external dependencies, background processing, scale risk, or meaningful uptime expectations.
-3. Pair it with `observability-monitoring`, `deployment-release-engineering`, and `distributed-systems-patterns` when services or queues are involved.
+3. Pair it with this package's observability and deployment references; use primary infrastructure documentation when services or queues introduce stack-specific behavior.
 
 ## Reliability Workflow
 
@@ -194,6 +194,7 @@ For meaningful reliability work, produce:
 
 ## References
 
-- [references/reliability-patterns.md](references/reliability-patterns.md): Design rules for timeouts, retries, queues, and degradation.
-- [references/incident-readiness.md](references/incident-readiness.md): Incident preparation and recovery prompts.
-- [references/reliability-verification.md](references/reliability-verification.md): Reliability drills, overload checks, and evidence expectations.
+- [Observability monitoring](observability-monitoring.md): Detection, correlation, SLO, alert, and dashboard design.
+- [Deployment release engineering](deployment-release-engineering.md): Rollout, rollback, and post-deploy verification.
+- [CI/CD and automation](ci-cd-and-automation.md): Automation gates for the reliability evidence a release requires.
+- The failure-mode workflow, protection mechanisms, recovery questions, verification expectations, and review checklist above are self-contained.

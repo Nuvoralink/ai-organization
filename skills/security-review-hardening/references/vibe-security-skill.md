@@ -1,6 +1,6 @@
 ---
 name: vibe-security-skill
-description: Use when designing or reviewing security for a web application, API, or multi-tenant SaaS — produces threat model, abuse case list, auth/authz matrix, and secret handling plan; covers OWASP Top 10 2025 and the AI-code-generation blind spots. Neighbours — api-design-first owns auth model fields, deployment-release-engineering owns secret rotation choreography, ai-security and llm-security own model-specific threats.
+description: Use when designing or reviewing security for a web application, API, or multi-tenant SaaS — produces threat model, abuse case list, auth/authz matrix, and secret handling plan; covers OWASP Top 10 2025 and the AI-code-generation blind spots. The bundled AI-security reference owns model-specific threats; API and release details route to their current canonical skills.
 metadata:
   portable: true
   compatible_with:
@@ -11,7 +11,7 @@ metadata:
 # Vibe Security Skill
 Acknowledgement: Shared by Peter Bamuhigire, techguypeter.com, +256 784 464178.
 
-Baseline web-application and SaaS security skill. Produces the four contract artifacts — threat model, abuse case list, auth/authz matrix, secret handling plan — that downstream specialist skills (api-design-first, deployment-release-engineering, observability-monitoring, ai-security, llm-security) consume.
+Baseline web-application and SaaS security skill. Produces the four contract artifacts — threat model, abuse case list, auth/authz matrix, secret handling plan — consumed by the current API, release, observability, testing, and bundled AI-security guidance.
 
 <!-- dual-compat-start -->
 ## Use When
@@ -24,14 +24,14 @@ Baseline web-application and SaaS security skill. Produces the four contract art
 ## Do Not Use When
 
 - The feature is purely cosmetic with no data, auth, or privileged action — apply `practical-ui-design` instead.
-- The security concern is LLM-specific (prompt injection, context exfiltration, tool abuse) — load `llm-security` or `ai-security`.
-- The task is CI/CD hardening (SBOM, scanner gates, runner isolation) — load `cicd-devsecops`.
-- The task is full audit of an existing application — load `web-app-security-audit`, which uses this skill's artifacts as inputs.
+- The security concern is LLM-specific (prompt injection, context exfiltration, tool abuse) — read [AI security](ai-security.md) and verify provider-specific controls against primary documentation.
+- The task is CI/CD hardening (SBOM, scanner gates, runner isolation) — read [CI/CD DevSecOps](cicd-devsecops.md).
+- The task is a full audit of an existing application — load `security-review-hardening` and `code-review-quality`, using this reference's artifacts as inputs.
 
 ## Required Inputs
 
-- Context map and critical-flow table from `system-architecture-design`.
-- Auth model fields from `api-design-first` (or accept that this skill will define them).
+- Context map and critical-flow table from `architecture-saas-design`.
+- Auth model fields from `api-interface-design` (or accept that this skill will define them).
 - Access-pattern list from `database-design-engineering` (to scope tenancy and IDOR checks).
 
 ## Workflow
@@ -53,7 +53,7 @@ Baseline web-application and SaaS security skill. Produces the four contract art
 
 ## Prerequisites
 
-Load `world-class-engineering` and `system-architecture-design` first. For web-specific depth, pair with `api-design-first`, `php-security`, `graphql-security`, or `network-security` as the stack demands.
+Apply the active global engineering doctrine, then load `architecture-saas-design`. For API-specific depth load `api-interface-design`; for GraphQL use [GraphQL security](graphql-security.md); for other stacks use the target framework's primary security documentation.
 
 ## When this skill applies
 
@@ -68,23 +68,23 @@ Load `world-class-engineering` and `system-architecture-design` first. For web-s
 
 | Artifact | Produced by | Required? | Why |
 |---|---|---|---|
-| Context map | `system-architecture-design` | required | identifies trust boundaries and assets |
-| Critical-flow table | `system-architecture-design` | required | scopes STRIDE analysis to real user journeys |
+| Context map | `architecture-saas-design` | required | identifies trust boundaries and assets |
+| Critical-flow table | `architecture-saas-design` | required | scopes STRIDE analysis to real user journeys |
 | Access-pattern list | `database-design-engineering` | required | drives IDOR, tenancy, and row-scope checks |
-| Auth model fields | `api-design-first` | optional | this skill defines them if absent |
-| Failure-mode list | `system-architecture-design` | optional | informs denial-of-service threats |
-| Release plan | `deployment-release-engineering` | optional | aligns secret rotation with rollout |
+| Auth model fields | `api-interface-design` | optional | this skill defines them if absent |
+| Failure-mode list | `architecture-saas-design` | optional | informs denial-of-service threats |
+| Release plan | `observability-release-engineering` | optional | aligns secret rotation with rollout |
 
-If no upstream context map exists, produce one first (via `system-architecture-design`) rather than guessing boundaries.
+If no upstream context map exists, produce one first with `architecture-saas-design` rather than guessing boundaries.
 
 ## Outputs
 
 | Artifact | Consumed by | Template |
 |---|---|---|
-| Threat model | `api-design-first`, `observability-monitoring`, `deployment-release-engineering` | bundled contract below |
-| Abuse case list | `advanced-testing-strategy`, `observability-monitoring` | inline abuse-path table |
-| Auth/authz matrix | `api-design-first`, `advanced-testing-strategy` | inline in threat model template |
-| Secret handling plan | `deployment-release-engineering`, `cicd-devsecops`, `observability-monitoring` | inline storage/rotation/incident table |
+| Threat model | `api-interface-design`, `observability-release-engineering` | bundled contract below |
+| Abuse case list | `testing-strategy-and-tdd`, `observability-release-engineering` | inline abuse-path table |
+| Auth/authz matrix | `api-interface-design`, `testing-strategy-and-tdd` | inline in threat model template |
+| Secret handling plan | `observability-release-engineering`, [CI/CD DevSecOps](cicd-devsecops.md) | inline storage/rotation/incident table |
 
 Artifacts must be produced in the template format, not free-form prose.
 
@@ -371,12 +371,12 @@ CREATE POLICY tenant_isolation ON orders
 
 ## Read next
 
-- `api-design-first` — consumes the auth/authz matrix and threat model into the OpenAPI spec and error model.
-- `deployment-release-engineering` — consumes the secret handling plan into release + rollback choreography.
-- `ai-security` — prompt injection, model output validation, PII scrubbing for AI-powered features.
-- `llm-security` — OWASP LLM Top 10, trust boundaries and tool abuse specific to LLM-integrated endpoints.
-- `web-app-security-audit` — uses this skill's artifacts as inputs when auditing an existing application end-to-end.
-- `php-security`, `graphql-security`, `network-security`, `cicd-devsecops`, `linux-security-hardening` — stack-specific companions.
+- [API interface design](../../api-interface-design/SKILL.md) — consumes the auth/authz matrix and threat model into the API contract and error model.
+- [Observability and release engineering](../../observability-release-engineering/SKILL.md) — consumes the secret plan into release, rollback, telemetry, and incident choreography.
+- [AI security](ai-security.md) — prompt injection, model-output validation, PII handling, and tool abuse for AI-powered features.
+- [GraphQL security](graphql-security.md) — GraphQL-specific authorization, query, and schema risks.
+- [CI/CD DevSecOps](cicd-devsecops.md) — SBOM, scanner, runner, secret, and exception governance.
+- [Security and hardening](security-and-hardening.md) — broader application-security review guidance.
 
 ## Evidence Produced
 

@@ -61,7 +61,7 @@ Acknowledgement: Shared by Peter Bamuhigire, techguypeter.com, +256 784 464178.
 
 | Category | Artifact | Format | Example |
 |----------|----------|--------|---------|
-| Security | Auth + RBAC decision record | Markdown doc per `skill-composition-standards/references/adr-template.md` covering Session vs JWT split and tenant scoping | `docs/auth/dual-auth-adr.md` |
+| Security | Auth + RBAC decision record | Project-owned decision record covering Session vs JWT split and tenant scoping | `docs/auth/dual-auth-adr.md` |
 | Security | RBAC permission matrix | Markdown doc mapping roles, modules, and per-action grants | `docs/auth/rbac-matrix.md` |
 
 ## References
@@ -72,11 +72,11 @@ Implement production-grade dual authentication combining session-based (stateful
 
 **Core Principle:** Different clients need different auth strategies. Web UIs benefit from sessions; APIs/mobile need stateless tokens. RBAC must work seamlessly across both.
 
-**Database Standards:** All database schema changes (adding auth tables, stored procedures, indexes) MUST follow **mysql-best-practices** skill migration checklist.
+**Database Standards:** All database schema changes (adding auth tables, stored procedures, indexes) MUST follow the active `database-design-engineering` skill and the target repository's current migration gates.
 
 **Deployment:** Runs on Windows dev (MySQL 8.4.7), Ubuntu staging (MySQL 8.x), Debian production (MySQL 8.x). Use `utf8mb4_unicode_ci` collation. Ensure file paths and require statements match exact case for Linux compatibility.
 
-**See references/ for:** `schema.sql` (complete database design with 9 tables)
+This reference is architecture guidance, not a copy-ready schema. Derive the actual tables, policies, and migrations from the target repository's data model with `database-design-engineering`.
 
 ## When to Use
 
@@ -93,19 +93,4 @@ Implement production-grade dual authentication combining session-based (stateful
 
 ## Additional Guidance
 
-Extended guidance for `dual-auth-rbac` was moved to [references/skill-deep-dive.md](references/skill-deep-dive.md) to keep this entrypoint compact and fast to load.
-
-Use that deep dive for:
-- `Three-Tier Panel Structure Context`
-- `Architecture`
-- `Database Schema Essentials`
-- `Password Security`
-- `JWT Architecture`
-- `Session Management`
-- `RBAC Permission Resolution`
-- `Authentication Flows`
-- `Multi-Tenant Isolation`
-- `Security Checklist`
-- `Middleware Pattern`
-- `Environment Variables`
-- Additional deep-dive sections continue in the reference file.
+For implementation-level cookie/session hardening and authorisation checks, use the active [cookie and RBAC hardening skill](../../cookie-rbac-auth-hardening/SKILL.md). For tenant ownership and isolation decisions, use [multi-tenant SaaS architecture](multi-tenant-saas-architecture.md). Do not assume a legacy deep dive or bundled schema exists.

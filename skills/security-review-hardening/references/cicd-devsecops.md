@@ -68,10 +68,10 @@ Use this skill when pipeline security must be systematic, reviewable, and audita
 
 ## Load Order
 
-1. Load `world-class-engineering`.
-2. Load `cicd-pipeline-design` to define the pipeline shape.
+1. Apply the active global engineering doctrine and the target repository's real security and release gates.
+2. Load `observability-release-engineering` to define the pipeline, rollout, rollback, and operational-evidence shape.
 3. Load this skill to define security gates, secrets handling, and exception policy.
-4. Pair it with `vibe-security-skill`, `deployment-release-engineering`, and `observability-monitoring`.
+4. Pair it with this package's threat-model guidance and the target platform's primary security documentation.
 
 ## Executable Outputs
 
