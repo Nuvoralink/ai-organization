@@ -148,7 +148,7 @@
     },
     {
       "path": "scripts/claude-lifecycle-hook.mjs",
-      "sha256": "8aa46c07b07fb5ef033e516985fc5b77b5761f4daa3bc832ca71571ac2389b7f"
+      "sha256": "10b9b4f5ddbba3dff9bc221c03923c16620d0719e4771e83e719d8249f7d705f"
     },
     {
       "path": "scripts/claude-posttooluse-gate.mjs",
