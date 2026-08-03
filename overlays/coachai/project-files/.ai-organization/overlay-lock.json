@@ -356,7 +356,7 @@
     },
     {
       "path": "scripts/check-doc-code-drift.mjs",
-      "sha256": "9b3d8670ef425538cdf2e26c006163f29412b72c60949d6b45b6f5599b41c228"
+        "sha256": "450b5b79a127047b4932ee276e926e37f4588252128e7214c602e98797e8cfce"
     },
     {
       "path": "scripts/check-fleet-parity.mjs",

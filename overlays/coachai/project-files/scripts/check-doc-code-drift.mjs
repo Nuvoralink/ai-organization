@@ -1038,7 +1038,18 @@ function checkScoreAuthorityContract() {
   for (const field of ['scoreAuthorityStatus', 'scoreAuthoritySource', 'scoreAuthorityReason']) {
     requireIncludes('DCD-SCORE-1', 'backend/prisma/schema.prisma', field, `Feedback schema must keep ${field}.`);
   }
-  requireIncludes('DCD-SCORE-2', 'backend/src/lib/coaching/scoreAuthority.ts', 'authoritativeFeedbackScore', 'Score authority helper must exist.');
+  requireIncludes(
+    'DCD-SCORE-2',
+    'backend/src/lib/coaching/callReviewAuthority.ts',
+    "canAggregate: scoreAvailability.status === 'authoritative'",
+    'Call Review Authority must keep per-call skill aggregation authoritative-only.',
+  );
+  requireIncludes(
+    'DCD-SCORE-2B',
+    'backend/src/lib/coaching/callReviewMapper.ts',
+    'visibleSkillScoreSnapshots = authorityAllowsAggregate ? model.skillScoreSnapshots : []',
+    'Call Review output must consume canAggregate before exposing skill snapshots.',
+  );
   requireIncludes('DCD-SCORE-3', 'backend/src/lib/coaching/callReviewAuthority.ts', 'scoreAvailability', 'Call Review Authority must own score availability.');
   requireIncludes('DCD-SCORE-4', 'MVP_CONTRACTS.md', 'scoreAuthorityStatus === "authoritative"', 'MVP contracts must keep the canonical score authority rule.');
   requireIncludes('DCD-SCORE-5', 'docs/app-plan/source-of-truth-map.md', 'Score-dependent surfaces require current `scoreAuthorityStatus`.', 'Source-of-truth map must require current score authority.');
