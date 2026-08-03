@@ -33,6 +33,8 @@ Copy-Item registries/project-roots.example.json registries/project-roots.local.j
 ```
 Open `registries/project-roots.local.json` and set the paths for THIS machine (`HOME`, each project root, and the `council-studio` dependency path). This file is intentionally gitignored — it is the ONE machine-specific binding. Every mapping resolves through it, so if a later step reports unresolvable paths, this file is the first thing to re-check.
 
+Keep that one binding in the primary Git checkout. Linked worktrees automatically reuse it through Git's common directory; a worktree-local copy, when deliberately present, overrides the primary binding for that worktree only.
+
 Clone the projects the human wants on this machine (ask if unsure which) to the paths you just registered.
 
 ### 3 — Prove the repo is healthy BEFORE changing anything on this machine

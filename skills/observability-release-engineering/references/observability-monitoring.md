@@ -57,7 +57,7 @@ Acknowledgement: Shared by Peter Bamuhigire, techguypeter.com, +256 784 464178.
 
 | Category | Artifact | Format | Example |
 |----------|----------|--------|---------|
-| Operability | SLO record | Markdown doc per `skill-composition-standards/references/slo-template.md` | `docs/slo/checkout-service.md` |
+| Operability | SLO record | Project-owned record containing indicator, target, window, error budget, owner, and response policy | `docs/slo/checkout-service.md` |
 | Operability | Observability wiring note | Markdown doc listing logs, metrics, traces, and dashboards wired | `docs/observability/checkout-wiring.md` |
 | Operability | Alert catalogue | Markdown doc listing alert name, threshold, and runbook link | `docs/observability/checkout-alerts.md` |
 
@@ -69,9 +69,9 @@ Use this skill when a system must be diagnosable in production. It covers operat
 
 ## Load Order
 
-1. Load `world-class-engineering`.
+1. Apply the active global engineering doctrine and the target repository's real operability gates.
 2. Load this skill before finalizing architecture, APIs, jobs, or release design.
-3. Pair it with `deployment-release-engineering` for rollout and incident visibility.
+3. Pair it with this package's deployment and reliability references for rollout and incident visibility.
 
 ## Observability Workflow
 
@@ -211,7 +211,7 @@ For AI-enabled systems, capture:
 - Avoid alerts without a runbook path.
 - Include environment, service, version, impact, and likely first checks.
 
-See [references/alert-design.md](references/alert-design.md).
+Use the page/ticket/dashboard rules above and require every alert to name its owner, impact, and first action.
 
 ## Deliverables
 
@@ -237,6 +237,7 @@ For significant systems, produce:
 
 ## References
 
-- [references/alert-design.md](references/alert-design.md): Alert severity and routing rules.
-- [references/diagnosis-first-observability.md](references/diagnosis-first-observability.md): Event design, cardinality, release markers, and AI telemetry.
-- [references/slo-template.md](references/slo-template.md): SLO template and service questions.
+- [Deployment release engineering](deployment-release-engineering.md): Release markers, rollout verification, and rollback observation windows.
+- [Reliability engineering](reliability-engineering.md): Failure modes, recovery paths, and incident-readiness expectations.
+- [OpenAI and Sentry](openai-sentry.md): Provider-specific AI telemetry when that stack is actually in scope.
+- The telemetry questions, SLO fields, alert routing rules, deliverables, and review checklist above are the bundled self-contained templates.

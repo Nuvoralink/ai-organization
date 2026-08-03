@@ -350,7 +350,7 @@ This separation ensures the test is written without knowledge of the fix, making
 
 ## See Also
 
-For detailed testing patterns, examples, and anti-patterns across frameworks, see `references/testing-patterns.md`.
+For deeper testing design, use [advanced testing strategy](advanced-testing-strategy.md), [mutation probes and boundaries](verifying-tests-mutation-probes-and-boundaries.md), and the target framework's primary testing documentation. Do not assume an unbundled testing-patterns file exists.
 
 ## Common Rationalizations
 

@@ -265,9 +265,9 @@ Every deployment needs a rollback plan before it happens:
 ```
 ## See Also
 
-- For security pre-launch checks, see `references/security-checklist.md`
-- For performance pre-launch checklist, see `references/performance-checklist.md`
-- For accessibility verification before launch, see `references/accessibility-checklist.md`
+- Use the security, performance, accessibility, infrastructure, documentation, rollout, monitoring, and rollback sections in this document as the bundled launch checklist.
+- Pair with [deployment release engineering](deployment-release-engineering.md) and [observability monitoring](observability-monitoring.md) for deeper release and telemetry design.
+- Use `security-review-hardening` and the target platform's primary documentation for stack-specific security checks; absent legacy checklists are not assumed.
 
 ## Common Rationalizations
 

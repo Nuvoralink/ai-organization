@@ -1,6 +1,6 @@
 ---
 name: api-design-first
-description: Use when designing or building HTTP APIs — spec-first OpenAPI workflow, REST conventions, versioning, auth model, rate limiting, idempotency keys, error envelope, and observability notes. Produces the OpenAPI contract plus error/auth/idempotency/observability artifacts that frontend, mobile, security, and reliability skills consume. For endpoint-level security review load `vibe-security-skill`; for GraphQL-specific hardening load `graphql-security`.
+description: Use when designing or building HTTP APIs — spec-first OpenAPI workflow, REST conventions, versioning, auth model, rate limiting, idempotency keys, error envelope, and observability notes. Produces the OpenAPI contract plus error/auth/idempotency/observability artifacts that frontend, mobile, security, and reliability skills consume. For endpoint-level or GraphQL security review load `security-review-hardening`.
 metadata:
   portable: true
   compatible_with:
@@ -25,21 +25,21 @@ Design APIs as contracts before code. This skill produces the OpenAPI 3.1 contra
 ## Do Not Use When
 
 - The task is purely client-side consumption of a third-party API (load the relevant SDK or integration skill).
-- The task is full threat modelling — load `vibe-security-skill`; this skill only records the auth model.
-- GraphQL-specific hardening is needed — load `graphql-security`.
+- The task is full threat modelling — load `security-review-hardening`; this skill only records the auth model.
+- GraphQL-specific hardening is needed — load `security-review-hardening` and verify version-specific mechanics against the chosen GraphQL implementation's primary documentation.
 
 ## Required Inputs
 
-- Context map and critical-flow table from `system-architecture-design`.
+- Context map and critical-flow table from `architecture-saas-design`.
 - Access-pattern list from `database-design-engineering`.
 - Consumers, trust boundaries, and latency budget for each endpoint.
 - Tenancy model (single-tenant, shared schema, schema-per-tenant) so `tenant_id` propagation can be proven.
 
 ## Workflow
 
-- Read this `SKILL.md`, then load only the references needed for the task (for example `openapi-workflow.md` for a greenfield design; `auth-and-security.md` for an auth choice; `rest-conventions.md` for URL / status-code review).
+- Read this reference, then use the relevant self-contained sections below for workflow, auth, idempotency, error, and REST decisions.
 - Apply the six-step design workflow before writing any code.
-- Produce the OpenAPI contract in the template format from `skill-composition-standards/references/openapi-contract.md`.
+- Produce the OpenAPI contract from the workflow, decision tables, response envelope, and output fields in this document, adapted to the target repository's owning contract format.
 - Record the auth model, error model, idempotency map, and observability notes alongside the spec.
 - Run the implementation checklist before merging.
 
@@ -78,28 +78,22 @@ Design APIs as contracts before code. This skill produces the OpenAPI 3.1 contra
 
 ## References
 
-- [references/rest-conventions.md](references/rest-conventions.md) — URLs, methods, status codes, envelope, pagination, middleware order, health checks.
-- [references/openapi-workflow.md](references/openapi-workflow.md) — spec-first workflow, OpenAPI 3.1 skeleton, versioning, HATEOAS, HTTP caching, GraphQL decision.
-- [references/auth-and-security.md](references/auth-and-security.md) — headers, CORS, auth-method selection table, API key, JWT, OAuth2, rate limiting, idempotency keys.
-- [references/implementation-checklist.md](references/implementation-checklist.md) — pre-merge checklist and observability contract handed to `observability-monitoring`.
-- [references/practical-api-architecture.md](references/practical-api-architecture.md) — book-distilled API product-contract checks, lifecycle/versioning policy, idempotency map, and error semantics.
-- [references/api-you-wont-hate-rules.md](references/api-you-wont-hate-rules.md) — consumer-first API action planning, resource shape, pagination, versioning, and endpoint test rules.
-- [references/source-register-api-you-wont-hate.md](references/source-register-api-you-wont-hate.md) — local EPUB source register for the API-design upgrade.
-- Companion skill: `graphql-patterns` — schema-first Apollo Server + TypeScript patterns when choosing GraphQL over REST for client-shaped reads.
+- [API and interface design](api-and-interface-design.md) — interface ownership, compatibility, pagination, errors, and idempotency across API styles.
+- [AI metering and billing](ai-metering-billing.md) — metering, quota, and billing-facing API contracts.
+- This document contains the OpenAPI workflow, REST conventions, auth choices, response envelope, idempotency map, and review checklist it requires; absent legacy deep dives are not assumed.
 <!-- dual-compat-end -->
 
 ## Prerequisites
 
 Load these skills first:
 
-- `system-architecture-design` — produces the context map and critical-flow table consumed below.
+- `architecture-saas-design` — produces the context map and critical-flow table consumed below.
 - `database-design-engineering` — produces the access-pattern list that shapes resource design.
-- `world-class-engineering` — the shared release gate this skill ships into.
+- Apply the active global engineering doctrine and the target repository's real release gates.
 
 Load alongside:
 
-- `vibe-security-skill` for threat modelling of the auth model produced here.
-- `graphql-security` whenever building or auditing a GraphQL API.
+- `security-review-hardening` for threat modelling of the auth model produced here, including GraphQL-specific review grounded in the implementation's primary documentation.
 
 ## When this skill applies
 
@@ -124,11 +118,11 @@ Load alongside:
 
 | Artifact                | Consumed by                                                        | Template                                                                                  |
 |-------------------------|--------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
-| OpenAPI 3.1 contract    | frontend, mobile, SDK, `advanced-testing-strategy` (contract tests)| `skill-composition-standards/references/openapi-contract.md`                              |
-| Error model             | frontend, mobile, `advanced-testing-strategy`                      | `skill-composition-standards/references/error-model.md`                                   |
-| Auth model              | `vibe-security-skill`, `mobile-rbac`, `ios-rbac`, `dual-auth-rbac` | inline in spec (`components.securitySchemes`) + role/scope matrix in `auth-and-security.md` |
-| Idempotency map         | `reliability-engineering`, `stripe-payments`                       | inline table — see `references/auth-and-security.md`                                      |
-| Observability notes     | `observability-monitoring`                                         | inline table — see `references/implementation-checklist.md`                               |
+| OpenAPI 3.1 contract    | frontend, mobile, SDK, `testing-strategy-and-tdd` (contract tests) | target repository's owning API contract, using the fields in this document                 |
+| Error model             | frontend, mobile, `testing-strategy-and-tdd`                       | inline response-envelope contract below                                                     |
+| Auth model              | `security-review-hardening`, clients, and tenant auth consumers    | inline in spec (`components.securitySchemes`) plus the role/scope matrix below              |
+| Idempotency map         | `observability-release-engineering` and side-effect owners         | inline decision table in this document                                                      |
+| Observability notes     | `observability-release-engineering`                                | inline per-endpoint telemetry and audit table                                                |
 
 ## Non-negotiables
 
@@ -199,9 +193,9 @@ Failure mode if wrong: GraphQL-first for simple CRUD buys query-complexity DoS r
 5. Design observability: request IDs, audit events, deprecation path, rate-limit telemetry.
 6. Validate that the API can evolve without breaking current consumers.
 
-Full spec skeleton and per-step detail in `references/openapi-workflow.md`.
-For partner, public, long-lived, or workflow-heavy APIs, also load `references/practical-api-architecture.md`.
-For consumer ergonomics, endpoint naming, pagination, embedding, versioning, and test expectations, load `references/api-you-wont-hate-rules.md`.
+The workflow, response-envelope examples, decision tables, and review checklist in this document are the self-contained spec skeleton.
+For partner, public, long-lived, or workflow-heavy APIs, apply the lifecycle, compatibility, idempotency, and observability checks in [API and interface design](api-and-interface-design.md).
+For consumer ergonomics, endpoint naming, pagination, embedding, versioning, and test expectations, use the design workflow and strategy rules below.
 
 ## Response envelope
 
@@ -227,7 +221,7 @@ The canonical envelope produced by this skill — every downstream client depend
 }
 ```
 
-Detail, status-code mapping, and pagination mechanics live in `references/rest-conventions.md`.
+The strategy rules and anti-patterns below own the status-code and pagination mechanics for this reference.
 
 ## Anti-patterns
 
@@ -242,19 +236,12 @@ Detail, status-code mapping, and pagination mechanics live in `references/rest-c
 
 ## Read next
 
-- `skill-composition-standards` — normalisation standard this skill was rewritten against; templates for the OpenAPI contract and error model live there.
-- `observability-monitoring` — consumes the observability notes table to build SLOs, alerts, and runbooks.
-- `reliability-engineering` — consumes the idempotency map for retry and circuit-breaker design.
-- `deployment-release-engineering` — consumes the versioning plan for migration choreography and rollback windows.
-- `vibe-security-skill` — consumes the auth model to build the threat model and abuse-case list.
+- `observability-release-engineering` — consumes observability, idempotency, versioning, migration, and rollback decisions.
+- `security-review-hardening` — consumes the auth model to build the threat model and abuse-case list.
+- `testing-strategy-and-tdd` — consumes the API contract for positive, negative, compatibility, and idempotency tests.
 
 ## References
 
-- [references/rest-conventions.md](references/rest-conventions.md) — URLs, methods, status codes, envelope, pagination, middleware order, health checks, PHP controller skeleton.
-- [references/openapi-workflow.md](references/openapi-workflow.md) — six-step workflow, OpenAPI 3.1 skeleton, versioning, HATEOAS, HTTP caching (ETags), GraphQL decision.
-- [references/auth-and-security.md](references/auth-and-security.md) — security headers, CORS, auth-method selection, API key, JWT, OAuth2, rate limiting, idempotency keys.
-- [references/implementation-checklist.md](references/implementation-checklist.md) — pre-merge checklist, observability notes handed to `observability-monitoring`, hand-off table to other skills.
-- [references/practical-api-architecture.md](references/practical-api-architecture.md) — API product-contract checks, versioning lifecycle, idempotency, and error semantics.
-- [references/api-you-wont-hate-rules.md](references/api-you-wont-hate-rules.md) — API action plan, resource design, JSON ergonomics, pagination, embedding, versioning, and endpoint tests.
-- [references/source-register-api-you-wont-hate.md](references/source-register-api-you-wont-hate.md) — local EPUB source register for the API-design upgrade.
-- [references/skill-deep-dive.md](references/skill-deep-dive.md) — index redirect for the legacy deep-dive; kept for backward compatibility.
+- [API and interface design](api-and-interface-design.md) — broader interface contracts and evolution guidance.
+- [AI metering and billing](ai-metering-billing.md) — provider usage, quotas, budgets, and billing-facing API contracts.
+- The current file is authoritative for its embedded six-step API workflow; no legacy redirect or unbundled reference is required.

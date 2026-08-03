@@ -49,10 +49,29 @@ function isWithin(root, candidate) {
   return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
 }
 
-export function loadRoots(repoRoot, override = undefined) {
+function resolveGitCommonDirectory(repoRoot) {
+  const result = spawnSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+  if (result.status !== 0 || result.error) return undefined;
+  const value = result.stdout.trim();
+  return value.length > 0 ? path.resolve(repoRoot, value) : undefined;
+}
+
+function primaryWorktreeRootRegistry(gitCommonDirectory) {
+  if (!gitCommonDirectory || path.basename(gitCommonDirectory).toLowerCase() !== '.git') return undefined;
+  return path.join(path.dirname(gitCommonDirectory), 'registries', 'project-roots.local.json');
+}
+
+export function loadRoots(repoRoot, override = undefined, options = {}) {
   if (override) return override;
   const localFile = path.join(repoRoot, 'registries', 'project-roots.local.json');
-  const roots = fs.existsSync(localFile) ? readJson(localFile) : {};
+  const primaryFile = primaryWorktreeRootRegistry(
+    options.gitCommonDirectory ?? resolveGitCommonDirectory(repoRoot),
+  );
+  const registryFile = [localFile, primaryFile].find((candidate) => candidate && fs.existsSync(candidate));
+  const roots = registryFile ? readJson(registryFile) : {};
   const home = process.env.HOME && fs.existsSync(process.env.HOME)
     ? process.env.HOME
     : process.env.USERPROFILE;

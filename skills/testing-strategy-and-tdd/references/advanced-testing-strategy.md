@@ -57,7 +57,7 @@ Acknowledgement: Shared by Peter Bamuhigire, techguypeter.com, +256 784 464178.
 
 | Category | Artifact | Format | Example |
 |----------|----------|--------|---------|
-| Correctness | Test plan | Markdown doc per `skill-composition-standards/references/test-plan-template.md` | `docs/testing/test-plan-checkout.md` |
+| Correctness | Test plan | Project-owned plan containing risk, failure modes, layers, data, determinism, release evidence, and killer mutations | `docs/testing/test-plan-checkout.md` |
 | Correctness | Latest CI run evidence | CI URL or archived log | `https://ci.example.com/run/12345` |
 
 ## References
@@ -68,9 +68,9 @@ Use this skill when testing must be designed as an engineering system rather tha
 
 ## Load Order
 
-1. Load `world-class-engineering`.
+1. Apply the active global engineering doctrine and the target repository's real test gates.
 2. Load this skill before declaring architecture or implementation work production-ready.
-3. Pair it with `deployment-release-engineering` for release gates and `observability-monitoring` for post-deploy verification.
+3. Pair it with `observability-release-engineering` for release gates and post-deploy verification.
 
 ## Testing Workflow
 
@@ -197,7 +197,7 @@ For meaningful changes, produce:
 - open risk list
 - flake or determinism notes when relevant
 
-See [references/test-matrix-template.md](references/test-matrix-template.md).
+Use the risk, failure-mode, layer, data, and release-evidence fields above as the minimum test-matrix template.
 
 ## Review Checklist
 
@@ -212,6 +212,8 @@ See [references/test-matrix-template.md](references/test-matrix-template.md).
 
 ## References
 
-- [references/risk-driven-testing.md](references/risk-driven-testing.md): Test-layer selection, determinism, and flake policy.
-- [references/test-matrix-template.md](references/test-matrix-template.md): Test plan by risk and layer.
-- [references/release-evidence.md](references/release-evidence.md): What must be true before shipping.
+- [Test-driven development](test-driven-development.md): Red-green-refactor workflow and test-quality guidance.
+- [Verifying tests, mutation probes, and boundaries](verifying-tests-mutation-probes-and-boundaries.md): Biting tests, boundary fixtures, and killer mutations.
+- [Property-based testing](property-based-testing.md): Generated-input testing for suitable invariant-heavy domains.
+- [Coverage analysis](coverage-analysis.md): Coverage evidence and interpretation.
+- The risk classification, layer-selection rules, test-matrix fields, release evidence, and review checklist above are self-contained.
