@@ -2,28 +2,9 @@
 // Wired from .claude/settings.json. Receives the tool-call JSON on stdin; routes the edited
 // file to the matching gate(s). Exit 2 feeds the gate failure back to the agent so it must
 // fix the violation before moving on ("wire the gate, not the rule").
-import { readFileSync, realpathSync } from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 import { runGatesForFiles } from './lib/claudeGateRouter.mjs';
-
-function pathKey(value) {
-  const normalized = path.resolve(value);
-  return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
-}
-
-function configuredProjectRoot() {
-  const scriptRoot = realpathSync.native(
-    path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'),
-  );
-  const configured = String(process.env.CLAUDE_PROJECT_DIR ?? '').trim();
-  if (!configured) return scriptRoot;
-  const configuredRoot = realpathSync.native(path.resolve(configured));
-  if (pathKey(configuredRoot) !== pathKey(scriptRoot)) {
-    throw new Error('CLAUDE_PROJECT_DIR does not match the repository root containing this hook');
-  }
-  return configuredRoot;
-}
+import { resolveHookProjectRoot } from './lib/hookProjectRoot.mjs';
 
 function blockInvalidPayload(message) {
   console.error(`[gate-hook] ${message}`);
@@ -34,7 +15,7 @@ const rootedInvocation = String(process.env.CLAUDE_PROJECT_DIR ?? '').trim().len
 let projectRoot;
 let payload;
 try {
-  projectRoot = configuredProjectRoot();
+  projectRoot = resolveHookProjectRoot({ importMetaUrl: import.meta.url });
   payload = JSON.parse(readFileSync(0, 'utf8'));
 } catch (error) {
   if (!rootedInvocation) process.exit(0);
