@@ -400,7 +400,7 @@
     },
     {
       "path": "scripts/run-risk-selected-proof.mjs",
-      "sha256": "e03663c6ab6f94556a7374a0cf386512623d3ee65253ddaccb641527312af3f5"
+      "sha256": "c494f8ceabe3f3cfab001b92d01c5b0776b9dcfb820f7c87ba3a4951fb281d70"
     },
     {
       "path": "scripts/task-governor.mjs",
@@ -424,7 +424,7 @@
     },
     {
       "path": "scripts/tests/riskSelectedProofRegression.mjs",
-      "sha256": "6fd2978cfb56a46d938cd1a4084a74332c5c8d1541d5d42b7e586427d7bcbe90"
+      "sha256": "bfdc3562b70ebf338b95c15bf42d816f84ff26822cefb50787bd5f54eb8ace4b"
     },
     {
       "path": "scripts/tests/taskLifecycleRegression.mjs",

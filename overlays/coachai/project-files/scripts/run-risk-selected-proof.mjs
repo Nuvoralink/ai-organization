@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Select and run proof from changed paths. Unknown paths fail; DB-risk completion requires a disposable DB. */
+/** Select and run proof from changed paths. Unknown paths fail; an explicit lane may be honestly non-applicable. */
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
@@ -46,7 +46,7 @@ export function runSelectedProof(root, files, options = {}) {
   for (const profile of selected.profiles) {
     if (profile.requires_env_any?.length && !profile.requires_env_any.some((name) => process.env[name])) errors.push(`profile ${profile.id} requires one of: ${profile.requires_env_any.join(', ')}`);
   }
-  if (selected.files.length > 0 && selected.profiles.length === 0) errors.push('changed paths selected zero applicable proof profiles');
+  if (selected.files.length > 0 && selected.profiles.length === 0 && !options.lane) errors.push('changed paths selected zero applicable proof profiles');
   if (errors.length || options.dryRun) return { ...selected, errors, commands: [...new Set(selected.profiles.flatMap((p) => p.commands))], ok: errors.length === 0 };
   const commands = [...new Set(selected.profiles.flatMap((p) => p.commands))];
   const results = [];
@@ -76,5 +76,9 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const result = runSelectedProof(process.cwd(), files, { lane });
   console.log(`risk-proof: files=${files.length} profiles=${result.profiles.map((p) => p.id).join(',') || 'none'} lane=${lane ?? 'all'}`);
   if (!result.ok) { console.error(result.errors.map((e) => `- ${e}`).join('\n')); process.exit(1); }
+  if (lane && result.profiles.length === 0) {
+    console.log(`risk-proof: PASS — no ${lane} profile applies; all ${files.length} changed path(s) remain mapped`);
+    process.exit(0);
+  }
   console.log(`risk-proof: PASS — ${result.commands.length} unique command(s)`);
 }
