@@ -42,6 +42,7 @@
     "docs/app-plan/product/**",
     "docs/app-plan/architecture/**",
     "docs/app-plan/decision-log.md",
+    ".ai-organization/policies/coordination-mode.v1.json",
     "**/.env*",
     "**/node_modules/**",
     "**/__pycache__/**",

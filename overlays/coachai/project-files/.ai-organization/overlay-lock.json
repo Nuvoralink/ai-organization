@@ -28,7 +28,7 @@
     },
     {
       "path": ".ai-organization/ownership.json",
-      "sha256": "6a2f8f97237ff9a0042b4251612657fc6adf70a82480345b68d190e2503849d5"
+      "sha256": "0e72a678c3f9577bba4c0125a83caab7561102cb2cbc4bb6bfba91b90877505f"
     },
     {
       "path": ".ai-organization/policies/action-authority.v1.json",
@@ -37,10 +37,6 @@
     {
       "path": ".ai-organization/policies/authority-domains.v1.json",
       "sha256": "3de4b7aa0094e8a3fe01f0bde3032a8a2b32cf665ab7af32bf87fab40d259f28"
-    },
-    {
-      "path": ".ai-organization/policies/coordination-mode.v1.json",
-      "sha256": "8fd4da14876028fe59d02ac3cdca76d2c88cf1612c552732e03d038d403a2582"
     },
     {
       "path": ".ai-organization/policies/risk-controls.v1.json",
@@ -336,11 +332,11 @@
     },
     {
       "path": ".github/workflows/backend-db-regressions.yml",
-      "sha256": "e634f53f2d289f90cb81b2f3a4893cfbdea0c0954fd22c7bfc9b5732528fb9d4"
+      "sha256": "d295cb92ecd6d0566dd1ab897c27e34aabcbbfddfda89afcc536e55722d9399c"
     },
     {
       "path": ".github/workflows/ui-source-of-truth-gates.yml",
-      "sha256": "dcd3fbe647c3c50f0008d637b74be09a4cf13c1e39f0fc494e5a5eb9cfa0d91d"
+      "sha256": "ff4bfcbdf96c881d43972c2fbe067d6a1a0f8d1c57bac38130d0ff8e15374f38"
     },
     {
       "path": "AGENTS.md",
@@ -356,7 +352,7 @@
     },
     {
       "path": "scripts/check-agent-control-plane.mjs",
-      "sha256": "c05e573124d262483d07731e44dbdd6f2d5a711a1bd795da16ac9e93d3415531"
+      "sha256": "0fec61a2a4ef658f62c3df421f44792e49f72a1aa3ddb86c6beaeab149618f2e"
     },
     {
       "path": "scripts/check-doc-code-drift.mjs",
@@ -380,7 +376,7 @@
     },
     {
       "path": "scripts/ci-local.mjs",
-      "sha256": "27b15cc8826f4c4e093ec93e532e7ac0d1aeae4e0e491f2da17729a0ae9e848a"
+      "sha256": "cfd2638969ccfe4f83d3a043286612804a0d8cf2a32664b8cf9a4ecb2d34633d"
     },
     {
       "path": "scripts/claude-lifecycle-hook.mjs",

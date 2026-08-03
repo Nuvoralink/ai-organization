@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -14,6 +15,7 @@ import {
   validateCanonical,
   validateManifest
 } from './lib/control-plane.mjs';
+import { buildOverlayLock } from '../overlays/coachai/project-files/scripts/check-overlay-parity.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -122,6 +124,58 @@ export function validateRunnerDeliveryContract(project, ownership) {
   return failures;
 }
 
+function setDottedValue(target, dotted, value) {
+  const parts = dotted.split('.');
+  let current = target;
+  for (const key of parts.slice(0, -1)) current = current[key] ??= {};
+  current[parts.at(-1)] = value;
+}
+
+export function comparePortableOverlayFiles(expected, actual) {
+  const failures = [];
+  const expectedFiles = new Map((expected.files ?? []).map((entry) => [entry.path, entry.sha256]));
+  const actualFiles = new Map((actual.files ?? []).map((entry) => [entry.path, entry.sha256]));
+  for (const [relative, hash] of expectedFiles) {
+    if (!actualFiles.has(relative)) failures.push(`portable overlay lock contains a file absent from the reviewed source: ${relative}`);
+    else if (actualFiles.get(relative) !== hash) failures.push(`portable overlay source differs from its lock: ${relative}`);
+  }
+  for (const relative of actualFiles.keys()) {
+    if (!expectedFiles.has(relative)) failures.push(`portable overlay source has an unlocked managed file: ${relative}`);
+  }
+  return failures;
+}
+
+export function validatePortableOverlaySourceParity(projectFilesRoot, manifest) {
+  const lockPath = path.join(projectFilesRoot, '.ai-organization', 'overlay-lock.json');
+  if (!fs.existsSync(lockPath)) return [];
+  const expected = readJson(lockPath);
+  const fixtureBase = fs.mkdtempSync(path.join(os.tmpdir(), `${manifest.project}-portable-overlay-`));
+  const installedRoot = path.join(fixtureBase, 'project');
+  const fixtureHome = path.join(fixtureBase, 'home');
+  try {
+    fs.mkdirSync(installedRoot, { recursive: true });
+    fs.mkdirSync(fixtureHome, { recursive: true });
+    runInstall({
+      repoRoot,
+      manifest,
+      roots: { [manifest.rootToken]: installedRoot, HOME: fixtureHome },
+    });
+    const installedOwnership = readJson(path.join(installedRoot, '.ai-organization', 'ownership.json'));
+    for (const [relative, sections] of Object.entries(installedOwnership.managed_json_sections ?? {})) {
+      const file = path.join(installedRoot, relative);
+      if (fs.existsSync(file)) continue;
+      const value = {};
+      for (const section of sections) setDottedValue(value, section, `portable-overlay-fixture:${section}`);
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
+    }
+    return comparePortableOverlayFiles(expected, buildOverlayLock(installedRoot))
+      .map((message) => `portable overlay source parity: ${message}`);
+  } finally {
+    fs.rmSync(fixtureBase, { recursive: true, force: true });
+  }
+}
+
 export function validateOverlay(project, rootsOverride = undefined) {
   const { overlayRoot, manifest, roots } = loadOverlay(project, rootsOverride);
   const failures = [...validateCanonical({ repoRoot, manifest })];
@@ -152,6 +206,9 @@ export function validateOverlay(project, rootsOverride = undefined) {
       }
     }
     for (const message of validateRunnerDeliveryContract(project, ownership)) {
+      failures.push({ type: 'overlay', message });
+    }
+    for (const message of validatePortableOverlaySourceParity(path.join(overlayRoot, 'project-files'), manifest)) {
       failures.push({ type: 'overlay', message });
     }
     for (const mapping of manifest.mappings) {
@@ -232,8 +289,13 @@ export function runProjectOverlayCli(argv, context = {}) {
         catch { portableCaptureReplacementValid = false; }
       }
     }
+    const refreshingPortableLock = command === 'capture'
+      && mappingIds?.length === 1
+      && mappingIds[0] === `${project}-project-portable-lock`;
     const blockingFailures = command === 'capture'
-      ? failures.filter((failure) => failure.type !== 'empty-source' && !(portableCaptureReplacementValid && failure.type === 'overlay' && failure.message?.startsWith('portable overlay lock ')))
+      ? failures.filter((failure) => failure.type !== 'empty-source'
+        && !(portableCaptureReplacementValid && failure.type === 'overlay' && failure.message?.startsWith('portable overlay lock '))
+        && !(refreshingPortableLock && failure.type === 'overlay' && failure.message?.startsWith('portable overlay source parity:')))
       : failures;
     if (blockingFailures.length > 0) {
       printFailures(blockingFailures, stderr);
