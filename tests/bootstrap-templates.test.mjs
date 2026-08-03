@@ -266,6 +266,19 @@ test('Proves: PERF-IDLE-LIFECYCLE-001; Test type: authority-propagation mutation
   }
 });
 
+test('Proves: FLEET-DISPATCHABLE-FRONTMATTER-001; Test type: control-wiring mutation; Surface: shared fleet-parity gate and CoachAI functionality-parity brief; Authority: registered agent files must be dispatchable and wiring claims must name their mechanical proof boundary; Killer mutation: count agent filenames without validating frontmatter, or restore the stale claim that CoachAI has no mechanical API-consumer gate; Gated command: npm test', () => {
+  const fleetGate = fs.readFileSync(path.join(root, 'scripts', 'check-fleet-parity.mjs'), 'utf8');
+  const coachaiParity = fs.readFileSync(
+    path.join(root, 'overlays', 'coachai', 'project-files', '.claude', 'agents', 'functionality-parity-auditor.md'),
+    'utf8',
+  );
+  assert.match(fleetGate, /assertDispatchableFrontmatter\(path\.join\(agentsDir, entry\.name\)/u);
+  assert.match(fleetGate, /unquoted scalar containing a colon-space/u);
+  assert.match(coachaiParity, /gate:api-method-consumers/u);
+  assert.match(coachaiParity, /backend mount .* API layer remains the complete manual cross-grep/u);
+  assert.doesNotMatch(coachaiParity, /no mechanical wiring gate exists in this repo/iu);
+});
+
 test('Proves: ORG-OVERLAY-001; Test type: mutation; Surface: existing-project bootstrap; Authority: overlay ownership manifest; Killer mutation: permit copy-all or overwrite a dirty managed target; Gated command: npm test', () => {
   const skill = fs.readFileSync(path.join(root, 'skills', 'bootstrap-orchestrator', 'SKILL.md'), 'utf8');
   assert.match(skill, /Existing-project overlay mode/u);
