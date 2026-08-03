@@ -44,7 +44,7 @@
     },
     {
       "path": ".ai-organization/proof-profiles.json",
-      "sha256": "5d7802875524bd312061ad04d0d6eb31f99d8938470f16654e019354de7b7df9"
+      "sha256": "52c2b04dbba1975726e261003c955906a5a2318d55251c92d7030d87965e472a"
     },
     {
       "path": ".ai-organization/registries/agent-roles.project.v1.json",
@@ -204,7 +204,7 @@
     },
     {
       "path": ".claude/agents/functionality-parity-auditor.md",
-      "sha256": "ce9f698e80e206f5308d0364a012a2a54e05ea21436dfdb3fc42dd562b48fbc4"
+      "sha256": "3ae5584fe84f2a0b7d3cfcaa1a099479c6522cace0e59ebd8baeee0d63995607"
     },
     {
       "path": ".claude/agents/performance-auditor.md",
@@ -296,11 +296,11 @@
     },
     {
       "path": ".cursor/rules/manager-surfaces.mdc",
-      "sha256": "d10993d99d6eac354bad13581573efaa3f498ed6380f802e3d08ce8df31c17b0"
+      "sha256": "79927da6061f12779bc6b2571c909fe92b1e63b1655e7d9ae2d12a07dd6549a5"
     },
     {
       "path": ".cursor/rules/manual-verification-smoke.mdc",
-      "sha256": "71d27616978a6e089a5a24041aa2e60143063877fab12fb6b5d9f4bb81111ff9"
+      "sha256": "4c632261a6102dfd600ee5473d7a9e92f45414e285e05ca4bae3a9f18f9cdf88"
     },
     {
       "path": ".cursor/rules/product-first-planning.mdc",
@@ -356,7 +356,7 @@
     },
     {
       "path": "scripts/check-doc-code-drift.mjs",
-      "sha256": "2714e1e405a5e6bde49eaa141e4ead60651da1dbf4f171fe59b26c3faf7ac803"
+      "sha256": "9b3d8670ef425538cdf2e26c006163f29412b72c60949d6b45b6f5599b41c228"
     },
     {
       "path": "scripts/check-fleet-parity.mjs",
@@ -424,7 +424,7 @@
     },
     {
       "path": "scripts/tests/riskSelectedProofRegression.mjs",
-      "sha256": "7462b726e329272e01a78680d909c3ab293d43a5fb36b97963b909dcd0f4088c"
+      "sha256": "6fd2978cfb56a46d938cd1a4084a74332c5c8d1541d5d42b7e586427d7bcbe90"
     },
     {
       "path": "scripts/tests/taskLifecycleRegression.mjs",
@@ -446,7 +446,7 @@
       "scripts.proof:changed": "4bfc520d777a10dc90733e32aadec7d92b0a9b7266227eb27a87f1de6816b82d",
       "scripts.test:organization-control-plane": "1c097a3b80598bc3bb156d3239afa4bb1f42bde973db652bcdc5168e62c5cb01",
       "scripts.test:evidence-integrity-mutation": "2b7ec9ebecd833ee23c906b81349d676eb418e18991b8517a1f1f3335723cbfb",
-      "scripts.gates:all": "ae5fb040e36b9882665065f5f7b77208587b913c8e23f631ff2bb1305ffd5948",
+      "scripts.gates:all": "a2af1ff9fc715e42541c72cce1b728b865fec4c6fbfc511b766ec8634c5398ba",
       "scripts.verify": "217cf314de5043c85b05401ecd1e3294077067f3b1f45edc3248d3c82d2ff46e",
       "scripts.verify:db": "2d3ccef8d9cccd97181a33d76be74f762a501883ce1533d54cd8ee80a7d421cb",
       "scripts.ci:local": "47db5601b61ff94cbd4ce34cd9a40217d0ffeec299b35d85321d747649f39a3b"

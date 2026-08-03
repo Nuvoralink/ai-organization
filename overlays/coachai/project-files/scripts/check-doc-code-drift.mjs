@@ -276,7 +276,6 @@ function checkAuthorityInventoryGate() {
     'stripe',
     'team',
     'tokens',
-    'uploadMode',
     'uploads',
     'user',
     '/api/health',
@@ -371,7 +370,6 @@ function checkTenantSecurityBlackBoxGate() {
     'public',
     'sessions',
     'sessionEvents',
-    'uploadMode',
     'uploads',
     'config',
     'tokens',
@@ -506,7 +504,6 @@ function checkTenantSecurityBlackBoxGate() {
     ['publicRouter', 'public'],
     ['sessionRouter', 'sessions'],
     ['sessionEventsRouter', 'sessionEvents'],
-    ['uploadModeRouter', 'uploadMode'],
     ['uploadsRouter', 'uploads'],
     ['uploadModeConfigRouter', 'config'],
     ['appConfigRouter', 'config'],
@@ -1141,8 +1138,9 @@ function checkTestCoverageTracksActiveSurfaces() {
     /status\?:\s*'available'\s*\|\s*'deleted'\s*\|\s*'missing'/.test(sharedContracts) &&
     /verifyRecordingAvailability\(session\.id\)/.test(callReviewMapper) &&
     /getSessionRecordingPlayback[\s\S]{0,1600}recording-url/.test(frontendApi) &&
-    /getSessionRecordingObjectUrl[\s\S]{0,1200}getSessionRecordingPlayback/.test(frontendApi) &&
-    !/getSessionRecordingObjectUrl[\s\S]{0,1200}responseType:\s*['"]blob['"]/.test(frontendApi) &&
+    !/getSessionRecordingPlayback[\s\S]{0,1600}responseType:\s*['"]blob['"]/.test(frontendApi) &&
+    /getSessionRecordingPlayback\(sid\)/.test(repV2) &&
+    /getSessionRecordingPlayback\(sessionId\)/.test(managerV2) &&
     /recording\?\.available === false/.test(repV2) &&
     /recording\?\.available === false/.test(managerV2) &&
     /recordingUnavailableMessage/.test(managerV2)
@@ -1175,7 +1173,8 @@ function checkTestCoverageTracksActiveSurfaces() {
     /RecordingDeletionError/.test(storageTs) &&
     /resolved\.kind === 'backend_unavailable'/.test(storageTs) &&
     /error instanceof RecordingDeletionError/.test(sessionRoute) &&
-    /persistSessionChunksToDurableStorage\(sessionId,\s*\{\s*requireAll:\s*true\s*\}\)/.test(sessionRoute) &&
+    /prepareUploadedAudio\([\s\S]{0,200}session\.id\)/.test(sessionRoute) &&
+    /persistSessionChunksToDurableStorage\(sessionId,\s*\{\s*requireAll:\s*true\s*\}\)/.test(storageTs) &&
     /function requireUploadIntentStorageDriver/.test(uploadIntentService) &&
     /async function verifyUploadIntentChunks/.test(uploadIntentService) &&
     /async function ensureFinalizedUploadIntentSessionAuthority/.test(uploadIntentService) &&

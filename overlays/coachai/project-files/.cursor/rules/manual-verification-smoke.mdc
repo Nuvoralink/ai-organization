@@ -56,9 +56,6 @@ silence a failing assertion or weaken a check to make it green.
   rep sentinel href. A new kind on the server must add a branch here.
 - `shared/src/coaching/nextAction.ts` — adding a new `NextActionKind`
   changes the exhaustiveness surface above.
-- `shared/src/coaching/teamRosterView.ts` — SavedView serializer /
-  deserializer for the `team_roster` scope. Round-trip must be an
-  identity; unknown enum values must fall back per-field.
 - `shared/src/coaching/activation.ts` — engagement vs coaching queue
   partition. Exactly `active` is coaching-eligible; the other five
   feed engagement.
