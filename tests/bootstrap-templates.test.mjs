@@ -231,13 +231,14 @@ test('Proves: ORG-FLEET-001; Test type: mutation; Surface: bootstrap roster; Aut
   }
 });
 
-test('Proves: PERF-IDLE-LIFECYCLE-001; Test type: authority-propagation mutation; Surface: performance-auditor registry, bootstrap template, and managed project overlays; Authority: idle-cost and persisted-lifecycle doctrine; Killer mutation: remove the critical idle-lifecycle criterion or let any project auditor omit due-work admission, liveness-readiness separation, monotonic retry, retention, or physical-mapping checks; Gated command: npm test', () => {
+test('Proves: PERF-IDLE-LIFECYCLE-001; Test type: authority-propagation mutation; Surface: performance-auditor registry, bootstrap template, and managed project overlays; Authority: idle-cost and persisted-lifecycle doctrine; Killer mutation: remove the critical idle-lifecycle criterion or let any project auditor omit due-work admission, liveness-readiness separation, monotonic retry, retention, bounded data-derived maintenance, or physical-mapping checks; Gated command: npm test', () => {
   const registry = JSON.parse(fs.readFileSync(path.join(root, 'registries', 'agent-roles.v1.json'), 'utf8'));
   const performanceRole = registry.roles.find((role) => role.id === 'performance-auditor');
   assert.ok(performanceRole, 'performance-auditor must remain registered');
   const idleCriterion = performanceRole.verdict_rubric.criteria.find((criterion) => criterion.id === 'idle-lifecycle');
   assert.equal(idleCriterion?.critical, true);
   assert.match(idleCriterion?.summary ?? '', /Idle runtimes issue no recurring database\/provider work/u);
+  assert.match(idleCriterion?.summary ?? '', /data-derived maintenance cardinality is policy-bounded per invocation/u);
   assert.equal(
     performanceRole.verdict_rubric.criteria.reduce((sum, criterion) => sum + criterion.weight, 0),
     100,
@@ -258,6 +259,9 @@ test('Proves: PERF-IDLE-LIFECYCLE-001; Test type: authority-propagation mutation
     assert.match(source, /dependency readiness/u);
     assert.match(source, /monotonic/u);
     assert.match(source, /retention/u);
+    assert.match(source, /fixed policy horizon/u);
+    assert.match(source, /per-invocation cap/u);
+    assert.match(source, /reject or quarantine out-of-policy values/u);
     assert.match(source, /physical (?:Prisma|ORM|identifier|mapping)/u);
   }
 });
