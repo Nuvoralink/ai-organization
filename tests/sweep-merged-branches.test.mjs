@@ -7,7 +7,13 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const sweep = path.join(root, 'scripts', 'sweep-merged-branches.mjs');
+const sweepSurfaces = [
+  ['canonical branch sweeper', path.join(root, 'scripts', 'sweep-merged-branches.mjs')],
+  [
+    'bootstrap branch-sweeper template',
+    path.join(root, 'skills', 'bootstrap-orchestrator', 'templates', 'gates', 'sweep-merged-branches.mjs.template'),
+  ],
+];
 
 function git(cwd, ...args) {
   const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
@@ -15,11 +21,13 @@ function git(cwd, ...args) {
   return result.stdout.trim();
 }
 
-test('Proves: ORG-GOV-005D; Test type: destructive-guard mutation; Surface: branch reconciliation apply mode; Authority: long-lived integration branch; Killer mutation: remove develop from protected branches and let --apply delete it; Gated command: npm test', (t) => {
+for (const [surface, sweep] of sweepSurfaces) test(`Proves: ORG-GOV-005D; Test type: destructive-guard mutation; Surface: ${surface} apply mode; Authority: long-lived integration branch; Killer mutation: remove develop from protected branches and let --apply delete it; Gated command: npm test`, (t) => {
   const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'branch-sweep-protection-'));
   const repo = path.join(fixture, 'repo');
   const remote = path.join(fixture, 'remote.git');
+  const executableSweep = sweep.endsWith('.template') ? path.join(fixture, 'sweep-merged-branches.mjs') : sweep;
   fs.mkdirSync(repo);
+  if (executableSweep !== sweep) fs.copyFileSync(sweep, executableSweep);
   t.after(() => fs.rmSync(fixture, { recursive: true, force: true }));
 
   git(repo, 'init', '-b', 'main');
@@ -35,7 +43,7 @@ test('Proves: ORG-GOV-005D; Test type: destructive-guard mutation; Surface: bran
   git(repo, 'remote', 'add', 'origin', remote);
   git(repo, 'push', '--all', 'origin');
 
-  const remoteApplied = spawnSync(process.execPath, [sweep, '--apply', '--protect', 'integration'], {
+  const remoteApplied = spawnSync(process.execPath, [executableSweep, '--apply', '--protect', 'integration'], {
     cwd: repo,
     encoding: 'utf8',
   });
@@ -49,7 +57,7 @@ test('Proves: ORG-GOV-005D; Test type: destructive-guard mutation; Surface: bran
     .map((line) => line.split('refs/heads/')[1]);
   assert.deepEqual(remoteBranches.sort(), ['develop', 'integration', 'main']);
 
-  const applied = spawnSync(process.execPath, [sweep, '--local', '--apply', '--protect', 'integration'], {
+  const applied = spawnSync(process.execPath, [executableSweep, '--local', '--apply', '--protect', 'integration'], {
     cwd: repo,
     encoding: 'utf8',
   });
