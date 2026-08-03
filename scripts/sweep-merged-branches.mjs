@@ -51,6 +51,7 @@
  *   node scripts/sweep-merged-branches.mjs --local         # report local branches
  *   node scripts/sweep-merged-branches.mjs --apply         # delete SAFE branches
  *   node scripts/sweep-merged-branches.mjs --base main --remote origin
+ *   node scripts/sweep-merged-branches.mjs --protect integration
  */
 import { spawnSync } from 'node:child_process';
 
@@ -65,7 +66,18 @@ const BASE = val('--base', 'main');
 const REMOTE = val('--remote', 'origin');
 const LOCAL = has('--local');
 const APPLY = has('--apply');
-const PROTECTED = new Set([BASE, 'master', 'HEAD']);
+const values = (flag) => argv.flatMap((arg, index) => arg === flag && argv[index + 1] ? [argv[index + 1]] : []);
+const DEFAULT_PROTECTED = ['master', 'develop', 'development', 'dev', 'staging', 'production'];
+const PROTECTED = new Set([BASE, 'HEAD', ...DEFAULT_PROTECTED, ...values('--protect')]);
+
+function unqualifiedBranchName(ref) {
+  const remotePrefix = `${REMOTE}/`;
+  return !LOCAL && ref.startsWith(remotePrefix) ? ref.slice(remotePrefix.length) : ref;
+}
+
+function isProtectedBranch(ref) {
+  return PROTECTED.has(unqualifiedBranchName(ref));
+}
 
 function git(args, { allowFail = true } = {}) {
   const r = spawnSync('git', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
@@ -91,8 +103,7 @@ if (!git(['rev-parse', '--verify', baseRef]).ok) {
 function listBranches() {
   if (LOCAL) {
     return gitStrict(['branch', '--format=%(refname:short)'])
-      .split('\n').map((s) => s.trim()).filter(Boolean)
-      .filter((b) => !PROTECTED.has(b));
+      .split('\n').map((s) => s.trim()).filter(Boolean);
   }
   return gitStrict(['branch', '-r', '--format=%(refname:short)'])
     .split('\n').map((s) => s.trim()).filter(Boolean)
@@ -100,7 +111,7 @@ function listBranches() {
     // It is not a branch, and `push <remote> --delete <remote>` is not something
     // to hand to --apply. Require a real <remote>/<branch> shape.
     .filter((b) => b.startsWith(`${REMOTE}/`) && b.slice(REMOTE.length + 1).length > 0)
-    .filter((b) => !b.endsWith('/HEAD') && b !== `${REMOTE}/${BASE}`);
+    .filter((b) => !b.endsWith('/HEAD'));
 }
 
 /** Did the base DELETE this path at some point after the fork? (retired scope) */
@@ -228,9 +239,15 @@ function checkedOutRefs() {
 const { refs: CHECKED_OUT, dirs: WORKTREE_DIR } = checkedOutRefs();
 
 const branches = listBranches();
-const buckets = { SAFE: [], REVIEW: [], UNMERGED: [], CHECKED_OUT: [] };
+const buckets = { SAFE: [], REVIEW: [], UNMERGED: [], CHECKED_OUT: [], PROTECTED: [] };
 
 for (const b of branches) {
+  if (isProtectedBranch(b)) {
+    const r = { branch: b, verdict: 'PROTECTED', reason: 'long-lived branch protection', files: [] };
+    buckets.PROTECTED.push(r);
+    console.log(`${r.verdict.padEnd(8)} ${b} — ${r.reason}`);
+    continue;
+  }
   let r = classify(b);
   // A checked-out branch gets its OWN verdict, never a silent exclusion: a
   // refusal you cannot see is indistinguishable from a branch never considered.
@@ -271,6 +288,9 @@ if (buckets.CHECKED_OUT.length) {
   console.log(
     `  CHECKED_OUT ${buckets.CHECKED_OUT.length}  (checked out in a worktree — NEVER deleted, whatever the content says)`,
   );
+}
+if (buckets.PROTECTED.length) {
+  console.log(`  PROTECTED ${buckets.PROTECTED.length}  (long-lived branches — NEVER deleted)`);
 }
 
 if (!APPLY) {
