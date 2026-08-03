@@ -100,7 +100,7 @@
     },
     {
       "path": "scripts/claude-lifecycle-hook.mjs",
-      "sha256": "6b5aee33d2107e37882a9ceded770aed30999206f89e7da1813513f2e69262bb"
+      "sha256": "782c99f22fc69e4dee362c0a9f215dce8611eb370da44973668e02e3378d8023"
     },
     {
       "path": "scripts/run-bounded-agent.mjs",
