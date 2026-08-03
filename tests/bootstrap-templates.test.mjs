@@ -86,6 +86,10 @@ function writePostToolFixture(project, fixtureRoot) {
       path.join(sourceRoot, 'scripts', 'lib', 'claudeGateRouter.mjs'),
       path.join(scriptsDir, 'lib', 'claudeGateRouter.mjs'),
     );
+    fs.copyFileSync(
+      path.join(sourceRoot, 'scripts', 'lib', 'hookProjectRoot.mjs'),
+      path.join(scriptsDir, 'lib', 'hookProjectRoot.mjs'),
+    );
     fs.mkdirSync(path.join(fixtureRoot, '.ai-organization'), { recursive: true });
     fs.copyFileSync(
       path.join(sourceRoot, '.ai-organization', 'completion-profiles.json'),

@@ -11,16 +11,24 @@ import {
   parseProjectOverlayArgs,
   runProjectOverlayCli,
   validateOverlay,
+  validateManagedOwnershipSourceParity,
   validatePortableOverlaySourceParity,
   validateRunnerDeliveryContract,
 } from '../scripts/project-overlay.mjs';
-import { discoverProjectOverlays, runCheck, runInstall } from '../scripts/lib/control-plane.mjs';
+import {
+  discoverProjectOverlays,
+  runCheck,
+  runInstall,
+} from '../scripts/lib/control-plane.mjs';
 import { validatePortableOverlayLock } from '../scripts/project-overlay.mjs';
 import { checkOverlayParity } from '../overlays/coachai/project-files/scripts/check-overlay-parity.mjs';
 import { findLayeredAuthorityMarkers } from '../overlays/auxara-dialer/project-files/scripts/check-decision-sprint-linkage.mjs';
 import { checkOverlayParity as checkNuvoraLinkOverlayParity } from '../overlays/nuvora-link/project-files/scripts/check-overlay-parity.mjs';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 function fixture(project = 'auxara-dialer') {
   const base = fs.mkdtempSync(path.join(os.tmpdir(), `${project}-overlay-`));
@@ -35,12 +43,23 @@ function fixture(project = 'auxara-dialer') {
 }
 
 function runNpm(cwd, args) {
-  const npmCli = process.env.npm_execpath
-    ?? (process.platform === 'win32'
-      ? path.join(path.dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js')
+  const npmCli =
+    process.env.npm_execpath ??
+    (process.platform === 'win32'
+      ? path.join(
+          path.dirname(process.execPath),
+          'node_modules',
+          'npm',
+          'bin',
+          'npm-cli.js',
+        )
       : undefined);
   return npmCli
-    ? spawnSync(process.execPath, [npmCli, ...args], { cwd, encoding: 'utf8', timeout: 60_000 })
+    ? spawnSync(process.execPath, [npmCli, ...args], {
+        cwd,
+        encoding: 'utf8',
+        timeout: 60_000,
+      })
     : spawnSync('npm', args, { cwd, encoding: 'utf8', timeout: 60_000 });
 }
 
@@ -49,15 +68,39 @@ test('Proves: ORG-OVERLAY-002 and OVERLAY-HYBRID-COMPAT-001 shared chokepoint; T
   fs.writeFileSync(path.join(root, 'PRODUCT.md'), 'project owned\n');
   runInstall({ repoRoot, manifest, roots });
   assert.deepEqual(runCheck({ repoRoot, manifest, roots }), []);
-  const runtimeLock = path.join(roots.HOME, '.nuvoralink-control-plane', 'project-locks', 'auxara-dialer', 'overlay-lock.json');
+  const runtimeLock = path.join(
+    roots.HOME,
+    '.nuvoralink-control-plane',
+    'project-locks',
+    'auxara-dialer',
+    'overlay-lock.json',
+  );
   assert.equal(fs.existsSync(runtimeLock), true);
-  assert.equal(fs.readFileSync(runtimeLock, 'utf8').includes(path.resolve(root)), false);
-  assert.equal(fs.existsSync(path.join(root, '.ai-organization', 'snapshots')), false);
+  assert.equal(
+    fs.readFileSync(runtimeLock, 'utf8').includes(path.resolve(root)),
+    false,
+  );
+  assert.equal(
+    fs.existsSync(path.join(root, '.ai-organization', 'snapshots')),
+    false,
+  );
 
-  const managed = path.join(root, '.ai-organization', 'control-plane', 'project-profile.v1.json');
+  const managed = path.join(
+    root,
+    '.ai-organization',
+    'control-plane',
+    'project-profile.v1.json',
+  );
   fs.appendFileSync(managed, '\nchanged\n');
-  assert.ok(runCheck({ repoRoot, manifest, roots }).some((finding) => finding.type === 'drift'));
-  assert.throws(() => runInstall({ repoRoot, manifest, roots }), /Locally evolved managed target refused/u);
+  assert.ok(
+    runCheck({ repoRoot, manifest, roots }).some(
+      (finding) => finding.type === 'drift',
+    ),
+  );
+  assert.throws(
+    () => runInstall({ repoRoot, manifest, roots }),
+    /Locally evolved managed target refused/u,
+  );
 
   const coachai = fixture('coachai');
   const output = [];
@@ -96,8 +139,16 @@ test('Proves: ORG-OVERLAY-002 and OVERLAY-HYBRID-COMPAT-001 shared chokepoint; T
     0,
     errors.join('\n'),
   );
-  assert.ok(output.some((line) => line.startsWith('reconcile-update\tcoachai-project-agents-router\t.')));
-  assert.match(fs.readFileSync(router, 'utf8'), /Reviewed pre-install authority/u, 'reviewed dry-run must not write');
+  assert.ok(
+    output.some((line) =>
+      line.startsWith('reconcile-update\tcoachai-project-agents-router\t.'),
+    ),
+  );
+  assert.match(
+    fs.readFileSync(router, 'utf8'),
+    /Reviewed pre-install authority/u,
+    'reviewed dry-run must not write',
+  );
   output.length = 0;
   errors.length = 0;
   assert.equal(
@@ -135,7 +186,9 @@ test('Proves: ORG-OVERLAY-002 and OVERLAY-HYBRID-COMPAT-001 shared chokepoint; T
     1,
   );
   const refusal = errors.join('\n');
-  const currentDigest = /current-target-sha256=([a-f0-9]{64})/u.exec(refusal)?.[1];
+  const currentDigest = /current-target-sha256=([a-f0-9]{64})/u.exec(
+    refusal,
+  )?.[1];
   assert.match(currentDigest ?? '', /^[a-f0-9]{64}$/u, refusal);
   assert.ok(
     refusal.includes(
@@ -164,9 +217,18 @@ test('Proves: ORG-OVERLAY-002 and OVERLAY-HYBRID-COMPAT-001 shared chokepoint; T
     0,
     errors.join('\n'),
   );
-  assert.ok(output.some((line) =>
-    line.includes(`reconcile-target-update\tcoachai-project-agents-router\t.\treviewed-target-sha256=${currentDigest}`)));
-  assert.match(fs.readFileSync(router, 'utf8'), /reviewed local divergence/u, 'reviewed target dry-run must not write');
+  assert.ok(
+    output.some((line) =>
+      line.includes(
+        `reconcile-target-update\tcoachai-project-agents-router\t.\treviewed-target-sha256=${currentDigest}`,
+      ),
+    ),
+  );
+  assert.match(
+    fs.readFileSync(router, 'utf8'),
+    /reviewed local divergence/u,
+    'reviewed target dry-run must not write',
+  );
   assert.throws(
     () =>
       parseProjectOverlayArgs([
@@ -185,7 +247,10 @@ test('Proves: ORG-OVERLAY-003; Test type: ownership counterexample; Surface: pro
   const { root, roots, manifest } = fixture('coachai');
   fs.writeFileSync(path.join(root, 'PRODUCT.md'), 'project owned\n');
   runInstall({ repoRoot, manifest, roots });
-  fs.writeFileSync(path.join(root, 'PRODUCT.md'), 'project changed independently\n');
+  fs.writeFileSync(
+    path.join(root, 'PRODUCT.md'),
+    'project changed independently\n',
+  );
   assert.deepEqual(runCheck({ repoRoot, manifest, roots }), []);
 });
 
@@ -193,29 +258,69 @@ test('Proves: ORG-OVERLAY-004; Test type: registry mutation; Surface: overlay ow
   const discovered = discoverProjectOverlays(repoRoot);
   assert.deepEqual(discovered, ['auxara-dialer', 'coachai', 'nuvora-link']);
   for (const project of discovered) {
-    assert.deepEqual(validateOverlay(project).map((failure) => failure.message ?? failure), []);
+    assert.deepEqual(
+      validateOverlay(project).map((failure) => failure.message ?? failure),
+      [],
+    );
   }
 });
 
 test('Proves: ORG-OVERLAY-005; Test type: portable-lock mutation; Surface: canonical project overlay source; Authority: reviewed portable overlay lock; Killer mutation: edit a managed source file without regenerating its portable lock; Gated command: npm test and overlay:validate:*', (t) => {
   const expected = {
-    files: [{ path: '.github/workflows/ui-source-of-truth-gates.yml', sha256: 'a'.repeat(64) }],
+    files: [
+      {
+        path: '.github/workflows/ui-source-of-truth-gates.yml',
+        sha256: 'a'.repeat(64),
+      },
+    ],
   };
   const mutated = {
-    files: [{ path: '.github/workflows/ui-source-of-truth-gates.yml', sha256: 'b'.repeat(64) }],
+    files: [
+      {
+        path: '.github/workflows/ui-source-of-truth-gates.yml',
+        sha256: 'b'.repeat(64),
+      },
+    ],
   };
   assert.match(
     comparePortableOverlayFiles(expected, mutated).join('\n'),
     /portable overlay source differs from its lock: \.github\/workflows\/ui-source-of-truth-gates\.yml/u,
   );
-  assert.deepEqual(validatePortableOverlaySourceParity(
-    path.join(repoRoot, 'overlays', 'coachai', 'project-files'),
-    loadOverlay('coachai').manifest,
-  ), []);
+  assert.deepEqual(
+    validatePortableOverlaySourceParity(
+      path.join(repoRoot, 'overlays', 'coachai', 'project-files'),
+      loadOverlay('coachai').manifest,
+    ),
+    [],
+  );
+});
+
+test('Proves: ORG-OVERLAY-006; Test type: managed-ownership integration; Surface: canonical Auxara project overlay source; Authority: ownership manifest hashes; Killer mutation: remove the managed-ownership parity call from validateOverlay so a stale source hash can pass canonical CI; Gated command: npm test and overlay:validate:auxara', () => {
+  const source = fs.readFileSync(
+    path.join(repoRoot, 'scripts', 'project-overlay.mjs'),
+    'utf8',
+  );
+  assert.match(
+    source,
+    /for\s*\(const message of validateManagedOwnershipSourceParity\(/u,
+  );
+  assert.deepEqual(
+    validateManagedOwnershipSourceParity(
+      path.join(repoRoot, 'overlays', 'auxara-dialer', 'project-files'),
+      loadOverlay('auxara-dialer').manifest,
+    ),
+    [],
+  );
 });
 
 test('Proves: AUXARA-DLR-014-CONTROL-001; Test type: stale-doctrine mutation; Surface: managed Auxara auditor and rule overlay; Authority: passive three-state AMD decision; Killer mutation: restore the blanket AMD ban, omit one mode, or make premium active; Gated command: npm test and overlay:validate:auxara', () => {
-  const overlayRoot = path.join(repoRoot, 'overlays', 'auxara-dialer', 'project-files', '.claude');
+  const overlayRoot = path.join(
+    repoRoot,
+    'overlays',
+    'auxara-dialer',
+    'project-files',
+    '.claude',
+  );
   const sources = [
     ['agents', 'compliance-auditor.md'],
     ['agents', 'doctrine-drift-auditor.md'],
@@ -224,20 +329,37 @@ test('Proves: AUXARA-DLR-014-CONTROL-001; Test type: stale-doctrine mutation; Su
     ['rules', 'sprint-rigor.md'],
   ].map((parts) => fs.readFileSync(path.join(overlayRoot, ...parts), 'utf8'));
   const combined = sources.join('\n');
-  assert.match(combined, /exactly three states \(`off`, `standard`, `premium`\)/u);
-  assert.match(combined, /Standard is active; premium is a retained dormant option/u);
+  assert.match(
+    combined,
+    /exactly three states \(`off`, `standard`, `premium`\)/u,
+  );
+  assert.match(
+    combined,
+    /Standard is active; premium is a retained dormant option/u,
+  );
   assert.match(combined, /AMD-to-bridge/u);
-  assert.doesNotMatch(combined, /parallel\/predictive dialing, AMD, per-number/u);
+  assert.doesNotMatch(
+    combined,
+    /parallel\/predictive dialing, AMD, per-number/u,
+  );
 });
 
 test('Proves: AUXARA-AUTHORITY-REPLACE-001 and REC-002; Test type: stale-authority mutation; Surface: managed Auxara decision gate and retention rule; Authority: replace-dont-layer plus 30-day offboarding policy; Killer mutation: restore a dated addendum or cancellation-plus-90-days claim; Gated command: npm test and overlay:validate:auxara', (t) => {
-  const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'auxara-current-authority-'));
+  const fixtureRoot = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'auxara-current-authority-'),
+  );
   t.after(() => fs.rmSync(fixtureRoot, { recursive: true, force: true }));
-  fs.writeFileSync(path.join(fixtureRoot, 'README.md'), '# Current authority\n\n## Addendum\n');
+  fs.writeFileSync(
+    path.join(fixtureRoot, 'README.md'),
+    '# Current authority\n\n## Addendum\n',
+  );
   const issues = findLayeredAuthorityMarkers(fixtureRoot);
   assert.equal(issues.length, 1);
   assert.equal(issues[0].marker, 'heading');
-  fs.writeFileSync(path.join(fixtureRoot, 'README.md'), '# Current authority\n');
+  fs.writeFileSync(
+    path.join(fixtureRoot, 'README.md'),
+    '# Current authority\n',
+  );
   assert.deepEqual(findLayeredAuthorityMarkers(fixtureRoot), []);
 
   const rule = fs.readFileSync(
@@ -281,7 +403,10 @@ test('Proves: REQ-COACHAI-AUTHORITY-DOMAINS-001; Test type: parser and overlay-r
   const mapping = manifest.mappings.find(
     ({ id }) => id === 'coachai-project-authority-domains',
   );
-  assert.ok(mapping, 'CoachAI authority domains must be registered as an overlay mapping');
+  assert.ok(
+    mapping,
+    'CoachAI authority domains must be registered as an overlay mapping',
+  );
   assert.equal(
     mapping.source,
     'overlays/coachai/project-files/.ai-organization/policies/authority-domains.v1.json',
@@ -294,7 +419,10 @@ test('Proves: REQ-COACHAI-AUTHORITY-DOMAINS-001; Test type: parser and overlay-r
 test('Proves: COORDINATION-RUNNER-DELIVERY-001; Test type: missing-mapping mutation; Surface: bootstrap project overlay and installed CoachAI organization parity; Authority: bounded runner ownership contract; Killer mutation: remove the runner mapping from an overlay copy; Gated command: npm test', () => {
   for (const project of ['auxara-dialer', 'coachai', 'nuvora-link']) {
     const ownership = JSON.parse(
-      fs.readFileSync(path.join(repoRoot, 'overlays', project, 'ownership.v1.json'), 'utf8'),
+      fs.readFileSync(
+        path.join(repoRoot, 'overlays', project, 'ownership.v1.json'),
+        'utf8',
+      ),
     );
     assert.deepEqual(validateRunnerDeliveryContract(project, ownership), []);
     const mutated = structuredClone(ownership);
@@ -330,7 +458,10 @@ test('Proves: COORDINATION-RUNNER-DELIVERY-001; Test type: missing-mapping mutat
   for (const dotted of ownership.managed_json_sections['package.json']) {
     packageJson.scripts[dotted.slice('scripts.'.length)] = `fixture:${dotted}`;
   }
-  fs.writeFileSync(path.join(coachai.root, 'package.json'), `${JSON.stringify(packageJson)}\n`);
+  fs.writeFileSync(
+    path.join(coachai.root, 'package.json'),
+    `${JSON.stringify(packageJson)}\n`,
+  );
   runInstall({ repoRoot, manifest: mutatedManifest, roots: coachai.roots });
   const installedParity = checkOverlayParity(coachai.root);
   assert.equal(installedParity.ok, false);
@@ -376,14 +507,26 @@ test('Proves: CONTROL-PLANE-LIFECYCLE-OVERLAY-DRIFT-001 and VERDICT-RUNTIME-OVER
     );
     assert.equal(
       fs.readFileSync(
-        path.join(target.root, '.ai-organization', 'schemas', 'task-evidence.v3.schema.json'),
+        path.join(
+          target.root,
+          '.ai-organization',
+          'schemas',
+          'task-evidence.v3.schema.json',
+        ),
         'utf8',
       ),
       canonicalEvidenceSchema,
       `${project} assurance mapping must deliver the current computed-verdict evidence schema`,
     );
     const hook = fs.readFileSync(
-      path.join(repoRoot, 'overlays', project, 'project-files', 'scripts', 'claude-lifecycle-hook.mjs'),
+      path.join(
+        repoRoot,
+        'overlays',
+        project,
+        'project-files',
+        'scripts',
+        'claude-lifecycle-hook.mjs',
+      ),
       'utf8',
     );
     assert.match(hook, /criterionStatuses:\s*review(?:Report)?\.criteria/u);
@@ -392,16 +535,38 @@ test('Proves: CONTROL-PLANE-LIFECYCLE-OVERLAY-DRIFT-001 and VERDICT-RUNTIME-OVER
 });
 
 test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and product-boundary mutation; Surface: Nuvora Link organization overlay; Authority: project profile, portable lock, and package script ownership; Killer mutations: describe generalized SaaS tenancy, drift a managed gate command, remove or corrupt task-evidence v3, omit a generated file, remove a required intent header, or omit a test from an explicit workspace list; Gated command: npm test', (t) => {
-  const profile = JSON.parse(fs.readFileSync(path.join(repoRoot, 'overlays', 'nuvora-link', 'control-plane', 'project-profile.v1.json'), 'utf8'));
+  const profile = JSON.parse(
+    fs.readFileSync(
+      path.join(
+        repoRoot,
+        'overlays',
+        'nuvora-link',
+        'control-plane',
+        'project-profile.v1.json',
+      ),
+      'utf8',
+    ),
+  );
   assert.equal(profile.productDeploymentMode, 'single-company-internal');
   assert.match(profile.organizationScopePurpose, /not-saas-tenancy/u);
   assert.doesNotMatch(
-    fs.readFileSync(path.join(repoRoot, 'overlays', 'nuvora-link', 'project-files', 'AGENTS.md'), 'utf8'),
+    fs.readFileSync(
+      path.join(
+        repoRoot,
+        'overlays',
+        'nuvora-link',
+        'project-files',
+        'AGENTS.md',
+      ),
+      'utf8',
+    ),
     /multi-tenant|tenant onboarding is required|generalized SaaS infrastructure is required/iu,
   );
 
   const target = fixture('nuvora-link');
-  t.after(() => fs.rmSync(path.dirname(target.root), { recursive: true, force: true }));
+  t.after(() =>
+    fs.rmSync(path.dirname(target.root), { recursive: true, force: true }),
+  );
   const packageJson = {
     scripts: {
       'agent:run': 'node scripts/run-bounded-agent.mjs',
@@ -411,29 +576,56 @@ test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and p
       'gate:fleet-parity': 'node scripts/check-fleet-parity.mjs',
       'gate:overlay-parity': 'node scripts/check-overlay-parity.mjs',
       'gate:test-intent': 'node scripts/check-test-intent.mjs',
-      'gate:test-workspace-coverage': 'node scripts/check-test-workspace-coverage.mjs',
-      'gate:documentation-authority': 'node scripts/check-documentation-authority.mjs',
-      'test:workspace-build-contracts': 'node --test scripts/check-workspace-build-contracts.test.mjs scripts/check-test-workspace-coverage.test.mjs scripts/clean-workspace-dist.test.mjs scripts/check-build-artifacts.test.mjs scripts/migrate-production.test.mjs scripts/check-documentation-authority.test.mjs',
+      'gate:test-workspace-coverage':
+        'node scripts/check-test-workspace-coverage.mjs',
+      'gate:documentation-authority':
+        'node scripts/check-documentation-authority.mjs',
+      'test:workspace-build-contracts':
+        'node --test scripts/check-workspace-build-contracts.test.mjs scripts/check-test-workspace-coverage.test.mjs scripts/clean-workspace-dist.test.mjs scripts/check-build-artifacts.test.mjs scripts/migrate-production.test.mjs scripts/check-documentation-authority.test.mjs',
       'test:all': 'npm run --workspaces --if-present test',
-      'gates:all': 'npm run gate:rules-wiring && npm run gate:agent-context && npm run gate:agent-control-plane && npm run gate:fleet-parity && npm run gate:overlay-parity && npm run gate:test-intent && npm run gate:test-workspace-coverage && npm run gate:documentation-authority',
-      verify: 'npm run test:workspace-build-contracts && npm run typecheck && npm run build && npm run test:all && npm run gates:all',
+      'gates:all':
+        'npm run gate:rules-wiring && npm run gate:agent-context && npm run gate:agent-control-plane && npm run gate:fleet-parity && npm run gate:overlay-parity && npm run gate:test-intent && npm run gate:test-workspace-coverage && npm run gate:documentation-authority',
+      verify:
+        'npm run test:workspace-build-contracts && npm run typecheck && npm run build && npm run test:all && npm run gates:all',
     },
   };
-  fs.writeFileSync(path.join(target.root, 'package.json'), `${JSON.stringify(packageJson)}\n`);
+  fs.writeFileSync(
+    path.join(target.root, 'package.json'),
+    `${JSON.stringify(packageJson)}\n`,
+  );
   fs.mkdirSync(path.join(target.root, 'docs'), { recursive: true });
   fs.writeFileSync(
     path.join(target.root, 'docs', 'DOCUMENTATION_INDEX.md'),
     '# Documentation authority\n\n| Document | Owner | Status | Purpose |\n|---|---|---|---|\n| `docs/DOCUMENTATION_INDEX.md` | Product engineering | living | Registry fixture |\n',
   );
-  assert.equal(spawnSync('git', ['init'], { cwd: target.root, encoding: 'utf8' }).status, 0);
-  assert.equal(spawnSync('git', ['add', 'package.json', 'docs/DOCUMENTATION_INDEX.md'], { cwd: target.root, encoding: 'utf8' }).status, 0);
+  assert.equal(
+    spawnSync('git', ['init'], { cwd: target.root, encoding: 'utf8' }).status,
+    0,
+  );
+  assert.equal(
+    spawnSync('git', ['add', 'package.json', 'docs/DOCUMENTATION_INDEX.md'], {
+      cwd: target.root,
+      encoding: 'utf8',
+    }).status,
+    0,
+  );
   runInstall({ repoRoot, manifest: target.manifest, roots: target.roots });
-  assert.deepEqual(runCheck({ repoRoot, manifest: target.manifest, roots: target.roots }), []);
+  assert.deepEqual(
+    runCheck({ repoRoot, manifest: target.manifest, roots: target.roots }),
+    [],
+  );
   const parity = checkNuvoraLinkOverlayParity(target.root);
-  assert.equal(parity.ok, true, `fresh Nuvora overlay parity failed:\n${parity.errors.join('\n')}`);
+  assert.equal(
+    parity.ok,
+    true,
+    `fresh Nuvora overlay parity failed:\n${parity.errors.join('\n')}`,
+  );
   assert.deepEqual(parity.errors, []);
   const portableLock = JSON.parse(
-    fs.readFileSync(path.join(target.root, '.ai-organization', 'overlay-lock.json'), 'utf8'),
+    fs.readFileSync(
+      path.join(target.root, '.ai-organization', 'overlay-lock.json'),
+      'utf8',
+    ),
   );
   assert.equal(parity.managedFileCount, portableLock.files.length);
 
@@ -450,17 +642,34 @@ test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and p
     'schemas',
     'task-evidence.v3.schema.json',
   );
-  const currentEvidenceSchemaSource = fs.readFileSync(currentEvidenceSchema, 'utf8');
+  const currentEvidenceSchemaSource = fs.readFileSync(
+    currentEvidenceSchema,
+    'utf8',
+  );
   fs.rmSync(currentEvidenceSchema);
-  const missingEvidenceSchema = runNpm(target.root, ['run', 'gate:agent-control-plane']);
-  assert.notEqual(missingEvidenceSchema.status, 0, 'missing task-evidence v3 must fail gate:agent-control-plane');
+  const missingEvidenceSchema = runNpm(target.root, [
+    'run',
+    'gate:agent-control-plane',
+  ]);
+  assert.notEqual(
+    missingEvidenceSchema.status,
+    0,
+    'missing task-evidence v3 must fail gate:agent-control-plane',
+  );
   assert.match(
     `${missingEvidenceSchema.stdout}\n${missingEvidenceSchema.stderr}`,
     /missing required control file: \.ai-organization\/schemas\/task-evidence\.v3\.schema\.json/u,
   );
   fs.writeFileSync(currentEvidenceSchema, '{\n');
-  const malformedEvidenceSchema = runNpm(target.root, ['run', 'gate:agent-control-plane']);
-  assert.notEqual(malformedEvidenceSchema.status, 0, 'malformed task-evidence v3 must fail gate:agent-control-plane');
+  const malformedEvidenceSchema = runNpm(target.root, [
+    'run',
+    'gate:agent-control-plane',
+  ]);
+  assert.notEqual(
+    malformedEvidenceSchema.status,
+    0,
+    'malformed task-evidence v3 must fail gate:agent-control-plane',
+  );
   assert.match(
     `${malformedEvidenceSchema.stdout}\n${malformedEvidenceSchema.stderr}`,
     /invalid JSON authority \.ai-organization\/schemas\/task-evidence\.v3\.schema\.json/u,
@@ -481,28 +690,57 @@ test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and p
     managedRuntimeSource.replace(/^ \* Gated command:.*\r?\n/mu, ''),
   );
   const mutatedTestIntent = runNpm(target.root, ['run', 'gate:test-intent']);
-  assert.notEqual(mutatedTestIntent.status, 0, 'missing managed-runtime Gated command must fail gate:test-intent');
-  assert.match(`${mutatedTestIntent.stdout}\n${mutatedTestIntent.stderr}`, /candidate\.test\.mjs[\s\S]*missing "Gated command:"/u);
+  assert.notEqual(
+    mutatedTestIntent.status,
+    0,
+    'missing managed-runtime Gated command must fail gate:test-intent',
+  );
+  assert.match(
+    `${mutatedTestIntent.stdout}\n${mutatedTestIntent.stderr}`,
+    /candidate\.test\.mjs[\s\S]*missing "Gated command:"/u,
+  );
   fs.writeFileSync(managedRuntimeTest, managedRuntimeSource);
 
   packageJson.workspaces = ['apps/*'];
-  fs.mkdirSync(path.join(target.root, 'apps', 'worker', 'src'), { recursive: true });
+  fs.mkdirSync(path.join(target.root, 'apps', 'worker', 'src'), {
+    recursive: true,
+  });
   fs.writeFileSync(
     path.join(target.root, 'apps', 'worker', 'package.json'),
     `${JSON.stringify({ name: '@fixture/worker', scripts: { test: 'tsx --test src/discovered.test.ts' } })}\n`,
   );
-  fs.writeFileSync(path.join(target.root, 'apps', 'worker', 'src', 'discovered.test.ts'), '// discovered\n');
-  fs.writeFileSync(path.join(target.root, 'apps', 'worker', 'src', 'omitted.test.ts'), '// omitted\n');
-  fs.writeFileSync(path.join(target.root, 'package.json'), `${JSON.stringify(packageJson)}\n`);
-  const omittedWorkspaceTest = runNpm(target.root, ['run', 'gate:test-workspace-coverage']);
-  assert.notEqual(omittedWorkspaceTest.status, 0, 'an omitted explicit workspace test must fail coverage');
+  fs.writeFileSync(
+    path.join(target.root, 'apps', 'worker', 'src', 'discovered.test.ts'),
+    '// discovered\n',
+  );
+  fs.writeFileSync(
+    path.join(target.root, 'apps', 'worker', 'src', 'omitted.test.ts'),
+    '// omitted\n',
+  );
+  fs.writeFileSync(
+    path.join(target.root, 'package.json'),
+    `${JSON.stringify(packageJson)}\n`,
+  );
+  const omittedWorkspaceTest = runNpm(target.root, [
+    'run',
+    'gate:test-workspace-coverage',
+  ]);
+  assert.notEqual(
+    omittedWorkspaceTest.status,
+    0,
+    'an omitted explicit workspace test must fail coverage',
+  );
   assert.match(
     `${omittedWorkspaceTest.stdout}\n${omittedWorkspaceTest.stderr}`,
     /test script omits 1 test file\(s\): src\/omitted\.test\.ts/u,
   );
 
-  packageJson.scripts['gate:agent-control-plane'] = 'node scripts/accept-everything.mjs';
-  fs.writeFileSync(path.join(target.root, 'package.json'), `${JSON.stringify(packageJson)}\n`);
+  packageJson.scripts['gate:agent-control-plane'] =
+    'node scripts/accept-everything.mjs';
+  fs.writeFileSync(
+    path.join(target.root, 'package.json'),
+    `${JSON.stringify(packageJson)}\n`,
+  );
   const mutatedParity = checkNuvoraLinkOverlayParity(target.root);
   assert.equal(mutatedParity.ok, false);
   assert.deepEqual(mutatedParity.errors, [
@@ -511,12 +749,26 @@ test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and p
 });
 
 test('Proves: portable overlay locks can contain only normalized paths and SHA-256 integrity hashes without secret-shaped path/hash pairs on one line; Test type: secret-boundary mutation; Surface: project overlay lock; Authority: portable lock schema; Killer mutation: restore a path-keyed hash map or hide a generic API key in a lock entry; Gated command: npm test', () => {
-  const valid = { version: 1, source: 'universal-private-orchestrator/overlays/coachai', files: [{ path: 'AGENTS.md', sha256: 'a'.repeat(64) }], json_sections: {} };
+  const valid = {
+    version: 1,
+    source: 'universal-private-orchestrator/overlays/coachai',
+    files: [{ path: 'AGENTS.md', sha256: 'a'.repeat(64) }],
+    json_sections: {},
+  };
   assert.deepEqual(validatePortableOverlayLock(valid), []);
   const unsafe = structuredClone(valid);
-  unsafe.files.push({ path: '../generic_api_key', sha256: 'not-a-sha256-secret-value' });
+  unsafe.files.push({
+    path: '../generic_api_key',
+    sha256: 'not-a-sha256-secret-value',
+  });
   const failures = validatePortableOverlayLock(unsafe).join('\n');
   assert.match(failures, /non-portable path/u);
   assert.match(failures, /non-SHA-256/u);
-  assert.match(validatePortableOverlayLock({ ...valid, files: { 'AGENTS.md': 'a'.repeat(64) } }).join('\n'), /files must be an array/u);
+  assert.match(
+    validatePortableOverlayLock({
+      ...valid,
+      files: { 'AGENTS.md': 'a'.repeat(64) },
+    }).join('\n'),
+    /files must be an array/u,
+  );
 });

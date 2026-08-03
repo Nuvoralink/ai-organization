@@ -96,11 +96,11 @@
     },
     {
       "path": "scripts/check-organization-overlay.mjs",
-      "sha256": "df8aa16a506fc1832368b94b87137a23481583ed4814d2fabd2cd6faa54ea07a"
+      "sha256": "48ec68e3860d0402ea2ee32feb3c7fe2efe51e5284aeff0d3d75b4d8dbe40d17"
     },
     {
       "path": "scripts/claude-lifecycle-hook.mjs",
-      "sha256": "782c99f22fc69e4dee362c0a9f215dce8611eb370da44973668e02e3378d8023"
+      "sha256": "df6a3950ad5dfe610895488896f9fa8855f0d3500fcdc54fe31a7463e89a571c"
     },
     {
       "path": "scripts/run-bounded-agent.mjs",
@@ -117,6 +117,14 @@
     {
       "path": "scripts/lib/dispatchBoundary.mjs",
       "sha256": "76f7e6fcbcd3627ab2f76a52947cc95ea83b34c47cec8e2378260a36d1ef87d7"
+    },
+    {
+      "path": "scripts/lib/hookProjectRoot.mjs",
+      "sha256": "75b1b4a9b7e67bd1d29c4e93f979365e86873ef6e410f0d624a3aef8814df099"
+    },
+    {
+      "path": "scripts/lib/hookProjectRoot.test.mjs",
+      "sha256": "efdc95865456e4d10f0739bb995155d6f79028c3f86e0457da6ab5f9fc815423"
     },
     {
       "path": "scripts/lib/validateClaudeHookSettings.mjs",

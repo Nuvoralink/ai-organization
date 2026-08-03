@@ -38,6 +38,8 @@ const REQUIRED_MANAGED_FILES = new Set([
   'scripts/run-bounded-agent.mjs',
   'scripts/lib/boundedProcess.mjs',
   'scripts/lib/dispatchBoundary.mjs',
+  'scripts/lib/hookProjectRoot.mjs',
+  'scripts/lib/hookProjectRoot.test.mjs',
   'scripts/lib/agentTelemetry.mjs',
   'scripts/lib/validateClaudeHookSettings.mjs',
 ]);
