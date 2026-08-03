@@ -94,8 +94,65 @@ function projectAgentIds(problems) {
     }
     if (agents.has(id)) problems.push(`duplicate project agent role id: ${id}`);
     agents.set(id, relative);
+    assertDispatchableFrontmatter(path.join(agentsDir, entry.name), relative, id, problems);
   }
   return agents;
+}
+
+/**
+ * A registry-matched file is not necessarily a dispatchable agent. The host
+ * silently omits malformed YAML frontmatter, so file/registry parity alone can
+ * report green while a required lens cannot be invoked.
+ */
+function assertDispatchableFrontmatter(absPath, relative, id, problems) {
+  let text;
+  try {
+    text = fs.readFileSync(absPath, 'utf8');
+  } catch (error) {
+    problems.push(`agent file unreadable: ${relative} (${error.message})`);
+    return;
+  }
+
+  const match = text.match(/^\uFEFF?---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u);
+  if (!match) {
+    problems.push(`agent file has no leading YAML frontmatter block: ${relative}`);
+    return;
+  }
+
+  const fields = new Map();
+  for (const rawLine of match[1].split(/\r?\n/u)) {
+    if (!rawLine.trim() || /^\s*#/u.test(rawLine)) continue;
+    if (/^\s/u.test(rawLine)) continue;
+    const keyValue = rawLine.match(/^([A-Za-z_][\w-]*):\s?(.*)$/u);
+    if (!keyValue) {
+      problems.push(`agent frontmatter line is not a key/value pair: ${relative} -> ${rawLine.trim()}`);
+      continue;
+    }
+    fields.set(keyValue[1], keyValue[2]);
+  }
+
+  for (const required of ['name', 'description']) {
+    if (!fields.has(required) || fields.get(required).trim() === '') {
+      problems.push(`agent frontmatter missing required ${required}: ${relative}`);
+    }
+  }
+  if (fields.has('name') && fields.get('name').trim() !== id) {
+    problems.push(
+      `agent frontmatter name does not match its filename role id: ${relative} ` +
+        `(name=${fields.get('name').trim()}, file=${id})`,
+    );
+  }
+
+  for (const [key, value] of fields) {
+    const scalar = value.trim();
+    if (!scalar) continue;
+    const quoted = /^(['"]).*\1$/su.test(scalar);
+    if (!quoted && /:\s/u.test(scalar)) {
+      problems.push(
+        `agent frontmatter ${key} is an unquoted scalar containing a colon-space, which prevents dispatch: ${relative}`,
+      );
+    }
+  }
 }
 
 const RUBRIC_HEADING = '## Verdict rubric';
