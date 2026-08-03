@@ -38,6 +38,13 @@ function role(id, mode = 'review_read_only') {
   };
 }
 
+function agentSource(id, body) {
+  return (
+    `---\nname: ${id}\ndescription: Exercise the ${id} fleet parity contract.\ntools: Read\n---\n\n` +
+    body
+  );
+}
+
 function fixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fleet-parity-'));
   const gateFile = path.join(root, 'scripts', 'check-fleet-parity.mjs');
@@ -83,8 +90,14 @@ function fixture() {
     project_roles: extension.roles.map((entry) => ({ name: entry.id })),
   });
   fs.mkdirSync(path.join(root, '.claude', 'agents'), { recursive: true });
-  fs.writeFileSync(path.join(root, '.claude', 'agents', 'universal-reviewer.md'), '# Universal reviewer\n');
-  fs.writeFileSync(path.join(root, '.claude', 'agents', 'project-auditor.md'), '# Project auditor\n');
+  fs.writeFileSync(
+    path.join(root, '.claude', 'agents', 'universal-reviewer.md'),
+    agentSource('universal-reviewer', '# Universal reviewer\n'),
+  );
+  fs.writeFileSync(
+    path.join(root, '.claude', 'agents', 'project-auditor.md'),
+    agentSource('project-auditor', '# Project auditor\n'),
+  );
   return { root, gateFile, universal, extension };
 }
 
@@ -118,7 +131,10 @@ test('missing registry row and an extra project agent file both fail closed and 
   assert.match(output(missingResult), /agent file has no effective-role row: .*project-auditor\.md/u);
 
   const extraFile = fixture();
-  fs.writeFileSync(path.join(extraFile.root, '.claude', 'agents', 'shadow-auditor.md'), '# Shadow\n');
+  fs.writeFileSync(
+    path.join(extraFile.root, '.claude', 'agents', 'shadow-auditor.md'),
+    agentSource('shadow-auditor', '# Shadow\n'),
+  );
   const extraResult = runGate(extraFile.root);
   assert.equal(extraResult.status, 1);
   assert.match(output(extraResult), /agent file has no effective-role row: .*shadow-auditor\.md/u);
@@ -203,7 +219,10 @@ function rubricFixture(criteriaLines) {
   ];
   fs.writeFileSync(
     path.join(built.root, '.claude', 'agents', 'universal-reviewer.md'),
-    `# Universal reviewer\n\n## Verdict rubric — computed, not asserted\n\n${lines.join('\n')}\n\n## Output\nA verdict.\n`,
+    agentSource(
+      'universal-reviewer',
+      `# Universal reviewer\n\n## Verdict rubric — computed, not asserted\n\n${lines.join('\n')}\n\n## Output\nA verdict.\n`,
+    ),
   );
   return built;
 }
@@ -217,7 +236,7 @@ test('an agent file whose declared criteria match its registered rubric passes, 
   const noBlock = rubricFixture();
   fs.writeFileSync(
     path.join(noBlock.root, '.claude', 'agents', 'universal-reviewer.md'),
-    '# Universal reviewer\n\n## Output\nA verdict.\n',
+    agentSource('universal-reviewer', '# Universal reviewer\n\n## Output\nA verdict.\n'),
   );
   const noBlockResult = runGate(noBlock.root);
   assert.equal(noBlockResult.status, 1);
@@ -255,7 +274,10 @@ test('an agent file whose declared criteria match its registered rubric passes, 
   const unregistered = fixture();
   fs.writeFileSync(
     path.join(unregistered.root, '.claude', 'agents', 'project-auditor.md'),
-    '# Project auditor\n\n## Verdict rubric — computed, not asserted\n\n- `stray` — Unbacked criterion.\n',
+    agentSource(
+      'project-auditor',
+      '# Project auditor\n\n## Verdict rubric — computed, not asserted\n\n- `stray` — Unbacked criterion.\n',
+    ),
   );
   const unregisteredResult = runGate(unregistered.root);
   assert.equal(unregisteredResult.status, 1);

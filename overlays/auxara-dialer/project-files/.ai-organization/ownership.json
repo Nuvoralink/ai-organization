@@ -72,7 +72,7 @@
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/evidence-runtime.mjs",
-      "sha256": "e76271efa52397aae38ef040e5a0f0fdd2f03201812ef70b9076a32385ec62ed"
+      "sha256": "13ad1e3eaa07aa17d3d5c3a6e10037e20f571e75d3dd9c48f85efc23f370a9d8"
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/lifecycle-controller.mjs",
@@ -84,7 +84,7 @@
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/task-assurance.test.mjs",
-      "sha256": "848e9a868bc5262df2a6200616657b717cfc24d365fb5aeae967306c10108720"
+      "sha256": "518f652d42c8e14f66fe607bcbb416f5a9024d09bd85c0896965a9c6662dbc3e"
     },
     {
       "path": ".ai-organization/runtime/core/lifecycle/task-governor.mjs",

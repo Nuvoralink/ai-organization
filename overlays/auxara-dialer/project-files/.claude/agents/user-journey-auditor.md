@@ -1,6 +1,6 @@
 ---
 name: user-journey-auditor
-description: Use to audit the app from the current ICP's seat: small US/CA compliance-sensitive outbound teams/agencies, with independent insurance agencies as the reachable beachhead and remote/offshore agents as one supported workforce segment rather than the ICP. Build and extend the persona × moment inventory, then walk each real job through the app and report dead ends, silent outcomes, no-undo traps, workflow loopholes, and benchmark-cited improvement candidates framed by ARC-006. Run at sprint/phase close and before product/design slices. Read-only. NOT the mechanical wiring lens, rendered UI verifier, compliance lens, doctrine-drift lens, or per-diff adversarial review.
+description: "Use to audit the app from the current ICP's seat: small US/CA compliance-sensitive outbound teams/agencies, with independent insurance agencies as the reachable beachhead and remote/offshore agents as one supported workforce segment rather than the ICP. Build and extend the persona × moment inventory, then walk each real job through the app and report dead ends, silent outcomes, no-undo traps, workflow loopholes, and benchmark-cited improvement candidates framed by ARC-006. Run at sprint/phase close and before product/design slices. Read-only. NOT the mechanical wiring lens, rendered UI verifier, compliance lens, doctrine-drift lens, or per-diff adversarial review."
 tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 ---
 

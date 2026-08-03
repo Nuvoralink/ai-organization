@@ -70,6 +70,53 @@ export function agentFrontmatterName(text) {
   return frontmatter.match(/^name:\s*["']?([^"'\r\n]+?)["']?\s*$/mu)?.[1]?.trim();
 }
 
+/**
+ * Validate the minimum frontmatter contract the agent host needs in order to
+ * discover and dispatch a role. Keep this pure so control-plane tests can run
+ * it across every canonical project overlay before installation.
+ */
+export function validateDispatchableAgentFrontmatter(text, relative, id) {
+  const problems = [];
+  const match = String(text ?? '').match(/^\uFEFF?---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u);
+  if (!match) return [`agent file has no leading YAML frontmatter block: ${relative}`];
+
+  const fields = new Map();
+  for (const rawLine of match[1].split(/\r?\n/u)) {
+    if (!rawLine.trim() || /^\s*#/u.test(rawLine) || /^\s/u.test(rawLine)) continue;
+    const keyValue = rawLine.match(/^([A-Za-z_][\w-]*):\s?(.*)$/u);
+    if (!keyValue) {
+      problems.push(
+        `agent frontmatter line is not a key/value pair: ${relative} -> ${rawLine.trim()}`,
+      );
+      continue;
+    }
+    fields.set(keyValue[1], keyValue[2]);
+  }
+
+  for (const required of ['name', 'description']) {
+    if (!fields.has(required) || fields.get(required).trim() === '')
+      problems.push(`agent frontmatter missing required ${required}: ${relative}`);
+  }
+  if (fields.has('name') && fields.get('name').trim() !== id) {
+    problems.push(
+      `agent frontmatter name does not match its filename role id: ${relative} ` +
+        `(name=${fields.get('name').trim()}, file=${id})`,
+    );
+  }
+
+  for (const [key, value] of fields) {
+    const scalar = value.trim();
+    if (!scalar) continue;
+    const quoted = /^(['"]).*\1$/su.test(scalar);
+    if (!quoted && /:\s/u.test(scalar)) {
+      problems.push(
+        `agent frontmatter ${key} is an unquoted scalar containing a colon-space, which prevents dispatch: ${relative}`,
+      );
+    }
+  }
+  return problems;
+}
+
 export function validateRegisteredAgentRoleProviders(roles, root) {
   const failures = [];
   for (const role of roles ?? []) {
