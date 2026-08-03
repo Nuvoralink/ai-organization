@@ -968,6 +968,28 @@ function handleSessionEnd(payload, telemetryDir) {
 const configuredProjectDir = String(process.env.CLAUDE_PROJECT_DIR ?? '').trim();
 const scriptProjectDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
+// The git COMMON dir is shared by every worktree of one repository even though each worktree has its
+// own --show-toplevel. It is how we tell "a sibling worktree of the same repo" (accept) from "a
+// genuinely different repository" (throw). Returns a platform-keyed absolute path, or null when `dir`
+// is not in a git repo / git is unavailable.
+function gitCommonDirKey(dir) {
+  const result = spawnSync('git', ['-C', dir, 'rev-parse', '--git-common-dir'], {
+    encoding: 'utf8',
+    windowsHide: true,
+  });
+  if (!result || result.status !== 0) return null;
+  const out = String(result.stdout ?? '').trim();
+  if (!out) return null;
+  const absolute = path.isAbsolute(out) ? out : path.resolve(dir, out);
+  let resolved;
+  try {
+    resolved = path.resolve(realpathSync.native(absolute));
+  } catch {
+    resolved = path.resolve(absolute);
+  }
+  return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+}
+
 function verifiedProjectRoot() {
   const scriptRoot = resolveGitRoot(scriptProjectDir) ?? scriptProjectDir;
   const scriptReal = path.resolve(realpathSync.native(scriptRoot));
@@ -975,10 +997,17 @@ function verifiedProjectRoot() {
   const configuredRoot = resolveGitRoot(configuredProjectDir) ?? path.resolve(configuredProjectDir);
   const configuredReal = path.resolve(realpathSync.native(configuredRoot));
   const key = (value) => (process.platform === 'win32' ? value.toLowerCase() : value);
-  if (key(configuredReal) !== key(scriptReal)) {
-    throw new Error('CLAUDE_PROJECT_DIR does not match the script-derived repository root');
+  if (key(configuredReal) === key(scriptReal)) return scriptReal;
+  // Different working-tree roots that share ONE git common dir are sibling worktrees of the same repo
+  // (an agent isolation worktree, where the harness sets CLAUDE_PROJECT_DIR to the main checkout while
+  // this hook copy runs from the worktree). Operate on the tree the hook lives in; throw only for a
+  // genuinely different repository.
+  const scriptCommon = gitCommonDirKey(scriptReal);
+  const configuredCommon = gitCommonDirKey(configuredReal);
+  if (scriptCommon && configuredCommon && scriptCommon === configuredCommon) {
+    return scriptReal;
   }
-  return scriptReal;
+  throw new Error('CLAUDE_PROJECT_DIR points to a different repository than the one containing this hook');
 }
 
 export async function dispatchLifecyclePayload(

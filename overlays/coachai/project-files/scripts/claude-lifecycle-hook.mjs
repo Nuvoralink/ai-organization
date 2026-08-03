@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { acceptLifecycleTask, completeLifecycleTask, recordLifecycleCompletionReport, recordLifecycleReview } from '../.ai-organization/runtime/core/lifecycle/lifecycle-controller.mjs';
 import { extractStructured, validateAgentReport, validateTaskContract } from './task-governor.mjs';
@@ -11,6 +12,18 @@ import { extractStructured, validateAgentReport, validateTaskContract } from './
 const configuredProjectDir = String(process.env.CLAUDE_PROJECT_DIR ?? '').trim();
 const scriptRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BLOCKING_EVENTS = new Set(['TaskCreated', 'SubagentStart', 'TaskCompleted', 'SubagentStop']);
+// The git COMMON dir is shared by every worktree of one repository, so it distinguishes a sibling
+// worktree of the same repo (accept) from a genuinely different repository (throw).
+const gitCommonDirKey = (dir) => {
+  const result = spawnSync('git', ['-C', dir, 'rev-parse', '--git-common-dir'], { encoding: 'utf8', windowsHide: true });
+  if (!result || result.status !== 0) return null;
+  const out = String(result.stdout ?? '').trim();
+  if (!out) return null;
+  const absolute = path.isAbsolute(out) ? out : path.resolve(dir, out);
+  let resolved;
+  try { resolved = path.resolve(fs.realpathSync.native(absolute)); } catch { resolved = path.resolve(absolute); }
+  return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+};
 let root;
 try {
   const scriptReal = path.resolve(fs.realpathSync.native(scriptRoot));
@@ -18,7 +31,15 @@ try {
     ? path.resolve(fs.realpathSync.native(path.resolve(configuredProjectDir)))
     : scriptReal;
   const key = (value) => process.platform === 'win32' ? value.toLowerCase() : value;
-  if (key(configuredReal) !== key(scriptReal)) throw new Error('CLAUDE_PROJECT_DIR does not match the script-derived repository root');
+  if (key(configuredReal) !== key(scriptReal)) {
+    // Sibling worktrees of one repo share a git common dir (agent isolation worktree). Accept; throw
+    // only for a genuinely different repository.
+    const scriptCommon = gitCommonDirKey(scriptReal);
+    const configuredCommon = gitCommonDirKey(configuredReal);
+    if (!scriptCommon || !configuredCommon || scriptCommon !== configuredCommon) {
+      throw new Error('CLAUDE_PROJECT_DIR points to a different repository than the one containing this hook');
+    }
+  }
   root = scriptReal;
 } catch (error) {
   console.error(`lifecycle root: BLOCKED\n- ${error.message}`);
