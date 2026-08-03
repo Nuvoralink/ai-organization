@@ -372,7 +372,7 @@ test('Proves: CONTROL-PLANE-LIFECYCLE-OVERLAY-DRIFT-001 and VERDICT-RUNTIME-OVER
   }
 });
 
-test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and product-boundary mutation; Surface: Nuvora Link organization overlay; Authority: project profile, portable lock, and package script ownership; Killer mutations: describe generalized SaaS tenancy, drift a managed gate command, remove or corrupt task-evidence v3, omit a generated file, or remove a required intent header from a managed runtime test; Gated command: npm test', (t) => {
+test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and product-boundary mutation; Surface: Nuvora Link organization overlay; Authority: project profile, portable lock, and package script ownership; Killer mutations: describe generalized SaaS tenancy, drift a managed gate command, remove or corrupt task-evidence v3, omit a generated file, remove a required intent header, or omit a test from an explicit workspace list; Gated command: npm test', (t) => {
   const profile = JSON.parse(fs.readFileSync(path.join(repoRoot, 'overlays', 'nuvora-link', 'control-plane', 'project-profile.v1.json'), 'utf8'));
   assert.equal(profile.productDeploymentMode, 'single-company-internal');
   assert.match(profile.organizationScopePurpose, /not-saas-tenancy/u);
@@ -465,6 +465,22 @@ test('Proves: NUVORA-LINK-OVERLAY-001; Test type: installed-fixture parity and p
   assert.notEqual(mutatedTestIntent.status, 0, 'missing managed-runtime Gated command must fail gate:test-intent');
   assert.match(`${mutatedTestIntent.stdout}\n${mutatedTestIntent.stderr}`, /candidate\.test\.mjs[\s\S]*missing "Gated command:"/u);
   fs.writeFileSync(managedRuntimeTest, managedRuntimeSource);
+
+  packageJson.workspaces = ['apps/*'];
+  fs.mkdirSync(path.join(target.root, 'apps', 'worker', 'src'), { recursive: true });
+  fs.writeFileSync(
+    path.join(target.root, 'apps', 'worker', 'package.json'),
+    `${JSON.stringify({ name: '@fixture/worker', scripts: { test: 'tsx --test src/discovered.test.ts' } })}\n`,
+  );
+  fs.writeFileSync(path.join(target.root, 'apps', 'worker', 'src', 'discovered.test.ts'), '// discovered\n');
+  fs.writeFileSync(path.join(target.root, 'apps', 'worker', 'src', 'omitted.test.ts'), '// omitted\n');
+  fs.writeFileSync(path.join(target.root, 'package.json'), `${JSON.stringify(packageJson)}\n`);
+  const omittedWorkspaceTest = runNpm(target.root, ['run', 'gate:test-workspace-coverage']);
+  assert.notEqual(omittedWorkspaceTest.status, 0, 'an omitted explicit workspace test must fail coverage');
+  assert.match(
+    `${omittedWorkspaceTest.stdout}\n${omittedWorkspaceTest.stderr}`,
+    /test script omits 1 test file\(s\): src\/omitted\.test\.ts/u,
+  );
 
   packageJson.scripts['gate:agent-control-plane'] = 'node scripts/accept-everything.mjs';
   fs.writeFileSync(path.join(target.root, 'package.json'), `${JSON.stringify(packageJson)}\n`);

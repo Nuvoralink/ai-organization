@@ -96,7 +96,7 @@
     },
     {
       "path": ".claude/rules/test-intent.md",
-      "sha256": "9f7220ad25c59ad314c5509f801358802841dc2bbc17551d52a4923d9aceca04"
+      "sha256": "fb30a52693bd50f63feee44bd002ef261f86bc62a705572e038780b237ded2fc"
     },
     {
       "path": ".github/ISSUE_TEMPLATE/agent-slice.yml",
@@ -144,7 +144,7 @@
     },
     {
       "path": "scripts/check-test-workspace-coverage.mjs",
-      "sha256": "7c49476fee14617f36407aeabb7cc42fdb55997a23f96b756a54ece94db24dda"
+      "sha256": "f485eed46838263a7cf49ce6a3ce12435c6c0c01e0ccb558aa3be1c956e9fc29"
     },
     {
       "path": "scripts/claude-lifecycle-hook.mjs",

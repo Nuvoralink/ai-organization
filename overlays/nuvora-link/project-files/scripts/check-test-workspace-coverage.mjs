@@ -37,6 +37,30 @@ async function findTests(directory, relative = "") {
   return files;
 }
 
+function vitestDiscoveryRoots(script) {
+  const roots = [];
+  for (const segment of script.split(/&&|\|\|/u)) {
+    const match = segment.match(/(?:^|\s)vitest\s+run(?:\s+([^&|]+))?/u);
+    if (!match) continue;
+    const tokens = (match[1] ?? "")
+      .trim()
+      .split(/\s+/u)
+      .filter(Boolean);
+    const positional = tokens.filter((token) => !token.startsWith("-") && !/^\d+$/u.test(token));
+    if (positional.length === 0) roots.push("");
+    else roots.push(...positional.map((token) => token.replace(/^\.\//u, "").replace(/\\/gu, "/")));
+  }
+  return roots;
+}
+
+function isTestDiscovered(test, script) {
+  const normalizedScript = script.replace(/\\/gu, "/");
+  if (normalizedScript.includes(test)) return true;
+  return vitestDiscoveryRoots(normalizedScript).some(
+    (root) => root === "" || test === root || test.startsWith(`${root.replace(/\/$/u, "")}/`)
+  );
+}
+
 export async function findTestWorkspaceCoverageViolations(root) {
   const rootManifest = await readJson(resolve(root, "package.json"));
   const patterns = Array.isArray(rootManifest.workspaces)
@@ -62,6 +86,13 @@ export async function findTestWorkspaceCoverageViolations(root) {
     }
     if (IGNORE_EMPTY_FLAGS.test(manifest.scripts.test)) {
       violations.push(`${manifest.name} test script can pass with zero executed tests`);
+      continue;
+    }
+    const undiscovered = tests.filter((test) => !isTestDiscovered(test, manifest.scripts.test));
+    if (undiscovered.length > 0) {
+      violations.push(
+        `${manifest.name} test script omits ${undiscovered.length} test file(s): ${undiscovered.join(", ")}`
+      );
       continue;
     }
     covered.push({ name: manifest.name, tests: tests.length });

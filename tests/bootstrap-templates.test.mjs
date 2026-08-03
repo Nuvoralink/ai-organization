@@ -422,6 +422,13 @@ test('Proves: CONTROL-PLANE-LIFECYCLE-OVERLAY-DRIFT-001; Test type: canonical sk
   );
 });
 
+test('Proves: TEST-INVENTORY-001; Test type: canonical skill contract mutation; Surface: bootstrap test aggregation guidance; Authority: live test-file inventory; Killer mutation: remove the explicit-filename inventory requirement and allow a green aggregate to omit a test; Gated command: npm test', () => {
+  assert.match(
+    read('SKILL.md'),
+    /inventory gate that compares the live test-file set with that command and fails when one file is omitted/u,
+  );
+});
+
 test('Proves: ORG-LOOP-002; Test type: exact-literal authority sweep; Surface: global, bootstrap, and overlay Markdown; Authority: propagating exit sentinel; Killer mutation: restore cmd; echo without saving and re-exiting the command status; Gated command: npm test', () => {
   const loopDiscipline = path.join(root, 'global', 'claude', 'rules', 'loop-discipline.md');
   const authorityRoots = [
