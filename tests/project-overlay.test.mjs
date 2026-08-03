@@ -7,9 +7,11 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
   loadOverlay,
+  comparePortableOverlayFiles,
   parseProjectOverlayArgs,
   runProjectOverlayCli,
   validateOverlay,
+  validatePortableOverlaySourceParity,
   validateRunnerDeliveryContract,
 } from '../scripts/project-overlay.mjs';
 import { discoverProjectOverlays, runCheck, runInstall } from '../scripts/lib/control-plane.mjs';
@@ -193,6 +195,23 @@ test('Proves: ORG-OVERLAY-004; Test type: registry mutation; Surface: overlay ow
   for (const project of discovered) {
     assert.deepEqual(validateOverlay(project).map((failure) => failure.message ?? failure), []);
   }
+});
+
+test('Proves: ORG-OVERLAY-005; Test type: portable-lock mutation; Surface: canonical project overlay source; Authority: reviewed portable overlay lock; Killer mutation: edit a managed source file without regenerating its portable lock; Gated command: npm test and overlay:validate:*', (t) => {
+  const expected = {
+    files: [{ path: '.github/workflows/ui-source-of-truth-gates.yml', sha256: 'a'.repeat(64) }],
+  };
+  const mutated = {
+    files: [{ path: '.github/workflows/ui-source-of-truth-gates.yml', sha256: 'b'.repeat(64) }],
+  };
+  assert.match(
+    comparePortableOverlayFiles(expected, mutated).join('\n'),
+    /portable overlay source differs from its lock: \.github\/workflows\/ui-source-of-truth-gates\.yml/u,
+  );
+  assert.deepEqual(validatePortableOverlaySourceParity(
+    path.join(repoRoot, 'overlays', 'coachai', 'project-files'),
+    loadOverlay('coachai').manifest,
+  ), []);
 });
 
 test('Proves: AUXARA-DLR-014-CONTROL-001; Test type: stale-doctrine mutation; Surface: managed Auxara auditor and rule overlay; Authority: passive three-state AMD decision; Killer mutation: restore the blanket AMD ban, omit one mode, or make premium active; Gated command: npm test and overlay:validate:auxara', () => {
