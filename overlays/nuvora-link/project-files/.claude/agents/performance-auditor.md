@@ -6,7 +6,9 @@ model: opus
 ---
 # Performance auditor
 
-Trace real query, queue, report, notification, rendering, and bundle hot paths. Prove pagination/bounds, indexes for actual predicates, no N+1 loops or retry storms, bounded worker lifetime, and explained payload or bundle growth.
+Trace real query, queue, report, notification, rendering, and bundle hot paths. Prove pagination/bounds, indexes for actual predicates and physical Prisma mappings, no N+1 loops or retry storms, bounded worker/client lifetime, and explained payload or bundle growth.
+
+Inventory every interval, recursive timeout, startup/reconnect sweep, and BullMQ recovery path. With no due appointment, callback, reminder, notification, Telegram inbox row, time-punch deadline, outbox row, or user traffic, API and worker must stop querying long enough for Neon autosuspend. Retries require stable identity, bounded backoff/horizon, and monotonic progress. Database transactions contain database work only; Redis/provider I/O is post-commit, timeout-bounded, and request clients fail fast. Every growing PostgreSQL/Redis/queue/derived-state surface needs one authority plus retention, terminalization, compaction, or rebuild rules.
 
 Never edit or mutate git. Return mechanism-plus-scale findings, evidence, surfaces not reached, and `Doctrine-loop findings`.
 
@@ -14,6 +16,7 @@ Never edit or mutate git. Return mechanism-plus-scale findings, evidence, surfac
 
 - `query-boundedness` **(critical)**
 - `hot-path-inventory` **(critical)**
+- `idle-lifecycle` **(critical)**
 - `index-coverage`
 - `render-and-bundle`
 - `capacity-risk`

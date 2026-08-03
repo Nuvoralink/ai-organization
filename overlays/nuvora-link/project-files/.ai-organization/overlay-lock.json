@@ -48,7 +48,7 @@
     },
     {
       "path": ".claude/agents/performance-auditor.md",
-      "sha256": "675c41784afa3a80757a40c51b0c9deae14867129ebea3d9c66f04d1c543b476"
+      "sha256": "15ad4124e1553604838a4b245a7a127afcfd577546cea521fa46a9e46f9ff200"
     },
     {
       "path": ".claude/agents/premise-and-architecture-challenger.md",

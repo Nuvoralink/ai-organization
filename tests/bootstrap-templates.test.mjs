@@ -231,6 +231,35 @@ test('Proves: ORG-FLEET-001; Test type: mutation; Surface: bootstrap roster; Aut
   }
 });
 
+test('Proves: PERF-IDLE-LIFECYCLE-001; Test type: authority-propagation mutation; Surface: performance-auditor registry, bootstrap template, and managed project overlays; Authority: idle-cost and persisted-lifecycle doctrine; Killer mutation: remove the critical idle-lifecycle criterion or let any project auditor omit due-work admission, monotonic retry, retention, or physical-mapping checks; Gated command: npm test', () => {
+  const registry = JSON.parse(fs.readFileSync(path.join(root, 'registries', 'agent-roles.v1.json'), 'utf8'));
+  const performanceRole = registry.roles.find((role) => role.id === 'performance-auditor');
+  assert.ok(performanceRole, 'performance-auditor must remain registered');
+  const idleCriterion = performanceRole.verdict_rubric.criteria.find((criterion) => criterion.id === 'idle-lifecycle');
+  assert.equal(idleCriterion?.critical, true);
+  assert.match(idleCriterion?.summary ?? '', /Idle runtimes issue no recurring database\/provider work/u);
+  assert.equal(
+    performanceRole.verdict_rubric.criteria.reduce((sum, criterion) => sum + criterion.weight, 0),
+    100,
+    'performance verdict weights must remain normalized',
+  );
+
+  const sources = [
+    read('templates/agents/performance-auditor.template.md'),
+    ...['auxara-dialer', 'coachai', 'nuvora-link'].map((project) => fs.readFileSync(
+      path.join(root, 'overlays', project, 'project-files', '.claude', 'agents', 'performance-auditor.md'),
+      'utf8',
+    )),
+  ];
+  for (const source of sources) {
+    assert.match(source, /idle-lifecycle/u);
+    assert.match(source, /persisted due row|due business work|no due appointment/u);
+    assert.match(source, /monotonic/u);
+    assert.match(source, /retention/u);
+    assert.match(source, /physical (?:Prisma|ORM|identifier|mapping)/u);
+  }
+});
+
 test('Proves: ORG-OVERLAY-001; Test type: mutation; Surface: existing-project bootstrap; Authority: overlay ownership manifest; Killer mutation: permit copy-all or overwrite a dirty managed target; Gated command: npm test', () => {
   const skill = fs.readFileSync(path.join(root, 'skills', 'bootstrap-orchestrator', 'SKILL.md'), 'utf8');
   assert.match(skill, /Existing-project overlay mode/u);
