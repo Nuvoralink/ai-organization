@@ -2,107 +2,134 @@ v1
 
 ## User Profile
 
-The user uses Codex across Nuvo Dialer, Nuvora Link, Nuvora CoachAi, Auxara, and an organization control plane. They want repository truth, source-to-screen authority, and explicit proof—not speculation. They expect current docs, rules, memory, and primary external contracts to be read before changes. They prefer concrete handoffs with exact blockers, next tests, and proof gaps. They authorize orchestration with subagents and audits where useful, while expecting strict scope boundaries and honest completion claims. [ad-hoc note]
+The user works across Nuvo Dialer/Auxara, Nuvora CoachAi, Nuvora Link, a canonical AI Organization control plane, and Dubai GTM for custom software. They want root-cause, product-first repairs grounded in primary docs, persisted contracts, and user-visible outcomes—not plausible patches. They use cross-repo, evidence-only audits and expect precise, grouped handoffs with live-state caveats. For Nuvora Link, the legacy built-in dialer is retired and may be removed completely. [ad-hoc note]
 
 ## User preferences
 
-- For unfamiliar integrations or contracts: “read rules, docs, memory ... dont guess”; use primary docs plus repo truth before editing.
-- Fix a manually exposed deployment/process gap with a checked-in gate or runbook and regression coverage.
-- For read-only drift reports, use only existing safe gates, report missing gates rather than inventing them, and never write repos, GitHub, worktrees, production, or automation memory.
-- For cross-repo read-only audits, compare projects side-by-side and deduplicate findings by project instead of replaying raw tool output.
-- In weekly fleet/doctrine reviews, compare both repos, use manifest-allowlisted surfaces, and cap deduplicated recommendations at three high-leverage changes.
-- Preserve stated sprint scope and give fresh handoffs with branch state, dirty files, delegated work, blockers, next tests, and guardrails.
-- For cleanup, classify each worktree/branch individually; preserve unrelated dirty work before fast-forwarding or deletion.
-- For frontend changes, fresh mock approval is blocking unless a foundation mock is approved/built and the change is a small addition using an existing primitive. [ad-hoc note]
-- For CoachAI prompt/quality bugs, use the spider pass and cheap-to-expensive proof ladder before a real rerun; at most one authoritative rerun for live proof. [ad-hoc note]
-- Before a production database write, obtain explicit confirmation; afterwards prove the persisted schema/data, not just the migration command’s status.
-- For Nuvora Link operational follow-ups, preserve “normal telegram notifications and what not” while enforcing “no KPI” / no effect on “anyones show ratio” through a persisted measurement scope.
-- For user-visible Nuvora Link changes, preserve per-agent defaults unless deliberately overridden, keep modal actions visible while the body scrolls, and verify requested role extensions both rendered and functionally.
+- “read rules, docs, memory ... dont guess”: trace primary authority before editing unfamiliar contracts.
+- For declared “read-only” audits, make no repository, GitHub, worktree, deployment, automation-memory, or other file mutation.
+- Group cross-project discrepancies by project, deduplicate, give exact next actions, and cap recommendations at three when requested.
+- Do not call previews, local green gates, PR comments, or Vercel success merge proof; inspect formal reviews and required checks.
+- When a propagation finding looks wrong, “check again” against actual `origin/main` refs and exact blobs.
+- For authority changes, “Replace, do not layer”: update every living projection and sweep old claims; do not create amendment trails or parallel cards. [ad-hoc note]
+- For Auxara cancellation policy, use the 30-day read-only export/reactivation window; 90 days is only active-workspace recording retention, and irreversible purge remains activation-gated. [ad-hoc note]
+- For Nuvora Link, recover intended product outcome before fixing legacy code; its built-in dialer is retired—remove the complete dependency slice, not just UI. [ad-hoc note]
+- For notification timing reports, distinguish scheduler behavior, persisted delivery/outbox evidence, provider dispatch, and recipient-side behavior before attributing the cause.
+- For Sprint scope, “make sure all the AI organization and Dialer related files are loaded” and “read all the other sprints as well” before deciding a takeover or authority change.
+- For Dubai GTM, begin problem-led rather than niche-led: test a painful cross-tool workflow gap, qualify deeply, then let paid evidence reveal the first vertical. Explain the delivery mechanism as configuration, integration, micro-app, or custom build.
+- For CoachAI quality work, use the spider pass and cheap-to-expensive proof ladder; at most one authoritative live rerun.
 
 ## General Tips
 
-- Use `raw_memories.md` as routing, then open rollout summaries for exact evidence or conflict resolution. Tag extension-derived facts `[ad-hoc note]`.
-- Read-only audit core: `git fetch --prune origin`, status/divergence, `git worktree list --porcelain`, PRs/issues, then only named gates. Dirty/ahead state requires retain/PR/retire ownership classification, not automatic cleanup.
-- Local orchestration gates and stale handoff docs are not live-state proof; separate offline authority checks from PR/Project/worktree reality.
-- Nuvo: `agent:state -- --github` is convenience, not authority; raw porcelain output catches prune-only residue. Railway image parity does not imply per-service env parity.
-- CoachAI: resolve repo slug with `gh repo view`; guard unset `$env:CODEX_HOME`; inspect `.claude/settings.json` and `scripts/claude-posttooluse-gate.mjs` directly.
-- Control plane: `npm run control:check` is a parity sentinel. Canonical hooks use rooted exec-form `${CLAUDE_PROJECT_DIR}/scripts/...`; malformed/missing PostToolUse `file_path` must exit 2. GitHub comments are not review objects.
-- Nuvora Link: clean-worktree builds can reveal missing local package prerequisites masked by `dist`; run `npm run check:workspace-build-contracts`, and use separate Windows npm acceptance commands with independent exit codes.
+- Use `raw_memories.md` for routing, then open the cited rollout summary for exact proof and time-sensitive state. Extension-derived facts carry `[ad-hoc note]`.
+- Separate canonical control-plane parity from project-local gates, and live GitHub Project truth from offline drift gates.
+- Treat branch/worktree/PR/Project status as live-state data: re-query before reporting. `audit:project-ledger-live` is the Project #7 authority; current canonical control-plane authority is `${PROJECT:control-plane|backslash}` at `e3c1eb9cb25aad665462fe3cbe9542e4de2b9cf9`, not the retired `${PROJECT:control-plane|backslash} Control Plane`. [ad-hoc note]
+- Fail-fast/long gate sequences need individual exit receipts; a partial aggregate run is not proof.
+- For Nuvora Link legacy work, map product docs → journey → persisted contract → visible behavior and fix the earliest wrong authority. [ad-hoc note]
+- CoachAI call audits begin with persisted session/job/review state; distinguish `analysis_failed` from `completed_with_feedback`.
 
 ## What's in Memory
 
+### ${PROJECT:control-plane|backslash} / ${PROJECT:auxara-dialer|backslash}
+
+#### 2026-08-01
+
+- Auxara control-plane final checkpoint: e3c1eb9cb25aad665462fe3cbe9542e4de2b9cf9, PR #29–#32, off standard premium, singular-current-decision, npm run ci
+  - desc: Current canonical control-plane authority; search before using PR #27 / `098a76c...`, the retired checkout, or stale AMD/cancellation/release-verifier projections. [ad-hoc note]
+  - learnings: Final local CI passed 281 tests and 1,257 tracked-scope classifications; GitHub-hosted CI is intentionally absent. [ad-hoc note]
+- Sprint 1.5 B/C final local checkpoint: ${WORKSPACE:dev|backslash}\nd-s15-bc, codex/s15-bc-membership-cutover, 48673cfd39269ebb00bae2813a626f995f85b362, migration 0081, Project #7, 201/201
+  - desc: Current local-only B/C takeover state; search before reporting membership authority, AMD, booking boundaries, exact CI, or Project #7 status. [ad-hoc note]
+  - learnings: `48673cfd...` passed exact `npm run ci`; it is intentionally unpushed, unmerged, and undeployed. `0079` activation still requires quiescence, drain, backfill/completeness, replacement-writer proof, and acknowledgement. [ad-hoc note]
+
+### ${WORKSPACE:dev|backslash}
+
+#### 2026-08-01
+
+- Dubai The Last 10% Build offer: Dubai, The Last 10% Build, Software Friction Score, subscription patchwork, Five-Day Workflow Fit Audit
+  - desc: Problem-led custom-software GTM direction; search before defining an ICP, lead magnet, custom-build offer, or acquisition test.
+  - learnings: Diagnose one recurring cross-tool gap and choose deletion/configuration/integration/custom build; demand, delivery time, and AED pricing remain hypotheses until paid validation.
+
+### ${PROJECT:auxara-dialer|backslash} / Auxara policy
+
+#### 2026-08-01
+
+- Tenant offboarding and cancellation retention: 30-day read-only, export/reactivation, internal-DNC, purge receipt, REC-002, tenant-offboarding-brief.md
+  - desc: Current cancellation/purge authority; search before documenting retention, export access, DIDs, tenant evidence, or global identity deletion. [ad-hoc note]
+  - learnings: Day 30 policy purges tenant-owned and derived data, but irreversible purge is not implemented until counsel, backup-horizon, provider-retention, and deployment checks pass. [ad-hoc note]
+
+### ${PROJECT:control-plane|backslash} / ${PROJECT:auxara-dialer|backslash}
+
+#### 2026-07-31
+
+- Earlier Sprint 1.5 reconciliation and Slice A: PR #333, PR #334, 0078_s15_identity_membership_expand, 76 physical User foreign keys, FORCE-RLS, staged-arrival bridge
+  - desc: Historical predecessor to the final 2026-08-01 B/C checkpoint; use for Slice-A/migration background, not for current head or Project #7 counts. [ad-hoc note]
+  - learnings: PRs #20–#26, #333, and #334 are merged; B/C cannot retire scalars until the six-clause staged contract, FORCE-RLS proof, and staged-arrival bridge hold. [ad-hoc note]
+- Cross-repository orchestration drift audit: audit:project-ledger-live, requiredAuthoritySatisfied, PR #238, UNSTABLE, ci:local, read-only
+  - desc: Fresh Auxara/CoachAI live audit, including Project #7, worktree disposition, CoachAI required checks, and stale legacy handoff docs.
+  - learnings: Prior 30 Project #7 discrepancies are superseded for the declared Sprint 1.4 scope; PR #238 remains unready despite local/Vercel success.
+
 ### ${PROJECT:nuvora-link|backslash}
+
+#### 2026-08-01
+
+- Telegram delivery and show-check diagnosis: Mina Nademi, NotificationDelivery, OutboxEvent, runtime_config, sweepMissedShowChecks, 20260731233000_canonicalize_telegram_bindings
+  - desc: Production Worker/scheduler and Telegram-binding investigation; search first for queued/early messages, show-check timing, missing reports, or binding conflicts.
+  - learnings: Confirm Railway deployment and durable `SENT`/outbox evidence before blaming the Worker or device; use authenticated relink for a conflicting Telegram identity.
+
+#### 2026-07-31
+
+- Intent-first repair and built-in dialer retirement: historical product intent, persisted contracts, built-in dialer, provider integrations, repo-wide verification
+  - desc: Product-first repair rule and full retirement boundary for the legacy Nuvora Link dialer. [ad-hoc note]
+  - learnings: Treat current code as historical evidence; remove/migrate UI, routes, providers, jobs, schema/config/docs/tests/helpers and verify no active or billing residue. [ad-hoc note]
+- Dial totals decoupled from TimePunch: DialTotalSubmission, 20260801020000_decouple_dial_totals_from_time_punch, scripts/migrate-production.js, PR #48, bd9626f4f104ccff44aee2bcc03fbdff11ca377e
+  - desc: Production-proven independent manual dial-total authority; search before changing analytics/timekeeping coupling or running its migration.
+  - learnings: Deploy through the guarded Railway migration entrypoint, then prove migration/schema objects and durable rows—green deploy status alone is insufficient.
 
 #### 2026-07-25
 
-- Operational-only agent follow-ups and production migration: AppointmentEntryOrigin, MeasurementScope, AgentFollowUpReceipt, 20260725120000_add_agent_operational_follow_ups, DIRECT_DATABASE_URL
-  - desc: Search for agent-entered appointment/callback behavior, KPI-exempt operational work, Neon migrations, or production schema proof; cwd=${PROJECT:nuvora-link|backslash}.
-  - learnings: Model measurement scope centrally; Neon Prisma migrations require a direct host and explicit production-write confirmation, followed by persisted-object verification.
-- Clean Railway Worker build contract: TS2307, @nuvora-link/contracts, prebuild, pretypecheck, check:workspace-build-contracts
-  - desc: Use for Worker/API/Web deployment-only TypeScript failures caused by local package build ordering; cwd=${PROJECT:nuvora-link|backslash}.
-  - learnings: A stale `packages/contracts/dist` can mask the error locally; clean install/worktree and per-consumer prerequisites are the proof.
-- Accounting defaults, analytics KPI presentation, and admin Follow-up: invoice-pricing.ts, PATCH /api/v1/accounting/admin/agent-rate, modal-body, Show, Book/Reach, Follow-up button
-  - desc: Server-authoritative Stripe/default-rate handling, modal/analytics presentation, safe worktree cleanup, and the explicitly unfinished admin role extension; cwd=${PROJECT:nuvora-link|backslash}.
-  - learnings: Keep agent defaults unless explicitly overridden; KPI order is Show, Book/Reach, Kept/Hr, Reach. The Follow-up extension has no recorded implementation—trace UI and API role gates before claiming it done.
+- Operational follow-ups, production migration, and clean builds: AppointmentEntryOrigin, MeasurementScope, DIRECT_DATABASE_URL, check:workspace-build-contracts
+  - desc: KPI-exempt operational work, Neon Prisma proof, and Railway workspace dependency ordering.
+  - learnings: Model measurement centrally; direct Neon host plus persisted-object proof; stale `packages/contracts/dist` can mask prerequisites.
+- Accounting defaults, analytics presentation, and admin Follow-up: invoice-pricing.ts, PATCH /api/v1/accounting/admin/agent-rate, modal-body, Show, Book/Reach
+  - desc: Server-authoritative Stripe/default-rate handling, selection-modal behavior, KPI order, and unfinished admin role extension.
+  - learnings: Preserve agent defaults unless deliberately overridden; trace both UI and API before claiming admin Follow-up works.
 
-### ${PROJECT:auxara-dialer|backslash}
+### ${PROJECT:auxara-dialer|backslash} / ${PROJECT:coachai|backslash} / ${PROJECT:control-plane|backslash}
 
-#### 2026-07-24
+#### 2026-07-27
 
-- Read-only organization orchestration drift audit: fix/integration-suite-repairs, 14 ahead/23 behind, 19 worktrees, 28 unregistered ahead branches, PR #251, Project #7, gate:agent-context
-  - desc: Newest Nuvo evidence-only state audit; search before any branch/worktree decision or any claim that local orchestration coverage means live drift is resolved.
-  - learnings: `gate:project-ledger-drift` stayed offline-only, PR #251 remained DIRTY with Vercel-only success/no review decision, and dirty integration work still needed a fresh serialized Sprint 1.4 closure proof.
-
-### ${PROJECT:coachai|backslash}
-
-#### 2026-07-24
-
-- Read-only organization orchestration drift audit: fix/dashboard-header-ambient, 2 ahead/145 behind, 15 worktrees, 50 unregistered ahead branches, PR #221, dialer-db-regressions, gates, SRP-004
-  - desc: Newest CoachAI evidence-only state audit; search before any cleanup or claim that orchestration docs or local gates reflect current live repo state.
-  - learnings: Classify retain/PR/retire; PR #221 was UNSTABLE with failed `dialer-db-regressions` and `gates`, `.claude/settings.json` still exposed only `PostToolUse`, and `docs/agent-prompts/README.md` remained stale versus live state.
-
-### ${PROJECT:control-plane|backslash} Control Plane
-
-#### 2026-07-20
-
-- Weekly fleet doctrine review: control:check, bootstrap-orchestrator, rooted exec-form hooks, CLAUDE_PROJECT_DIR, PostToolUse, exit 2, review objects, installed parity
-  - desc: Canonical-vs-installed-vs-overlay audit across Nuvo and CoachAI.
-  - learnings: Red `control:check` means installed doctrine is stale; rooted hooks, exit-2 malformed payloads, and review objects are reusable hardening checks.
+- CoachAI swarm coordination propagation and main delivery: swarm-coordination, origin/main, project-overlay.mjs install coachai, proof:changed
+  - desc: Recheck canonical blobs, install full managed CoachAI overlay in a clean worktree, prove parity, and push main.
+  - learnings: A stale worktree can misdiagnose propagation; partial overlays fail parity and new generated surfaces must be mapped in `organization-control`.
 
 ### Older Memory Topics
 
 #### ${PROJECT:auxara-dialer|backslash}
 
-- Sprint 1.4 rebase, deployment parity, and orchestrator handoff: kickoff-goal.md, git range-diff, service-env-contract.json, deployment-config-parity:live, terminalizeNoProviderEffect
-  - desc: Authority reconciliation, Railway API/worker env parity, and B01 continuation; cwd=${PROJECT:auxara-dialer|backslash}.
-- AI capability audit and portable orchestration control plane: AGENTS.md, CLAUDE.md, TaskCreated, TaskCompleted, mutation receipt, overlay checks
-  - desc: Actual Claude/Codex operating-model and controller-owned completion-evidence audit; cwd=${PROJECT:auxara-dialer|backslash} and ${PROJECT:control-plane|backslash} Control Plane.
-- Orchestration drift, consolidation, and main sync: agent:state, git worktree list --porcelain, PR 244, npm run gates:all, wip/local-main-pre-sync-20260715
-  - desc: Read-only audit, safe residue cleanup, and local-main sync procedures; cwd=${PROJECT:auxara-dialer|backslash}.
-- Worktree cleanup and stale-branch hygiene: git worktree prune, git cherry -v, decision-sprint-linkage, unique commit
-  - desc: Folder-by-folder deletion safety and branch-uniqueness checks; cwd=${PROJECT:auxara-dialer|backslash}.
-- Weather BUX-010 review handoff: BUX-010, FINAL_VERIFY_EXIT: 0, PENDING_WIRING, PR 242
-  - desc: Named weather-backend worktree review/verification handoff; cwd=${PROJECT:auxara-dialer|backslash}\.claude\worktrees\weather-backend.
-- Manual-dial calling-hours confirm flow: CMP-012, confirm_needed, callingHoursManualMode, ComposeDialog.tsx
-  - desc: UI-to-backend explanation for manual calling-hours behavior; cwd=${PROJECT:auxara-dialer|backslash}.
-- Sprint 1.1–1.3 closure and endpoint hardening: prisma:generate, dialer_app already exists, PENDING_WIRING, AST member-access scanning
-  - desc: Sprint proof, test-DB, scheduler-RLS, endpoint-gate, and handoff guidance; cwd=${PROJECT:auxara-dialer|backslash}.
+- Sprint 1.4 rebase, deployment parity, and handoff: kickoff-goal.md, service-env-contract.json, deployment-config-parity:live, terminalizeNoProviderEffect
+  - desc: Historical sprint authority/rebase, Railway per-service environment proof, and honest handoff boundaries; cwd=${PROJECT:auxara-dialer|backslash}.
+- Orchestration, cleanup, and compliance investigations: agent:state, git worktree list --porcelain, BUX-010, CMP-012, confirm_needed
+  - desc: Read-only state audits, worktree hygiene, weather BUX-010 handoff, and calling-hours investigation; re-query all live status.
+- Sprint 1.1–1.3 closure and endpoint hardening: prisma:generate, gate:tx-seam, PENDING_WIRING, AST member-access scanning
+  - desc: Sprint 1.1–1.3 closure, scheduler-RLS, endpoint gates, and continuation guidance; cwd=${PROJECT:auxara-dialer|backslash}.
+- AI capability control plane and frontend threshold: TaskCreated, mutation receipt, bootstrap-orchestrator, frontend mock approval
+  - desc: Historical portable controller-owned completion evidence and the small-addition versus mock-gated visual-change rule; cwd=${PROJECT:auxara-dialer|backslash}. `${PROJECT:control-plane|backslash} Control Plane` is retired; use canonical `${PROJECT:control-plane|backslash}`. [ad-hoc note]
+- Auxara Sprint 1.3 remediation and recovery: DIAL_RUN_REQUIRED, config authority, DLR-016, Redis-parallel tests
+  - desc: Historical Sprint 1.3 status/remediation, placeholder retirement, queue/snapshot/disposition authority, and recovery hardening; cwd=${PROJECT:auxara-dialer|backslash}.
 
 #### ${PROJECT:coachai|backslash}
 
-- Earlier orchestration drift audits: gate:preflight-rules, test:doc-code-drift, claude-posttooluse-gate.mjs, authority doc drift
-  - desc: Historical safe-gate and wiring evidence; recheck time-specific state in the 2026-07-22 audit; cwd=${PROJECT:coachai|backslash}.
-- Sales SOP and coaching guide split: FINAL CALL REVIEW SYSTEM.txt, COACHAI_SALES_AND_COACHING_TECHNIQUES.md, SALES_CALL_SOP_AND_COACHING_GUIDE.md
-  - desc: Technical companion plus no-technical-reference manager artifact; cwd=${PROJECT:coachai|backslash}.
-- Dialpad auto-ingest adapter and fail-closed verification: ingestCall, dialpadWebhookIngest.ts, DIALPAD_WEBHOOK_SECRET, Railway, PR 180
-  - desc: Provider integration authority and honest smoke-proof boundaries; cwd=${PROJECT:coachai|backslash}.
+- Call-audit RCA and one-rerun workflow: analysis_json_main_v1, semanticJudgment.ts, topFixSelection.ts, completed_with_feedback
+  - desc: Persisted-artifact-first call-review diagnosis, spider/pass prompt-testing defaults, and `skills/coachai-call-audit-rerun/SKILL.md`; use for coaching-quality complaints.
+- Read-only orchestration and sales/provider work: gate:organization, test:doc-code-drift, COACHING_BUG_BACKLOG.md, dialpadWebhookIngest.ts
+  - desc: Time-sensitive Git/GitHub/rule-wiring evidence, sales SOP/guide split, and Dialpad ingest/deploy boundaries; cwd=${PROJECT:coachai|backslash}.
+
+#### Historical ${PROJECT:control-plane|backslash} Control Plane
+
+- Portable controller-owned completion evidence: TaskCreated, TaskCompleted, mutation receipt, control-plane.manifest.json
+  - desc: Historical checkout lessons only; separate local verifier proof from installation/activation/trust-boundary claims and inspect current canonical `${PROJECT:control-plane|backslash}` before reuse. [ad-hoc note]
 
 #### ${HOME|backslash}\.codex\memories\extensions\ad_hoc
 
-- Auxara authority, orchestrator posture, and CoachAI spider ladder: DIAL_RUN_REQUIRED, orchestrator mode, frontend mockup approval, spider pass, real app-model rerun
-  - desc: Extension-derived operating defaults for Auxara/CoachAI workflows; [ad-hoc note].
-
-#### ${HOME|backslash}\.codex\memories\skills\coachai-call-audit-rerun
-
-- CoachAI call audit and one-rerun verification skill: coachai-call-audit-rerun, analysis_json_main_v1, semanticJudgment.ts, POST /api/analysis/session/:sessionId/rerun
-  - desc: Use for separating upstream analysis failure from downstream coaching defects when one live rerun is allowed.
+- Standing CoachAI and frontend notes: spider pass, prompt-testing ladder, frontend mock approval
+  - desc: Extension-derived operating defaults for CoachAI AI-quality workflows and visible frontend changes. [ad-hoc note]

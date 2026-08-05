@@ -26,7 +26,7 @@ This file is the shared project entry point for Codex and Claude Code. It stays 
 
 ## Just-in-time rule routing
 
-The four compact execution rules imported by `CLAUDE.md` are always active for Claude and must be read by Codex: `.claude/rules/agent-product-intent.md`, `.claude/rules/decision-discipline.md`, `.claude/rules/loop-discipline.md`, and `.claude/rules/doctrine-loop.md`.
+The five compact execution rules imported by `CLAUDE.md` are always active for Claude and must be read by Codex: `.claude/rules/agent-product-intent.md`, `.claude/rules/decision-discipline.md`, `.claude/rules/loop-discipline.md`, `.claude/rules/doctrine-loop.md`, and `.claude/rules/never-reactive.md`.
 
 Load the remaining rule only when its topic/path applies:
 

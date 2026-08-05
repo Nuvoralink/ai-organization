@@ -13,7 +13,7 @@ Think of it as hiring a team and writing their job descriptions on day one, inst
   - a *kickoff auditor* that proves settled decisions and dependencies actually made it into the iteration before work starts;
   - a *builder* that implements one slice of work at a time, completely;
   - a *skeptic* that assumes the work is NOT done and tries to prove it broke something;
-  - a *domain expert* tuned to your product's must-not-break rules (this is the one piece written specifically for your product);
+  - one or more *domain experts*, each tuned to a coherent group of your product's must-not-break rules (this is the set written specifically for your product);
   - a *security auditor*;
   - a *"does the code match our own written decisions?"* checker;
   - a *"does the screen actually look right at phone/tablet/desktop sizes?"* checker (only for products with a UI);
@@ -21,6 +21,7 @@ Think of it as hiring a team and writing their job descriptions on day one, inst
   - a *"did the live site actually come up after we shipped?"* checker;
   - a *test runner* that runs the slow full test suite so it doesn't clog the main session.
 - **Automatic guardrails** ("gates") — small checks that run the moment a file is edited and again before anything merges. They block things like: a made-up color instead of a design token, a test that secretly proves nothing, a broken link between the rules and the agents.
+- **One checked reviewer roster** — universal roles plus your project-specific auditors are registered once, then a fleet-parity gate proves the installed reviewer files, scoring rubrics, and executable roster still agree. A project can have multiple crown-jewel auditors without squeezing them into one generic "domain auditor."
 - **Living docs** — a decision log, a bug backlog, an architecture map, and a "lessons learned" journal that get updated as work happens, not at the end.
 - **A lean "what the AI always reads" layer** — the always-loaded project instructions are kept deliberately small, and everything else sits behind an index the AI opens only when a task needs it. (Why: an AI's attention is a finite budget — stuffing its standing instructions measurably makes it worse at every task. The setup measures the always-on size at install and records it, so growth is a decision, not a drift.)
 - **A learning loop** — every time a reviewer catches (or misses) a bug, it also reports *why nothing caught it earlier*, and the fix goes into a guardrail or a job description so it can't recur silently.
@@ -34,13 +35,13 @@ In any project's chat, just say: **"bootstrap this project"** or **"install the 
 It will *discover* from the code (never asks you): what language/framework, what test tool, what checks already exist, whether it's a monorepo, whether there's a UI, what CI provider you use.
 
 It will *ask you* only the product-judgment things it can't read from code:
-1. **What can this product absolutely not get wrong?** (Your "crown jewels" — the legal rules, the money path, the AI-decision boundary, the data guarantee.) This is what makes your *domain expert* reviewer. It'll give you two examples (the dialer's = telephony compliance; CoachAI's = the AI-owns-the-judgment boundary) so you can place yours.
+1. **What can this product absolutely not get wrong?** (Your "crown jewels" — the legal rules, the money path, the AI-decision boundary, the data guarantee.) Coherent groups become focused *domain expert* reviewers; materially different authorities stay separate. It'll give you two examples (the dialer's = telephony compliance; CoachAI's = AI judgment plus source-to-screen provenance) so you can place yours.
 2. **Where does it run?** (Site URLs, where the "is it healthy?" endpoint is, where errors are tracked.)
 3. **What's billed / can't be undone?** (Paid AI calls, production database changes, anything that contacts a real customer.)
 4. **Merge policy?** (Default: open a PR, let checks + a review pass, then self-merge.)
 
 ## What you approve
-- **The crown jewels** — you confirm the list, because it defines what your domain reviewer guards. Get this right and the reviewer is sharp; get it vague and it's useless.
+- **The crown jewels and their routing** — you confirm which focused reviewer owns each invariant group. Get this right and the reviewers are sharp; collapse it into a generic lens and it is useless.
 - **Any visible UI change** stays mockup-first as always — the setup doesn't change that rule, it enforces it.
 - **Push and merge policy** — branch creation, commit, and PR creation/update proceed autonomously. Push proceeds only after live proof that it cannot trigger a preview/production deploy, publish or billed build, production write, or external contact; preview deploys count as deploys. A low-risk, additive/isolated merge can proceed only when every capability-matrix condition is proven and it has no deploy/production effect; otherwise you approve. Deploy, production mutation, deletion, billing, external contact, and unresolved product/design/architecture decisions remain yours.
 
@@ -53,6 +54,7 @@ It will *ask you* only the product-judgment things it can't read from code:
 ## How to check it worked
 After the setup, the session runs the guardrails and shows you their results. The quick self-check is one command it will run and report:
 - `npm run gate:rules-wiring` (or your project's equivalent) coming back **green** means the reviewers and rules are correctly wired together.
+- `npm run gate:fleet-parity` coming back **green** with nonzero effective-role and agent-file counts means the universal + project reviewer registries, installed reviewer files, rubrics, and runtime projection agree.
 - `npm run gates:all` coming back **green** means the whole guardrail battery passes.
 - It also does a "does the guardrail actually catch a planted mistake?" spot-check, so you know the guardrails aren't just decoration.
 

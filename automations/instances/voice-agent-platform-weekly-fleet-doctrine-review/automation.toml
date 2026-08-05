@@ -1,0 +1,15 @@
+version = 1
+id = "voice-agent-platform-weekly-fleet-doctrine-review"
+kind = "cron"
+name = "Voice Agent Platform weekly fleet doctrine review"
+prompt = "Read-only weekly fleet and doctrine review. Inspect tracked commits, current role/rule/gate authorities, journey lessons, architecture blast radius, decisions, and open backlog. Identify recurring failure classes with the three-question RCA and recommend at most three reusable controls. Never inspect credentials, customer data, transcripts, recordings, raw payloads, or telemetry bodies; never mutate any repository or external system."
+status = "ACTIVE"
+rrule = "FREQ=WEEKLY;BYDAY=MO;BYHOUR=9;BYMINUTE=25"
+model = "gpt-5.6-terra"
+reasoning_effort = "high"
+notification_policy = "failed_runs_only"
+execution_environment = "local"
+target = { type = "project", project_id = "ab7ca06a-b610-4550-aa4b-2c77e5b91ad9" }
+cwds = ["C:\\dev\\Voice Agents"]
+created_at = 1785603299532
+updated_at = 1785603299532

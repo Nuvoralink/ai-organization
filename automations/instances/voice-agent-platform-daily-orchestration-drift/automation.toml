@@ -1,0 +1,15 @@
+version = 1
+id = "voice-agent-platform-daily-orchestration-drift"
+kind = "cron"
+name = "Voice Agent Platform daily orchestration drift"
+prompt = "Read-only orchestration drift report. Inspect live Git/worktree state, current decision and architecture authorities, AGENTS/CLAUDE rule wiring, lifecycle hooks, role registries, generated projections, gate output, and orchestration backlog. Open raw outputs; report evidence-backed discrepancies and exact next actions only. Never inspect secrets, customer data, transcripts, recordings, raw provider payloads, or telemetry bodies. Do not edit, commit, push, merge, deploy, delete, purchase, mutate production, submit browser actions, or contact anyone."
+status = "ACTIVE"
+rrule = "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=10"
+model = "gpt-5.6-terra"
+reasoning_effort = "medium"
+notification_policy = "failed_runs_only"
+execution_environment = "local"
+target = { type = "project", project_id = "ab7ca06a-b610-4550-aa4b-2c77e5b91ad9" }
+cwds = ["C:\\dev\\Voice Agents"]
+created_at = 1785603292246
+updated_at = 1785603292246

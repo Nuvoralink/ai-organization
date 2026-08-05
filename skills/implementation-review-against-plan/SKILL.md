@@ -7,9 +7,9 @@ description: Use after code or docs were implemented from a plan to verify the a
 
 Use this skill after implementation, before calling work done.
 
-## The Standing Gauntlet — review the diff against all ten (non-negotiable)
+## The Standing Gauntlet — review the diff against all eleven (non-negotiable)
 
-These ten gates mirror the user's global engineering doctrine. They are **always implied** and never need to be asked for. The diff is not done until it can affirm each gate; otherwise list which gate failed and what it needs.
+These eleven gates mirror the user's global engineering doctrine. They are **always implied** and never need to be asked for. The diff is not done until it can affirm each gate; otherwise list which gate failed and what it needs.
 
 1. **Verify, never assume.** Every claim in the review ("X is wired," "Y is consumed," "Z is deleted") is traced to the actual changed code/output, not inferred from the plan or a summary.
 2. **Outputs over statuses.** Confirm behavior from the real artifact (persisted row, rendered surface, raw model response), not a passing-test status; distrust a green test or a grep returning 0 and re-check differently.
@@ -21,6 +21,12 @@ These ten gates mirror the user's global engineering doctrine. They are **always
 8. **Pressure-test the thing itself.** Did the change build something that needn't exist, belongs elsewhere for better UX, or duplicates existing capability? Is it over-engineered, or too loose/sloppy on durability/security/edges?
 9. **Stop before you quick-fix.** If this review surfaces a NEW bug, do not patch it on the spot — run the mid-task loop (verify it's real → already fixed/mis-wired or legacy-to-delete → pressure-test purpose → hypothesize → verify the fix is best → run the rest of the gauntlet → implement or flag).
 10. **Clean up after yourself — repoint or remove every trace of the old.** After any delete/replace/rename/change, grep the old name repo-wide: switch every dependent to the new thing (or migrate/remove it on delete), delete every now-orphaned dead path, and leave no dangling reference — in *all* files; nothing still points at the old thing (the reverse of Gate 4).
+11. **Relational, never hardcoded.** Values that encode a relationship—routes, keys, enum strings, thresholds, duplicated constants, response assumptions, design values, positions, or sizes—must derive from their owning contract, registry, token, or layout relation. A literal belongs only at the source that defines it. *Fail-state:* the reviewed diff inlines a leaf-level value that silently duplicates or assumes another authority and no gate fails when that authority changes.
+
+Regression mutation: review a diff that hardcodes a shared route, retry limit, or
+design value at a consumer instead of referencing its authority; the review must
+report Gate 11 as failed. Counterexample: a literal at the canonical registry or
+token definition remains allowed when it is the source rather than a duplicate.
 
 ## Review Goal
 
@@ -63,6 +69,7 @@ For feature work, big slices, cross-session work, or audit-remediation passes, u
 - The change is over-engineered (machinery the product doesn't need yet) or, conversely, too loose/sloppy (skips durability, security, or edge handling the feature genuinely needs). Either misses the durable-but-minimal middle (Gate 8).
 - Something was built that didn't need to exist, or belongs on a different surface/layer/step for better UX (Gate 8).
 - A bug surfaced during review was quick-patched in place instead of run through the mid-task loop (Gate 9).
+- A consumer hardcodes a route, enum, threshold, response-shape assumption, or design value that should derive from its owning authority (Gate 11).
 
 ## Output
 

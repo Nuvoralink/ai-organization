@@ -1,0 +1,16 @@
+{
+  "$schema": "https://nuvoralink.internal/schemas/agent-role-project-extension.v1.schema.json",
+  "version": "1.1.0",
+  "agent_file_exceptions": [
+    // FILL: inherited universal review/verify roles that intentionally have no project agent file. Use an empty
+    // replacement when none apply. Every row needs role_id, source:"inherited_global_agent", and a concrete reason.
+    {{AGENT_FILE_EXCEPTION_ROWS_JSON}}
+  ],
+  "roles": [
+    // FILL: one complete canonical role row per project-authored role. Multiple domain/crown-jewel auditors are
+    // separate rows; each review_read_only/verify_runtime role carries a verdict_rubric and its agent file carries
+    // the matching criterion ids/critical markers. Do not copy universal rows here unless explicitly extending or
+    // superseding one under the project-extension schema.
+    {{PROJECT_ROLE_ROWS_JSON}}
+  ]
+}

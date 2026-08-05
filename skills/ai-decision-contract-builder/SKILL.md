@@ -70,6 +70,19 @@ Validators are backstops and teachers. When regeneration is possible:
 
 Do not silently rewrite bad semantic decisions in deterministic code unless the issue is exact policy, security, formatting, or display validation.
 
+## Safety-Critical Executable Contract Shape
+
+When a status, mode, or lifecycle branch can authorize contact, speech, a tool mutation, money movement, persistence, or another externally visible effect, prose and a permissive object plus runtime refinements are not the source of truth. Define the accepted executable artifact as a discriminated union so illegal authority combinations are unrepresentable:
+
+- every executable branch requires its complete authority package at the type/schema boundary: source/policy releases, evidence or provenance, scope, expiry, idempotency or one-use authority where applicable, and the exact content/action/intent/receipt binding that downstream effects consume;
+- blocked, abstained, review, pending, failed, and unknown branches forbid executable fields (for example with `?: never`) instead of merely asking consumers to ignore them;
+- lifecycle terminal branches require their exact terminal evidence: a success receipt or an explicit evidence-backed no-effect/no-result outcome; nonterminal and failed branches forbid a success receipt;
+- coupled identities and hashes stay relational across accepted decision → admitted output/action → provider execution → terminal receipt, and a mismatch fails before the effect;
+- downstream consumers pattern-match the admitted union variant, never a loose `status` string or truthy optional field;
+- add one negative fixture for every illegal cross-field combination and one positive liveness fixture for every executable branch. Name the killer mutation: weaken a required field, restore an optional effect field, accept the status alone, or permit terminal completion without its receipt; each must turn red.
+
+Runtime validation remains a backstop for untrusted JSON and cross-record lookups; it is not a substitute for the canonical union. Counterexample: open-world semantic labels, rationale, uncertainty, and novel caller phrasing may remain flexible inside a structurally admitted candidate. Do not turn phrase-level meaning into enum branches or deterministic keyword gates merely to make the outer contract strict.
+
 ### Guards are signals, not gates — never let a check override the model's meaning verdict
 
 A schema-valid model verdict (valid enum/shape, required fields, rationale present) is **authoritative**. The semantic guards — grounding, speaker attribution, time-window, confidence floor — may **attach** a confidence discount or an "unverified" provenance flag, but must **never reject, discard, override, or substitute** the verdict, and must never trigger a deterministic fallback that overwrites it. The moment a guard can overrule the model, deterministic code is the primary intelligence layer again — the exact thing this skill exists to prevent. Guards also **compound**: one upstream model slip (e.g. a mis-assigned speaker) feeding an authoritative downstream guard (a speaker-filtered grounding check) cascades into a wrong final verdict AND a wrong "limited"/degraded honesty state. Gate only on schema + security/policy; everything about meaning is a signal surfaced for review. You cannot enumerate a guard for every situation — that is precisely why the model owns meaning and the guards only annotate it. (Where a deterministic semantic block is genuinely unavoidable, mark it with scope + reason per the rule below and prove it can't expand.)

@@ -10,20 +10,32 @@ verify = <install/generate as needed> && build && lint && format:check && typech
 ```
 **Why the full sequence, not `gates:all` alone:** `gates:all` omits lint/format:check/typecheck — running it alone let a banned import + unformatted files reach a RED CI (origin incident, 2026-06-11). `verify` surfaces the whole cascade locally, before the commit. The implementer/reviewer read each command's OWN exit code via a sentinel (`npm run verify; rc=$?; echo "EXIT: $rc"; exit $rc`), never a piped `| tail` status (a pipe reports the last stage's exit, not verify's).
 
-## `gates:all` — always include these two, then add the project's own
+## `gates:all` — include the invariant gates, then add conditional and project gates
 ```
-gates:all = gate:rules-wiring && gate:agent-context && gate:agent-control-plane && gate:test-intent && <project-specific gates...>
+gates:all = gate:rules-wiring && gate:agent-context && gate:agent-control-plane && <gate:test-intent when the project has executable tests> && <project-specific gates...>
 ```
 - **`gate:rules-wiring`** (invariant) — the loader-integrity gate. Wire it FIRST so a broken rules↔agents link fails fast.
 - **`gate:agent-context`** (invariant) — recursively measures CLAUDE imports + accidentally unscoped rules; fails above the named startup budget.
 - **`gate:agent-control-plane`** (invariant) — validates the six-part issue form, human-gated PR template, plan-mode saved workflow/playbook, bounded loop/goals, lifecycle hook, settings events/permission surface, and ignored content-free telemetry path.
-- **`gate:test-intent`** (invariant) — every test declares what it proves.
+- **`gate:test-intent`** (required when executable tests exist) — every test declares what it proves, and every complete executable catalog ID has a discovered test-file claim. A genuinely test-free project omits the gate; it never installs a green bootstrap skip.
 - **Project-specific gates** — add per domain, e.g.:
   - Frontend product: `check:ui` (guardrails + source-of-truth + testid + continuity), `check:layout` (scroll + header-surface).
   - ORM/DB product: a `gate:tx-seam` (typed transaction seams), a `gate:lifecycle-write`, an `ephemeral-listen` gate for HTTP integration tests.
   - Monorepo with internal `file:`/`workspace:` packages: `gate:shared-resolution` — internal packages must resolve in-tree; wire it into each consumer's `build` (see "Workspace-package resolution guard" below).
   - **Any product that runs PARALLEL agents in worktrees** (i.e. every bootstrapped repo): the two shared-namespace COLLISION gates — `gate:migration-object-names` (any repo with SQL migrations) and `gate:adr-numbering` (any repo with numbered ADRs). See "Shared-namespace reservation + its collision gates" below.
   - Any product: `gate:doc-code-drift` (every claimed authority path resolves), a `preflight-security` gate, a supply-chain `gate:audit` in CI.
+
+## Example (the dialer's actual `gates:all`, for calibration — do NOT copy verbatim)
+```
+gate:preflight-security && gate:doc-code-drift && gate:rules-wiring && check:ui && gate:test-intent
+  && gate:copy-terms && check:layout && gate:tx-seam && gate:tx-rollback && gate:lifecycle-write
+  && gate:ephemeral-listen && gate:filemap
+```
+The dialer's `verify`:
+```
+prisma:generate -w @<scope>/backend && build && lint && format:check && typecheck && test && gates:all
+```
+Note the heavy DB suite (`test:integration`) is DELIBERATELY NOT in `verify` — it's a separate script the orchestrator runs via the test-runner agent (implementer Pattern A). CoachAI expresses the same idea with different gate names — the invariant is the sequence plus the applicable invariant gates, not the specific project gates.
 
 ## Shared-namespace reservation + its collision gates
 
@@ -50,20 +62,8 @@ gate:adr-numbering          = node --test .ai-organization/runtime/core/coordina
 
 **Prove the gates BITE before calling this done** — a registered gate that never fires is not proof. Seed a scratch duplicate (a second migration hard-creating a table that is *still occupied* at the end of the chain, and a second ADR file on an existing number), confirm exit 1 with the right message, delete the fixture, and confirm exit 0 again. Pick the duplicate object by *tracing the real migration set*, not by eye: an object that a later migration DROPs is legitimately re-creatable, so duplicating it produces an inert fixture that passes and proves nothing.
 
-## Example (the dialer's actual `gates:all`, for calibration — do NOT copy verbatim)
-```
-gate:preflight-security && gate:doc-code-drift && gate:rules-wiring && check:ui && gate:test-intent
-  && gate:copy-terms && check:layout && gate:tx-seam && gate:tx-rollback && gate:lifecycle-write
-  && gate:ephemeral-listen && gate:filemap
-```
-The dialer's `verify`:
-```
-prisma:generate -w @<scope>/backend && build && lint && format:check && typecheck && test && gates:all
-```
-Note the heavy DB suite (`test:integration`) is DELIBERATELY NOT in `verify` — it's a separate script the orchestrator runs via the test-runner agent (implementer Pattern A). CoachAI expresses the same idea with different gate names — the invariant is the sequence + the two mandatory gates, not the specific project gates.
-
-## The two scripts each gate needs
-Each gate is `node {{SCRIPTS_DIR}}/check-<name>.mjs`, exposed as an npm script (`gate:<name>` or `check:<name>`), returning exit 0 (pass) / 1 (fail), and bootstrap-skipping (exit 0) until the code it scans exists.
+## The two wiring surfaces each gate needs
+Each installed gate is `node {{SCRIPTS_DIR}}/check-<name>.mjs`, exposed as an npm script (`gate:<name>` or `check:<name>`), returning exit 0 (pass) / 1 (fail), and failing closed when its configured proof inputs do not exist. Omit a genuinely inapplicable gate instead of installing a green no-input path. A narrowly optional producer may bootstrap-skip only when that optionality is part of that gate's explicit contract; test-intent source roots, complete catalogs, executable IDs, and tests are not optional once `gate:test-intent` is installed.
 
 ## If the repo has no `verify` yet
 Create it. If it has one, EXTEND it (append `gates:all`) — never replace a working sequence, which risks dropping a step CI relies on.

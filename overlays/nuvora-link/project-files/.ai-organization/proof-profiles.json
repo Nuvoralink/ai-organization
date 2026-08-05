@@ -4,84 +4,26 @@
   "lifecycle_hook_timeout_ms": 1800000,
   "lifecycle_timeout_safety_margin_ms": 60000,
   "lifecycle_roles_by_completion_mode": {
-    "read-only": [
-      "codex-backend-implementer",
-      "claude-frontend-implementer",
-      "adversarial-reviewer"
-    ],
-    "implementation": [
-      "codex-backend-implementer",
-      "claude-frontend-implementer"
-    ]
+    "read-only": ["codex-backend-implementer", "claude-frontend-implementer", "adversarial-reviewer"],
+    "implementation": ["codex-backend-implementer", "claude-frontend-implementer"]
   },
-  "lifecycle_supported_risk_classes": [
-    "control_plane"
-  ],
-  "risk_path_rules": [
-    {
-      "risk_class": "control_plane",
-      "profile_id": "organization-control"
-    }
-  ],
+  "lifecycle_supported_risk_classes": ["control_plane"],
+  "risk_path_rules": [{"risk_class": "control_plane", "profile_id": "organization-control"}],
   "profiles": [
     {
       "id": "organization-control",
       "lane": "static",
       "risk": "control_plane",
-      "include": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        ".ai-organization/**",
-        ".claude/**",
-        ".github/**",
-        "scripts/check-*.mjs",
-        "scripts/claude-*.mjs",
-        "scripts/run-bounded-agent.mjs",
-        "scripts/lib/**",
-        "package.json"
-      ],
-      "commands": [
-        "npm run gates:all"
-      ],
+      "include": ["AGENTS.md", "CLAUDE.md", ".ai-organization/**", ".claude/**", ".github/**", "scripts/check-*.mjs", "scripts/claude-*.mjs", "scripts/run-bounded-agent.mjs", "scripts/lib/**", "package.json"],
+      "commands": ["npm run gates:all"],
       "assurance": {
         "version": 1,
         "classification": "local_non_mutating",
         "safe_local_only": true,
-        "capabilities": [
-          "control_plane_completion"
-        ],
+        "capabilities": ["control_plane_completion"],
         "env_allowlist": [],
-        "commands": [
-          {
-            "id": "organization-gates",
-            "argv": [
-              "npm",
-              "run",
-              "gates:all"
-            ],
-            "timeout_ms": 600000,
-            "parser": {
-              "kind": "patterns",
-              "minimum_output_bytes": 1,
-              "minimum_executed": 1,
-              "required_patterns": [
-                "fleet-parity: PASS",
-                "overlay-parity: PASS"
-              ]
-            }
-          }
-        ],
-        "mutation": {
-          "case_id": "malformed-posttooluse-rejected",
-          "argv": [
-            "node",
-            "scripts/check-agent-control-plane.mjs",
-            "--self-test"
-          ],
-          "timeout_ms": 60000,
-          "receipt_marker": "MUTATION_RECEIPT_JSON:",
-          "expected_diagnostic": "malformed PostToolUse payload was accepted"
-        }
+        "commands": [{"id": "organization-gates", "argv": ["npm", "run", "gates:all"], "timeout_ms": 600000, "parser": {"kind": "patterns", "minimum_output_bytes": 1, "minimum_executed": 1, "required_patterns": ["fleet-parity: PASS", "overlay-parity: PASS"]}}],
+        "mutation": {"case_id": "malformed-posttooluse-rejected", "argv": ["node", "scripts/check-agent-control-plane.mjs", "--self-test"], "timeout_ms": 60000, "receipt_marker": "MUTATION_RECEIPT_JSON:", "expected_diagnostic": "malformed PostToolUse payload was accepted"}
       }
     },
     {
@@ -94,28 +36,9 @@
         "version": 1,
         "classification": "internal_read_only",
         "safe_local_only": true,
-        "capabilities": [
-          "read_only_integrity"
-        ],
+        "capabilities": ["read_only_integrity"],
         "env_allowlist": [],
-        "commands": [
-          {
-            "id": "repository-binding",
-            "argv": [
-              "internal",
-              "repository-binding"
-            ],
-            "timeout_ms": 1000,
-            "parser": {
-              "kind": "patterns",
-              "minimum_output_bytes": 1,
-              "minimum_executed": 1,
-              "required_patterns": [
-                "READ_ONLY_REPOSITORY_BINDING:"
-              ]
-            }
-          }
-        ]
+        "commands": [{"id": "repository-binding", "argv": ["internal", "repository-binding"], "timeout_ms": 1000, "parser": {"kind": "patterns", "minimum_output_bytes": 1, "minimum_executed": 1, "required_patterns": ["READ_ONLY_REPOSITORY_BINDING:"]}}]
       }
     }
   ],

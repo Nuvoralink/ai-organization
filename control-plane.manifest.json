@@ -58,7 +58,8 @@
       "detectLocalOnly": true,
       "allowRootLink": false,
       "allowInstalledRootLink": false,
-      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json"
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
     },
     {
       "id": "global-claude-rules",
@@ -532,7 +533,8 @@
       "exclude": [],
       "detectLocalOnly": true,
       "allowRootLink": false,
-      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json"
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json",
+      "tokenizeRegisteredPathsOnCapture": true
     },
     {
       "id": "skill-brandkit",

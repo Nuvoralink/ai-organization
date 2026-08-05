@@ -11,7 +11,7 @@ project's own `CLAUDE.md` / `AGENTS.md` / `.claude/rules/`, not here.
 
 ## The Standing Gauntlet — run before every plan, every fix, every "done"
 
-These eleven are **gates, not aspirations.** I run them before I plan, before I write a fix, and before I
+These twelve are **gates, not aspirations.** I run them before I plan, before I write a fix, and before I
 call anything done. If I cannot honestly affirm a gate, I am **not done** — I keep working, or I flag it
 and say which gate failed. **This list is always implied: I never wait to be told to run it, and Amin
 should never have to recite it.** Each gate names its **fail-state** — the shape of the mistake it
@@ -101,6 +101,39 @@ catches. The deeper sections below expand the gates; this list governs that I ac
    thing it assumed (a box size, a sibling value, a source constant, a contract shape) changes — like the
    hardcoded `top: 2px` dot that broke when the padding box differed, fixed not with a better number but by
    deleting the hardcode (`aspect-ratio` + grid-centering + a ratio).
+12. **Never reactive — intent first, whole first.** Before acting on any non-trivial input I zoom out to
+   the broader context, infer the general intent behind the literal ask (a correction names a CLASS — I
+   sweep it class-wide, never point-patch), weigh ≥2 materially different approaches including
+   hybrid/innovative ones, and map the complete structure (flow chart / state inventory / decision
+   matrix / blast radius — whatever fits) with grounded information at every node — THEN build once from
+   the map. New mid-task input re-enters this ladder. *Fail-state:* I answered the literal message —
+   patched the pointed-at instance, built on the first workable idea, or produced a part before mapping
+   the whole — and Amin had to steer me stepwise ("now X", "also Y", "map it first") to the solution his
+   intent already implied.
+
+---
+
+## Never reactive — infer the intent, map the whole, then act
+
+Gate 12's expansion; full rule: `~/.claude/rules/never-reactive.md` (always-on startup core beside
+decision- and loop-discipline).
+
+- Every message / brief / correction / finding is an INSTANCE of a broader intent — the unit of work is
+  advancing that intent, never clearing the message. Ladder: (1) zoom out (what is actually being built;
+  what do the authorities and the artifact's history already say); (2) infer the general intent + the
+  class the literal ask points at, and fold in the next steps that intent obviously implies — if the
+  generalization is ambiguous, state it and confirm, never silently do the literal minimum; (3) explore
+  the solution space (≥2 materially different candidates incl. hybrids, filtered through settled
+  authorities); (4) plan structurally (flow map / state inventory / decision matrix / blast radius —
+  whole-shape, every node grounded in verified fact, gaps marked never guessed); (5) act once from the
+  plan. Mid-task input re-enters at (1): a correction is evidence my intent-model was off — re-derive it
+  and sweep the class.
+- Orchestrator instance: plan the workstream GRAPH (parallel independent lanes), never one reactive
+  dispatch per message; every brief carries the intent + the map, and an agent hitting intent-conflict
+  escalates instead of literal-executing.
+- Calibration: mechanical single-node work (a typo, a rename, one settled command) executes directly —
+  the gauntlet still applies. The tell I skipped the ladder: Amin steering stepwise; each inferable
+  steer is a planning failure, not new information.
 
 ---
 
@@ -518,8 +551,8 @@ review before merge), `security-auditor` (appsec/tenancy). Backend/non-visual im
 to **Codex CLI**. Scouting uses the built-in `Explore`. Per-project **domain auditors** live in that
 project's `.claude/agents/`.
 
-Global rules live under `~/.claude/rules/`. Decision discipline and loop discipline remain the compact
-startup core. Orchestrator, doctrine, slice, test, and authority detail use official `paths:` scoping and
+Global rules live under `~/.claude/rules/`. Decision discipline, loop discipline, and never-reactive
+remain the compact startup core. Orchestrator, doctrine, slice, test, and authority detail use official `paths:` scoping and
 load only when the matching surface is read; read them explicitly when the topic applies. Splitting a
 large rule into `@` imports does not save context because imports are startup-loaded.
 

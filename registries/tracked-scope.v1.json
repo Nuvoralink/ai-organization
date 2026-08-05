@@ -67,7 +67,15 @@
       "class": "automation-instance"
     },
     {
+      "path": "automations/instances/nuvora-link-weekday-orchestration-drift/memory.md",
+      "class": "automation-instance"
+    },
+    {
       "path": "automations/instances/nuvora-link-weekly-fleet-doctrine-review/automation.toml",
+      "class": "automation-instance"
+    },
+    {
+      "path": "automations/instances/nuvora-link-weekly-fleet-doctrine-review/memory.md",
       "class": "automation-instance"
     },
     {
@@ -80,6 +88,26 @@
     },
     {
       "path": "automations/instances/universal-weekday-control-plane-drift-alarm/automation.toml",
+      "class": "automation-instance"
+    },
+    {
+      "path": "automations/instances/universal-weekday-control-plane-drift-alarm/memory.md",
+      "class": "automation-instance"
+    },
+    {
+      "path": "automations/instances/voice-agent-platform-daily-orchestration-drift/automation.toml",
+      "class": "automation-instance"
+    },
+    {
+      "path": "automations/instances/voice-agent-platform-daily-orchestration-drift/memory.md",
+      "class": "automation-instance"
+    },
+    {
+      "path": "automations/instances/voice-agent-platform-weekly-fleet-doctrine-review/automation.toml",
+      "class": "automation-instance"
+    },
+    {
+      "path": "automations/instances/voice-agent-platform-weekly-fleet-doctrine-review/memory.md",
       "class": "automation-instance"
     },
     {
@@ -2479,6 +2507,14 @@
       "class": "global-orchestration"
     },
     {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/agent-final-message-is-the-report.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/agent-liveness-not-from-output-file.md",
+      "class": "global-orchestration"
+    },
+    {
       "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/brand-architecture-two-hats.md",
       "class": "global-orchestration"
     },
@@ -2531,11 +2567,23 @@
       "class": "global-orchestration"
     },
     {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/compliance-ux-tos-not-acks.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/decide-authorities-then-research-never-on-the-fly.md",
+      "class": "global-orchestration"
+    },
+    {
       "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/decision-defaults.md",
       "class": "global-orchestration"
     },
     {
       "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/deployment-topology.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/design-conveys-meaning-not-narrative.md",
       "class": "global-orchestration"
     },
     {
@@ -2575,7 +2623,15 @@
       "class": "global-orchestration"
     },
     {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/gh-pr-merge-from-worktree.md",
+      "class": "global-orchestration"
+    },
+    {
       "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/git-bash-git-show-pathconv.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/managed-asset-fork-trap.md",
       "class": "global-orchestration"
     },
     {
@@ -2592,6 +2648,10 @@
     },
     {
       "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/mockup-quality-bar.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/namespace-reservation-managed.md",
       "class": "global-orchestration"
     },
     {
@@ -2619,6 +2679,10 @@
       "class": "global-orchestration"
     },
     {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/parity-gates-normalize-line-endings.md",
+      "class": "global-orchestration"
+    },
+    {
       "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/periodic-branch-sync.md",
       "class": "global-orchestration"
     },
@@ -2636,6 +2700,10 @@
     },
     {
       "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/push-rebase-before-dispatching-into-worktree.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/read-commit-messages-before-declaring-work-unfinished.md",
       "class": "global-orchestration"
     },
     {
@@ -2676,6 +2744,10 @@
     },
     {
       "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/user-profile-and-operating-mode.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/visible-surface-audit.md",
       "class": "global-orchestration"
     },
     {
@@ -2863,6 +2935,10 @@
       "class": "global-orchestration"
     },
     {
+      "path": "global/claude/rules/never-reactive.md",
+      "class": "global-orchestration"
+    },
+    {
       "path": "global/claude/rules/orchestrator-mode.md",
       "class": "global-orchestration"
     },
@@ -2944,6 +3020,42 @@
     },
     {
       "path": "global/codex/memories/extensions/ad_hoc/notes/2026-07-08T09-41-17-s13-recovery-hardening.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/2026-07-31-auxara-control-plane-s15-reconciliation-handoff.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/2026-07-31-project-7-live-audit-supersedes-30-issues.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/2026-08-01T08-15-00-dialer-retention-authority-replacement.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/2026-08-01T08-35-00-auxara-control-plane-pr27-merged.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/2026-08-01T09-48-14-auxara-s15-bc-local-checkpoint.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/2026-08-01T23-52-45-auxara-s15-control-plane-final-checkpoint.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/20260731-123551-nuvora-link-intent-first-rebuild.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/20260731-123712-nuvora-link-dialer-retired.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/20260731-230925-auxara-control-plane-s15-merged-handoff.md",
       "class": "global-orchestration"
     },
     {
@@ -3128,6 +3240,10 @@
     },
     {
       "path": "overlays/auxara-dialer/project-files/.claude/rules/loop-discipline.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/rules/never-reactive.md",
       "class": "project-orchestration-overlay"
     },
     {
@@ -4035,6 +4151,14 @@
       "class": "reusable-skill"
     },
     {
+      "path": "skills/bootstrap-orchestrator/scripts/verify-control-plane-asset-provenance.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/scripts/verify-control-plane-asset-provenance.test.mjs",
+      "class": "reusable-skill"
+    },
+    {
       "path": "skills/bootstrap-orchestrator/templates/AGENTS.md.template",
       "class": "reusable-skill"
     },
@@ -4124,6 +4248,10 @@
     },
     {
       "path": "skills/bootstrap-orchestrator/templates/claude-posttooluse-gate.mjs.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/control-plane/agent-roles.project.v1.json.template",
       "class": "reusable-skill"
     },
     {
@@ -4420,6 +4548,10 @@
     },
     {
       "path": "skills/frontend-design-director/agents/openai.yaml",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/frontend-design-director/references/flow-stage-patterns.md",
       "class": "reusable-skill"
     },
     {

@@ -2,8 +2,12 @@
 paths:
   - "**/*.test.ts"
   - "**/*.test.tsx"
+  - "**/*.test.mts"
+  - "**/*.test.mjs"
   - "**/*.spec.ts"
   - "**/*.spec.tsx"
+  - "**/*.spec.mts"
+  - "**/*.spec.mjs"
   - "**/__tests__/**/*"
   - "**/e2e/**/*"
   - "scripts/**/*gate*"
@@ -24,6 +28,10 @@ Authority: <which source-of-truth owns the decision being asserted>
 <one-line product statement: "Given X, the system does Y; if it regressed to Z, this fails.">
 ```
 A test without a `Proves:` line is not allowed. `Proves:` must reference a real ID from the project's requirement/benchmark/decision registry — not a vague phrase.
+
+### Typed catalog authority
+
+Complete executable intent comes only from a dedicated machine-readable catalog whose rows use the exact form `- \`ID\` — description`; every such ID must have at least one discovered test-file claim. ADRs, mixed decision logs, and backlogs are resolution-only unless their owner deliberately promotes exact rows into the executable catalog: their IDs may resolve in `Proves:`, but uncovered rows stay neutral. An installed gate fails closed on zero configured roots, zero complete sources, missing sources, malformed or duplicate executable rows, zero executable IDs, zero discovered tests, and uncovered executable IDs. A genuinely test-free project omits the gate instead of installing a bootstrap skip.
 
 ## 2. The test must bite
 For every test, name the concrete **mutation** that should make it fail (the regression it defends against) — AND the **GATED command that turns red** under that mutation (a check that lives only on an ungated or permanently-red surface — an aux tsconfig no gate compiles, a script no CI runs — proves nothing; 2026-07-12 CoachAI CA-4: a DTO type-guard "bit" only in a 233-errors-red scripts tsconfig that verify never compiles). If you can't name a mutation that breaks it, the test isn't testing the right thing. Pair every positive assertion with the negative/fail-closed path — happy-path-only is half a test.
@@ -68,6 +76,8 @@ A test that passes without exercising the decision it *claims* to prove is a **P
 Where the project can, a CI gate scans test files for the intent header + a real `Proves:` ID and fails the build on a missing/placeholder one — so the discipline bites automatically (per the doctrine-loop rule). If no such gate exists yet, that gate is a named follow-up, not an excuse to skip the header.
 
 **Test-runner discovery is part of the proof.** A named proof command must fail when it discovers zero files or executes zero tests; never use `--passWithNoTests` (or an equivalent ignore-empty switch) in a proof, aggregate, CI, integration, or closure lane. Workspace-filtered paths are resolved from that workspace's effective cwd, not presumed repository-root paths. Aggregates must explicitly reach every test-bearing workspace, or a derived inventory gate must prove that they do. The raw proof includes the command's own exit plus nonzero file and executed-test counts for every expected workspace/lane. Killer mutations: re-add an ignore-empty flag, delete a test-bearing workspace's test script, or pass a repository-root-prefixed filter through a workspace runner; each must turn the proof red. Counterexample: a workspace with no test files may omit a test command and is not required to manufacture a no-op test.
+
+Where a stable project-owned test-lane registry exists, both the runner aggregate and the intent scanner consume it. Without one, the project supplies a separate aggregate/discovery mutation proving lane reachability; a universal scanner must not infer arbitrary package-manager runner syntax.
 
 **Scanner success output is a predicate ledger, not a class-wide claim.** Every `OK`/success line from a scanner or authority gate must enumerate each distinct enforcement scope separately and report that scope's own count. Its wording may claim no broader property than the exact predicate checked: one literal, token, path, or syntax-shape scan cannot certify the whole authority class. When several predicates enforce sibling scopes, print and count each one rather than collapsing them into a reassuring umbrella sentence. A meta-test should assert the scoped labels/counts so a broadened success claim or dropped predicate turns the gate red. (2026-07-19: second known scanner success-line overstatement; STOP-and-codify.)
 

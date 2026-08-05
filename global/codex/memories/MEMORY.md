@@ -1,3 +1,385 @@
+# Task Group: Auxara control-plane reconciliation, billing authority, and Sprint 1.5 handoff
+scope: current canonical AI Organization authority, Nuvo Dialer Sprint 1.5 membership cutover, no-surprise billing, booking boundaries, and live Project #7 evidence
+applies_to: cwd=${PROJECT:control-plane|backslash} and ${PROJECT:auxara-dialer|backslash}; reuse_rule=reuse only after re-querying live Git, GitHub, Project, worktree, provider, and proof state; the 2026-08-01 final checkpoint supersedes older heads, counts, and pending-work claims
+
+## Task 1: Reconcile the canonical Auxara overlay with the Dialer projection, outcome documented
+
+### rollout_summary_files
+
+- extensions/ad_hoc/notes/2026-07-31-auxara-control-plane-s15-reconciliation-handoff.md (cwd=${WORKSPACE:dev|backslash}\ai-org-auxara-reconcile and ${WORKSPACE:dev|backslash}\nd-s15-planning, rollout_path=${HOME|backslash}\.codex\memories\extensions\ad_hoc\notes\2026-07-31-auxara-control-plane-s15-reconciliation-handoff.md, updated_at=2026-07-31, source=ad-hoc-note)
+
+### keywords
+
+- codex/auxara-overlay-reconciliation, codex/s15-kickoff-reconciliation, overlay:check:auxara, validateClaudeHookSettings.mjs, structural-prefix parity, ## Learned classes, 271 passed, Sprint 1.5, Project #7
+
+## Task 2: Merged canonical control plane, Sprint 1.5 plan, and Slice A; coordinated B/C cutover remains, outcome success
+
+### rollout_summary_files
+
+- extensions/ad_hoc/notes/20260731-230925-auxara-control-plane-s15-merged-handoff.md (cwd=${PROJECT:control-plane|backslash} and ${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\memories\extensions\ad_hoc\notes\20260731-230925-auxara-control-plane-s15-merged-handoff.md, updated_at=2026-07-31, source=ad-hoc-note, supersedes the pre-push handoff)
+
+### keywords
+
+- PR #20–#26, 3ca66bd, npm run ci, PR #333, 0dc9867, PR #334, 231778b, 0078_s15_identity_membership_expand, 76 physical User foreign keys, ed91217b, FORCE-RLS, staged-arrival bridge, Project #7, 199/199, PVTI_lAHOD1DbR84BZDEPzguFdok
+
+## Task 3: Update canonical control-plane authority through PRs #27 and #29–#32, outcome success
+
+### rollout_summary_files
+
+- extensions/ad_hoc/notes/2026-08-01T23-52-45-auxara-s15-control-plane-final-checkpoint.md (cwd=${PROJECT:control-plane|backslash}, rollout_path=${HOME|backslash}\.codex\memories\extensions\ad_hoc\notes\2026-08-01T23-52-45-auxara-s15-control-plane-final-checkpoint.md, updated_at=2026-08-01T23:52:45, source=ad-hoc-note, current checkpoint)
+- extensions/ad_hoc/notes/2026-08-01T08-35-00-auxara-control-plane-pr27-merged.md (cwd=${PROJECT:control-plane|backslash}, rollout_path=${HOME|backslash}\.codex\memories\extensions\ad_hoc\notes\2026-08-01T08-35-00-auxara-control-plane-pr27-merged.md, updated_at=2026-08-01T08:35:00, source=ad-hoc-note, superseded as current-head authority)
+
+### keywords
+
+- PR #27, PR #29–#32, e3c1eb9cb25aad665462fe3cbe9542e4de2b9cf9, CLI/readiness authority, off standard premium, singular-current-decision, 1,257 tracked-scope classifications, npm run ci
+
+## Task 4: Sprint 1.5 B/C membership-bound runtime checkpoint, outcome locally verified but deliberately unpushed
+
+### rollout_summary_files
+
+- rollout_summaries/2026-07-31T06-43-58-Azb2-nuvo_dialer_sprint_1_5_reconciliation_membership_authority_c.md (cwd=\\?\${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\31\rollout-2026-07-31T10-43-58-019fb6ea-566b-7ce0-9f8e-1ebc3b876748.jsonl, updated_at=2026-08-01T19:56:28+00:00, thread_id=019fb6ea-566b-7ce0-9f8e-1ebc3b876748, final B/C proof)
+- extensions/ad_hoc/notes/2026-08-01T23-52-45-auxara-s15-control-plane-final-checkpoint.md (cwd=${WORKSPACE:dev|backslash}\nd-s15-bc, rollout_path=${HOME|backslash}\.codex\memories\extensions\ad_hoc\notes\2026-08-01T23-52-45-auxara-s15-control-plane-final-checkpoint.md, updated_at=2026-08-01T23:52:45, source=ad-hoc-note, supersedes the 44b253e4/199-item checkpoint)
+
+### keywords
+
+- ${WORKSPACE:dev|backslash}\nd-s15-bc, codex/s15-bc-membership-cutover, 48673cfd39269ebb00bae2813a626f995f85b362, migration 0079, migration 0081_s15_dispatch_actor_authority_snapshot, npm run ci, off standard premium, Project #7, 201/201
+
+## User preferences
+
+- when a decision or authority changes, use “Replace, do not layer” -> rewrite the owning current-authority record and every living projection in the same change; delete the retired claim rather than add “latest wins” banners, amendment trails, duplicate IDs, or parallel cards. [Task 1] [ad-hoc note]
+- for the coordinated Slice B/C cutover, do not activate visible workspace selection without the approved minimum workspace-selector reference, and do not merge a stale mock branch wholesale. [Task 2] [ad-hoc note]
+- when reconciling Sprint scope, the user asked to “make sure all the AI organization and Dialer related files are loaded and you understand them” and to “read all the other sprints as well” -> load canonical product, architecture, sprint, source-of-truth, blast-radius, and AI-organization authorities before deciding scope. [Task 4]
+
+## Reusable knowledge
+
+- Historical reconciliation procedure: land canonical AI Organization first, then reinstall/check the landed canonical commit into Dialer and land the Dialer projection; never merge only the generated half. [Task 1] [ad-hoc note]
+- Canonical ownership uses structural-prefix parity for agent files while `## Learned classes` remains append-only project memory. The dependency-free writer refreshes only SHA-256 values and preserves every other generator-owned byte. Claude hooks must be rooted exec form: `command: "node"` plus one `${CLAUDE_PROJECT_DIR}/scripts/...` argument; `PostToolUse` matcher is `Edit|Write`. [Task 1] [ad-hoc note]
+- The pre-merge reconciliation proof was 271/271 tests plus `control:validate`, `overlay:validate:auxara`, Dialer overlay check, all Dialer build/lint/format/type/backend/frontend/gate lanes, and a serialized integration retry after an unrelated first-run mock-browser timeout. [Task 1] [ad-hoc note]
+- No-surprise billing: commercial anchor is `$80–120/seat/month`; default US/Canada voice/SMS is a useful per-seat flat bundle, never pooled; ingest/reconcile/rate all units through one versioned pipeline, but flat policy creates no automatic usage charge. A metered/higher-flat policy is prospective only after measured basis, allowance, price, effective date, projected impact, and explicit tenant acceptance; never retroactively rerate/back-bill or reveal a charge first on an invoice. Exact tiers/rates remain deferred. [Task 1] [ad-hoc note]
+- Current canonical authority is `${PROJECT:control-plane|backslash}`; `origin/main` is merge `e3c1eb9cb25aad665462fe3cbe9542e4de2b9cf9`. PR #29 replaced the Railway release-verifier contract with CLI/readiness authority; PR #30 replaced AMD/ICP/number-lifecycle projections; PR #31 replaced the cancellation claim and promoted singular-current-decision/no-layered-addendum; PR #32 restored byte-for-byte canonical/project formatting parity. `${PROJECT:control-plane|backslash} Control Plane` is retired and has zero authority. [Task 3] [ad-hoc note]
+- Final canonical `npm run ci` passed: 281 tests, 1,257 tracked-scope classifications, control-plane validation, Auxara overlay validation, and CoachAI overlay validation. GitHub has zero Actions workflows; local CI remains intentional merge proof. [Task 3] [ad-hoc note]
+- Sprint 1.5 plan PR #333 (`0dc9867a0143096324adfc1ca6eecaa45f796a21`) and Slice A PR #334 (`231778b9c6c3a64790e5d27abaed45a9aa9dcb2e`) are merged. The canonical plan is `${PROJECT:auxara-dialer|backslash}\docs\agent-prompts\sprint-1-5\kickoff-plan.md`; Slice A adds `User.accountStatus`, retains `TenantMembership`, and migration `0078_s15_identity_membership_expand` without runtime writer/read cutover. [Task 2] [ad-hoc note]
+- Slice A predecessor authority is 76 physical User foreign keys (74 Prisma-defined, 2 SQL-only), hash `ed91217bf2fce20bb1de56846fc6952c`. Preserve BYPASSRLS plus `row_security=off` preconditions, deterministic feeder locks, bounded lock/statement timeouts, retained-membership RLS/guards, exact runtime UPDATE-column grants, and historical-predecessor verification. Proof: runtime/cutover PASS, authority gate 48/48 mutations, focused DB 11/11, complete local CI exit 0; audit has 25 known low/moderate findings and no high-severity failure. [Task 2] [ad-hoc note]
+- Sprint 1.5 remains In Progress: Slice B/C must replace signup/invite writers, establish active-workspace runtime context, then convert auth/session/RBAC/RLS/audit/queue/provider consumers. Scalar retirement is forbidden until `quiesce_signup_and_invite`, `drain_old_instances`, `locked_idempotent_post_expand_delta_backfill`, `exact_membership_completeness_before_activation`, `replacement_writers_before_activation`, and `scalar_retirement_after_zero_old_reads_writes` all hold. Authentication migration proof requires FORCE-RLS and a staged-arrival bridge; the static gate mutates all six clauses in both active authorities. [Task 2] [ad-hoc note]
+- Final B/C worktree is `${WORKSPACE:dev|backslash}\nd-s15-bc`, branch `codex/s15-bc-membership-cutover`, clean HEAD `48673cfd39269ebb00bae2813a626f995f85b362`, six commits ahead of Dialer `origin/main`; it is intentionally unpushed, has no PR, and is undeployed. Final `npm run ci` exited 0 in 1,798.5 seconds, including audit, full verify/gates, serialized DB integration, and Docker. [Task 4] [ad-hoc note]
+- All 74 Prisma-modeled tenant-actor relations across the 76-physical-User-FK predecessor remain repointed through retained membership. `0081_s15_dispatch_actor_authority_snapshot` adds exact `(tenant_id, initiating_membership_id)` dispatch authority and initiating auth-token version; JWT/session/CSRF, invites, recovery, claims, provider preflight, recording/disclosure, and Telnyx webhooks revalidate active membership, tenant, token version, and grants. [Task 4] [ad-hoc note]
+- AMD is exactly `off`, `standard`, `premium`: standard provider AMD is active on the prospect leg, premium dormant, and off omits provider AMD/usage; every result remains passive/advisory. Booking is external link/embed plus explicit human `user_reported_external`; native Google/Calendly OAuth/API/write/webhook/reconciliation is deferred INT-004 and disabled/quarantined. [Task 4] [ad-hoc note]
+- Project #7 (`PVT_kwHOD1DbR84BZDEP`) final audit is 24/24 fields, 201/201 active items, 75 required Sprint-1.4 authority cards, 40 included decision cards, `requiredAuthoritySatisfied=true`, `validation.ok=true`, `issueCount=0`; Sprint 1.5 stays In Progress. [Task 4] [ad-hoc note]
+
+## Failures and how to do differently
+
+- Symptom: a canonical/project overlay gate is green while controller ownership drifts -> cause: target-evolved files were overwritten or a parallel fork was retained -> reconcile them into canonical ownership, validate every mapped file/hook/verdict mapping, then install the canonical projection. [Task 1] [ad-hoc note]
+- Symptom: changed authority leaves old claims in docs, cards, tests, or configuration -> cause: the decision was layered instead of replaced -> sweep for old claims and reread every mutated external card; retain provenance only in Git history or an isolated archive. [Task 1] [ad-hoc note]
+- Symptom: mock proof looks green but real closure is claimed -> cause: hash/registry proof was mistaken for current v2 controls, browser evidence, provider continuity/E911, or calling-hours/DNC UI proof -> retain those as open until separately evidenced. [Task 1] [ad-hoc note]
+- Symptom: activation or scalar retirement happens after only part of the membership migration -> cause: staged contract was treated as prose or a partial gate -> enforce the exact six-clause contract in both active authorities, use the staged-arrival bridge and FORCE-RLS proof, and retire scalars only after zero old reads/writes. [Task 2] [ad-hoc note]
+- Symptom: a stale worktree/mocked UI branch is treated as current authority -> cause: it predates canonical `origin/main` or the approved visible reference -> re-query live state; `${WORKSPACE:dev|backslash}\nd-hookfix` is owner-controlled and stale, so do not merge, reset, or reuse it without explicit rebase/reconciliation. [Task 2] [ad-hoc note]
+- Symptom: an old local handoff is reapplied as current authority -> cause: PR #27 / `098a76c...`, `44b253e4`, or 199-item Project evidence was not replaced -> begin from `e3c1eb9...` and `48673cfd...` or their current descendants; do not reopen the retired control-plane checkout. [Task 3][Task 4] [ad-hoc note]
+- Symptom: B/C is reported as uncommitted, DB-unproven, or awaiting security repairs -> cause: an older handoff was used instead of the final checkpoint -> route to `48673cfd...` and final exact-HEAD CI, while preserving that it is not push/PR/merge/deploy proof. [Task 4] [ad-hoc note]
+- Symptom: migration `0079` is pushed or deployed before activation readiness -> cause: local CI was conflated with production cutover authorization -> do not push or merge until real old-writer quiescence, instance drain, replacement-writer proof, and the exact activation acknowledgement exist; Railway auto-runs migrations on deploy. Workspace-selection, recovery, invite, and remember-me frontend work is Claude Design/founder-approval-gated and not fully wired. [Task 4] [ad-hoc note]
+
+# Task Group: Auxara tenant offboarding and cancellation retention authority
+scope: current cancellation, read-only export/reactivation, DID holding, and activation-gated irreversible-purge contract for tenant data
+applies_to: cwd=${PROJECT:auxara-dialer|backslash} / Auxara policy and product docs; reuse_rule=reuse the stated contract as current authority, but do not claim irreversible purge is active until the named activation checks are evidenced
+
+## Task 1: Replace the cancellation-retention authority, outcome policy clarified; implementation activation pending
+
+### rollout_summary_files
+
+- extensions/ad_hoc/notes/2026-08-01T08-15-00-dialer-retention-authority-replacement.md (cwd=${PROJECT:auxara-dialer|backslash} / Auxara, rollout_path=${HOME|backslash}\.codex\memories\extensions\ad_hoc\notes\2026-08-01T08-15-00-dialer-retention-authority-replacement.md, updated_at=2026-08-01T08:15:00, source=ad-hoc-note, current retention authority)
+
+### keywords
+
+- cancellation, 30-day read-only, export/reactivation, DIDs, tenant-owned data, derived data, compliance/admin evidence, internal-DNC, PII-free business record, purge receipt, recording retention, REC-002, tenant-offboarding-brief.md
+
+## User preferences
+
+- when replacing an authority, the user requested: “replace any retained Auxara/Nuvo Dialer claim that the post-cancellation export window is 90 days” -> state only the current contract; do not preserve superseded values as a parallel amendment trail. [Task 1] [ad-hoc note]
+
+## Reusable knowledge
+
+- Cancellation runs through the paid period; closure then begins one 30-day read-only export/reactivation window while DIDs are held. At day 30, approved policy purges tenant-owned and derived data, including compliance/admin evidence and the tenant internal-DNC list; only a PII-free business record and purge receipt remain. A global user identity is deleted only when no other workspace membership still requires it. [Task 1] [ad-hoc note]
+- The 90-day value is only the configurable default for recording retention while a workspace is active, not a cancellation/export window. The irreversible purge is not implemented: activation remains gated on counsel, backup-horizon, provider-retention, and deployment checks in `REC-002` and `docs/app-plan/product/tenant-offboarding-brief.md`. [Task 1] [ad-hoc note]
+
+## Failures and how to do differently
+
+- Symptom: a policy or handoff says a post-cancellation export window is 90 days or that tenant call/compliance/DNC data remains for a multi-year platform horizon -> cause: active recording-retention default was conflated with cancellation policy -> replace the claim with the 30-day read-only window and day-30 approved-purge contract; keep the pending activation caveat. [Task 1] [ad-hoc note]
+
+# Task Group: Dubai GTM and The Last 10% Build custom-software offer
+scope: problem-led Dubai acquisition and offer design for fixing one recurring cross-tool workflow gap; positioning is a validated direction, while demand, pricing, and delivery ranges remain hypotheses
+applies_to: cwd=${WORKSPACE:dev|backslash} and capability evidence in ${PROJECT:control-plane|backslash}, ${PROJECT:coachai|backslash}, and ${PROJECT:nuvora-link|backslash}; reuse_rule=reuse for adjacent GTM/offer work, but validate local market demand and do not treat private delivery infrastructure as a client product
+
+## Task 1: Position custom software around horizontal software friction, outcome direction set but unvalidated
+
+### rollout_summary_files
+
+- rollout_summaries/2026-08-01T11-09-43-tU8X-horizontal_last_10_percent_custom_software_offer.md (cwd=\\?\${WORKSPACE:dev|backslash}, rollout_path=${HOME|backslash}\.codex\sessions\2026\08\01\rollout-2026-08-01T15-09-43-019fbd03-fd2f-7a13-88a9-97481d7d3b33.jsonl, updated_at=2026-08-01T17:34:37+00:00, thread_id=019fbd03-fd2f-7a13-88a9-97481d7d3b33, positioning and validation hypothesis)
+
+### keywords
+
+- Dubai, UAE, The Last 10% Build, Software Friction Score, software handles 90%, subscription patchwork, platform overkill, Five-Day Workflow Fit Audit, custom software, Hormozi
+
+## User preferences
+
+- when choosing an initial market, the user said “instead of targeting a specific business niche, lets focus on a painful problem that most businesses might have, we just run ads based on that see who reaches out” -> start with broad problem-led acquisition and deep qualification; specialize only when paid evidence reveals a repeated vertical or workflow. [Task 1]
+- when discussing the offer, the user asked how it relates to “custom build and software” -> explain what is standardized delivery infrastructure versus client-specific configuration, integration, micro-application, or larger custom build. [Task 1]
+- for offer/lead-magnet work, the user asked to “read AI organization and orchestrator bootstrap first” and requested the Hormozi skill -> ground strategy in actual capabilities and use the requested framework instead of generic agency advice. [Task 1]
+
+## Reusable knowledge
+
+- Positioning: “Your software handles 90% of the workflow. Your employees manually bridge the missing 10%. We fix that gap without making you replace everything that already works.” The Last 10% Build diagnoses one recurring cross-tool workflow, quantifies its cost, then chooses deletion, configuration, connection, or a custom build for only the missing layer. [Task 1]
+- Funnel hypothesis: problem-focused ad → Software Friction Score → qualification → 20-minute fit call → paid Five-Day Workflow Fit Audit → configure/connect/custom-build/no-build decision → managed software service. Use the “missing 10%,” “subscription patchwork,” and “platform overkill” angles; judge qualified applications and paid audits, not clicks. [Task 1]
+- Track industry, buyer role, workflow, systems, manual step, frequency, consequence, solution type, budget, and purchase outcome across roughly 20–30 qualified submissions before specializing. AI Organization is private delivery infrastructure; CoachAI and Nuvora Link are reusable engineering-pattern evidence, not a ready-made horizontal client product. [Task 1]
+
+## Failures and how to do differently
+
+- Symptom: the offer sounds like generic Dubai custom-software positioning -> cause: it leads with “we build software that fits your business” -> lead with a concrete recurring moment such as copying, reconciling, chasing, re-entering, or waiting between systems and remain vendor-neutral about the answer. [Task 1]
+- Symptom: the offer promises a result or implementation prematurely -> cause: unvalidated delivery time, pricing, savings, revenue, or custom-code need was presented as fact -> inspect the workflow first; use a fit-or-don’t-build decision and fixed acceptance criteria. The stated AED ranges are hypotheses only. [Task 1]
+
+# Task Group: CoachAI swarm coordination overlay propagation and verified main delivery
+scope: rechecking cross-repository swarm-coordination status against canonical and remote refs, then installing the complete managed CoachAI overlay in a clean worktree, proving parity, and delivering verified commits to main
+applies_to: cwd=${PROJECT:auxara-dialer|backslash}, ${PROJECT:coachai|backslash}, and ${PROJECT:control-plane|backslash}; reuse_rule=reuse for canonical CoachAI shared-runtime/organization-control overlay propagation while the named mappings and gates exist; commits, blobs, and remote refs are historical and must be rechecked
+
+## Task 1: Recheck swarm-coordination propagation in Nuvo and CoachAI, outcome success
+
+### rollout_summary_files
+
+- rollout_summaries/2026-07-27T10-00-44-sTxI-coachai_swarm_coordination_propagation_main_push.md (cwd=\\?\${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\archived_sessions\rollout-2026-07-27T14-00-44-019fa305-0a4f-7f51-9f97-584b595d7376.jsonl, updated_at=2026-07-27T12:40:52+00:00, thread_id=019fa305-0a4f-7f51-9f97-584b595d7376, Nuvo current on origin/main; CoachAI propagation gap confirmed)
+
+### keywords
+
+- swarm coordination, swarm-coordination, origin/main, git ls-remote, exact blob, 774d76f, f06ff3e2, 44098b1, a5958920, abcace5, Claude CLI dispatcher instrumentation
+
+## Task 2: Install, verify, commit, and push the complete CoachAI overlay to main, outcome success
+
+### rollout_summary_files
+
+- rollout_summaries/2026-07-27T10-00-44-sTxI-coachai_swarm_coordination_propagation_main_push.md (cwd=\\?\${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\archived_sessions\rollout-2026-07-27T14-00-44-019fa305-0a4f-7f51-9f97-584b595d7376.jsonl, updated_at=2026-07-27T12:40:52+00:00, thread_id=019fa305-0a4f-7f51-9f97-584b595d7376, full overlay propagated, verified, and pushed)
+
+### keywords
+
+- project-overlay.mjs install coachai, coachai-shared-runtime, coachai-project-portable-lock, check-overlay-parity.mjs --write, proof:changed, test:organization-control-plane, organization-control, .agents/skills/**, f886d078, a2222322
+
+## User preferences
+
+- when an orchestration finding looked inconsistent, the user said “can you check again? its supposed to be propogated to both repos” -> compare actual remote/main refs, commit reachability, and exact blobs before reporting a propagation gap; do not trust an open stale worktree alone [Task 1]
+- when they asked “are you talking about the swarm coordination?” -> explain internal orchestration findings plainly and distinguish them from customer-facing product failures [Task 1]
+- when they said “can you update the coachai?” then “once done commit and push to main on github” -> use the canonical overlay mechanism, preserve unrelated edits, independently verify it, and complete the requested Git delivery [Task 2]
+
+## Reusable knowledge
+
+- Canonical source is `${PROJECT:control-plane|backslash}`, not the stale configured `${PROJECT:control-plane|backslash} Control Plane`; inspect canonical content against `origin/main` and exact blobs. In this audit Nuvo `774d76f` already matched blob `f06ff3e2`, while CoachAI `44098b1` retained older blob `a5958920`; canonical `abcace5` added Claude CLI dispatcher instrumentation. [Task 1]
+- Start from a clean worktree freshly fetched from `origin/main` when the existing CoachAI checkout has unrelated edits. The installer shape is `node ${PROJECT:control-plane|backslash}\scripts\project-overlay.mjs install coachai --root <worktree> --adopt-existing`. [Task 2]
+- Install the complete generated overlay, not only runtime files: coordination engine/tests, lifecycle/runtime support, assurance schemas, project control files, rules/hooks, agents, and skills. Refresh the project portable lock with `node scripts/check-overlay-parity.mjs --write`, then capture it through `coachai-project-portable-lock`. [Task 2]
+- Verification that passed here: canonical `node scripts/project-overlay.mjs check coachai --root <worktree>`, CoachAI overlay parity, `npm run test:organization-control-plane` (26/26), `npm run proof:changed` (organization gates, 26 regressions, 1,516 doc/code checks), `git diff --check`, and `git ls-remote origin refs/heads/main`. Pushed refs were control plane `f886d0788a3254330a865cc9941db2f9f44eb4b7` and CoachAI `a2222322ff9062e689867cb023cced28895678ee`. [Task 2]
+
+## Failures and how to do differently
+
+- Symptom: a propagation audit reports Nuvo missing the change -> cause: it inspected a stale working branch -> compare the relevant `origin/main` ref and exact content before declaring a gap. [Task 1]
+- Symptom: partial runtime install passes canonical installer but CoachAI parity fails -> cause: project parity owns a wider managed surface -> install the complete generated overlay. [Task 2]
+- Symptom: `proof:changed` rejects a generated `.agents/skills/**` change as unmapped -> cause: the proof profile lacks that managed surface -> add it to `organization-control` and add a regression assertion; do not bypass the gate. [Task 2]
+- Symptom: full organization tests exit 124 under a short timeout -> cause: the command exceeded the wrapper window -> rerun with a bounded longer timeout and use the command's actual exit sentinel. [Task 2]
+
+# Task Group: Cross-repository orchestration drift and doctrine audits
+scope: read-only, manifest-bounded audits of Nuvo Dialer/Auxara and Nuvora CoachAi orchestration controls, live repo drift, canonical overlay parity, formal-review evidence, and aggregate-gate receipts
+applies_to: cwd=${PROJECT:auxara-dialer|backslash}, ${PROJECT:coachai|backslash}, and ${PROJECT:control-plane|backslash}; reuse_rule=reuse for evidence-only cross-repo drift or weekly doctrine reviews while the canonical manifest and named gates exist; re-check live git/GitHub/check results and do not write any file unless the scope explicitly authorizes it
+
+## Task 1: Weekly organization-wide doctrine and overlay audit on 2026-07-27, outcome partial
+
+### rollout_summary_files
+
+- rollout_summaries/2026-07-27T05-27-07-1wvY-weekly_fleet_doctrine_review_enforcement_drift_2026_07_27.md (cwd=\\?\${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\archived_sessions\rollout-2026-07-27T09-27-07-019fa20a-8897-7b62-8d55-fbeababcf876.jsonl, updated_at=2026-07-27T05:35:46+00:00, thread_id=019fa20a-8897-7b62-8d55-fbeababcf876, canonical parity drift and scope violation found)
+
+### keywords
+
+- control:check, overlay:check:auxara, overlay:check:coachai, gate:organization-overlay, gate:organization, PullRequestReview, control-plane.manifest.json, PostToolUse, CLAUDE_PROJECT_DIR, exit 2, PR #288, aggregate gate receipt
+
+## Task 2: Read-only cross-repository orchestration drift audit on 2026-07-27, outcome partial
+
+### rollout_summary_files
+
+- rollout_summaries/2026-07-27T05-11-04-WWC1-cross_repo_orchestration_drift_audit_nuvo_dialer_coachai_202.md (cwd=\\?\${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\archived_sessions\rollout-2026-07-27T09-11-04-019fa1fb-d93c-7a23-8555-604776db34ad.jsonl, updated_at=2026-07-27T05:14:58+00:00, thread_id=019fa1fb-d93c-7a23-8555-604776db34ad, live repo drift captured but unresolved under read-only scope)
+
+### keywords
+
+- git fetch --prune, git worktree list --porcelain, git rev-list --left-right --count, gh pr list, gh issue list, agent:state, gate:project-ledger-drift, gate:test-intent:audit, PR #290, Project #7, upstream gone, stale handoff, automation memory writeback
+
+## Task 3: Auxara Dialer read-only organization drift audit on 2026-07-28, outcome success
+
+### rollout_summary_files
+
+- rollout_summaries/2026-07-28T05-10-44-LV7Q-auxara_coachai_organization_drift_audit_2026_07_28.md (cwd=\\?\${PROJECT:auxara-dialer|backslash}, rollout_path=\\?\${HOME|backslash}\.codex\sessions\2026\07\28\rollout-2026-07-28T09-10-44-019fa721-e55c-79b2-851c-e1886515bc72.jsonl, updated_at=2026-07-28T05:13:52+00:00, thread_id=019fa721-e55c-79b2-851c-e1886515bc72, fresh Auxara git/GitHub/Project #7 evidence)
+
+### keywords
+
+- agent:state -- --github, gate:rules-wiring, gate:agent-context, gate:agent-control-plane, gate:organization-overlay, gate:project-ledger-drift, gate:decision-sprint-linkage, audit:project-ledger-live, PR #298, Project #7, BUX-016, CMP-005, requiredAuthoritySatisfied
+
+## Task 4: CoachAI read-only organization drift audit on 2026-07-28, outcome success
+
+### rollout_summary_files
+
+- rollout_summaries/2026-07-28T05-10-44-LV7Q-auxara_coachai_organization_drift_audit_2026_07_28.md (cwd=\\?\${PROJECT:auxara-dialer|backslash}, rollout_path=\\?\${HOME|backslash}\.codex\sessions\2026\07\28\rollout-2026-07-28T09-10-44-019fa721-e55c-79b2-851c-e1886515bc72.jsonl, updated_at=2026-07-28T05:13:52+00:00, thread_id=019fa721-e55c-79b2-851c-e1886515bc72, fresh CoachAI branch/worktree and gate evidence)
+
+### keywords
+
+- ${PROJECT:coachai|backslash}, git worktree list --porcelain, git branch -vv, upstream gone, fix/stack-deploy-paid-app-host, feat/int-f1-speaker-roles, fix/dcd-test5-editorial-authority, gate:organization, test:doc-code-drift, gate:test-intent:audit, 202 legacy/noncompliant, docs/BUG_BACKLOG.md
+
+## Task 5: Authorized automation comparison-log update after the 2026-07-28 audit, outcome success
+
+### rollout_summary_files
+
+- rollout_summaries/2026-07-28T05-10-44-LV7Q-auxara_coachai_organization_drift_audit_2026_07_28.md (cwd=\\?\${PROJECT:auxara-dialer|backslash}, rollout_path=\\?\${HOME|backslash}\.codex\sessions\2026\07\28\rollout-2026-07-28T09-10-44-019fa721-e55c-79b2-851c-e1886515bc72.jsonl, updated_at=2026-07-28T05:13:52+00:00, thread_id=019fa721-e55c-79b2-851c-e1886515bc72, rolling audit comparison record appended)
+
+### keywords
+
+- auxara-daily-orchestration-drift, ${HOME|backslash}\.codex\automations\auxara-daily-orchestration-drift\memory.md, # 2026-07-28 run, Project #7, PR #298, branch reconciliation
+
+## Task 6: Read-only cross-project orchestration drift audit on 2026-07-29, outcome success
+
+### rollout_summary_files
+
+- rollout_summaries/2026-07-29T05-11-00-SRNc-cross_project_orchestration_drift_audit_2026_07_29.md (cwd=\\?\${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\29\rollout-2026-07-29T09-11-00-019fac48-7ead-7dd2-8862-0043a0316b5e.jsonl, updated_at=2026-07-29T05:15:02+00:00, thread_id=019fac48-7ead-7dd2-8862-0043a0316b5e, refreshed live Auxara/CoachAI discrepancy and disposition evidence)
+
+### keywords
+
+- audit:project-ledger-live, 30 issues, S14 B/M authority cards, Product intent, Scope boundary, Proofs, Blockers, #250, agent:worktrees, fix/coaching-call-type-grounding-authority, scripts/run-bounded-agent.mjs, 166 compliant, 197 legacy/noncompliant
+
+## Task 7: Read-only cross-project orchestration drift audit on 2026-07-30, outcome success
+
+### rollout_summary_files
+
+- rollout_summaries/2026-07-30T07-34-27-jJ5L-organization_orchestration_drift_audit_2026_07_30.md (cwd=\\?\${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\30\rollout-2026-07-30T11-34-28-019fb1f2-3088-7c13-9f33-675e36e2d161.jsonl, updated_at=2026-07-30T07:39:20+00:00, thread_id=019fb1f2-3088-7c13-9f33-675e36e2d161, newest live Auxara/CoachAI state; controls pass but authority/worktree/CI debts remain)
+
+### keywords
+
+- git fetch --prune origin, audit:project-ledger-live, gate:project-ledger-drift, Project #7, S14 B/M, Product intent, Scope boundary, Proofs, Blockers, agent:worktrees, nd-mock1, nd-root, nd-mocks, COACHING_BUG_BACKLOG.md, ci:local, gate:test-intent:audit, 196 legacy/noncompliant
+
+## Task 8: Read-only cross-repository orchestration drift audit on 2026-07-31, outcome partial
+
+### rollout_summary_files
+
+- rollout_summaries/2026-07-31T05-11-21-M7Hw-cross_repo_orchestration_drift_audit_2026_07_31.md (cwd=${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\31\rollout-2026-07-31T09-11-21-019fb695-89b9-7523-8c8b-1a590de50b16.jsonl, updated_at=2026-07-31T05:16:43+00:00, thread_id=019fb695-89b9-7523-8c8b-1a590de50b16, newest live Project #7 and CoachAI merge evidence)
+
+### keywords
+
+- agent:state -- --github, audit:project-ledger-live, requiredAuthoritySatisfied, issueCount: 0, Project #7, PR #238, dialer-db-regressions, gates, UNSTABLE, ci:local, feat/disposition-sweep, read-only
+
+## User preferences
+
+- when the automation requires a “read-only” review and says “do not implement them” -> remain evidence-only; do not edit repositories, GitHub, deployments, worktrees, or automation memory [Task 1]
+- when it says “never search an entire home directory” and prohibits credentials, sessions, raw telemetry, `.env`, and build output -> use only manifest-declared safe surfaces and preserve the denylist [Task 1]
+- when it requires “recommend at most three high-leverage changes” -> deduplicate across projects and cap the report at three recommendations [Task 1][Task 2]
+- when the user asks for inspection of both repos and grouped reporting “by project” -> gather cross-repo evidence first, then summarize in project-grouped buckets instead of repo-by-repo notes [Task 2]
+- when a cross-repo audit explicitly prohibits credentials, tokens, session logs, `.env`, secret stores, customer/provider data, transcripts, recordings, histories, caches, build output, and raw telemetry -> stay at metadata/docs/gates level and report only evidence-backed discrepancies [Task 3][Task 4]
+- when the user requires exact next actions and discrepancies “grouped by project and deduplicated” -> distinguish confirmed live blockers from stale documentation and name the needed branch/PR/worktree disposition action [Task 6]
+- when previews or local green gates could be mistaken for merge proof -> independently inspect review objects and required checks; do not treat Vercel success as merge readiness. [Task 8]
+
+## Reusable knowledge
+
+- The actual canonical root is `${PROJECT:control-plane|backslash}`, not the absent configured `${PROJECT:control-plane|backslash} Control Plane`; its `control-plane.manifest.json` has the allowlisted mappings and deny rules for this audit. [Task 1]
+- `npm run control:check`, `npm run overlay:check:auxara`, and `npm run overlay:check:coachai` are canonical-parity evidence. Passing project-local `npm run gate:organization-overlay` (Auxara) or `npm run gate:organization` (CoachAI) is not parity proof because local locks can be self-referential. [Task 1]
+- Formal independent-review evidence is a GitHub `PullRequestReview` object or an independent-review receipt bound to the merge SHA; comments and PR bodies are not substitutes. The sampled 37 Auxara and 6 CoachAI merged PRs had zero review objects. [Task 1]
+- Canonical PostToolUse hooks run rooted exec-form `node` through `${CLAUDE_PROJECT_DIR}/scripts/...` and fail closed with exit 2 on malformed JSON or missing `tool_input.file_path`; both inspected project hooks were cwd-relative and returned exit 0 for malformed/missing payloads. [Task 1]
+- A fail-fast chain is incomplete when an earlier command aborts it: Auxara PR #288 showed `verify` can prevent `gates:all`. Require a commit-bound receipt enumerating every required gate and its actual exit code. [Task 1]
+- Nuvo Dialer exposes a broader live-drift gate surface than the weekly doctrine audit alone: `agent:state`, `gate:rules-wiring`, `gate:agent-context`, `gate:decision-sprint-linkage`, `gate:project-ledger-drift`, `gate:agent-control-plane`, `gate:organization-overlay`, and `gate:deployment-config-parity`. [Task 2]
+- Nuvo Dialer's `gate:project-ledger-drift` is explicitly offline-only; its own output says it does not verify live GitHub Project synchronization, so live Project #7 conclusions must come from live GitHub evidence. [Task 2]
+- Historical 2026-07-28 Project #7 audit found `requiredAuthoritySatisfied: false` across 28 issues. It was superseded by a 2026-07-31 Slice-A reread, and the current final checkpoint is 24/24 fields, 201/201 active items, `requiredAuthoritySatisfied=true`, `validation.ok=true`, `issueCount=0`. Re-run the live audit for any new scope or status claim. [Task 3][Task 8] [ad-hoc note]
+- Fresh 2026-07-28 GitHub state: the live Auxara PR was #298 (Vercel success only, no review decision), not the historical #290. Always re-query PRs/issues rather than carrying forward prior audit state. [Task 3]
+- CoachAI's current router/entrypoint docs still conflict with legacy handoff docs: the router says single orchestrator plus worktree-per-agent, while older handoff files still describe user-mediated relay and shared-checkout recovery. [Task 2]
+- The 2026-07-27 drift sweep captured three CoachAI branches with upstream `[gone]`: `feat/int-f1-speaker-roles`, `fix/dcd-test5-editorial-authority`, and `fix/stack-deploy-paid-app-host`. Treat branch hygiene and stale handoff docs as a linked audit surface. [Task 2]
+- CoachAI has no `agent:state` script or `docs/BUG_BACKLOG.md`; derive audit state from `git worktree`, `git branch -vv`, and docs/gates. On 2026-07-28, `gate:organization` and `test:doc-code-drift` passed (1511 checks), while `gate:test-intent:audit` remained a report gate with 202 legacy/noncompliant of 358 tests. [Task 4]
+- The rolling comparison file is `${HOME|backslash}\.codex\automations\auxara-daily-orchestration-drift\memory.md`; update it after an audit only when the scope explicitly authorizes that write, timestamp the entry, and use the next run to compare Project #7, PR #298, gone-upstream CoachAI branches, and detached-worktree reconciliation. [Task 5]
+- Historical 2026-07-29 live audit found 30 Sprint 1.4 Project #7 discrepancies; do not reuse that as current state. It was superseded by the 2026-07-31 0-issue declared-scope live audit. Worktree counts/branch status remain time-sensitive and require re-query. [Task 6][Task 8] [ad-hoc note]
+- Fresh 2026-07-29 CoachAI evidence: root `fix/coaching-call-type-grounding-authority` was clean but 1 ahead of its remote and 2 behind `origin/main`; local `main` was 1 behind. All 17 registered worktrees were clean, including two detached, and there were no open PRs. `gate:organization` passed, while `test:doc-code-drift` failed because `docs/app-plan/v2-authority-source-inventory.json` still lists `scripts/run-bounded-agent.mjs`; `gate:test-intent:audit` was informational at 166 compliant and 197 legacy/noncompliant files out of 363. [Task 6]
+- `docs/BUG_BACKLOG.md` claims that `fix/integration-suite-repairs` is dirty/15 commits ahead and startup context is red at 11,521 tokens, but the 2026-07-29 live state contradicted both; correct these stale rows rather than escalating them as current blockers. The legacy CoachAI `docs/agent-prompts/orchestrator-handoff-context.md` similarly conflicts with current `AGENTS.md` and the vendor-neutral `.ai-organization` control plane. [Task 6]
+- Fresh 2026-07-30 evidence supersedes the preceding checkout counts: both roots were clean and synchronized with `origin/main`, with no open PRs. Auxara had four registered worktrees, but `${WORKSPACE:dev|backslash}\nd-mock1` held an untracked mock HTML file, `${WORKSPACE:dev|backslash}\nd-root` had nine changed paths including two staged gate files, `${WORKSPACE:dev|backslash}\nd-mocks` was 1 ahead/4 behind, three sibling directories were unregistered report-only, and eight local branches tracked deleted remotes. Reconcile or retire only after owner disposition. [Task 7]
+- Historical 2026-07-30 30-discrepancy Project #7 result is superseded by the 2026-07-31 declared-scope live audit with `issueCount: 0`; do not report the old count as current. [Task 7][Task 8] [ad-hoc note]
+- Fresh 2026-07-31 Auxara evidence: `main` was clean and synchronized; rules wiring, context budget, control plane, fleet parity, and organization overlay passed. `npm run audit:project-ledger-live` / `node scripts/audit-project-ledger-live.mjs` is authoritative for live Project #7 and returned `requiredAuthoritySatisfied: true`, `issueCount: 0`. Side worktrees still require owner disposition. [Task 8]
+- Fresh 2026-07-31 CoachAI evidence: local organization/overlay/doc-code-drift passed, but PR #238 had no reviews/review decision, `UNSTABLE` merge state, and zero-step failed `dialer-db-regressions` and `gates` Actions checks. `feat/disposition-sweep` was dirty (20 paths, 5 ahead) and `claude/distracted-almeida-d1846f` had a gone upstream. [Task 8]
+- On 2026-07-30, CoachAI had only a clean synchronized root worktree and no gone-upstream local branches. Organization/rules/overlay and doc-code-drift passed; `gate:test-intent:audit` reported 196 legacy/noncompliant files of 364. It has no `.github/workflows/ci.yml`; documented GitHub Actions billing leaves `ci:local` as interim merge proof. The authority backlog is `docs/COACHING_BUG_BACKLOG.md`, with CI billing, Sentry scope, regression-battery aggregation, reverse doc-drift, and legacy handoff-doc conflicts still open. [Task 7]
+
+## Failures and how to do differently
+
+- Symptom: local organization gates are green while canonical checks are red -> cause: local parity locks are not canonical parity -> run the canonical control-plane and overlay checks before claiming drift is resolved. [Task 1]
+- Symptom: audit evidence treats comments/summaries as independent review -> cause: no formal review object was queried -> require `PullRequestReview` evidence or a merge-SHA-bound receipt. [Task 1]
+- Symptom: an aggregate gate looks green from a subset -> cause: fail-fast aborted before it executed -> require machine-verifiable receipts with all expected gate names and exit codes. [Task 1]
+- Symptom: a read-only audit is treated as closure because inventory gates passed -> cause: `agent:state` or offline ledger gates were mistaken for live GitHub/project truth -> keep live git/GitHub drift as unresolved until those sources are reconciled. [Task 2]
+- Symptom: a read-only audit mutates automation memory -> cause: the memory write was treated as exempt from the no-edit boundary -> do not write any file unless explicit authorization changes the scope; when a rolling comparison log is expressly authorized, reread it after writing. [Task 1][Task 2][Task 5]
+- Symptom: an automation memory write appears to succeed but the tool output is empty or ambiguous -> cause: persistence was assumed without reread -> reread the target file after writing and treat unverified writes as unconfirmed. [Task 2]
+- Symptom: CoachAI gate commands report missing scripts -> cause: the command was invoked from the Auxara shell context -> `Push-Location ${PROJECT:coachai|backslash}` before running repo-local scripts. [Task 4]
+- Symptom: a historical audit/backlog claim is reported as live state -> cause: prior automation memory or stale documentation was carried forward -> re-derive branch, worktree, PR, gate, and Project #7 state live each run; correct contradicted backlog rows rather than treating them as blockers. [Task 6]
+- Symptom: clean or gone-upstream CoachAI branches are treated as safely done -> cause: no open PR/reconciliation was verified -> require visible PR/reconciliation or deliberate retirement before reclaiming worktrees; verify legacy handoff authority against `AGENTS.md`, lifecycle hooks, and organization policy. [Task 6]
+- Symptom: global `specforge-repo-audit` skill path is absent -> cause: skill discovery assumed a global install -> use the valid repo-local `${PROJECT:auxara-dialer|backslash}\.agents\skills\specforge-repo-audit\SKILL.md` when present. [Task 6]
+- Symptom: `gate:project-ledger-drift` passes while live Project #7 is still red -> cause: the offline projection gate was mistaken for live GitHub synchronization -> run `npm run audit:project-ledger-live` and retain its live discrepancies as the authority. [Task 7]
+- Symptom: a combined audit gate chain times out after 60 seconds -> cause: a long sequence hides which later gates ran -> rerun the remaining high-signal gates individually and record each reliable exit code/output. [Task 7]
+- Symptom: clean roots are reported as a clean organization -> cause: registered worktrees and branch tracking were not inspected -> audit every registered worktree plus gone-upstream branches before concluding hygiene is clear. [Task 7]
+- Symptom: zero-step Actions failures are attributed to billing/spend limits as fact -> cause: documented billing context was treated as direct proof -> request billing/runner evidence and preserve the causal uncertainty. [Task 8]
+- Symptom: a read-only audit edits automation comparison memory -> cause: automation memory was treated as exempt -> report the stale record instead; do not write any file without explicit authorization. [Task 8]
+
+# Task Group: CoachAI call-audit RCA, coaching-state authority, and V46 production closure
+scope: session-specific root-cause audits of CoachAI manager/trainer call reviews, role-scoped projections, causal coaching-moment selection, and proof of a deployed upstream fix
+applies_to: cwd=${PROJECT:coachai|backslash}; reuse_rule=reuse across CoachAI call-review/coaching-quality investigations that share the persisted analysis and V2 review pipeline; session, deployment, and CI-account-state details are historical and must be rechecked
+
+## Task 1: Audit session 82631618-d951-493a-9538-9749fd75c13f and fix V46 coaching-state authority, outcome success
+
+### rollout_summary_files
+
+- rollout_summaries/2026-07-25T13-25-08-Q0hC-coachai_call_audit_v46_production_closure.md (cwd=\\?\${PROJECT:coachai|backslash}, rollout_path=\\?\${HOME|backslash}\.codex\sessions\2026\07\25\rollout-2026-07-25T17-25-09-019f9973-75c4-7042-b37b-3034c4433c84.jsonl, updated_at=2026-07-27T01:06:42+00:00, thread_id=019f9973-75c4-7042-b37b-3034c4433c84, production API/artifact proof and docs closure)
+
+### keywords
+
+- 82631618-d951-493a-9538-9749fd75c13f, self-uploaded call, manager view, trainer view, Session.userId, uploadedByUserId, repeatReviewCoachingPolicy.ts, scriptDeviation.ts, one-episode causal compression, ELITE_CALL_COACH_PROMPT_V46, script_deviation_v3_repeat_review_state, Nothing to coach on this call.
+
+## User preferences
+
+- when auditing CoachAI behavior, the user said “dont add deterministic guads, find the root problems and fix those” -> trace and repair the earliest authority/state decision; do not add display-layer guards as a substitute [Task 1]
+- when the user asked to “check the latest PRs for the edits and what was fixed then check if they are working properly” -> inspect recent changes and prove them against persisted/live artifacts, not only diffs [Task 1]
+- when a self-uploaded call is involved, the user asks whether manager/trainer visibility still applies -> verify session ownership and org-role projection explicitly [Task 1]
+- when the user asks whether there was “really only one moment to be coached on” or why one exchange is reused -> audit causal compression and duplicate/coerced moment selection, not just the visible count [Task 1]
+
+## Reusable knowledge
+
+- Manager/trainer visibility for a self-uploaded call derives from `Session.userId` plus org role, not `uploadedByUserId`; this session’s authenticated `INTERNAL_MANAGER` owner received both rep and manager responses (HTTP 200, score 61), with one manager priority. [Task 1]
+- One open-question / acknowledgment / micro-commitment exchange can be correctly compressed into one causal coaching fix plus one strength; it should not be displayed as multiple independent coachable moments. [Task 1]
+- The source authority is `backend/src/lib/coaching/repeatReviewCoachingPolicy.ts` plus `backend/src/lib/coaching/scriptDeviation.ts`. The V46 fix resolved overlapping generic repeat-review and appointment-directed state upstream, rather than scrubbing the frontend. [Task 1]
+- Persisted proof: `ELITE_CALL_COACH_PROMPT_V46`, `script_deviation_v3_repeat_review_state`, no schema retry or repair-pressure warning, one focused field repair and one re-audit. Current V2 Call Analysis renders aggregate scores/requirements, not raw checklist replacement lines. [Task 1]
+- Related skill: skills/coachai-call-audit-rerun/SKILL.md. Use its persisted-artifact-first and at-most-one-rerun procedure. [Task 1]
+
+## Failures and how to do differently
+
+- Symptom: browser bootstrap is unavailable -> cause: desktop browser client cannot connect -> only spend setup time early if browser proof is required; otherwise use authenticated API responses and deployed-asset inspection. [Task 1]
+- Symptom: red GitHub checks have no runner logs -> cause: jobs were not started because of billing/spend-limit refusal -> inspect annotations before treating them as code regressions; `gh run view --log-failed` cannot help without jobs. [Task 1]
+- Symptom: stale coaching text may return in a future screen -> cause: raw audit DTO checklist replacement suggestions remain although V2 does not render them -> if a new consumer renders those fields, clean the persisted/audit-data source rather than assuming V2 protection applies. [Task 1]
+
+# Task Group: Nuvora Link production Telegram notifications and show-check scheduler
+scope: production diagnosis of queued/early Telegram messages, show-check timing, durable delivery evidence, and binding-migration safety
+applies_to: cwd=${PROJECT:nuvora-link|backslash}; reuse_rule=reuse for current Telegram/Worker investigations only after re-checking Railway deployment, runtime configuration, and production records; do not use a local branch as production authority
+
+## Task 1: Diagnose Mina Telegram delivery and show-check timing, outcome success
+
+### rollout_summary_files
+
+- rollout_summaries/2026-07-26T10-15-10-c1w9-nuvora_link_telegram_show_check_diagnosis.md (cwd=\\?\${PROJECT:nuvora-link|backslash}, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\26\rollout-2026-07-26T14-15-10-019f9deb-e63b-7c03-bc07-502977120add.jsonl, updated_at=2026-08-01T12:47:08+00:00, thread_id=019f9deb-e63b-7c03-bc07-502977120add, production diagnosis)
+
+### keywords
+
+- Telegram, Mina Nademi, show-check, show_check_agent, BullMQ, worker, NotificationDelivery, OutboxEvent, runtime_config, canonicalize_telegram_bindings, Railway, AgentNotificationPrefs
+
+## User preferences
+
+- when investigating notification timing, the user asked: “is the worker working properly? can it be on her end? whats happening” -> distinguish application scheduling, persisted delivery, provider dispatch, and recipient-side behavior with evidence rather than speculate. [Task 1]
+
+## Reusable knowledge
+
+- Start from durable evidence: `NotificationDelivery` and `OutboxEvent` establish whether a Telegram message was queued, dispatched, processed, or failed. In this production check, API and Worker were `RUNNING` and 13 2026-08-01 Telegram deliveries were `SENT`, including `show_check_agent` and `show_check_result_booker`; that supports a healthy general dispatch pipeline, not a global Worker outage. [Task 1]
+- The Worker owns scheduled reports, show-check recovery, and outbound dispatch in `apps/worker/src/main.ts`; inspect `readAutomationConfig`, `sweepMissedShowChecks`, and `runAutomationScheduler`. It runs every five minutes, reads per-organization `system` / `runtime_config`, and uses a 15-minute default show-check delay plus 60-minute timeout. Telegram runtime configuration is `NotificationTemplate` with `channel: "system"` and `templateKey: "runtime_config"`. [Task 1]
+- Telegram bindings are authentication authorities, not merely delivery preferences. `20260731233000_canonicalize_telegram_bindings` can conflict with a stale/deactivated identity; recover through `Profile → Notification Preferences → Link Telegram` and the generated bot link, never by forcibly assigning a chat. [Task 1]
+
+## Failures and how to do differently
+
+- Symptom: a Prisma diagnostic query fails on notification/binding fields -> cause: schema assumed `NuvoTelegramLink.createdAt` and `User.notificationPrefs` -> use `linkedAt`/`lastSeenAt` and query `AgentNotificationPrefs` separately. [Task 1]
+- Symptom: local code appears to explain a production Telegram incident -> cause: local branch/deployment divergence -> verify Railway deployment commit and environment before interpreting scheduler behavior. [Task 1]
+- Symptom: a binding migration clears a live recipient preference -> cause: preflight reports identity conflicts without blocking execution -> fail closed on identity conflicts and planned active-preference clears; regression-test an active preference that conflicts with a deactivated user’s stale link. [Task 1]
+
 # Task Group: Nuvora Link operational follow-ups, production migration, and clean workspace builds
 scope: deploying agent-entered operational-only appointments/callbacks without KPI attribution, applying their Prisma migration safely, and preventing Railway clean-build dependency omissions
 applies_to: cwd=${PROJECT:nuvora-link|backslash}; reuse_rule=reuse for this monorepo while its Prisma, Railway, and workspace-package contracts remain current; re-check live deployment and database state before asserting production completion
@@ -38,6 +420,58 @@ applies_to: cwd=${PROJECT:nuvora-link|backslash}; reuse_rule=reuse for this mono
 - Symptom: production migration is reported pending through `railway run ... prisma migrate status` -> cause: only pooled `DATABASE_URL` was supplied -> use the direct Neon endpoint via the installed Prisma Node CLI, then prove schema objects; do not print credentials. [Task 1]
 - Symptom: Railway Worker reports `TS2307: Cannot find module '@nuvora-link/contracts'` while local builds pass -> cause: stale `packages/contracts/dist` masks a missing local build prerequisite -> reproduce from a clean worktree/install and add direct dependency build ordering to every consumer. [Task 2]
 - Symptom: a combined Windows npm acceptance command times out -> cause: partial output was treated as success -> run checks separately and require each independent exit code. [Task 2]
+
+# Task Group: Nuvora Link intent-first repair and built-in dialer retirement
+scope: auditing or changing the legacy Nuvora Link product architecture and removing its retired built-in dialer as one connected product slice
+applies_to: cwd=${PROJECT:nuvora-link|backslash}; reuse_rule=reuse for future Nuvora Link audits, root repairs, and dialer removal; discover current product journeys and dependencies before deleting or retaining any path
+
+## Task 1: Recover intended product architecture before repairing legacy Nuvora Link, outcome documented
+
+### rollout_summary_files
+
+- extensions/ad_hoc/notes/20260731-123551-nuvora-link-intent-first-rebuild.md (cwd=${PROJECT:nuvora-link|backslash}, rollout_path=${HOME|backslash}\.codex\memories\extensions\ad_hoc\notes\20260731-123551-nuvora-link-intent-first-rebuild.md, updated_at=2026-07-31, source=ad-hoc-note)
+
+### keywords
+
+- intent-first, historical product intent, product docs, journeys, persisted contracts, user-visible behavior, earliest wrong authority, durable product-first architecture
+
+## Task 2: Retire the built-in Nuvora Link dialer completely, outcome documented
+
+### rollout_summary_files
+
+- extensions/ad_hoc/notes/20260731-123712-nuvora-link-dialer-retired.md (cwd=${PROJECT:nuvora-link|backslash}, rollout_path=${HOME|backslash}\.codex\memories\extensions\ad_hoc\notes\20260731-123712-nuvora-link-dialer-retired.md, updated_at=2026-07-31, source=ad-hoc-note)
+
+### keywords
+
+- built-in dialer, dialer retirement, dialer UI, routes, provider integrations, jobs, schema, configuration, billing/provider side effect, secret requirement, repo-wide verification
+
+## Task 3: Decouple manual dial totals from timekeeping and deploy the authority, outcome success
+
+### rollout_summary_files
+
+- rollout_summaries/2026-07-31T08-32-14-qt3H-nuvora_link_intent_first_audit_dial_total_decoupling.md (cwd=\\?\${PROJECT:nuvora-link|backslash}, rollout_path=\\?\${HOME|backslash}\.codex\sessions\2026\07\31\rollout-2026-07-31T12-32-14-019fb74d-7590-7881-aed9-733098be6459.jsonl, updated_at=2026-08-01T06:31:21+00:00, thread_id=019fb74d-7590-7881-aed9-733098be6459, production migration and deployment proved)
+
+### keywords
+
+- DialTotalSubmission, TimePunch, 20260801020000_decouple_dial_totals_from_time_punch, scripts/migrate-production.js, Railway, Vercel, PR #48, bd9626f4f104ccff44aee2bcc03fbdff11ca377e, readiness HTTP 200
+
+## User preferences
+
+- for Nuvora Link audits and fixes, treat the current code as “evidence of historical product intent, not as an architecture that must be preserved” -> recover product docs, journeys, persisted contracts, and visible behavior; map the full pipeline, compare a durable product-first architecture with a real alternative, then fix the earliest wrong authority. [Task 1] [ad-hoc note]
+- the user confirmed the built-in dialer “is retired and can be fully removed” -> do not preserve, repair, extend, or harden it as a product capability. [Task 2] [ad-hoc note]
+- when fixing legacy Nuvora Link architecture, the user said “look at the intent of what i was trying to do, propose a proper fix, then do that. dont look at the current code and just try to patch it” -> recover intended behavior and replace the earliest wrong authority instead of retaining accidental coupling. [Task 3]
+
+## Reusable knowledge
+
+- Retirement is one connected slice: dialer UI/routes, provider integrations, jobs, schema, configuration, docs, tests, and orphaned shared helpers. Remove or migrate every dependent, then verify repo-wide that no active dialer path, billing/provider side effect, secret requirement, or visible entry point remains. Keep only shared components whose non-dialer purpose is explicit. [Task 2] [ad-hoc note]
+- `DialTotalSubmission` is the independent authority keyed by organization, booker, agent, and business date; it supports absolute replacement and explicit zero without an active punch. Migration `20260801020000_decouple_dial_totals_from_time_punch` uses expand/contract, legacy backfill, and a fail-closed compatibility bridge for rolling deploys. [Task 3]
+- Production migrations use `scripts/migrate-production.js`, which enforces Railway production API context and validates `DIRECT_DATABASE_URL` against runtime `DATABASE_URL`. `npm run verify` passed, then PR #48 merged as `bd9626f4f104ccff44aee2bcc03fbdff11ca377e`; Vercel/Railway API/worker were successful and readiness was HTTP 200 with DB/Redis up. [Task 3]
+
+## Failures and how to do differently
+
+- Symptom: a legacy defect is patched around the present code shape -> cause: implementation structure was treated as current authority -> recover intended outcome and replace/retire superseded paths, proving final user-visible or system-visible behavior. [Task 1] [ad-hoc note]
+- Symptom: dialer removal leaves runtime or billing residue -> cause: only the visible UI was deleted -> trace and remove/migrate all connected routes, providers, jobs, schema/config/docs/tests/helpers and run a repo-wide active-path sweep. [Task 2] [ad-hoc note]
+- Symptom: deployed code queries a new Prisma model but production is not ready -> cause: deployment success was mistaken for migration/schema proof -> run the guarded production migration and verify migration count, legacy columns, bridge trigger, and durable rows after deploy. [Task 3]
 
 # Task Group: Nuvora Link accounting defaults, analytics KPI presentation, and admin follow-up access
 scope: server-authoritative invoice price resolution, persisted agent rates, usable long selection modals, analytics roster presentation, and the unfinished extension of Follow-up to administrators
@@ -152,7 +586,7 @@ applies_to: cwd=${PROJECT:auxara-dialer|backslash}; reuse_rule=reuse for current
 
 # Task Group: Nuvo Dialer AI capability audit and portable orchestration control plane
 scope: auditing the user's actual Claude/Codex operating model and designing or validating portable controller-owned completion evidence; separates verified local proof from installation, activation, billing, and trust-boundary gaps
-applies_to: cwd=${PROJECT:auxara-dialer|backslash} and ${PROJECT:control-plane|backslash} Control Plane; reuse_rule=reuse for AI workflow/capability audits or portable orchestration-control-plane work, but re-check live repo, CI, installation, and automation activation state before claiming rollout or deployment completeness
+applies_to: cwd=${PROJECT:auxara-dialer|backslash}; historical source checkout=${PROJECT:control-plane|backslash} Control Plane; reuse_rule=reuse the portable-evidence lessons for AI workflow/capability audits, but do not reopen that retired checkout; fetch current canonical ${PROJECT:control-plane|backslash} and re-check live repo, CI, installation, and automation activation state
 
 ## Task 1: Audit the actual Claude/Codex operating model, outcome partial
 
@@ -178,7 +612,7 @@ applies_to: cwd=${PROJECT:auxara-dialer|backslash} and ${PROJECT:control-plane|b
 
 ### rollout_summary_files
 
-- rollout_summaries/2026-07-20T05-26-28-4IV8-weekly_fleet_doctrine_review_control_plane_drift.md (cwd=${PROJECT:control-plane|backslash} Control Plane, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\20\rollout-2026-07-20T09-26-33-019f7dfd-6e5e-7061-a2fc-8f4ef6ac7fe6.jsonl, updated_at=2026-07-20T05:33:04+00:00, thread_id=019f7dfd-6e5e-7061-a2fc-8f4ef6ac7fe6, read-only parity finding; no remediation)
+- rollout_summaries/2026-07-20T05-26-28-4IV8-weekly_fleet_doctrine_review_control_plane_drift.md (cwd=${PROJECT:control-plane|backslash} Control Plane, rollout_path=${HOME|backslash}\.codex\archived_sessions\rollout-2026-07-20T09-26-33-019f7dfd-6e5e-7061-a2fc-8f4ef6ac7fe6.jsonl, updated_at=2026-07-20T05:33:04+00:00, thread_id=019f7dfd-6e5e-7061-a2fc-8f4ef6ac7fe6, read-only parity finding; no remediation)
 
 ### keywords
 
@@ -198,7 +632,7 @@ applies_to: cwd=${PROJECT:auxara-dialer|backslash} and ${PROJECT:control-plane|b
 - The portable control plane binds completion evidence to task, repository, commit, attempt, contract, profile, role, lifecycle events, and parsed proof artifacts. Completion is controller/platform evidence (`TaskCreated -> SubagentStop -> TaskCompleted`), not agent-authored booleans. [Task 2]
 - Mutation proof is a verifier trust test: clean baseline pass -> registered mutant fails with expected diagnostic -> exact byte restoration -> clean post-restore pass. Local evidence reported universal 69/69, CoachAI 22/22, Auxara lifecycle 7/7 and control 10/10, plus mutation receipts, syntax/diff checks, gitleaks, and independent audits. [Task 2]
 - Automation specifications and portable repository commits/PRs are not activation or installed-overlay proof. Verify desktop activation and current project overlay parity separately. [Task 1][Task 2]
-- `npm run control:check` in `${PROJECT:control-plane|backslash} Control Plane` is a parity sentinel: a red result means installed doctrine is stale until parity is restored. Keep canonical sources, installed copies, and project overlays distinct. [Task 3]
+- The historical `npm run control:check` result was parity evidence, not an instruction to reopen the retired checkout. For current parity work, fetch and begin from canonical `${PROJECT:control-plane|backslash}` at `e3c1eb9cb25aad665462fe3cbe9542e4de2b9cf9` or its descendant; keep canonical sources, installed copies, and project overlays distinct. [Task 3] [ad-hoc note]
 - The canonical bootstrap contract requires rooted exec-form `node` hooks using `${CLAUDE_PROJECT_DIR}/scripts/...`; malformed JSON or missing `tool_input.file_path` in `PostToolUse` must fail closed with exit 2. Query actual GitHub review objects when independent review evidence matters; comments alone are not reviews. [Task 3]
 
 ## Failures and how to do differently
@@ -237,7 +671,7 @@ applies_to: cwd=${PROJECT:coachai|backslash}; reuse_rule=reuse across read-only 
 
 ### rollout_summary_files
 
-- rollout_summaries/2026-07-21T05-11-50-LINu-organization_orchestration_drift_audit_2026_07_21.md (cwd=${PROJECT:coachai|backslash}, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\21\rollout-2026-07-21T09-11-55-019f8316-63c2-7992-af90-901459a1ea84.jsonl, updated_at=2026-07-21T05:15:55+00:00, thread_id=019f8316-63c2-7992-af90-901459a1ea84, newer CoachAI evidence from cross-repo audit)
+- rollout_summaries/2026-07-21T05-11-50-LINu-organization_orchestration_drift_audit_2026_07_21.md (cwd=${PROJECT:coachai|backslash}, rollout_path=${HOME|backslash}\.codex\archived_sessions\rollout-2026-07-21T09-11-55-019f8316-63c2-7992-af90-901459a1ea84.jsonl, updated_at=2026-07-21T05:15:55+00:00, thread_id=019f8316-63c2-7992-af90-901459a1ea84, newer CoachAI evidence from cross-repo audit)
 
 ### keywords
 
@@ -247,8 +681,8 @@ applies_to: cwd=${PROJECT:coachai|backslash}; reuse_rule=reuse across read-only 
 
 ### rollout_summary_files
 
-- rollout_summaries/2026-07-22T05-10-33-3SHf-read_only_orchestration_drift_audit_2026_07_22.md (cwd=${PROJECT:coachai|backslash}, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\22\rollout-2026-07-22T09-10-38-019f883b-934a-7873-a27e-2cbd01d10e59.jsonl, updated_at=2026-07-22T05:14:22+00:00, thread_id=019f883b-934a-7873-a27e-2cbd01d10e59, newest time-specific CoachAI state)
-- rollout_summaries/2026-07-20T05-11-23-WXnt-organization_wide_orchestration_drift_audit_nuvo_coachai.md (cwd=${PROJECT:coachai|backslash}, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\20\rollout-2026-07-20T09-11-30-019f7def-9cb1-7251-8a70-b811b8e96cdb.jsonl, updated_at=2026-07-20T05:14:45+00:00, thread_id=019f7def-9cb1-7251-8a70-b811b8e96cdb, iterative cross-repo audit)
+- rollout_summaries/2026-07-22T05-10-33-3SHf-read_only_orchestration_drift_audit_2026_07_22.md (cwd=${PROJECT:coachai|backslash}, rollout_path=${HOME|backslash}\.codex\archived_sessions\rollout-2026-07-22T09-10-38-019f883b-934a-7873-a27e-2cbd01d10e59.jsonl, updated_at=2026-07-22T05:14:22+00:00, thread_id=019f883b-934a-7873-a27e-2cbd01d10e59, newest time-specific CoachAI state)
+- rollout_summaries/2026-07-20T05-11-23-WXnt-organization_wide_orchestration_drift_audit_nuvo_coachai.md (cwd=${PROJECT:coachai|backslash}, rollout_path=${HOME|backslash}\.codex\archived_sessions\rollout-2026-07-20T09-11-30-019f7def-9cb1-7251-8a70-b811b8e96cdb.jsonl, updated_at=2026-07-20T05:14:45+00:00, thread_id=019f7def-9cb1-7251-8a70-b811b8e96cdb, iterative cross-repo audit)
 
 ### keywords
 
@@ -258,7 +692,7 @@ applies_to: cwd=${PROJECT:coachai|backslash}; reuse_rule=reuse across read-only 
 
 ### rollout_summary_files
 
-- rollout_summaries/2026-07-23T05-11-46-z9yL-organization_orchestration_drift_audit_2026_07_23.md (cwd=\\?\${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\23\rollout-2026-07-23T09-11-51-019f8d63-0b86-76a0-ac4f-fe8d694ea6e7.jsonl, updated_at=2026-07-23T05:15:33+00:00, thread_id=019f8d63-0b86-76a0-ac4f-fe8d694ea6e7, newest time-specific CoachAI evidence from cross-repo audit)
+- rollout_summaries/2026-07-23T05-11-46-z9yL-organization_orchestration_drift_audit_2026_07_23.md (cwd=\\?\${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\archived_sessions\rollout-2026-07-23T09-11-51-019f8d63-0b86-76a0-ac4f-fe8d694ea6e7.jsonl, updated_at=2026-07-23T05:15:33+00:00, thread_id=019f8d63-0b86-76a0-ac4f-fe8d694ea6e7, newest time-specific CoachAI evidence from cross-repo audit)
 
 ### keywords
 
@@ -268,7 +702,7 @@ applies_to: cwd=${PROJECT:coachai|backslash}; reuse_rule=reuse across read-only 
 
 ### rollout_summary_files
 
-- rollout_summaries/2026-07-24T05-10-07-Haxp-cross_repo_orchestration_drift_audit_nuvo_coachai_2026_07_24.md (cwd=\\?\${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\24\rollout-2026-07-24T09-10-12-019f9287-e51d-76c3-b4b8-c9e551a423a7.jsonl, updated_at=2026-07-24T05:13:29+00:00, thread_id=019f9287-e51d-76c3-b4b8-c9e551a423a7, newest time-specific CoachAI evidence from cross-repo audit)
+- rollout_summaries/2026-07-24T05-10-07-Haxp-cross_repo_orchestration_drift_audit_nuvo_coachai_2026_07_24.md (cwd=\\?\${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\archived_sessions\rollout-2026-07-24T09-10-12-019f9287-e51d-76c3-b4b8-c9e551a423a7.jsonl, updated_at=2026-07-24T05:13:29+00:00, thread_id=019f9287-e51d-76c3-b4b8-c9e551a423a7, newest time-specific CoachAI evidence from cross-repo audit)
 
 ### keywords
 
@@ -418,7 +852,7 @@ applies_to: cwd=${PROJECT:auxara-dialer|backslash}; reuse_rule=reuse across Nuvo
 
 ### rollout_summary_files
 
-- rollout_summaries/2026-07-16T05-11-35-XNHf-auxara_daily_orchestration_drift_audit_2026_07_16.md (cwd=${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\16\rollout-2026-07-16T09-11-40-019f6956-5ee3-7e03-bfad-14c7808e7a75.jsonl, updated_at=2026-07-16T05:14:22+00:00, thread_id=019f6956-5ee3-7e03-bfad-14c7808e7a75, freshest read-only audit)
+- rollout_summaries/2026-07-16T05-11-35-XNHf-auxara_daily_orchestration_drift_audit_2026_07_16.md (cwd=${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\archived_sessions\rollout-2026-07-16T09-11-40-019f6956-5ee3-7e03-bfad-14c7808e7a75.jsonl, updated_at=2026-07-16T05:14:22+00:00, thread_id=019f6956-5ee3-7e03-bfad-14c7808e7a75, freshest read-only audit)
 
 ### keywords
 
@@ -448,7 +882,7 @@ applies_to: cwd=${PROJECT:auxara-dialer|backslash}; reuse_rule=reuse across Nuvo
 
 ### rollout_summary_files
 
-- rollout_summaries/2026-07-17T05-11-48-RIya-auxara_orchestration_drift_read_only_sweep_2026_07_17.md (cwd=${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\17\rollout-2026-07-17T09-11-53-019f6e7c-eaf0-7620-8d09-0337060c2aae.jsonl, updated_at=2026-07-17T05:14:45+00:00, thread_id=019f6e7c-eaf0-7620-8d09-0337060c2aae, evidence collected but no-edit constraint violated)
+- rollout_summaries/2026-07-17T05-11-48-RIya-auxara_orchestration_drift_read_only_sweep_2026_07_17.md (cwd=${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\archived_sessions\rollout-2026-07-17T09-11-53-019f6e7c-eaf0-7620-8d09-0337060c2aae.jsonl, updated_at=2026-07-17T05:14:45+00:00, thread_id=019f6e7c-eaf0-7620-8d09-0337060c2aae, evidence collected but no-edit constraint violated)
 
 ### keywords
 
@@ -458,7 +892,7 @@ applies_to: cwd=${PROJECT:auxara-dialer|backslash}; reuse_rule=reuse across Nuvo
 
 ### rollout_summary_files
 
-- rollout_summaries/2026-07-21T05-11-50-LINu-organization_orchestration_drift_audit_2026_07_21.md (cwd=${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\21\rollout-2026-07-21T09-11-55-019f8316-63c2-7992-af90-901459a1ea84.jsonl, updated_at=2026-07-21T05:15:55+00:00, thread_id=019f8316-63c2-7992-af90-901459a1ea84, newer Nuvo evidence from cross-repo audit)
+- rollout_summaries/2026-07-21T05-11-50-LINu-organization_orchestration_drift_audit_2026_07_21.md (cwd=${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\archived_sessions\rollout-2026-07-21T09-11-55-019f8316-63c2-7992-af90-901459a1ea84.jsonl, updated_at=2026-07-21T05:15:55+00:00, thread_id=019f8316-63c2-7992-af90-901459a1ea84, newer Nuvo evidence from cross-repo audit)
 
 ### keywords
 
@@ -468,8 +902,8 @@ applies_to: cwd=${PROJECT:auxara-dialer|backslash}; reuse_rule=reuse across Nuvo
 
 ### rollout_summary_files
 
-- rollout_summaries/2026-07-22T05-10-33-3SHf-read_only_orchestration_drift_audit_2026_07_22.md (cwd=${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\22\rollout-2026-07-22T09-10-38-019f883b-934a-7873-a27e-2cbd01d10e59.jsonl, updated_at=2026-07-22T05:14:22+00:00, thread_id=019f883b-934a-7873-a27e-2cbd01d10e59, newest time-specific Nuvo state)
-- rollout_summaries/2026-07-20T05-11-23-WXnt-organization_wide_orchestration_drift_audit_nuvo_coachai.md (cwd=${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\20\rollout-2026-07-20T09-11-30-019f7def-9cb1-7251-8a70-b811b8e96cdb.jsonl, updated_at=2026-07-20T05:14:45+00:00, thread_id=019f7def-9cb1-7251-8a70-b811b8e96cdb, iterative cross-repo audit)
+- rollout_summaries/2026-07-22T05-10-33-3SHf-read_only_orchestration_drift_audit_2026_07_22.md (cwd=${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\archived_sessions\rollout-2026-07-22T09-10-38-019f883b-934a-7873-a27e-2cbd01d10e59.jsonl, updated_at=2026-07-22T05:14:22+00:00, thread_id=019f883b-934a-7873-a27e-2cbd01d10e59, newest time-specific Nuvo state)
+- rollout_summaries/2026-07-20T05-11-23-WXnt-organization_wide_orchestration_drift_audit_nuvo_coachai.md (cwd=${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\archived_sessions\rollout-2026-07-20T09-11-30-019f7def-9cb1-7251-8a70-b811b8e96cdb.jsonl, updated_at=2026-07-20T05:14:45+00:00, thread_id=019f7def-9cb1-7251-8a70-b811b8e96cdb, iterative cross-repo audit)
 
 ### keywords
 
@@ -479,7 +913,7 @@ applies_to: cwd=${PROJECT:auxara-dialer|backslash}; reuse_rule=reuse across Nuvo
 
 ### rollout_summary_files
 
-- rollout_summaries/2026-07-23T05-11-46-z9yL-organization_orchestration_drift_audit_2026_07_23.md (cwd=\\?\${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\23\rollout-2026-07-23T09-11-51-019f8d63-0b86-76a0-ac4f-fe8d694ea6e7.jsonl, updated_at=2026-07-23T05:15:33+00:00, thread_id=019f8d63-0b86-76a0-ac4f-fe8d694ea6e7, newest time-specific Nuvo evidence from cross-repo audit)
+- rollout_summaries/2026-07-23T05-11-46-z9yL-organization_orchestration_drift_audit_2026_07_23.md (cwd=\\?\${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\archived_sessions\rollout-2026-07-23T09-11-51-019f8d63-0b86-76a0-ac4f-fe8d694ea6e7.jsonl, updated_at=2026-07-23T05:15:33+00:00, thread_id=019f8d63-0b86-76a0-ac4f-fe8d694ea6e7, newest time-specific Nuvo evidence from cross-repo audit)
 
 ### keywords
 
@@ -489,7 +923,7 @@ applies_to: cwd=${PROJECT:auxara-dialer|backslash}; reuse_rule=reuse across Nuvo
 
 ### rollout_summary_files
 
-- rollout_summaries/2026-07-24T05-10-07-Haxp-cross_repo_orchestration_drift_audit_nuvo_coachai_2026_07_24.md (cwd=\\?\${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\sessions\2026\07\24\rollout-2026-07-24T09-10-12-019f9287-e51d-76c3-b4b8-c9e551a423a7.jsonl, updated_at=2026-07-24T05:13:29+00:00, thread_id=019f9287-e51d-76c3-b4b8-c9e551a423a7, newest time-specific Nuvo evidence from cross-repo audit)
+- rollout_summaries/2026-07-24T05-10-07-Haxp-cross_repo_orchestration_drift_audit_nuvo_coachai_2026_07_24.md (cwd=\\?\${PROJECT:auxara-dialer|backslash}, rollout_path=${HOME|backslash}\.codex\archived_sessions\rollout-2026-07-24T09-10-12-019f9287-e51d-76c3-b4b8-c9e551a423a7.jsonl, updated_at=2026-07-24T05:13:29+00:00, thread_id=019f9287-e51d-76c3-b4b8-c9e551a423a7, newest time-specific Nuvo evidence from cross-repo audit)
 
 ### keywords
 

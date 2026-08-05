@@ -139,6 +139,14 @@ CREATE TABLE ai_budget_alerts (
 
 ## Metering Middleware (PHP/Laravel)
 
+### Durable pre-effect attempt authority
+
+For every billable or possibly billable provider call, persist a uniquely bound `STARTED` attempt **before** handing work to the provider. Bind tenant, budget reservation, operation/idempotency identity, provider route, pricing release, attempt number, and a claim fence/lease. The terminal write then resolves that same attempt to `SUCCEEDED`, evidence-backed `FAILED_NO_EFFECT`, or `UNKNOWN`; a timeout/crash after provider handoff is never silently treated as unused budget. Expiry may release an unstarted reservation, but an expired started attempt remains reserved and enters evidence-backed reconciliation.
+
+Fail-state: the application calls the provider first and writes usage afterward, so a process crash can hide billed usage or permanently strand budget without a reconcilable attempt.
+
+Regression mutation: move `claimStartedAttempt` below `provider->complete`, or let reservation expiry release a `STARTED` attempt; the metering proof must turn red. Counterexample: a purely local, contractually unbilled computation with no provider execution may bypass the paid-attempt ledger while retaining its ordinary audit path.
+
 ```php
 // app/Services/AI/AIMeteredClient.php
 class AIMeteredClient
@@ -157,32 +165,48 @@ class AIMeteredClient
         // 2. Budget pre-check
         $this->assertBudgetAvailable($tenantId);
 
-        // 3. Make the AI call
-        $response = $this->provider->complete($request);
+        // 3. Persist one exact STARTED attempt before provider handoff.
+        $attempt = $this->claimStartedAttempt(
+            $tenantId,
+            $userId,
+            $featureSlug,
+            $request->model,
+            $request->idempotencyKey,
+        );
 
-        // 4. Record usage
-        $this->record($tenantId, $userId, $featureSlug, $request->model, $response);
+        // 4. Make the provider call. Any post-handoff ambiguity remains UNKNOWN.
+        try {
+            $response = $this->provider->complete($request);
+        } catch (Throwable $error) {
+            $this->markAttemptUnknown($attempt, $error);
+            throw $error;
+        }
 
-        // 5. Post-call budget check (triggers alerts)
+        // 5. Terminalize the exact started attempt with provider evidence.
+        $this->record($attempt, $response);
+
+        // 6. Post-call budget check (triggers alerts)
         $this->checkBudgetAlerts($tenantId);
 
         return $response;
     }
 
-    private function record(int $tenantId, int $userId, string $slug, string $model, AIResponse $r): void
+    private function record(StartedAIAttempt $attempt, AIResponse $r): void
     {
-        $costUsd = $this->costs->calculate($model, $r->inputTokens, $r->outputTokens);
+        $costUsd = $this->costs->calculate($attempt->model, $r->inputTokens, $r->outputTokens);
 
         AIUsageLog::create([
-            'tenant_id'      => $tenantId,
-            'user_id'        => $userId,
-            'feature_slug'   => $slug,
-            'model'          => $model,
-            'provider'       => $this->costs->providerFor($model),
+            'tenant_id'      => $attempt->tenantId,
+            'user_id'        => $attempt->userId,
+            'feature_slug'   => $attempt->featureSlug,
+            'model'          => $attempt->model,
+            'provider'       => $this->costs->providerFor($attempt->model),
             'input_tokens'   => $r->inputTokens,
             'output_tokens'  => $r->outputTokens,
             'cost_usd'       => $costUsd,
             'billing_period' => now()->format('Y-m'),
+            'attempt_id'     => $attempt->id,
+            'provider_evidence_id' => $r->usageEvidenceId,
         ]);
     }
 
