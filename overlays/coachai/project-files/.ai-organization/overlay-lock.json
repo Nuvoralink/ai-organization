@@ -456,11 +456,11 @@
     },
     {
       "path": "scripts/tests/fixture-helpers.mjs",
-      "sha256": "0a10cd3bb45b149068867d1abd6d011100bd11bf4e6d0bef4c2dfe3a790c4b6c"
+      "sha256": "dc95d4455fca3c22d754b6b7b0c0cc4faba40906162440a8373241029e8a8f3a"
     },
     {
       "path": "scripts/tests/overlayParityRegression.mjs",
-      "sha256": "f96d7e2473f54a2f5c1777f7e27be8f320a4c65b2ddb647957d39f1a68e25bf8"
+      "sha256": "1c93b08da61c3c8131a6f170fbcaace8a3451380eee2fe38269fb078ddc6e487"
     },
     {
       "path": "scripts/tests/riskSelectedProofRegression.mjs",

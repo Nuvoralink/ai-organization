@@ -94,6 +94,26 @@ test('append-only learned-classes region is excluded from parity, and the exclus
   );
 });
 
+test('fixture copy inventory derives from the ownership manifest, not a hand-maintained list', () => {
+  // Founding failure (2026-08-05): adding scripts/claude-pretooluse-guard.mjs to managed_files
+  // broke six fixture-built regressions ("managed file missing") until a hardcoded helper list
+  // was hand-extended. Derivation kills the class: a new ownership row must reach the fixture
+  // with zero helper edits. Killer mutation: reintroduce a hardcoded inventory in
+  // organizationFixture() and this fails — the probe row never lands in the derived copy.
+  const base = organizationFixture(source);
+  fs.writeFileSync(path.join(base, 'scripts/scratch-managed-probe.mjs'), 'export const probe = 1;\n');
+  const ownershipFile = path.join(base, '.ai-organization/ownership.json');
+  const ownership = JSON.parse(fs.readFileSync(ownershipFile, 'utf8'));
+  ownership.managed_files.push('scripts/scratch-managed-probe.mjs');
+  fs.writeFileSync(ownershipFile, `${JSON.stringify(ownership, null, 2)}\n`);
+  const derived = organizationFixture(base);
+  assert.equal(
+    fs.existsSync(path.join(derived, 'scripts/scratch-managed-probe.mjs')),
+    true,
+    'a managed_files row must reach the derived fixture without a helper edit',
+  );
+});
+
 test('structural change ABOVE the append-only marker still trips overlay parity', () => {
   const root = organizationFixture(source);
   const agentFile = path.join(root, '.claude/agents/adversarial-reviewer.md');
