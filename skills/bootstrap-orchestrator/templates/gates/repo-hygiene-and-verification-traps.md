@@ -172,6 +172,26 @@ Put that question in the project's agent router next to the worktree step, so it
 
 This is not hypothetical symmetry: in that session one project's parity gate normalized and its sibling did not, so the same class was invisible in one repo and blocking in the other. **When you ship a parity/digest gate, normalize — and when you find one that does not, fix it rather than working around the red.**
 
+## 8. Killing a gate run orphans its strict-port server, and the NEXT run reads as a code defect
+
+If any gate in the chain starts a server on a fixed port (a Playwright/e2e lane is the usual one — `vite --port 4173 --strictPort`), **killing that run does not kill the server.** Stopping a background task reaps the parent shell; the detached child survives. The next run then dies at that gate with
+
+```
+Error: http://127.0.0.1:4173 is already used, make sure that nothing is running on the port/url
+```
+
+which looks like a broken gate and sends the reader into the diff. It is the same descendant-survival class the orchestration playbook documents for bounded agent dispatches, arriving through the gate chain instead.
+
+**Before re-running a gate chain you killed, sweep for the orphan** — and identify it before killing, so you never kill an unrelated dev server:
+
+```powershell
+Get-NetTCPConnection -LocalPort <port> -State Listen | ForEach-Object {
+  (Get-CimInstance Win32_Process -Filter "ProcessId=$($_.OwningProcess)").CommandLine
+}   # confirm it names YOUR worktree path, then Stop-Process -Id <pid> -Force
+```
+
+Two durable reductions, in preference order: have the e2e lane bind an **ephemeral** port (or `reuseExistingServer` in CI-local mode) so a stale child cannot block it at all; and if the port must stay fixed, list it in the reservation config's `RESERVED_PORTS` so no agent is ever handed it (see "Shared-namespace reservation" in `gates-all-wiring.md`). Prefer killing the run's whole descendant tree in the first place — that is what the bounded-runner helper exists for.
+
 ## Install checklist
 
 - [ ] `.gitattributes` with `* text=auto eol=lf` + binaries; `git ls-files --eol` measured, not assumed
