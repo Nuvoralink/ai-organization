@@ -7,7 +7,7 @@ import { validateActionPolicySemantics } from '../.ai-organization/runtime/core/
 import { validateJsonAgainstSchema } from '../.ai-organization/runtime/core/schema/validate-json-schema.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const requiredEvents = ['SessionStart', 'SubagentStart', 'TaskCreated', 'TaskCompleted', 'SubagentStop', 'PostCompact', 'SessionEnd', 'PostToolUse'];
+const requiredEvents = ['SessionStart', 'SubagentStart', 'TaskCreated', 'TaskCompleted', 'SubagentStop', 'PostCompact', 'SessionEnd', 'PostToolUse', 'PreToolUse'];
 const requiredAssuranceSchemas = [
   '.ai-organization/schemas/task-assurance.v2.schema.json',
   '.ai-organization/schemas/task-evidence.v2.schema.json',
@@ -42,7 +42,7 @@ if (problems.length === 0) {
 const settings = JSON.parse(fs.readFileSync(path.join(root, '.claude', 'settings.json'), 'utf8'));
 for (const event of requiredEvents) {
   const hooks = settings.hooks?.[event]?.flatMap((entry) => entry.hooks ?? []) ?? [];
-  const script = event === 'PostToolUse' ? 'claude-posttooluse-gate.mjs' : 'claude-lifecycle-hook.mjs';
+  const script = event === 'PostToolUse' ? 'claude-posttooluse-gate.mjs' : event === 'PreToolUse' ? 'claude-pretooluse-guard.mjs' : 'claude-lifecycle-hook.mjs';
   if (hooks.length !== 1 || hooks[0].command !== 'node' || hooks[0].args?.[0] !== `\${CLAUDE_PROJECT_DIR}/scripts/${script}`) problems.push(`unrooted or malformed hook: ${event}`);
 }
 for (const relative of localRuntimeState) {

@@ -13,6 +13,7 @@ export const AUXARA_HOOK_POLICY = Object.freeze({
   ]),
   lifecycleScript: 'claude-lifecycle-hook.mjs',
   postToolUseScript: 'claude-posttooluse-gate.mjs',
+  preToolUseScript: 'claude-pretooluse-guard.mjs',
 });
 
 function commandHooks(registrations) {
@@ -86,6 +87,25 @@ export function validateHookSettings(
   ) {
     errors.push(
       `${policy.settingsArtifact}: PostToolUse must be Edit|Write with exactly one rooted exec-form post-tool hook command`,
+    );
+  }
+
+  // The managed-edit guard is REQUIRED: without it the fork trap (editing a delivered managed copy)
+  // is discovered only at parity-gate time. A project silently dropping the PreToolUse hook is the
+  // "registered gate that never fires" hazard, so its absence fails this control.
+  const preToolUseRegistrations = settings.hooks?.PreToolUse;
+  const preToolUseHooks = commandHooks(preToolUseRegistrations);
+  const canonicalPreToolUse = preToolUseHooks.filter((hook) =>
+    isRootedExecHook(hook, policy.preToolUseScript),
+  );
+  if (
+    preToolUseRegistrations?.length !== 1 ||
+    preToolUseRegistrations[0]?.matcher !== 'Edit|Write' ||
+    preToolUseHooks.length !== 1 ||
+    canonicalPreToolUse.length !== 1
+  ) {
+    errors.push(
+      `${policy.settingsArtifact}: PreToolUse must be Edit|Write with exactly one rooted exec-form managed-edit guard command`,
     );
   }
 

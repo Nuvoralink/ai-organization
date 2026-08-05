@@ -19,6 +19,9 @@ const REQUIRED_MANAGED_FILES = new Set([
   '.ai-organization/schemas/task-evidence.v2.schema.json',
   '.ai-organization/schemas/task-evidence.v3.schema.json',
   '.ai-organization/runtime/core/authority/assess-action.mjs',
+  // Managed-edit guard: the fork-trap edit-time control (PreToolUse hook logic + its test).
+  '.ai-organization/runtime/core/authority/managed-edit-guard.mjs',
+  '.ai-organization/runtime/core/authority/managed-edit-guard.test.mjs',
   '.ai-organization/runtime/core/coordination/coverage.mjs',
   '.ai-organization/runtime/core/coordination/dependencyGraph.mjs',
   // Namespace-reservation authority: the project-agnostic core, the shared CLI, and the two
@@ -45,6 +48,7 @@ const REQUIRED_MANAGED_FILES = new Set([
   'scripts/check-agent-control-plane.mjs',
   'scripts/check-organization-overlay.mjs',
   'scripts/claude-lifecycle-hook.mjs',
+  'scripts/claude-pretooluse-guard.mjs',
   'scripts/run-bounded-agent.mjs',
   'scripts/lib/boundedProcess.mjs',
   'scripts/lib/dispatchBoundary.mjs',

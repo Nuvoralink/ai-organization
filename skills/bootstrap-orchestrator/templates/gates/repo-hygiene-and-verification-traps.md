@@ -159,14 +159,14 @@ Two failures from the same 2026-08-05 promotion, both cheap to prevent and both 
 
 **(a) The fork trap fires on EDIT, not on review — so the warning has to reach the editor.** A control-plane MANAGED file lives in a project like any other file. Editing it there forks the digest-pinned source: the parity gate fails, and the next install silently reverts the work. It bit twice in one session — once when a merged change added a step to a delivered `orchestration-playbook.md`, once when an agent added a step to a delivered `AGENTS.md`. Both were *correct content in the wrong place*; the fix each time was to move the edit to the overlay source and re-deliver.
 
-The project already knows the answer — make agents ask it before editing anything control-plane-adjacent (`AGENTS.md`, `CLAUDE.md`, `.claude/**`, `scripts/check-*.mjs`, `.ai-organization/**`, `docs/agent-prompts/**`):
+The project already knows the answer the whole time (`.ai-organization/ownership.json`) — so the control is **mechanical, not a habit**: the `PreToolUse` managed-edit guard (`scripts/claude-pretooluse-guard.mjs`, wired in `settings.json.template`, logic in the delivered runtime at `.ai-organization/runtime/core/authority/managed-edit-guard.mjs`). It refuses an Edit/Write aimed at a managed delivered copy **at edit time** and prints the overlay-source path to edit instead. Three properties matter, each learned from a live instance: it resolves the manifest by walking up from the **edited file** (two of the three founding traps were cross-repo edits from a differently-rooted session); it always allows edits inside the control-plane **source** repo (that is the fix path); and it allows edits confined to **append-only regions** (`## Learned classes`), which parity hashers strip anyway. The settings validators require the hook, so a project cannot silently drop it. A deliberate human-directed local fork sets `CLAUDE_MANAGED_EDIT_ACK=1` — visible in the transcript.
+
+Manual fallback where the guard is not yet delivered (and the doc-only control this section carried before the hook existed — three fork traps in one session proved a documented habit is not a control):
 
 ```bash
 # Is this file managed? Non-empty output = edit the OVERLAY SOURCE, not this copy.
 node -e "const o=require('./.ai-organization/ownership.json');console.log((o.managedFiles||[]).map(r=>r.path).filter(p=>p===process.argv[1]).join('\n'))" <path>
 ```
-
-Put that question in the project's agent router next to the worktree step, so it is asked at edit time rather than discovered at gate time.
 
 **(b) Content-identity hashing must be line-ending insensitive — and decide that by CONTENT, never by an extension allowlist.** Git may materialize the same committed text as LF or CRLF depending on the checkout (`core.autocrlf`, or a worktree created under different settings). A hasher that sees raw bytes then reports "parity mismatch" in one checkout and passes in another with `git status` clean in both — unexplainable, and it sends the reader hunting for a change nobody made.
 

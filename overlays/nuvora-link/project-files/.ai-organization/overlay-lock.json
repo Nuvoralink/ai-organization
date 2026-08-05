@@ -16,7 +16,7 @@
     },
     {
       "path": ".ai-organization/ownership.json",
-      "sha256": "6b8808d505d52cacd76316ffad04f70a31d6c1fb765a7ae05a7aa87488b56a6b"
+      "sha256": "7ce30d9d1577e3cc9eefc2a984c6d1308db79d54968a1e12397415abc0ebc0b2"
     },
     {
       "path": ".ai-organization/policies/authority-domains.v1.json",
@@ -24,7 +24,7 @@
     },
     {
       "path": ".ai-organization/proof-profiles.json",
-      "sha256": "94dd8118ecdd843242d381fe3287754dd79df783fdfa7fcd5ec9a5f99f65def9"
+      "sha256": "258788a7e2b125285e580b6e432e38a42018a11c8474495a87731d46049d5537"
     },
     {
       "path": ".ai-organization/roles.json",
@@ -120,7 +120,7 @@
     },
     {
       "path": "scripts/check-agent-control-plane.mjs",
-      "sha256": "0d5df62fcf510ae78e206294f3194421b8276edcdc25523eb14d1ad66e737f7f"
+      "sha256": "78cbbe9236d3d0c25a1ff98933a1a54e27f2826e3f3cc840f563b4d686c60743"
     },
     {
       "path": "scripts/check-documentation-authority.mjs",
@@ -155,6 +155,10 @@
       "sha256": "25676a71d5af7212e1d340121245901e50ce7b69f6320158943c385b88af28db"
     },
     {
+      "path": "scripts/claude-pretooluse-guard.mjs",
+      "sha256": "9358a7993c8a521eef6ac97791f634b1377d6096dcddfd842909f642b54cf5ef"
+    },
+    {
       "path": "scripts/lib/boundedProcess.mjs",
       "sha256": "f8599afaa689f4baa101ae0a314505e75fca13e89877c3659871d391e169a0f9"
     },
@@ -169,7 +173,7 @@
   ],
   "json_sections": {
     ".claude/settings.json": {
-      "hooks": "ab8fb96e8a68a636eaf44d9fe274f1096dc8f641bdee7b87cff6a9e2ba7ff29f"
+      "hooks": "21083269743c943ef38bf49f037afbf17e4fd2709aa7e4e375b3381980e1fee2"
     },
     "package.json": {
       "scripts.agent:run": "a8e3be98df0d5406d91588e1cefc5924397ce80fa742c893afddcea7a2e9a9d5",

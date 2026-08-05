@@ -135,6 +135,11 @@ export function checkAgentControlPlane(root = process.cwd()) {
   const post = settings.hooks?.PostToolUse;
   const postHooks = commandHooks(post);
   if (post?.length !== 1 || post[0]?.matcher !== 'Edit|Write' || postHooks.length !== 1 || !isRootedExecHook(postHooks[0], 'claude-posttooluse-gate.mjs')) errors.push('separate rooted exec-form PostToolUse gate is missing');
+  // The managed-edit guard is REQUIRED (fork-trap shift-left): without it, editing a delivered
+  // managed copy is only discovered at parity-gate time, after the damage.
+  const pre = settings.hooks?.PreToolUse;
+  const preHooks = commandHooks(pre);
+  if (pre?.length !== 1 || pre[0]?.matcher !== 'Edit|Write' || preHooks.length !== 1 || !isRootedExecHook(preHooks[0], 'claude-pretooluse-guard.mjs')) errors.push('separate rooted exec-form PreToolUse managed-edit guard is missing');
 
   const pkg = readJson(root, 'package.json');
   for (const script of ['gate:agent-context', 'gate:rules-wiring', 'gate:agent-control-plane', 'gate:fleet-parity', 'gate:overlay-parity', 'gate:organization', 'proof:changed', 'test:organization-control-plane']) if (!pkg.scripts?.[script]) errors.push(`package script missing: ${script}`);

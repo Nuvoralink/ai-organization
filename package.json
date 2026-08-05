@@ -26,7 +26,7 @@
     "overlay:install:auxara": "node scripts/project-overlay.mjs install auxara-dialer",
     "overlay:install:coachai": "node scripts/project-overlay.mjs install coachai",
     "overlay:install:nuvora-link": "node scripts/project-overlay.mjs install nuvora-link",
-    "test": "node --test tests/*.test.mjs skills/bootstrap-orchestrator/scripts/dispatch-claude-cli.test.mjs",
+    "test": "node --test tests/*.test.mjs core/authority/managed-edit-guard.test.mjs skills/bootstrap-orchestrator/scripts/dispatch-claude-cli.test.mjs",
     "sweep:branches": "node scripts/sweep-merged-branches.mjs"
   }
 }

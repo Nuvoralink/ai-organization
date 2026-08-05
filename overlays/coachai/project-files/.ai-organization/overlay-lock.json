@@ -28,7 +28,7 @@
     },
     {
       "path": ".ai-organization/ownership.json",
-      "sha256": "0e72a678c3f9577bba4c0125a83caab7561102cb2cbc4bb6bfba91b90877505f"
+      "sha256": "49522bb31fa2be6edc1aa834acaa9af0e06838491aaa52fdb9418daf7f244c87"
     },
     {
       "path": ".ai-organization/policies/action-authority.v1.json",
@@ -44,7 +44,7 @@
     },
     {
       "path": ".ai-organization/proof-profiles.json",
-      "sha256": "493f6bd6e050cb7579770fb422edb8a525ea146cc22d3ad23e9bef8d0cfba167"
+      "sha256": "9fa0d04381af622d0423dc168fc53c7e1ba095f23d2a56f8f7a9ae9e4a1467ab"
     },
     {
       "path": ".ai-organization/registries/agent-roles.project.v1.json",
@@ -61,6 +61,14 @@
     {
       "path": ".ai-organization/runtime/core/authority/assess-action.mjs",
       "sha256": "c80793aa9f71dfb771930b22eac386333973beb1c184a3595bf004e6023d8747"
+    },
+    {
+      "path": ".ai-organization/runtime/core/authority/managed-edit-guard.mjs",
+      "sha256": "29e647b431f35bb9e2bc81ebac35dbd79471319758743ba716e92ce8922f04f7"
+    },
+    {
+      "path": ".ai-organization/runtime/core/authority/managed-edit-guard.test.mjs",
+      "sha256": "8edee3636baf28cb34c4823c56e83451f21a4501289235a7d2cf1c35aadac5a0"
     },
     {
       "path": ".ai-organization/runtime/core/coordination/adr-numbering.mjs",
@@ -380,7 +388,7 @@
     },
     {
       "path": "scripts/check-agent-control-plane.mjs",
-      "sha256": "0fec61a2a4ef658f62c3df421f44792e49f72a1aa3ddb86c6beaeab149618f2e"
+      "sha256": "14e3c76bd2a803a2b8c126416384b46e6889197214ac46ddb226212e332f9ffe"
     },
     {
       "path": "scripts/check-doc-code-drift.mjs",
@@ -415,6 +423,10 @@
       "sha256": "816ff7433cde5463bc81c95fe75fcee9601e84da4b2b192fb189d53322e8f939"
     },
     {
+      "path": "scripts/claude-pretooluse-guard.mjs",
+      "sha256": "9358a7993c8a521eef6ac97791f634b1377d6096dcddfd842909f642b54cf5ef"
+    },
+    {
       "path": "scripts/lib/boundedProcess.mjs",
       "sha256": "f8599afaa689f4baa101ae0a314505e75fca13e89877c3659871d391e169a0f9"
     },
@@ -444,7 +456,7 @@
     },
     {
       "path": "scripts/tests/fixture-helpers.mjs",
-      "sha256": "1e5480e74b3b576b7bc022595d96d7d4cfc5a911b9d57bf611253bd3b0cc1075"
+      "sha256": "0a10cd3bb45b149068867d1abd6d011100bd11bf4e6d0bef4c2dfe3a790c4b6c"
     },
     {
       "path": "scripts/tests/overlayParityRegression.mjs",
@@ -461,7 +473,7 @@
   ],
   "json_sections": {
     ".claude/settings.json": {
-      "hooks": "ab8fb96e8a68a636eaf44d9fe274f1096dc8f641bdee7b87cff6a9e2ba7ff29f"
+      "hooks": "21083269743c943ef38bf49f037afbf17e4fd2709aa7e4e375b3381980e1fee2"
     },
     "package.json": {
       "scripts.agent:run": "a8e3be98df0d5406d91588e1cefc5924397ce80fa742c893afddcea7a2e9a9d5",

@@ -39,6 +39,14 @@
       "sha256": "c80793aa9f71dfb771930b22eac386333973beb1c184a3595bf004e6023d8747"
     },
     {
+      "path": ".ai-organization/runtime/core/authority/managed-edit-guard.test.mjs",
+      "sha256": "8edee3636baf28cb34c4823c56e83451f21a4501289235a7d2cf1c35aadac5a0"
+    },
+    {
+      "path": ".ai-organization/runtime/core/authority/managed-edit-guard.mjs",
+      "sha256": "29e647b431f35bb9e2bc81ebac35dbd79471319758743ba716e92ce8922f04f7"
+    },
+    {
       "path": ".ai-organization/runtime/core/coordination/coverage.mjs",
       "sha256": "7f7b38f923becfcce3c40ebe30d9bdcd9df82da4adb0df69ef9429fcdec2ba16"
     },
@@ -124,11 +132,15 @@
     },
     {
       "path": "scripts/check-organization-overlay.mjs",
-      "sha256": "c9f4f3104b3802ccbd5f6c0b1f2da5b5b0eff74304db31300326f83f0eac6e20"
+      "sha256": "3d5dda74abe17b4d824c8868e0415bc71218e91039f617bc33be36ae9ac44ef3"
     },
     {
       "path": "scripts/claude-lifecycle-hook.mjs",
       "sha256": "df6a3950ad5dfe610895488896f9fa8855f0d3500fcdc54fe31a7463e89a571c"
+    },
+    {
+      "path": "scripts/claude-pretooluse-guard.mjs",
+      "sha256": "9358a7993c8a521eef6ac97791f634b1377d6096dcddfd842909f642b54cf5ef"
     },
     {
       "path": "scripts/run-bounded-agent.mjs",
@@ -156,7 +168,7 @@
     },
     {
       "path": "scripts/lib/validateClaudeHookSettings.mjs",
-      "sha256": "8e4012b4c68210e4df47141bbc0bc880fc940be42e2817c778b0904d1d4500c7"
+      "sha256": "d1343172d69185e29e836fc71a9d74defc5dc7a909b5894e22dd1a7c70e5493d"
     },
     {
       "path": ".claude/agents/premise-and-architecture-challenger.md",
@@ -185,5 +197,34 @@
   ],
   "appendOnlyMarkers": [
     "## Learned classes"
+  ],
+  "managed_files": [
+    ".claude/launch.json",
+    ".claude/settings.json",
+    ".github/ISSUE_TEMPLATE/agent-slice.yml",
+    ".github/PULL_REQUEST_TEMPLATE.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/agent-prompts/goal-templates.md",
+    "docs/agent-prompts/orchestration-playbook.md",
+    "docs/agent-prompts/orchestrator-handoff-context.md",
+    "scripts/check-agent-context-budget.mjs",
+    "scripts/check-call-drop-gate.mjs",
+    "scripts/check-decision-sprint-linkage.mjs",
+    "scripts/check-doc-code-drift.mjs",
+    "scripts/check-filemap.mjs",
+    "scripts/check-fleet-parity.mjs",
+    "scripts/check-rules-wiring.mjs",
+    "scripts/check-test-intent.mjs",
+    "scripts/claude-posttooluse-gate.mjs",
+    "scripts/generate-repo-filemap.mjs",
+    "scripts/lib/claudeGateRouter.mjs",
+    "scripts/orchestration-state.mjs",
+    "scripts/summarize-agent-telemetry.mjs"
+  ],
+  "managed_roots": [
+    ".claude/agents",
+    ".claude/rules",
+    ".agents/skills"
   ]
 }

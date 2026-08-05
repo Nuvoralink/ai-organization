@@ -56,6 +56,7 @@
         "scripts/lib/boundedProcess.mjs",
         "scripts/lib/dispatchBoundary.mjs",
         "scripts/claude-posttooluse-gate.mjs",
+        "scripts/claude-pretooluse-guard.mjs",
         "scripts/run-risk-selected-proof.mjs",
         "scripts/sweep-merged-branches.mjs",
         "scripts/run-backend-regressions.mjs",

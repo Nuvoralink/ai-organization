@@ -63,7 +63,9 @@
           {
             "type": "command",
             "command": "node",
-            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"],
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"
+            ],
             "timeout": 10
           }
         ]
@@ -75,7 +77,9 @@
           {
             "type": "command",
             "command": "node",
-            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"],
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"
+            ],
             "timeout": 10
           }
         ]
@@ -87,7 +91,9 @@
           {
             "type": "command",
             "command": "node",
-            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"],
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"
+            ],
             "timeout": 10
           }
         ]
@@ -99,7 +105,9 @@
           {
             "type": "command",
             "command": "node",
-            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"],
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"
+            ],
             "timeout": 1800
           }
         ]
@@ -111,7 +119,9 @@
           {
             "type": "command",
             "command": "node",
-            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"],
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"
+            ],
             "timeout": 10
           }
         ]
@@ -123,7 +133,9 @@
           {
             "type": "command",
             "command": "node",
-            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"],
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"
+            ],
             "timeout": 5
           }
         ]
@@ -135,8 +147,25 @@
           {
             "type": "command",
             "command": "node",
-            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"],
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"
+            ],
             "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/scripts/claude-pretooluse-guard.mjs"
+            ],
+            "timeout": 20
           }
         ]
       }
@@ -148,7 +177,9 @@
           {
             "type": "command",
             "command": "node",
-            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-posttooluse-gate.mjs"],
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/scripts/claude-posttooluse-gate.mjs"
+            ],
             "timeout": 120
           }
         ]

@@ -95,6 +95,14 @@
       "class": "shared-control-plane-runtime"
     },
     {
+      "path": "core/authority/managed-edit-guard.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/authority/managed-edit-guard.test.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
       "path": "core/coordination/adr-numbering.mjs",
       "class": "shared-control-plane-runtime"
     },
@@ -3215,6 +3223,10 @@
       "class": "project-orchestration-overlay"
     },
     {
+      "path": "overlays/auxara-dialer/project-files/scripts/claude-pretooluse-guard.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
       "path": "overlays/auxara-dialer/project-files/scripts/generate-repo-filemap.mjs",
       "class": "project-orchestration-overlay"
     },
@@ -3575,6 +3587,10 @@
       "class": "project-orchestration-overlay"
     },
     {
+      "path": "overlays/coachai/project-files/scripts/claude-pretooluse-guard.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
       "path": "overlays/coachai/project-files/scripts/lib/boundedProcess.mjs",
       "class": "project-orchestration-overlay"
     },
@@ -3808,6 +3824,10 @@
     },
     {
       "path": "overlays/nuvora-link/project-files/scripts/claude-posttooluse-gate.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/nuvora-link/project-files/scripts/claude-pretooluse-guard.mjs",
       "class": "project-orchestration-overlay"
     },
     {
@@ -4228,6 +4248,10 @@
     },
     {
       "path": "skills/bootstrap-orchestrator/templates/lifecycle/claude-lifecycle-hook.mjs.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/lifecycle/claude-pretooluse-guard.mjs.template",
       "class": "reusable-skill"
     },
     {
@@ -5276,6 +5300,10 @@
     },
     {
       "path": "tests/local-ci-only.test.mjs",
+      "class": "control-plane-test"
+    },
+    {
+      "path": "tests/managed-edit-guard-wiring.test.mjs",
       "class": "control-plane-test"
     },
     {

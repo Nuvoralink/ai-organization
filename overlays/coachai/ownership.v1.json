@@ -2,62 +2,595 @@
   "version": "1.0.0",
   "project": "coachai",
   "assets": [
-    { "id": "coachai-organization-metadata", "mode": "generated", "destination": ".ai-organization/control-plane" },
-    { "id": "coachai-action-authority", "mode": "generated", "destination": ".ai-organization/policies/action-authority.v1.json" },
-    { "id": "coachai-risk-controls", "mode": "generated", "destination": ".ai-organization/policies/risk-controls.v1.json" },
-    { "id": "coachai-agent-role-registry", "mode": "generated", "destination": ".ai-organization/registries/agent-roles.v1.json" },
-    { "id": "coachai-agent-role-extension-registry", "mode": "generated", "destination": ".ai-organization/registries/agent-roles.project.v1.json" },
-    { "id": "coachai-assurance-schemas", "mode": "generated", "destination": ".ai-organization/schemas" },
-    { "id": "coachai-shared-runtime", "mode": "generated", "destination": ".ai-organization/runtime/core" },
-    { "id": "coachai-fleet-parity-gate", "mode": "generated", "destination": "scripts/check-fleet-parity.mjs" },
-    { "id": "coachai-automation-specs", "mode": "generated", "destination": ".ai-organization/automations" },
-    { "id": "coachai-project-readme", "mode": "generated", "destination": ".ai-organization/README.md", "sourcePath": ".ai-organization/README.md", "installMode": "file", "allowedExtensions": [".md"], "detectLocalOnly": false },
-    { "id": "coachai-project-task-governor-adapter", "mode": "generated", "destination": "scripts/task-governor.mjs", "sourcePath": "scripts/task-governor.mjs", "installMode": "file", "allowedExtensions": [".mjs"], "detectLocalOnly": false },
-    { "id": "coachai-project-context-budget", "mode": "generated", "destination": ".ai-organization/context-budget.json", "sourcePath": ".ai-organization/context-budget.json", "installMode": "file", "allowedExtensions": [".json"], "detectLocalOnly": false },
-    { "id": "coachai-project-lifecycle-policy", "mode": "generated", "destination": ".ai-organization/lifecycle-policy.json", "sourcePath": ".ai-organization/lifecycle-policy.json", "installMode": "file", "allowedExtensions": [".json"], "detectLocalOnly": false },
-    { "id": "coachai-project-authority-domains", "mode": "generated", "destination": ".ai-organization/policies/authority-domains.v1.json", "sourcePath": ".ai-organization/policies/authority-domains.v1.json", "installMode": "file", "allowedExtensions": [".json"], "detectLocalOnly": false },
-    { "id": "coachai-project-portable-lock", "mode": "generated", "destination": ".ai-organization/overlay-lock.json", "sourcePath": ".ai-organization/overlay-lock.json", "installMode": "file", "allowedExtensions": [".json"], "detectLocalOnly": false },
-    { "id": "coachai-project-ownership", "mode": "generated", "destination": ".ai-organization/ownership.json", "sourcePath": ".ai-organization/ownership.json", "installMode": "file", "allowedExtensions": [".json"], "detectLocalOnly": false },
-    { "id": "coachai-project-proof-profiles", "mode": "generated", "destination": ".ai-organization/proof-profiles.json", "sourcePath": ".ai-organization/proof-profiles.json", "installMode": "file", "allowedExtensions": [".json"], "detectLocalOnly": false },
-    { "id": "coachai-project-roles", "mode": "generated", "destination": ".ai-organization/roles.json", "sourcePath": ".ai-organization/roles.json", "installMode": "file", "allowedExtensions": [".json"], "detectLocalOnly": false },
-    { "id": "coachai-project-agents", "mode": "generated", "destination": ".claude/agents", "sourcePath": ".claude/agents", "installMode": "tree", "allowedExtensions": [".md"], "detectLocalOnly": true },
-    { "id": "coachai-project-rules", "mode": "generated", "destination": ".cursor/rules", "sourcePath": ".cursor/rules", "installMode": "tree", "allowedExtensions": [".mdc"], "detectLocalOnly": true },
-    { "id": "coachai-project-settings", "mode": "generated", "destination": ".claude/settings.json", "sourcePath": ".claude/settings.json", "installMode": "file", "allowedExtensions": [".json"], "detectLocalOnly": false },
-    { "id": "coachai-project-agents-router", "mode": "generated", "destination": "AGENTS.md", "sourcePath": "AGENTS.md", "installMode": "file", "allowedExtensions": [".md"], "detectLocalOnly": false },
-    { "id": "coachai-project-claude-router", "mode": "generated", "destination": "CLAUDE.md", "sourcePath": "CLAUDE.md", "installMode": "file", "allowedExtensions": [".md"], "detectLocalOnly": false },
-    { "id": "coachai-project-codeowners", "mode": "generated", "destination": ".github/CODEOWNERS", "sourcePath": ".github/CODEOWNERS", "installMode": "file", "allowedExtensions": [""], "detectLocalOnly": false },
-    { "id": "coachai-project-issue-template", "mode": "generated", "destination": ".github/ISSUE_TEMPLATE/agent-slice.yml", "sourcePath": ".github/ISSUE_TEMPLATE/agent-slice.yml", "installMode": "file", "allowedExtensions": [".yml"], "detectLocalOnly": false },
-    { "id": "coachai-project-pr-template", "mode": "generated", "destination": ".github/pull_request_template.md", "sourcePath": ".github/pull_request_template.md", "installMode": "file", "allowedExtensions": [".md"], "detectLocalOnly": false },
-    { "id": "coachai-project-db-workflow", "mode": "generated", "destination": ".github/workflows/backend-db-regressions.yml", "sourcePath": ".github/workflows/backend-db-regressions.yml", "installMode": "file", "allowedExtensions": [".yml"], "detectLocalOnly": false },
-    { "id": "coachai-project-ui-workflow", "mode": "generated", "destination": ".github/workflows/ui-source-of-truth-gates.yml", "sourcePath": ".github/workflows/ui-source-of-truth-gates.yml", "installMode": "file", "allowedExtensions": [".yml"], "detectLocalOnly": false },
-    { "id": "coachai-project-check-context", "mode": "generated", "destination": "scripts/check-agent-context.mjs", "sourcePath": "scripts/check-agent-context.mjs", "installMode": "file", "allowedExtensions": [".mjs"], "detectLocalOnly": false },
-    { "id": "coachai-project-check-control", "mode": "generated", "destination": "scripts/check-agent-control-plane.mjs", "sourcePath": "scripts/check-agent-control-plane.mjs", "installMode": "file", "allowedExtensions": [".mjs"], "detectLocalOnly": false },
-    { "id": "coachai-project-check-doc-drift", "mode": "generated", "destination": "scripts/check-doc-code-drift.mjs", "sourcePath": "scripts/check-doc-code-drift.mjs", "installMode": "file", "allowedExtensions": [".mjs"], "detectLocalOnly": false },
-    { "id": "coachai-project-check-overlay", "mode": "generated", "destination": "scripts/check-overlay-parity.mjs", "sourcePath": "scripts/check-overlay-parity.mjs", "installMode": "file", "allowedExtensions": [".mjs"], "detectLocalOnly": false },
-    { "id": "coachai-project-check-rules", "mode": "generated", "destination": "scripts/check-rules-wiring.mjs", "sourcePath": "scripts/check-rules-wiring.mjs", "installMode": "file", "allowedExtensions": [".mjs"], "detectLocalOnly": false },
-    { "id": "coachai-project-check-test-intent", "mode": "generated", "destination": "scripts/check-test-intent.mjs", "sourcePath": "scripts/check-test-intent.mjs", "installMode": "file", "allowedExtensions": [".mjs"], "detectLocalOnly": false },
-    { "id": "coachai-project-ci-local", "mode": "generated", "destination": "scripts/ci-local.mjs", "sourcePath": "scripts/ci-local.mjs", "installMode": "file", "allowedExtensions": [".mjs"], "detectLocalOnly": false },
-    { "id": "coachai-project-lifecycle-hook", "mode": "generated", "destination": "scripts/claude-lifecycle-hook.mjs", "sourcePath": "scripts/claude-lifecycle-hook.mjs", "installMode": "file", "allowedExtensions": [".mjs"], "detectLocalOnly": false },
-    { "id": "coachai-project-bounded-runner", "mode": "generated", "destination": "scripts/run-bounded-agent.mjs", "sourcePath": "scripts/run-bounded-agent.mjs", "installMode": "file", "allowedExtensions": [".mjs"], "detectLocalOnly": false },
-    { "id": "coachai-project-bounded-process-lib", "mode": "generated", "destination": "scripts/lib/boundedProcess.mjs", "sourcePath": "scripts/lib/boundedProcess.mjs", "installMode": "file", "allowedExtensions": [".mjs"], "detectLocalOnly": false },
-    { "id": "coachai-project-dispatch-boundary-lib", "mode": "generated", "destination": "scripts/lib/dispatchBoundary.mjs", "sourcePath": "scripts/lib/dispatchBoundary.mjs", "installMode": "file", "allowedExtensions": [".mjs"], "detectLocalOnly": false },
-    { "id": "coachai-project-posttooluse-gate", "mode": "generated", "destination": "scripts/claude-posttooluse-gate.mjs", "sourcePath": "scripts/claude-posttooluse-gate.mjs", "installMode": "file", "allowedExtensions": [".mjs"], "detectLocalOnly": false },
-    { "id": "coachai-project-risk-proof", "mode": "generated", "destination": "scripts/run-risk-selected-proof.mjs", "sourcePath": "scripts/run-risk-selected-proof.mjs", "installMode": "file", "allowedExtensions": [".mjs"], "detectLocalOnly": false },
-    { "id": "coachai-project-control-tests", "mode": "generated", "destination": "scripts/tests", "sourcePath": "scripts/tests", "installMode": "tree", "allowedExtensions": [".mjs"], "detectLocalOnly": true },
-    { "id": "coachai-skill-audit-queue-quality", "mode": "generated", "destination": ".agents/skills/coachai-audit-queue-coaching-quality", "sourcePath": ".agents/skills/coachai-audit-queue-coaching-quality", "installMode": "tree", "allowedExtensions": [".md", ".yaml", ".json", ".mjs", ".js", ".ts"], "detectLocalOnly": true },
-    { "id": "coachai-skill-authentication", "mode": "generated", "destination": ".agents/skills/coachai-authentication", "sourcePath": ".agents/skills/coachai-authentication", "installMode": "tree", "allowedExtensions": [".md", ".json", ".mjs", ".js", ".ts"], "detectLocalOnly": true },
-    { "id": "coachai-skill-call-audit-rca", "mode": "generated", "destination": ".agents/skills/coachai-call-audit-rca", "sourcePath": ".agents/skills/coachai-call-audit-rca", "installMode": "tree", "allowedExtensions": [".md", ".yaml", ".json", ".mjs", ".js", ".ts"], "detectLocalOnly": true },
-    { "id": "coachai-skill-downstream-rerun", "mode": "generated", "destination": ".agents/skills/coachai-downstream-rerun", "sourcePath": ".agents/skills/coachai-downstream-rerun", "installMode": "tree", "allowedExtensions": [".md", ".yaml", ".json", ".mjs", ".js", ".ts"], "detectLocalOnly": true },
-    { "id": "coachai-skill-journey-documentation", "mode": "generated", "destination": ".agents/skills/coachai-journey-documentation", "sourcePath": ".agents/skills/coachai-journey-documentation", "installMode": "tree", "allowedExtensions": [".md", ".json", ".mjs", ".js", ".ts"], "detectLocalOnly": true },
-    { "id": "coachai-skill-persona-new-agent", "mode": "generated", "destination": ".agents/skills/coachai-persona-new-agent-audit", "sourcePath": ".agents/skills/coachai-persona-new-agent-audit", "installMode": "tree", "allowedExtensions": [".md", ".json", ".mjs", ".js", ".ts"], "detectLocalOnly": true },
-    { "id": "coachai-skill-persona-manager", "mode": "generated", "destination": ".agents/skills/coachai-persona-overloaded-manager-audit", "sourcePath": ".agents/skills/coachai-persona-overloaded-manager-audit", "installMode": "tree", "allowedExtensions": [".md", ".json", ".mjs", ".js", ".ts"], "detectLocalOnly": true },
-    { "id": "coachai-skill-persona-owner", "mode": "generated", "destination": ".agents/skills/coachai-persona-owner-delegated-coaching-audit", "sourcePath": ".agents/skills/coachai-persona-owner-delegated-coaching-audit", "installMode": "tree", "allowedExtensions": [".md", ".json", ".mjs", ".js", ".ts"], "detectLocalOnly": true },
-    { "id": "coachai-skill-source-of-truth", "mode": "generated", "destination": ".agents/skills/coachai-source-of-truth-architecture", "sourcePath": ".agents/skills/coachai-source-of-truth-architecture", "installMode": "tree", "allowedExtensions": [".md", ".json", ".mjs", ".js", ".ts"], "detectLocalOnly": true },
-    { "id": "coachai-project-package-wiring", "mode": "project-owned-reference", "destination": "package.json#scripts", "managedSections": ["scripts.agent:run"] },
-    { "id": "coachai-project-decision-log", "mode": "project-owned-reference", "destination": "docs/app-plan/decision-log.md|docs/app-plan/adr" },
-    { "id": "coachai-product-authority", "mode": "project-owned-reference", "destination": "docs|PRODUCT.md" },
-    { "id": "coachai-application-source", "mode": "project-owned-reference", "destination": "backend|frontend|packages" },
-    { "id": "coachai-github-runtime", "mode": "external-state", "destination": "GitHub settings" },
-    { "id": "coachai-local-runtime", "mode": "retired", "destination": "logs|telemetry|cache|worktrees" }
+    {
+      "id": "coachai-organization-metadata",
+      "mode": "generated",
+      "destination": ".ai-organization/control-plane"
+    },
+    {
+      "id": "coachai-action-authority",
+      "mode": "generated",
+      "destination": ".ai-organization/policies/action-authority.v1.json"
+    },
+    {
+      "id": "coachai-risk-controls",
+      "mode": "generated",
+      "destination": ".ai-organization/policies/risk-controls.v1.json"
+    },
+    {
+      "id": "coachai-agent-role-registry",
+      "mode": "generated",
+      "destination": ".ai-organization/registries/agent-roles.v1.json"
+    },
+    {
+      "id": "coachai-agent-role-extension-registry",
+      "mode": "generated",
+      "destination": ".ai-organization/registries/agent-roles.project.v1.json"
+    },
+    {
+      "id": "coachai-assurance-schemas",
+      "mode": "generated",
+      "destination": ".ai-organization/schemas"
+    },
+    {
+      "id": "coachai-shared-runtime",
+      "mode": "generated",
+      "destination": ".ai-organization/runtime/core"
+    },
+    {
+      "id": "coachai-fleet-parity-gate",
+      "mode": "generated",
+      "destination": "scripts/check-fleet-parity.mjs"
+    },
+    {
+      "id": "coachai-automation-specs",
+      "mode": "generated",
+      "destination": ".ai-organization/automations"
+    },
+    {
+      "id": "coachai-project-readme",
+      "mode": "generated",
+      "destination": ".ai-organization/README.md",
+      "sourcePath": ".ai-organization/README.md",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".md"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-task-governor-adapter",
+      "mode": "generated",
+      "destination": "scripts/task-governor.mjs",
+      "sourcePath": "scripts/task-governor.mjs",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".mjs"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-context-budget",
+      "mode": "generated",
+      "destination": ".ai-organization/context-budget.json",
+      "sourcePath": ".ai-organization/context-budget.json",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".json"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-lifecycle-policy",
+      "mode": "generated",
+      "destination": ".ai-organization/lifecycle-policy.json",
+      "sourcePath": ".ai-organization/lifecycle-policy.json",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".json"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-authority-domains",
+      "mode": "generated",
+      "destination": ".ai-organization/policies/authority-domains.v1.json",
+      "sourcePath": ".ai-organization/policies/authority-domains.v1.json",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".json"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-portable-lock",
+      "mode": "generated",
+      "destination": ".ai-organization/overlay-lock.json",
+      "sourcePath": ".ai-organization/overlay-lock.json",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".json"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-ownership",
+      "mode": "generated",
+      "destination": ".ai-organization/ownership.json",
+      "sourcePath": ".ai-organization/ownership.json",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".json"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-proof-profiles",
+      "mode": "generated",
+      "destination": ".ai-organization/proof-profiles.json",
+      "sourcePath": ".ai-organization/proof-profiles.json",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".json"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-roles",
+      "mode": "generated",
+      "destination": ".ai-organization/roles.json",
+      "sourcePath": ".ai-organization/roles.json",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".json"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-agents",
+      "mode": "generated",
+      "destination": ".claude/agents",
+      "sourcePath": ".claude/agents",
+      "installMode": "tree",
+      "allowedExtensions": [
+        ".md"
+      ],
+      "detectLocalOnly": true
+    },
+    {
+      "id": "coachai-project-rules",
+      "mode": "generated",
+      "destination": ".cursor/rules",
+      "sourcePath": ".cursor/rules",
+      "installMode": "tree",
+      "allowedExtensions": [
+        ".mdc"
+      ],
+      "detectLocalOnly": true
+    },
+    {
+      "id": "coachai-project-settings",
+      "mode": "generated",
+      "destination": ".claude/settings.json",
+      "sourcePath": ".claude/settings.json",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".json"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-agents-router",
+      "mode": "generated",
+      "destination": "AGENTS.md",
+      "sourcePath": "AGENTS.md",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".md"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-claude-router",
+      "mode": "generated",
+      "destination": "CLAUDE.md",
+      "sourcePath": "CLAUDE.md",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".md"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-codeowners",
+      "mode": "generated",
+      "destination": ".github/CODEOWNERS",
+      "sourcePath": ".github/CODEOWNERS",
+      "installMode": "file",
+      "allowedExtensions": [
+        ""
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-issue-template",
+      "mode": "generated",
+      "destination": ".github/ISSUE_TEMPLATE/agent-slice.yml",
+      "sourcePath": ".github/ISSUE_TEMPLATE/agent-slice.yml",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".yml"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-pr-template",
+      "mode": "generated",
+      "destination": ".github/pull_request_template.md",
+      "sourcePath": ".github/pull_request_template.md",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".md"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-db-workflow",
+      "mode": "generated",
+      "destination": ".github/workflows/backend-db-regressions.yml",
+      "sourcePath": ".github/workflows/backend-db-regressions.yml",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".yml"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-ui-workflow",
+      "mode": "generated",
+      "destination": ".github/workflows/ui-source-of-truth-gates.yml",
+      "sourcePath": ".github/workflows/ui-source-of-truth-gates.yml",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".yml"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-check-context",
+      "mode": "generated",
+      "destination": "scripts/check-agent-context.mjs",
+      "sourcePath": "scripts/check-agent-context.mjs",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".mjs"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-check-control",
+      "mode": "generated",
+      "destination": "scripts/check-agent-control-plane.mjs",
+      "sourcePath": "scripts/check-agent-control-plane.mjs",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".mjs"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-check-doc-drift",
+      "mode": "generated",
+      "destination": "scripts/check-doc-code-drift.mjs",
+      "sourcePath": "scripts/check-doc-code-drift.mjs",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".mjs"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-check-overlay",
+      "mode": "generated",
+      "destination": "scripts/check-overlay-parity.mjs",
+      "sourcePath": "scripts/check-overlay-parity.mjs",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".mjs"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-check-rules",
+      "mode": "generated",
+      "destination": "scripts/check-rules-wiring.mjs",
+      "sourcePath": "scripts/check-rules-wiring.mjs",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".mjs"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-check-test-intent",
+      "mode": "generated",
+      "destination": "scripts/check-test-intent.mjs",
+      "sourcePath": "scripts/check-test-intent.mjs",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".mjs"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-ci-local",
+      "mode": "generated",
+      "destination": "scripts/ci-local.mjs",
+      "sourcePath": "scripts/ci-local.mjs",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".mjs"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-lifecycle-hook",
+      "mode": "generated",
+      "destination": "scripts/claude-lifecycle-hook.mjs",
+      "sourcePath": "scripts/claude-lifecycle-hook.mjs",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".mjs"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-pretooluse-guard",
+      "mode": "generated",
+      "destination": "scripts/claude-pretooluse-guard.mjs",
+      "sourcePath": "scripts/claude-pretooluse-guard.mjs",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".mjs"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-bounded-runner",
+      "mode": "generated",
+      "destination": "scripts/run-bounded-agent.mjs",
+      "sourcePath": "scripts/run-bounded-agent.mjs",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".mjs"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-bounded-process-lib",
+      "mode": "generated",
+      "destination": "scripts/lib/boundedProcess.mjs",
+      "sourcePath": "scripts/lib/boundedProcess.mjs",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".mjs"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-dispatch-boundary-lib",
+      "mode": "generated",
+      "destination": "scripts/lib/dispatchBoundary.mjs",
+      "sourcePath": "scripts/lib/dispatchBoundary.mjs",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".mjs"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-posttooluse-gate",
+      "mode": "generated",
+      "destination": "scripts/claude-posttooluse-gate.mjs",
+      "sourcePath": "scripts/claude-posttooluse-gate.mjs",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".mjs"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-risk-proof",
+      "mode": "generated",
+      "destination": "scripts/run-risk-selected-proof.mjs",
+      "sourcePath": "scripts/run-risk-selected-proof.mjs",
+      "installMode": "file",
+      "allowedExtensions": [
+        ".mjs"
+      ],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "coachai-project-control-tests",
+      "mode": "generated",
+      "destination": "scripts/tests",
+      "sourcePath": "scripts/tests",
+      "installMode": "tree",
+      "allowedExtensions": [
+        ".mjs"
+      ],
+      "detectLocalOnly": true
+    },
+    {
+      "id": "coachai-skill-audit-queue-quality",
+      "mode": "generated",
+      "destination": ".agents/skills/coachai-audit-queue-coaching-quality",
+      "sourcePath": ".agents/skills/coachai-audit-queue-coaching-quality",
+      "installMode": "tree",
+      "allowedExtensions": [
+        ".md",
+        ".yaml",
+        ".json",
+        ".mjs",
+        ".js",
+        ".ts"
+      ],
+      "detectLocalOnly": true
+    },
+    {
+      "id": "coachai-skill-authentication",
+      "mode": "generated",
+      "destination": ".agents/skills/coachai-authentication",
+      "sourcePath": ".agents/skills/coachai-authentication",
+      "installMode": "tree",
+      "allowedExtensions": [
+        ".md",
+        ".json",
+        ".mjs",
+        ".js",
+        ".ts"
+      ],
+      "detectLocalOnly": true
+    },
+    {
+      "id": "coachai-skill-call-audit-rca",
+      "mode": "generated",
+      "destination": ".agents/skills/coachai-call-audit-rca",
+      "sourcePath": ".agents/skills/coachai-call-audit-rca",
+      "installMode": "tree",
+      "allowedExtensions": [
+        ".md",
+        ".yaml",
+        ".json",
+        ".mjs",
+        ".js",
+        ".ts"
+      ],
+      "detectLocalOnly": true
+    },
+    {
+      "id": "coachai-skill-downstream-rerun",
+      "mode": "generated",
+      "destination": ".agents/skills/coachai-downstream-rerun",
+      "sourcePath": ".agents/skills/coachai-downstream-rerun",
+      "installMode": "tree",
+      "allowedExtensions": [
+        ".md",
+        ".yaml",
+        ".json",
+        ".mjs",
+        ".js",
+        ".ts"
+      ],
+      "detectLocalOnly": true
+    },
+    {
+      "id": "coachai-skill-journey-documentation",
+      "mode": "generated",
+      "destination": ".agents/skills/coachai-journey-documentation",
+      "sourcePath": ".agents/skills/coachai-journey-documentation",
+      "installMode": "tree",
+      "allowedExtensions": [
+        ".md",
+        ".json",
+        ".mjs",
+        ".js",
+        ".ts"
+      ],
+      "detectLocalOnly": true
+    },
+    {
+      "id": "coachai-skill-persona-new-agent",
+      "mode": "generated",
+      "destination": ".agents/skills/coachai-persona-new-agent-audit",
+      "sourcePath": ".agents/skills/coachai-persona-new-agent-audit",
+      "installMode": "tree",
+      "allowedExtensions": [
+        ".md",
+        ".json",
+        ".mjs",
+        ".js",
+        ".ts"
+      ],
+      "detectLocalOnly": true
+    },
+    {
+      "id": "coachai-skill-persona-manager",
+      "mode": "generated",
+      "destination": ".agents/skills/coachai-persona-overloaded-manager-audit",
+      "sourcePath": ".agents/skills/coachai-persona-overloaded-manager-audit",
+      "installMode": "tree",
+      "allowedExtensions": [
+        ".md",
+        ".json",
+        ".mjs",
+        ".js",
+        ".ts"
+      ],
+      "detectLocalOnly": true
+    },
+    {
+      "id": "coachai-skill-persona-owner",
+      "mode": "generated",
+      "destination": ".agents/skills/coachai-persona-owner-delegated-coaching-audit",
+      "sourcePath": ".agents/skills/coachai-persona-owner-delegated-coaching-audit",
+      "installMode": "tree",
+      "allowedExtensions": [
+        ".md",
+        ".json",
+        ".mjs",
+        ".js",
+        ".ts"
+      ],
+      "detectLocalOnly": true
+    },
+    {
+      "id": "coachai-skill-source-of-truth",
+      "mode": "generated",
+      "destination": ".agents/skills/coachai-source-of-truth-architecture",
+      "sourcePath": ".agents/skills/coachai-source-of-truth-architecture",
+      "installMode": "tree",
+      "allowedExtensions": [
+        ".md",
+        ".json",
+        ".mjs",
+        ".js",
+        ".ts"
+      ],
+      "detectLocalOnly": true
+    },
+    {
+      "id": "coachai-project-package-wiring",
+      "mode": "project-owned-reference",
+      "destination": "package.json#scripts",
+      "managedSections": [
+        "scripts.agent:run"
+      ]
+    },
+    {
+      "id": "coachai-project-decision-log",
+      "mode": "project-owned-reference",
+      "destination": "docs/app-plan/decision-log.md|docs/app-plan/adr"
+    },
+    {
+      "id": "coachai-product-authority",
+      "mode": "project-owned-reference",
+      "destination": "docs|PRODUCT.md"
+    },
+    {
+      "id": "coachai-application-source",
+      "mode": "project-owned-reference",
+      "destination": "backend|frontend|packages"
+    },
+    {
+      "id": "coachai-github-runtime",
+      "mode": "external-state",
+      "destination": "GitHub settings"
+    },
+    {
+      "id": "coachai-local-runtime",
+      "mode": "retired",
+      "destination": "logs|telemetry|cache|worktrees"
+    }
   ]
 }

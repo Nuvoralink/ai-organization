@@ -1,10 +1,11 @@
 {
   "version": 1,
   "overlay_source": "universal-private-orchestrator/overlays/nuvora-link",
-  "managed_roots": [".claude/agents", ".claude/rules"],
+  "managed_roots": [
+    ".claude/agents",
+    ".claude/rules"
+  ],
   "managed_files": [
-    "AGENTS.md",
-    "CLAUDE.md",
     ".ai-organization/README.md",
     ".ai-organization/context-budget.json",
     ".ai-organization/lifecycle-policy.json",
@@ -14,22 +15,27 @@
     ".ai-organization/roles.json",
     ".github/ISSUE_TEMPLATE/agent-slice.yml",
     ".github/pull_request_template.md",
+    "AGENTS.md",
+    "CLAUDE.md",
     "scripts/check-agent-context.mjs",
     "scripts/check-agent-control-plane.mjs",
+    "scripts/check-documentation-authority.mjs",
     "scripts/check-fleet-parity.mjs",
     "scripts/check-overlay-parity.mjs",
     "scripts/check-rules-wiring.mjs",
     "scripts/check-test-intent.mjs",
     "scripts/check-test-workspace-coverage.mjs",
-    "scripts/check-documentation-authority.mjs",
     "scripts/claude-lifecycle-hook.mjs",
     "scripts/claude-posttooluse-gate.mjs",
-    "scripts/run-bounded-agent.mjs",
+    "scripts/claude-pretooluse-guard.mjs",
     "scripts/lib/boundedProcess.mjs",
-    "scripts/lib/dispatchBoundary.mjs"
+    "scripts/lib/dispatchBoundary.mjs",
+    "scripts/run-bounded-agent.mjs"
   ],
   "managed_json_sections": {
-    ".claude/settings.json": ["hooks"],
+    ".claude/settings.json": [
+      "hooks"
+    ],
     "package.json": [
       "scripts.agent:run",
       "scripts.gate:rules-wiring",
@@ -57,6 +63,8 @@
     "**/build/**",
     "tmp/**"
   ],
-  "append_only_markers": ["## Learned classes"],
+  "append_only_markers": [
+    "## Learned classes"
+  ],
   "lock_file": ".ai-organization/overlay-lock.json"
 }
