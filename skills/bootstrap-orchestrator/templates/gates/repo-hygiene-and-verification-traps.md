@@ -168,9 +168,20 @@ node -e "const o=require('./.ai-organization/ownership.json');console.log((o.man
 
 Put that question in the project's agent router next to the worktree step, so it is asked at edit time rather than discovered at gate time.
 
-**(b) A parity gate that hashes RAW BYTES reports drift on identical content.** Git may materialize the same committed text as LF or CRLF depending on the checkout (`core.autocrlf`, a worktree created under different settings). A byte-hashing parity gate then fails in one checkout and passes in another with `git status` clean in both — an unexplainable "managed file parity mismatch" that sends the reader hunting for a change nobody made. Normalize text to LF before hashing (hash binaries raw, detected by a NUL byte); §1's `.gitattributes` reduces the exposure but does not remove it, because existing worktrees keep whatever endings they were created with.
+**(b) Content-identity hashing must be line-ending insensitive — and decide that by CONTENT, never by an extension allowlist.** Git may materialize the same committed text as LF or CRLF depending on the checkout (`core.autocrlf`, or a worktree created under different settings). A hasher that sees raw bytes then reports "parity mismatch" in one checkout and passes in another with `git status` clean in both — unexplainable, and it sends the reader hunting for a change nobody made.
 
-This is not hypothetical symmetry: in that session one project's parity gate normalized and its sibling did not, so the same class was invisible in one repo and blocking in the other. **When you ship a parity/digest gate, normalize — and when you find one that does not, fix it rather than working around the red.**
+The subtle version is worse than the obvious one. A hasher that normalizes *only extensions on an allowlist* looks correct and is silently broken for everything the list forgot — an allowlist here is a **denylist-by-omission**, and the next text extension anyone adds inherits the bug. Live instance (2026-08-05): the control plane's `normalizedBytes` normalized `.md`/`.json`/`.mjs`/… but not `.mdc`, so a project's Cursor rules reported permanent overlay drift while being byte-identical after normalization. Detect binary by scanning for a **NUL byte** and normalize everything else:
+
+```js
+function normalizedBytes(buffer) {
+  if (buffer.includes(0)) return buffer;            // binary: normalizing corrupts the digest
+  return Buffer.from(buffer.toString('utf8').replace(/\r\n/g, '\n'));
+}
+```
+
+**Do not route RAW hashes through it.** Two hash purposes coexist and must not be merged: *content identity* ("is this the same content?" — drift, install comparison) is normalized; *exact-bytes integrity* ("were these bytes touched at all?" — rollback snapshots, tamper detection, evidence bundles) stays raw, because there a CRLF rewrite **is** a real change. When auditing, classify each hasher by purpose before changing it.
+
+Fix the working-tree cause too: give every text extension an explicit `eol=lf` in `.gitattributes` (§1) — `* text=auto` alone still checks out CRLF on Windows. And note that changing a hash function **invalidates stored digests**: recompute or refresh every lock/manifest it feeds in the same change.
 
 ## 8. Killing a gate run orphans its strict-port server, and the NEXT run reads as a code defect
 

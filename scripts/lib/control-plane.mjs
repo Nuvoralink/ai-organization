@@ -98,9 +98,25 @@ export function resolveSource(repoRoot, source) {
   return resolved;
 }
 
+/**
+ * Line-ending-insensitive bytes for CONTENT-IDENTITY hashing ("is this the same content?").
+ *
+ * Detection is CONTENT-BASED (a NUL byte means binary), deliberately NOT an extension allowlist.
+ * An allowlist is a denylist-by-omission: every text extension it forgets is hashed raw, so the same
+ * committed text hashes differently in a CRLF checkout than an LF one and reports as drift with
+ * `git status` clean in both — unexplainable, and it sends the reader hunting for a change nobody
+ * made. That is not hypothetical: `.mdc` (Cursor rules) was missing from the old allowlist, so
+ * CoachAI's two `.mdc` rules reported permanent drift while being byte-identical after normalization.
+ * Content detection cannot forget an extension. It matches the two parity gates
+ * (`check-organization-overlay.mjs`, `check-overlay-parity.mjs`), so all three hashers now agree.
+ *
+ * NOT used for the RAW hashes (`hashRawBytes`/`hashRawFile`). Those are the exact-bytes snapshot that
+ * guards rollback and reviewed-target integrity — "were the installed bytes touched at all?" — where
+ * raw is the correct and required semantics. Do not route them through here.
+ */
 function normalizedBytes(buffer, file) {
-  const ext = path.extname(file).toLowerCase();
-  if (!TEXT_EXTENSIONS.has(ext)) return buffer;
+  if (buffer.includes(0)) return buffer; // binary: normalizing would corrupt the digest
+  void file; // identity is decided by content, not by the path's extension
   return Buffer.from(buffer.toString('utf8').replace(/\r\n/g, '\n'));
 }
 

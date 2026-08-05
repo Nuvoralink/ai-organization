@@ -9,6 +9,7 @@ import { validateJsonAgainstSchema } from '../core/schema/validate-json-schema.m
 import {
   classifyTrackedScope,
   computeInstalledTreeDigest,
+  hashFile,
   loadRoots,
   parseControlPlaneArgs,
   runCapture,
@@ -1903,4 +1904,42 @@ test('Proves: the executable reconciliation install writes reviewed bytes and lo
   assert.equal(fs.readFileSync(installed, 'utf8'), '# Canonical\n');
   assert.equal(fs.existsSync(lock), true);
   assert.ok(io.stdout.some((line) => line === 'operations=1 dryRun=false'));
+});
+
+test('content-identity hashing is line-ending insensitive for ANY text extension, and leaves binaries raw', () => {
+  // Anchor (2026-08-05): `normalizedBytes` used an extension ALLOWLIST. `.mdc` (Cursor rules) was not
+  // on it, so CoachAI's two `.mdc` rules hashed raw and reported permanent overlay drift while being
+  // byte-identical after normalization - git status clean in both checkouts, nothing to find. The fix
+  // is content-based detection, which cannot forget an extension. This test uses extensions that are
+  // NOT in any allowlist on purpose: re-introducing an allowlist must turn it red.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cp-eol-'));
+  try {
+    const body = '---\nalwaysApply: false\n---\n# Rule\n\n- one\n- two\n';
+    for (const ext of ['.mdc', '.mdx', '.rules', '.conf', '.no-extension-at-all']) {
+      const lf = path.join(dir, `a${ext}`);
+      const crlf = path.join(dir, `b${ext}`);
+      fs.writeFileSync(lf, body);
+      fs.writeFileSync(crlf, body.replace(/\n/g, '\r\n'));
+      assert.equal(
+        hashFile(lf),
+        hashFile(crlf),
+        `${ext}: the same content in two checkout conventions must have ONE content identity`,
+      );
+    }
+
+    // Different CONTENT must still differ - normalization must not flatten real differences.
+    const other = path.join(dir, 'c.mdc');
+    fs.writeFileSync(other, `${body}- three\n`);
+    assert.notEqual(hashFile(path.join(dir, 'a.mdc')), hashFile(other));
+
+    // A binary (NUL byte) is hashed raw: normalizing it would corrupt the digest, and two binaries
+    // differing only in a 0x0D 0x0A pair are genuinely different files.
+    const binA = path.join(dir, 'a.bin');
+    const binB = path.join(dir, 'b.bin');
+    fs.writeFileSync(binA, Buffer.from([0x89, 0x50, 0x00, 0x0d, 0x0a, 0x01]));
+    fs.writeFileSync(binB, Buffer.from([0x89, 0x50, 0x00, 0x0a, 0x01]));
+    assert.notEqual(hashFile(binA), hashFile(binB), 'binaries must not be EOL-normalized');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });

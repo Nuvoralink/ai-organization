@@ -1,5 +1,8 @@
 * text=auto
 *.md text eol=lf
+# Cursor rule files. Without this they fall to `* text=auto` and check out CRLF on Windows while a
+# consuming project's copy is LF — byte-identical per git, yet reported as permanent overlay drift.
+*.mdc text eol=lf
 *.json text eol=lf
 *.mjs text eol=lf
 *.js text eol=lf
