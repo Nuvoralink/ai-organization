@@ -1,0 +1,43 @@
+#!/usr/bin/env node
+/* global process */
+
+/**
+ * gate:migration-object-names — THIN ENTRY. INSTALL PATH:
+ * `{{SCRIPTS_DIR}}/check-migration-object-names.mjs`.
+ *
+ * The engine is the MANAGED shared asset
+ * `.ai-organization/runtime/core/coordination/migration-object-names.mjs`; this file only binds THIS
+ * repo's migrations directory, read from `{{SCRIPTS_DIR}}/reservation-config.mjs`.
+ *
+ * WHY — and why this one applies to EVERY project with SQL migrations, however they are named. A
+ * migration-NUMBER (or timestamp) gate cannot see this class: two parallel agents in isolated
+ * worktrees can pick DISTINCT migration names yet both create a DB object with the SAME NAME
+ * (`CREATE TABLE x`, `CREATE INDEX i`, `ADD CONSTRAINT c`, `CREATE TRIGGER t`, `CREATE TYPE y`,
+ * `CREATE POLICY p ON t`). It is git-clean and passes the number gate, then fails at APPLY time with
+ * `already exists` against a database where the first one already ran. Where migration directories are
+ * timestamp-prefixed — so the number axis cannot collide at all — this is the ONLY applicable control.
+ *
+ * The engine models apply-time semantics rather than text, so it tolerates exactly what Postgres
+ * tolerates: IF NOT EXISTS, CREATE OR REPLACE, DROP-then-recreate rebuilds, and the atomic
+ * `ALTER TYPE … RENAME TO …_legacy` enum-swap. Table-scoped kinds key by `<table>.<name>`, so the same
+ * constraint/trigger/policy name on two different tables is not a false collision. That is also why it
+ * must be green on already-applied migrations: a real collision would have failed the deploy.
+ *
+ * Exit 0 = no same-name object hard-created twice without a drop between. Exit 1 = a collision or an
+ * unreadable/empty migrations directory (fail-closed: a gate that cannot see cannot certify).
+ */
+
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { runMigrationObjectNamesGate } from '../.ai-organization/runtime/core/coordination/migration-object-names.mjs';
+import { MIGRATIONS_DIR } from './reservation-config.mjs';
+
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+/** Absolute migrations directory, derived from the reservation config's repo-relative path. */
+export const MIGRATIONS_DIRECTORY = path.join(REPO_ROOT, ...MIGRATIONS_DIR.split('/'));
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  process.exit(runMigrationObjectNamesGate({ migrationsDir: MIGRATIONS_DIRECTORY }));
+}

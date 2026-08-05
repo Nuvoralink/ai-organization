@@ -29,6 +29,7 @@ This is the compact, cross-vendor startup router. It names authorities and tells
 4. For judgment-heavy, destructive, security/billing, or one-way work: produce a read-only plan and settle the decision before implementation.
 5. Run the premise challenger before material architecture or unclear-value work. Its result is advice to the orchestrator, not a second command chain.
 6. Use an isolated fetched-base worktree for parallel work. Preserve unrelated dirty state. Commit before any tree-touching review and re-check the tree afterward.
+7. RESERVE a shared-namespace value before creating the artifact that uses it. Parallel agents in isolated worktrees each independently take "the next" ADR number, decision-log ID, or free dev port and collide — git-clean until integration, or EADDRINUSE at runtime. Run `node scripts/reserve.mjs <namespace> [scope] <label>` FIRST and use exactly the printed value (stdout carries the value and nothing else); `--help` lists exactly the namespaces this repo wires, `--list`/`--reconcile`/`--release <value>` manage outstanding claims. There is deliberately NO `migration` namespace here: migration directories are 14-digit timestamps, so the number axis cannot collide — the class that applies is the DB object name, caught by `gate:migration-object-names`. The mechanism is a control-plane MANAGED asset in `.ai-organization/runtime/core/coordination/`; this repo owns only `scripts/reservation-config.mjs` and the thin entries beside it, and a delivered copy is never edited.
 
 ## Just-in-time rule routing
 

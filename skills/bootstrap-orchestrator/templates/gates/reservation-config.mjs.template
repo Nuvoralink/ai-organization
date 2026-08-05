@@ -1,0 +1,140 @@
+/**
+ * {{PROJECT_NAME}} namespace-reservation CONFIG — the ONLY project-specific part of the reservation
+ * authority. It binds the MANAGED project-agnostic core to THIS repo's paths, patterns, and port range.
+ *
+ * INSTALL PATH: `{{SCRIPTS_DIR}}/reservation-config.mjs`.
+ *
+ * The core, the shared CLI, and both collision-gate ENGINES are control-plane MANAGED assets delivered
+ * to `.ai-organization/runtime/core/coordination/` (canonical source: `core/coordination/` in the
+ * AI-Organization repo). NEVER edit a delivered copy — that forks the digest-pinned asset and the next
+ * install reverts it. Fix the core at its source and re-install; every project inherits the fix. This
+ * file, and the thin entry scripts beside it, are all a project owns.
+ *
+ * PROBLEM CLASS this prevents: parallel/swarm agents in isolated worktrees each independently take
+ * "the next value" from a shared namespace — the next migration number, ADR number, decision-log ID, a
+ * free dev port — and collide. The collision is git-clean (different files, no merge conflict) until
+ * integration, or shows up at runtime as EADDRINUSE.
+ *
+ * WIRE ONLY THE NAMESPACES THAT ARE REAL COLLISION CLASSES HERE. Delete the ones that are not, and say
+ * WHY in a comment — a wired namespace nobody uses is noise, and an unwired real one is a live bug.
+ * The canonical judgement call:
+ *   - Sequentially-numbered migrations (`NNNN_slug`) → WIRE `migration`.
+ *   - TIMESTAMP-prefixed migrations (`20260803090000_slug`, Prisma's default) → do NOT wire it. The
+ *     number comes from the clock, not a sequence, so there is no "next number" to contend for. The
+ *     class that DOES apply is the DB OBJECT NAME, caught by `gate:migration-object-names`.
+ *   - ADRs → wire `adr` and pick the convention your filenames actually use (see ADR_CONVENTION).
+ *   - A single decision-log file with `<PREFIX>-NNN` IDs → wire `decision`.
+ *   - Agents that start dev/test servers → wire `port`.
+ */
+
+import {
+  dirEntryNames,
+  extractNumbers,
+  extractNumbersFromText,
+  fileText,
+  resolveBaseRef,
+} from '../.ai-organization/runtime/core/coordination/namespace-reservation.mjs';
+
+/** The integration target whose committed values are the durable floor (env-overridable for testing). */
+const BASE_REF = resolveBaseRef('{{INTEGRATION_BRANCH}}');
+
+export const MIGRATIONS_DIR = '{{PLACEHOLDER}}'; // e.g. backend/prisma/migrations
+export const ADR_DIR = '{{PLACEHOLDER}}'; // e.g. docs/app-plan/architecture/adr
+export const DECISION_LOG = '{{PLACEHOLDER}}'; // e.g. docs/app-plan/auditability/decision-log.md
+
+/**
+ * Which ADR filename convention this repo uses, resolved by the shared `adr-numbering` engine:
+ *   'domain-numbered' → `ADR-<DOMAIN>-NNN-kebab-title.md`, sequential PER DOMAIN.
+ *   'sequential'      → `NNN-kebab-title.md`, ONE global sequence.
+ * Needing a third convention means adding it to the shared engine (so every project can use it),
+ * never forking a delivered copy.
+ */
+export const ADR_CONVENTION = 'domain-numbered';
+
+const UPPER_SCOPE = /^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$/; // ADR domain / decision prefix
+const KEBAB_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const SNAKE_SLUG = /^[a-z0-9]+(?:_[a-z0-9]+)*$/;
+const SNAKE_OR_KEBAB = /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/;
+
+/**
+ * Fixed local ports agents must NEVER allocate — every port this repo commits (dev server, preview,
+ * API, and any leased test infrastructure). The agent range must sit clear of all of them.
+ *
+ * FLEET NOTE: the agent range is PER PROJECT and must not overlap a sibling project's when both can
+ * run on one machine. Check the other projects' `reservation-config.mjs` before choosing, and record
+ * the assignment here so the next author does not have to re-derive it.
+ */
+const RESERVED_PORTS = [{{PLACEHOLDER}}]; // e.g. 3001, 5173, 6173
+const AGENT_PORT_RANGE = [{{PLACEHOLDER}}, {{PLACEHOLDER}}]; // e.g. 5500, 5599 — must not overlap a sibling
+
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+}
+
+function pad(number, width) {
+  return String(number).padStart(width, '0');
+}
+
+export const NAMESPACES = Object.freeze({
+  // DELETE THIS ENTRY when migration directories are timestamp-prefixed (see the header note).
+  migration: {
+    kind: 'sequential',
+    baseRef: BASE_REF,
+    scope: null,
+    // Prefer importing the slug pattern FROM the numbering gate so the allocator and the gate agree by
+    // construction, instead of re-typing the shape here.
+    validateLabel: (label) => SNAKE_SLUG.test(label),
+    occupiedNumbers: (cwd, _scope, { refOnly, baseRef }) =>
+      extractNumbers(
+        dirEntryNames(cwd, MIGRATIONS_DIR, { baseRef, entryType: 'tree', includeLocal: !refOnly }),
+        /^(\d{4,})_/u,
+      ),
+    // The migration value INCLUDES the slug — the directory name IS the reserved token.
+    formatValue: (_scope, number, label) => `${pad(number, 4)}_${label}`,
+  },
+
+  adr: {
+    kind: 'sequential',
+    baseRef: BASE_REF,
+    // 'domain-numbered' takes a domain scope; for 'sequential', set `scope: null` and drop the
+    // `${scope}` segment from formatValue + the occupiedNumbers pattern (`/^(\d+)-/u`).
+    scope: { label: 'domain', validate: (scope) => UPPER_SCOPE.test(scope) },
+    validateLabel: (label) => KEBAB_SLUG.test(label),
+    occupiedNumbers: (cwd, scope, { refOnly, baseRef }) =>
+      extractNumbers(
+        dirEntryNames(cwd, ADR_DIR, { baseRef, entryType: 'blob', includeLocal: !refOnly }),
+        new RegExp(`^ADR-${escapeRegex(scope)}-(\\d+)-`, 'u'),
+      ),
+    formatValue: (scope, number) => `ADR-${scope}-${pad(number, 3)}`,
+  },
+
+  decision: {
+    kind: 'sequential',
+    baseRef: BASE_REF,
+    scope: { label: 'prefix', validate: (scope) => UPPER_SCOPE.test(scope) },
+    validateLabel: (label) => SNAKE_OR_KEBAB.test(label),
+    // `\bPREFIX-(\d+)\b` finds the regular numeric IDs of the prefix; irregular compound IDs do not
+    // match and correctly do not affect the numeric max.
+    occupiedNumbers: (cwd, scope, { refOnly, baseRef }) =>
+      extractNumbersFromText(
+        fileText(cwd, DECISION_LOG, { baseRef, includeLocal: !refOnly }),
+        new RegExp(`\\b${escapeRegex(scope)}-(\\d+)\\b`, 'gu'),
+      ),
+    formatValue: (scope, number) => `${scope}-${pad(number, 3)}`,
+  },
+
+  port: {
+    kind: 'range',
+    range: AGENT_PORT_RANGE,
+    scope: null,
+    validateLabel: (label) => SNAKE_OR_KEBAB.test(label),
+    reservedValues: () => RESERVED_PORTS,
+    formatValue: (_scope, number) => String(number),
+  },
+});
+
+export const NAMESPACE_NAMES = Object.keys(NAMESPACES);
+
+export function specFor(namespace) {
+  return NAMESPACES[namespace];
+}

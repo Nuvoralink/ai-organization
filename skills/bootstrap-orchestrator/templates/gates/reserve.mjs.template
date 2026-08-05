@@ -1,0 +1,28 @@
+#!/usr/bin/env node
+/* global process */
+
+/**
+ * reserve — claim a UNIQUE value in a shared NAMESPACE for a parallel/swarm agent, atomically.
+ *
+ * INSTALL PATH: `{{SCRIPTS_DIR}}/reserve.mjs`. Expose as npm scripts, e.g.
+ *   "reserve": "node {{SCRIPTS_DIR}}/reserve.mjs"
+ *   "reserve:migration": "node {{SCRIPTS_DIR}}/reserve.mjs migration"
+ *
+ * This is a THIN ENTRY. All behaviour lives in the MANAGED shared CLI
+ * (`.ai-organization/runtime/core/coordination/reserve-cli.mjs`); this file only supplies THIS repo's
+ * namespace bindings. Fix CLI behaviour at the control-plane source, never in the delivered copy —
+ * an edit there forks the digest-pinned asset and the overlay-parity gate fails.
+ *
+ * Usage (the CLI derives its own usage text from the project's wired namespaces, so a namespace this
+ * repo does not wire is never advertised):
+ *   node {{SCRIPTS_DIR}}/reserve.mjs <namespace> [scope] <label>
+ *   node {{SCRIPTS_DIR}}/reserve.mjs --list | --reconcile [ns] | --release <value>   (add --json)
+ *
+ * stdout contract: on a successful claim the ONLY thing on stdout is the value, so
+ * `DIR=$(node {{SCRIPTS_DIR}}/reserve.mjs migration my_slug)` works. Human context goes to stderr.
+ */
+
+import { runReserveCli } from '../.ai-organization/runtime/core/coordination/reserve-cli.mjs';
+import * as config from './reservation-config.mjs';
+
+process.exit(runReserveCli({ config, cliPath: '{{SCRIPTS_DIR}}/reserve.mjs' }));

@@ -63,6 +63,14 @@
       "sha256": "c80793aa9f71dfb771930b22eac386333973beb1c184a3595bf004e6023d8747"
     },
     {
+      "path": ".ai-organization/runtime/core/coordination/adr-numbering.mjs",
+      "sha256": "1390958d892ca8b7a8248e52997c61eb0221d513ac1619ba38af82673e251735"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/adr-numbering.test.mjs",
+      "sha256": "1b18975de93bde787a2b263ab9f394785ed75fe0a23dbeafb646b872bca051bc"
+    },
+    {
       "path": ".ai-organization/runtime/core/coordination/candidate.mjs",
       "sha256": "dc576bbc92c42463c65041ddfd0cc35b48758e038b84b9969c7649e864cc3fb9"
     },
@@ -95,12 +103,32 @@
       "sha256": "121ac385dbd0ebf99f94d61cfe3143c19d30d9a4c39e81da10e2c263b1ee435e"
     },
     {
+      "path": ".ai-organization/runtime/core/coordination/migration-object-names.mjs",
+      "sha256": "b8f83b05d324ceaedba9fe465b6b66bf3fe5e92c781bd9d2c42253a85caf5b52"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/migration-object-names.test.mjs",
+      "sha256": "d394911b7d52c539a9352345c6c5e52d384cfca77deab4fb3f53b81c4157cf76"
+    },
+    {
       "path": ".ai-organization/runtime/core/coordination/mode.mjs",
       "sha256": "84621908dd229572f62cb6701fea06fd3ec04981fa392da80112dbf6ce0edbe3"
     },
     {
+      "path": ".ai-organization/runtime/core/coordination/namespace-reservation.mjs",
+      "sha256": "367e1a4bd85912f0c01b921d4ad6fcb85fd9f34e2ff4f446a6eabe02869d9687"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/namespace-reservation.test.mjs",
+      "sha256": "450324367b6f6be372de2b5b65c80cb641a0f53b862c562463d80d50427966dc"
+    },
+    {
       "path": ".ai-organization/runtime/core/coordination/register.mjs",
       "sha256": "8b1dec0a351aff642be35c1b6f4247af1fdf9123771ebf7c70752d9376036558"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/reserve-cli.mjs",
+      "sha256": "ce919d44c7de7b018a0fc5e58add7e0f18d979d8b87990e0a4667f9981473ed4"
     },
     {
       "path": ".ai-organization/runtime/core/coordination/resourceConfig.mjs",
@@ -340,7 +368,7 @@
     },
     {
       "path": "AGENTS.md",
-      "sha256": "6be4ff95e94986e1abb7710af42bcdea5ac398b52e35fba11999bd28a72fc6cc"
+      "sha256": "87019f53a25d1f2c8c0048032d05ebfc166002027f9c8379a02d6dcdb75ec719"
     },
     {
       "path": "CLAUDE.md",
@@ -356,7 +384,7 @@
     },
     {
       "path": "scripts/check-doc-code-drift.mjs",
-        "sha256": "450b5b79a127047b4932ee276e926e37f4588252128e7214c602e98797e8cfce"
+      "sha256": "450b5b79a127047b4932ee276e926e37f4588252128e7214c602e98797e8cfce"
     },
     {
       "path": "scripts/check-fleet-parity.mjs",
@@ -446,7 +474,7 @@
       "scripts.proof:changed": "4bfc520d777a10dc90733e32aadec7d92b0a9b7266227eb27a87f1de6816b82d",
       "scripts.test:organization-control-plane": "1c097a3b80598bc3bb156d3239afa4bb1f42bde973db652bcdc5168e62c5cb01",
       "scripts.test:evidence-integrity-mutation": "2b7ec9ebecd833ee23c906b81349d676eb418e18991b8517a1f1f3335723cbfb",
-      "scripts.gates:all": "a2af1ff9fc715e42541c72cce1b728b865fec4c6fbfc511b766ec8634c5398ba",
+      "scripts.gates:all": "edff820e7b001a16614131f9635897b3733c41d8c8242cbf84f0051149c29932",
       "scripts.verify": "217cf314de5043c85b05401ecd1e3294077067f3b1f45edc3248d3c82d2ff46e",
       "scripts.verify:db": "2d3ccef8d9cccd97181a33d76be74f762a501883ce1533d54cd8ee80a7d421cb",
       "scripts.ci:local": "47db5601b61ff94cbd4ce34cd9a40217d0ffeec299b35d85321d747649f39a3b"

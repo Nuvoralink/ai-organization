@@ -153,6 +153,25 @@ centralized into a shared constant, i.e. the refactor made the guarantee *strong
 
 ---
 
+## 7. Managed files: know before you edit, and never hash raw bytes to compare them
+
+Two failures from the same 2026-08-05 promotion, both cheap to prevent and both expensive to debug.
+
+**(a) The fork trap fires on EDIT, not on review — so the warning has to reach the editor.** A control-plane MANAGED file lives in a project like any other file. Editing it there forks the digest-pinned source: the parity gate fails, and the next install silently reverts the work. It bit twice in one session — once when a merged change added a step to a delivered `orchestration-playbook.md`, once when an agent added a step to a delivered `AGENTS.md`. Both were *correct content in the wrong place*; the fix each time was to move the edit to the overlay source and re-deliver.
+
+The project already knows the answer — make agents ask it before editing anything control-plane-adjacent (`AGENTS.md`, `CLAUDE.md`, `.claude/**`, `scripts/check-*.mjs`, `.ai-organization/**`, `docs/agent-prompts/**`):
+
+```bash
+# Is this file managed? Non-empty output = edit the OVERLAY SOURCE, not this copy.
+node -e "const o=require('./.ai-organization/ownership.json');console.log((o.managedFiles||[]).map(r=>r.path).filter(p=>p===process.argv[1]).join('\n'))" <path>
+```
+
+Put that question in the project's agent router next to the worktree step, so it is asked at edit time rather than discovered at gate time.
+
+**(b) A parity gate that hashes RAW BYTES reports drift on identical content.** Git may materialize the same committed text as LF or CRLF depending on the checkout (`core.autocrlf`, a worktree created under different settings). A byte-hashing parity gate then fails in one checkout and passes in another with `git status` clean in both — an unexplainable "managed file parity mismatch" that sends the reader hunting for a change nobody made. Normalize text to LF before hashing (hash binaries raw, detected by a NUL byte); §1's `.gitattributes` reduces the exposure but does not remove it, because existing worktrees keep whatever endings they were created with.
+
+This is not hypothetical symmetry: in that session one project's parity gate normalized and its sibling did not, so the same class was invisible in one repo and blocking in the other. **When you ship a parity/digest gate, normalize — and when you find one that does not, fix it rather than working around the red.**
+
 ## Install checklist
 
 - [ ] `.gitattributes` with `* text=auto eol=lf` + binaries; `git ls-files --eol` measured, not assumed

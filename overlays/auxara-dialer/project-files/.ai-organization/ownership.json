@@ -47,6 +47,34 @@
       "sha256": "050a8c91b7c6808de9a13f5adf0d719eabe541cf07fade9b3a5666ffda8008e4"
     },
     {
+      "path": ".ai-organization/runtime/core/coordination/namespace-reservation.mjs",
+      "sha256": "367e1a4bd85912f0c01b921d4ad6fcb85fd9f34e2ff4f446a6eabe02869d9687"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/namespace-reservation.test.mjs",
+      "sha256": "450324367b6f6be372de2b5b65c80cb641a0f53b862c562463d80d50427966dc"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/reserve-cli.mjs",
+      "sha256": "ce919d44c7de7b018a0fc5e58add7e0f18d979d8b87990e0a4667f9981473ed4"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/adr-numbering.mjs",
+      "sha256": "1390958d892ca8b7a8248e52997c61eb0221d513ac1619ba38af82673e251735"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/adr-numbering.test.mjs",
+      "sha256": "1b18975de93bde787a2b263ab9f394785ed75fe0a23dbeafb646b872bca051bc"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/migration-object-names.mjs",
+      "sha256": "b8f83b05d324ceaedba9fe465b6b66bf3fe5e92c781bd9d2c42253a85caf5b52"
+    },
+    {
+      "path": ".ai-organization/runtime/core/coordination/migration-object-names.test.mjs",
+      "sha256": "d394911b7d52c539a9352345c6c5e52d384cfca77deab4fb3f53b81c4157cf76"
+    },
+    {
       "path": ".ai-organization/runtime/core/roles/agent-role-registry.mjs",
       "sha256": "a32cbf3f79c69e90735e1aeccac70a44ef023d6330303a140e7c0ab1a62949cb"
     },
@@ -96,7 +124,7 @@
     },
     {
       "path": "scripts/check-organization-overlay.mjs",
-      "sha256": "48ec68e3860d0402ea2ee32feb3c7fe2efe51e5284aeff0d3d75b4d8dbe40d17"
+      "sha256": "c9f4f3104b3802ccbd5f6c0b1f2da5b5b0eff74304db31300326f83f0eac6e20"
     },
     {
       "path": "scripts/claude-lifecycle-hook.mjs",

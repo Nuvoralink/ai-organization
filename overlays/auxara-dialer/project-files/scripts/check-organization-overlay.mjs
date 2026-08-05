@@ -21,6 +21,16 @@ const REQUIRED_MANAGED_FILES = new Set([
   '.ai-organization/runtime/core/authority/assess-action.mjs',
   '.ai-organization/runtime/core/coordination/coverage.mjs',
   '.ai-organization/runtime/core/coordination/dependencyGraph.mjs',
+  // Namespace-reservation authority: the project-agnostic core, the shared CLI, and the two
+  // collision gate engines. Digest-pinned so a project-local edit to a delivered copy is caught
+  // here rather than silently reverted by the next install.
+  '.ai-organization/runtime/core/coordination/namespace-reservation.mjs',
+  '.ai-organization/runtime/core/coordination/namespace-reservation.test.mjs',
+  '.ai-organization/runtime/core/coordination/reserve-cli.mjs',
+  '.ai-organization/runtime/core/coordination/adr-numbering.mjs',
+  '.ai-organization/runtime/core/coordination/adr-numbering.test.mjs',
+  '.ai-organization/runtime/core/coordination/migration-object-names.mjs',
+  '.ai-organization/runtime/core/coordination/migration-object-names.test.mjs',
   '.ai-organization/runtime/core/roles/agent-role-registry.mjs',
   '.ai-organization/runtime/core/roles/verdict-rubric.mjs',
   '.ai-organization/runtime/core/schema/task-assurance.mjs',
@@ -59,15 +69,21 @@ const stripAppendOnlyRegions = (text, markers) => {
   }
   return text;
 };
+// Git may materialize the SAME committed text as LF or CRLF depending on the checkout (`core.autocrlf`,
+// a worktree created under different settings). Overlay meaning is CONTENT, not checkout convention, so
+// text is normalized to LF before hashing — otherwise a byte-identical-per-git file reports "parity
+// mismatch" in one checkout and passes in another, and `git status` shows nothing to explain it. This
+// mirrors the sibling parity gate (`check-overlay-parity.mjs`), which has always normalized; this gate
+// did not, and every managed .md/.mjs read from a CRLF worktree failed against its LF-based digest
+// (observed 2026-08-05: `.claude/loop.md` + `.claude/agents/premise-and-architecture-challenger.md`
+// failed in a worktree while passing in the main checkout, with a clean `git status` in both).
+// Binary files (a NUL byte) are hashed raw — normalizing them would corrupt the digest.
 const hashFile = (file, appendOnlyMarkers = []) => {
   const buffer = fs.readFileSync(file);
-  if (!appendOnlyMarkers.length || buffer.includes(0))
-    return createHash('sha256').update(buffer).digest('hex');
-  const text = buffer.toString('utf8');
-  const stripped = stripAppendOnlyRegions(text, appendOnlyMarkers);
-  return stripped === text
-    ? createHash('sha256').update(buffer).digest('hex')
-    : createHash('sha256').update(stripped).digest('hex');
+  if (buffer.includes(0)) return createHash('sha256').update(buffer).digest('hex');
+  const text = buffer.toString('utf8').replace(/\r\n/g, '\n');
+  const body = appendOnlyMarkers.length ? stripAppendOnlyRegions(text, appendOnlyMarkers) : text;
+  return createHash('sha256').update(body).digest('hex');
 };
 const readAppendOnlyMarkers = (manifest) =>
   Array.isArray(manifest?.appendOnlyMarkers)

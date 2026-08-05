@@ -1,0 +1,40 @@
+#!/usr/bin/env node
+/* global process */
+
+/**
+ * gate:adr-numbering — THIN ENTRY. INSTALL PATH: `{{SCRIPTS_DIR}}/check-adr-numbering.mjs`.
+ *
+ * The engine is the MANAGED shared asset
+ * `.ai-organization/runtime/core/coordination/adr-numbering.mjs`; this file only binds THIS repo's ADR
+ * directory and naming convention, both read from `{{SCRIPTS_DIR}}/reservation-config.mjs` so the gate
+ * and the reservation allocator can never disagree about where ADRs live or how they are named.
+ *
+ * WHY: two parallel agents in isolated worktrees can each add an ADR with the SAME number for
+ * different decisions — a git-clean collision (separate files, no merge conflict) invisible until
+ * integration, after which the identifier no longer names a single decision. The `adr` reservation
+ * namespace PREVENTS it; this gate is the mechanical backstop when discipline slips.
+ *
+ * Exit 0 = every ADR number unique and well-formed. Exit 1 = a collision, a malformed ADR name, or an
+ * unreadable/empty ADR directory (fail-closed: a gate that cannot see cannot certify).
+ */
+
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { runAdrNumberingGate } from '../.ai-organization/runtime/core/coordination/adr-numbering.mjs';
+import { ADR_CONVENTION, ADR_DIR } from './reservation-config.mjs';
+
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+/** Absolute ADR directory, derived from the reservation config's repo-relative path. */
+export const ADR_DIRECTORY = path.join(REPO_ROOT, ...ADR_DIR.split('/'));
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  process.exit(
+    runAdrNumberingGate({
+      adrDir: ADR_DIRECTORY,
+      convention: ADR_CONVENTION,
+      reserveCli: '{{SCRIPTS_DIR}}/reserve.mjs',
+    }),
+  );
+}

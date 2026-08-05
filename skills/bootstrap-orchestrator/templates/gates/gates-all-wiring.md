@@ -22,7 +22,33 @@ gates:all = gate:rules-wiring && gate:agent-context && gate:agent-control-plane 
   - Frontend product: `check:ui` (guardrails + source-of-truth + testid + continuity), `check:layout` (scroll + header-surface).
   - ORM/DB product: a `gate:tx-seam` (typed transaction seams), a `gate:lifecycle-write`, an `ephemeral-listen` gate for HTTP integration tests.
   - Monorepo with internal `file:`/`workspace:` packages: `gate:shared-resolution` — internal packages must resolve in-tree; wire it into each consumer's `build` (see "Workspace-package resolution guard" below).
+  - **Any product that runs PARALLEL agents in worktrees** (i.e. every bootstrapped repo): the two shared-namespace COLLISION gates — `gate:migration-object-names` (any repo with SQL migrations) and `gate:adr-numbering` (any repo with numbered ADRs). See "Shared-namespace reservation + its collision gates" below.
   - Any product: `gate:doc-code-drift` (every claimed authority path resolves), a `preflight-security` gate, a supply-chain `gate:audit` in CI.
+
+## Shared-namespace reservation + its collision gates
+
+Parallel/swarm agents in isolated worktrees each independently take "the next value" from a shared namespace — the next migration number, ADR number, decision-log ID, a free dev port — and collide. The collision is **git-clean** (different files, no merge conflict) until integration, or shows up at runtime as EADDRINUSE. Proven, not theoretical: two backend agents both created migration `0083`, caught only by hand at integration.
+
+The mechanism is a **control-plane MANAGED asset** — the project-agnostic core, the shared CLI, and both gate ENGINES live at `core/coordination/` in the AI-Organization repo and auto-deliver to `.ai-organization/runtime/core/coordination/` in every project. **Never edit a delivered copy**: it forks the digest-pinned source, the next install reverts it, and the overlay-parity gate fails. A bootstrapped project installs only four small files from this directory:
+
+| Template | Installs to | Owns |
+|---|---|---|
+| `reservation-config.mjs.template` | `{{SCRIPTS_DIR}}/reservation-config.mjs` | the ONLY project-specific file — namespace→path bindings, ADR convention, port range |
+| `reserve.mjs.template` | `{{SCRIPTS_DIR}}/reserve.mjs` | thin CLI entry |
+| `check-adr-numbering.mjs.template` | `{{SCRIPTS_DIR}}/check-adr-numbering.mjs` | thin gate entry |
+| `check-migration-object-names.mjs.template` | `{{SCRIPTS_DIR}}/check-migration-object-names.mjs` | thin gate entry |
+
+Wire the gates to run the MANAGED engine test alongside any project-binding test, so a broken engine fails the project's own gate rather than silently degrading:
+```
+gate:migration-object-names = node --test .ai-organization/runtime/core/coordination/migration-object-names.test.mjs && node {{SCRIPTS_DIR}}/check-migration-object-names.mjs
+gate:adr-numbering          = node --test .ai-organization/runtime/core/coordination/adr-numbering.test.mjs .ai-organization/runtime/core/coordination/namespace-reservation.test.mjs && node {{SCRIPTS_DIR}}/check-adr-numbering.mjs
+```
+
+**Two calibration calls the bootstrapper must make, not copy:**
+- **Which namespaces to wire.** Sequentially-numbered migrations (`NNNN_slug`) → wire `migration`. TIMESTAMP-prefixed migrations (Prisma's default, `20260803090000_slug`) → do **not** wire it: the number comes from the clock, so there is no "next number" to contend for, and `gate:migration-object-names` is the applicable control. A wired namespace nobody uses is noise; an unwired real one is a live bug.
+- **The agent port range must not overlap a sibling project's.** Ranges are per project and both can run on one machine. Check the other projects' `reservation-config.mjs` and record the assignment in a comment (currently taken: Auxara Dialer 5300–5399, CoachAI 5400–5499).
+
+**Prove the gates BITE before calling this done** — a registered gate that never fires is not proof. Seed a scratch duplicate (a second migration hard-creating a table that is *still occupied* at the end of the chain, and a second ADR file on an existing number), confirm exit 1 with the right message, delete the fixture, and confirm exit 0 again. Pick the duplicate object by *tracing the real migration set*, not by eye: an object that a later migration DROPs is legitimately re-creatable, so duplicating it produces an inert fixture that passes and proves nothing.
 
 ## Example (the dialer's actual `gates:all`, for calibration — do NOT copy verbatim)
 ```

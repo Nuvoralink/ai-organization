@@ -95,6 +95,14 @@
       "class": "shared-control-plane-runtime"
     },
     {
+      "path": "core/coordination/adr-numbering.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/coordination/adr-numbering.test.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
       "path": "core/coordination/candidate.mjs",
       "class": "shared-control-plane-runtime"
     },
@@ -127,11 +135,31 @@
       "class": "shared-control-plane-runtime"
     },
     {
+      "path": "core/coordination/migration-object-names.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/coordination/migration-object-names.test.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
       "path": "core/coordination/mode.mjs",
       "class": "shared-control-plane-runtime"
     },
     {
+      "path": "core/coordination/namespace-reservation.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/coordination/namespace-reservation.test.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
       "path": "core/coordination/register.mjs",
+      "class": "shared-control-plane-runtime"
+    },
+    {
+      "path": "core/coordination/reserve-cli.mjs",
       "class": "shared-control-plane-runtime"
     },
     {
@@ -4131,6 +4159,10 @@
       "class": "reusable-skill"
     },
     {
+      "path": "skills/bootstrap-orchestrator/templates/gates/check-adr-numbering.mjs.template",
+      "class": "reusable-skill"
+    },
+    {
       "path": "skills/bootstrap-orchestrator/templates/gates/check-agent-context-budget.mjs.template",
       "class": "reusable-skill"
     },
@@ -4144,6 +4176,10 @@
     },
     {
       "path": "skills/bootstrap-orchestrator/templates/gates/check-decision-sprint-linkage.mjs.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/gates/check-migration-object-names.mjs.template",
       "class": "reusable-skill"
     },
     {
@@ -4176,6 +4212,14 @@
     },
     {
       "path": "skills/bootstrap-orchestrator/templates/gates/repo-hygiene-and-verification-traps.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/gates/reservation-config.mjs.template",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/gates/reserve.mjs.template",
       "class": "reusable-skill"
     },
     {
@@ -5232,6 +5276,10 @@
     },
     {
       "path": "tests/local-ci-only.test.mjs",
+      "class": "control-plane-test"
+    },
+    {
+      "path": "tests/namespace-reservation-promotion.test.mjs",
       "class": "control-plane-test"
     },
     {
