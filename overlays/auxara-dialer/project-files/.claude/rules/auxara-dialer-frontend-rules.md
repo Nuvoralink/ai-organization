@@ -311,3 +311,87 @@ Before finishing a frontend change, confirm:
 - types are explicit for the changed flow
 - UI reflects backend truth rather than inventing client-only assumptions
 - real-time surfaces handle reconnect / stale-event / missed-event cases
+
+## Information architecture comes BEFORE the screen map — derive the inventory, don't document the sprawl
+
+A screen map that starts from the screens that already exist will faithfully document sprawl. Derive the
+page inventory from OUTSIDE the codebase first, then reconcile inward. Run these five steps in order,
+before specifying a single screen.
+
+**1 — Industry page inventory (research-first, primary sources only).** Read the ACTUAL documentation of
+5+ comparable mature products and extract, verbatim with URLs: their complete top-level navigation in
+real order; what each page contains; and where they put the recurring surfaces — activity/history,
+artifacts (recordings/files/exports), admin audit log, team/users, billing, settings, integrations,
+analytics, compliance/registration. Mark `NOT FOUND for <product>: <what>` rather than filling a gap with
+a likely pattern. Also collect REAL user feedback on navigation — complaints ("buried", "too many
+clicks", "had to go to three places", "can't find it") and praise ("everything in one place") — because
+those name the failure modes the IA must design against. A surface **no** researched product has is
+either a genuine differentiator or a mistake; decide which deliberately, never by accident.
+
+**2 — Gap analysis.** One row per surface: what it is · which products have it · our state
+(**Have / Partial / Missing / Rejected**) · the note. In any product past its first months, most
+"Missing" rows are not unbuilt features — they are **built or approved things with nowhere to live**.
+That is what sprawl actually is, and the gap table is what makes it visible.
+
+**3 — Placement rule, stated once and applied consistently.** For every surface decide: a **PAGE** (its
+own destination), a **SECTION** (nested in a hub), or **IN-PLACE** (drawer, side panel, expand-in-place
+row, split pane). Default to in-place for *detail*: depth reached without navigation is the single
+biggest usability lever, and mature products open detail beside the list rather than on another page.
+**Never split the same data across two destinations** — that forces the product to teach users which one
+to use, and it is a documented failure mode in shipping products. Settings split by SCOPE (personal /
+workspace / product) inside ONE namespace beats a parallel `/admin` tree.
+
+**4 — Object-oriented UX per page.** Specify each page as an OBJECT, not a layout:
+**Object** (the one thing this page is about) → **Attributes** (what it shows) → **Actions** (what you can
+do) → **States** (empty · loading · error · permission · degraded · terminal) → **Role scoping**. Prefer
+scoping the **DATA, not the navigation**: same nav for everyone, contents narrow by role, and a section a
+role lacks is hidden rather than dead-linked. A different nav (or a different app) per role multiplies
+build, test, and support cost — adopt it only with a stated reason.
+
+**5 — Nothing approved is homeless; nothing documented is fictional.** Every locked/approved design
+artifact maps to exactly ONE page or section in the IA — an approved mock with no home is a silent drop.
+And diff the documented routes against the ACTUAL router/registry: a screen map naming routes that do not
+exist is worse than no map, because agents and humans build into fiction. Rewrite the map **in place**;
+never leave the stale version behind a supersession note.
+
+*Fail-state:* the page inventory was derived from the routes that happen to exist, so the map documented
+sprawl instead of correcting it; an approved mock had no home; a role had no landing page; or the screen
+map named routes the application does not have.
+
+## A mock covers the WORST realistic case, not the best — granular empty states are mandatory
+
+A mock built from the happy path is a wish list, and it hides exactly the work that makes a surface hard.
+Every mock is rejected until it shows what the surface looks like when the data is thin, absent, stale, or
+contradictory — because that is the state real users hit first and most often.
+
+**1 — Granular empty states, not just the page-level one.** "No calls yet" is the easy one and it is not
+sufficient. Every FIELD, ROW, SECTION and PANEL needs its own missing-data treatment, designed and shown:
+a row whose lead has no name (only a raw number), a detail panel with no notes, no recording, no
+disposition, no outcome; a section whose entire data source is unconfigured. The question to ask of every
+element in the mock is *"what renders here when this is null?"* — and the answer must be in the mock, not
+left to the implementer.
+
+**2 — Minimum-information variant.** For any surface built around a rich object, mock the version where
+almost nothing is known. In a dialer that is the **raw manual dial**: a phone number and nothing else — no
+name, no company, no timezone, no list, no history. If the layout only works with a fully-populated
+record, the layout is wrong, and that only becomes visible when the sparse variant is drawn.
+
+**3 — Adverse and in-between states, not just success and empty.** Cover: partial data (some fields
+known), stale/pending data (processing, awaiting provider, propagating), failed/unavailable (provider
+down, permission denied, deleted-with-tombstone), degraded (a capability turned off), conflicting
+(two sources disagree), and over-full (long names, 50 rows, a value that overflows its column). A state
+that can occur in production and is not in the mock will be improvised in code by whoever implements it.
+
+**4 — Show only what the system actually records.** Every field, badge, check, and status in a mock must
+trace to something the product genuinely stores or computes — verified against the schema/contract, not
+assumed from what a surface of this KIND usually shows. Inventing a plausible-looking row (a check we do
+not perform, a field we do not persist) is the fabrication class: it reads as authoritative, it will be
+implemented, and it makes a claim the system cannot back. Check the model before drawing the row.
+
+**5 — Name the states in the handoff.** The mock's own state inventory is part of the deliverable: list
+every state drawn and every state deliberately omitted with the reason. An unlisted state is an
+unanswered question the implementer will answer alone.
+
+*Fail-state:* a mock showed a fully-populated best case, so the sparse/partial/failed/degraded variants
+were designed ad-hoc during implementation — or it displayed a field, check, or badge the system does not
+actually record, which then got built as though it did.
