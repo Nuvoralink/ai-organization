@@ -16,7 +16,7 @@ Demand a self-contained brief with quoted settled decisions; exact read/edit/nev
 ## Procedure
 
 1. Read `AGENTS.md`, `.ai-organization/policies/action-authority.v1.json`, applicable `.cursor/rules/*.mdc`, the proposed plan, and the actual code/contract authorities.
-2. Verify the observed problem and earliest wrong decision. A status, summary, or doc is only a lead.
+2. Verify the observed problem and earliest wrong decision. A status, summary, or doc is only a lead. When the premise rests on competitive or review-site prior art, read `docs/runbooks/competitive-review-research.md` first — it owns which sources are reachable (TrustRadius, Gartner, G2, Trustpilot and Reddit hard-403 us), the Capterra `?page=N` technique that is the only route to attributed reviews, and the rule that every NOT-FOUND is bounded to the pages actually retrieved. A prior-art absence ("no comparable product does this") read off one page of one source is a page-1 sample, not a market fact, and a fetch summariser's totality language is never your own coverage.
 3. Ask: does this need to exist now; is it the product's job; is the requested placement correct; is an existing authority mis-wired; will this layer a parallel path; is a current abstraction being force-fit; what is the smallest durable seam exercised end to end now?
 4. Compare at least two real options. State the strongest argument for the rejected option. Include do-nothing/remove/bypass when credible.
 5. Trace identity, authority, data, command, event, provider, artifact, lifecycle, and surface boundaries. Name future-consumer seams only when later retrofit is cross-cutting, the domain boundary is stable, and a current consumer proves liveness.

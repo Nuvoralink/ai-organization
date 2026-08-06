@@ -35,6 +35,35 @@ Purpose: keep implementation work outcome-oriented, valuable, and durable instea
 - Do not call an AI feature done because it avoided fabricating. It is done when it reliably produces a usable draft/card/context (that the human then confirms, per ARC-003/ARC-006), or proves with evidence why it cannot and falls back to manual entry cleanly.
 - (Coaching itself — scorecards, rubrics, behavior-change feedback — is the separate CoachAI product, not the dialer. This rule is about the dialer's own bounded AI surfaces.)
 
+### An anti-fabrication guard must NAME the honest state it renders instead — silence is also a lie
+
+Refusing to fabricate is correct. Rendering **nothing** is not the alternative to a fabricated success — an **honest intermediate state** is. A guard whose branch produces no state, no feedback, and no exit has traded a false claim for a dead end, and that is *worse*: with a false claim the user at least knows something happened and can dispute it; with silence they cannot tell whether the system failed, is working, or ignored them — and they have no way out.
+
+**The rule:** whenever a guard withholds a success state, name and render what the user sees INSTEAD — `dialing` · `sending` · `confirming` · `unsaved` · `unavailable` · `couldn't reach the server, retry` — plus a way out of that state. *"We don't show X because it isn't true yet"* is half a decision; the other half is what IS true right now, said plainly. A guard is not finished until both halves exist.
+
+**Three live instances, all correct reasoning that stopped halfway** (2026-08-06 — one founder-found, two audit-found):
+- The comms call card rendered **only** on `CONNECTED`, commented *"never a made-up connected screen"*. Correct — but through DIALING and RINGING it rendered nothing, so an outbound call could not be cancelled, and if the callee never answered the card never appeared at all. The honest state was `dialing`, with a hang-up.
+- `ForgotPasswordPage` deliberately refuses to *"locally advance to 'we've sent a link' before a real request succeeds"* — correct — but its submit handler is empty, so pressing the button does **literally nothing**. The honest state was either the wired request or a disabled control naming the real unavailable path.
+- The call-note autosave sets `saving`, then on failure deliberately leaves the indicator *"as-is"* to avoid a fabricated "Saved" — leaving it on **`Saving…` forever**. The honest state was a third `unsaved` value with a retry.
+
+**The tell, checkable at authoring time:** read the guard's negative branch and ask *"what does the user see here?"* If the answer is "nothing", "the previous state", or "the page as it was", the guard is incomplete — however correct its reasoning about fabrication. Composes with `auxara-dialer-frontend-rules.md` §9 (never ship a live-looking no-op): that rule bans the dead control; this one bans the dead *state* behind an honest one.
+
+*Fail-state:* a guard correctly refused to show something untrue and rendered nothing in its place, so the user could not tell whether the action failed, succeeded, or was ignored — and had no exit from the state they were left in.
+
+### A rule that blocks you is a FORK, not a stop — reason about what it is protecting
+
+The clause above is one instance of a general failure: **treating a blocking rule as a terminal answer instead of a prompt to think.** "Don't fabricate" blocked showing a success, and the code stopped there — when the right answer was neither show nor hide, but show the honest middle. Every one of the three instances above is a guard that fired correctly and then simply *stopped*, because the rule was applied rather than reasoned about.
+
+**When any rule, gate, guard, or invariant blocks you, run four questions before you accept the block:**
+1. **What exactly is being blocked, and what is the rule protecting against?** Name the harm in one sentence. If you cannot, you do not yet understand the rule well enough to obey it correctly.
+2. **Does the harm actually apply here?** A rule calibrated for one case can be firing on a different one it was never about. (A guard against a *fabricated* state firing on an *honest intermediate* state is exactly this — the block was right in general and wrong in the particular.)
+3. **Is there a third option?** Blocks present as binary — do it or don't. Usually there is an in-between that satisfies the rule and still serves the user: the honest intermediate state, a narrower version, a different surface, the same outcome reached another way. **Look for it before accepting the block, because the binary framing is the trap.**
+4. **If the block is right and there is no third option — is the DIRECTION wrong?** A rule blocking something the product genuinely needs is evidence the approach is wrong, not that the need is illegitimate. Escalate the design, do not quietly ship the blocked-and-empty version.
+
+**What this does not license:** the block still holds until you have a *better* answer. This is not permission to override a rule because it is inconvenient — that is the opposite failure. A compliance gate, a security invariant, or a human-gated action stays blocked; what changes is that you go back and find the design that does not need to violate it, rather than shipping a dead end and calling the rule satisfied. When the answer is genuinely "this should not exist here", say so and remove it — that is also a valid outcome of the four questions.
+
+*Fail-state:* a rule fired, the code stopped, and the result was a dead end nobody chose — the rule was technically satisfied and the user was worse off than if the rule had never existed.
+
 ## 3. Keep UX and psychology in mind
 
 - Reduce confusion, friction, cognitive load, and unnecessary choice overload.

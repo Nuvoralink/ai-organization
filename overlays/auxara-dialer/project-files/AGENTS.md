@@ -43,6 +43,7 @@ Load the remaining rule only when its topic/path applies:
 | User-facing route/page/component or analytics | `.claude/rules/instrumentation.md` |
 | Internal-admin behavior or permissions | `.claude/rules/internal-admin-full-experience.md` |
 | Parallel agent dispatch, worktree/file collisions, or coordination mode | `docs/ARCHITECTURE_BLAST_RADIUS.md` (coordination section) + decision-log `ARC-010` |
+| Competitive, incumbent-sentiment, or ICP review research (before the first fetch) | `docs/runbooks/competitive-review-research.md` |
 
 ## Execution and evidence
 

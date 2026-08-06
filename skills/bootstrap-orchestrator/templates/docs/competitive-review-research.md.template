@@ -1,0 +1,116 @@
+# Runbook — Competitive / Review-Site Research (source reachability + coverage bounding)
+
+**Status:** live — Last verified: {{DATE}}
+**Owns:** which review/competitive sources are actually fetchable, how to extract attributed reviews
+from the sources that yield them, and how a NOT-FOUND from a paginated source must be bounded before it
+reaches a brief, a decision, or the human.
+**Read this BEFORE** any competitive, incumbent-sentiment, or ICP review-research pass
+(decision-discipline rung 2 — "research before inventing"). It is the project binding for
+{{BENCHMARK_AND_SENTIMENT_DOCS}}.
+
+**Why this file exists.** Reachability is a runtime property of our fetch path — it is not documented
+anywhere upstream and cannot be guessed. Without a durable record, every research pass rediscovers the
+same hard blocks by spending attempts on them, and every agent re-learns the same extraction technique.
+The origin (Auxara Dialer, 2026-08-06): a session burned fetches on two sources that hard-403 us, and a
+WebFetch summariser volunteered *"After reviewing all 919 reviews displayed on this page"* for a page
+that renders ~25 — a claim that, relayed once, turns a page-1 sample into a whole-corpus absence claim.
+
+---
+
+## 1. Source reachability matrix
+
+**A row is a DATED observation, not a permanent fact** — reachability changes in both directions.
+Re-verify per §4 when a row is load-bearing. Seed values below are from the 2026-08-06 verification on
+the shared fetch path; confirm them for this project rather than assuming.
+
+| Source | Status | What it actually returns | Notes |
+|---|---|---|---|
+| capterra.com | ✅ WORKS | **Full attributed individual review bodies** — the only source that does | Requires the §2 technique; a default fetch returns only the aggregated summary block. |
+| softwareadvice.com | ⚠️ Partial | Aggregated pros/cons blocks only — never attributed individual reviews | Directional signal only; cannot source a quote or a reviewer attribute. |
+| getapp.com | ⚠️ Partial | Aggregated pros/cons blocks only — never attributed individual reviews | Same limitation. |
+| trustradius.com | ❌ BLOCKED | Hard HTTP 403 | Also kills its `?cg=small` company-size filter — see §3. |
+| gartner.com/reviews | ❌ BLOCKED | Hard HTTP 403 | — |
+| g2.com | ❌ BLOCKED | — | Long-standing. |
+| trustpilot.com | ❌ BLOCKED | — | Long-standing. |
+| reddit.com | ❌ BLOCKED | — | User voice reaches us only second-hand via teardowns/listicles — label it as such. |
+
+**Do not spend fetch attempts on a ❌ row.** If a blocked source is the only one that could settle a
+load-bearing claim, say so and escalate — never substitute a plausible-sounding secondary and present it
+at the same confidence. Aggregator/teardown sources remain usable but are **second-hand**: a complaint
+reaching us through a teardown is attributed to the teardown, never to the reviewer.
+
+---
+
+## 2. The extraction technique (why a default fetch under-delivers)
+
+A generic *"extract the reviews/quotes from this page"* prompt against a review site reliably returns
+**only the aggregated pros/cons summary block**. The individual review bodies are present, but the
+summariser collapses past them. Two things are both required:
+
+1. **Paginate explicitly** — append `?page=N` and fetch each page as its own request. Page 1 is not a
+   sample of the corpus; it is the most recent/most-promoted slice and systematically under-represents
+   the specific operational complaints that make a review useful. *In the origin session the decisive
+   quotes came from pages 3 and 5, not page 1.*
+2. **Prompt for the specific, not the general** — ask it to **name specific reviewers** or to **print the
+   complete Cons text verbatim**. "Extract quotes" or "summarize the complaints" returns the summary block.
+
+Then apply the normal evidence discipline: quote it, attribute it (reviewer + product + source), and
+record the row in {{RESEARCH_LEDGER_DOC}}.
+
+---
+
+## 3. Segment targeting after a filter becomes unreachable
+
+When a source's company-size / segment filter is the cleanest lens for your ICP and that source is
+blocked, the substitute is **per-review reviewer metadata** (company size, industry, role, usage
+duration) on a reachable source, applied *after* fetching — which means it must be applied over the
+paginated pages from §2, not over page 1 alone.
+
+When a claim is scoped to a segment, say which reviewer metadata supported the scoping. An unscoped
+review corpus does not become segment evidence because the product is sold to that segment.
+
+---
+
+## 4. Re-verifying a row
+
+1. Fetch one representative URL for that source.
+2. Record the **actual** outcome — the HTTP status, or what the body contained (attributed reviews vs
+   aggregated block).
+3. Update the row **in place** with the new date. Do not append a second row beside it and do not add an
+   "as of" footnote below the old one — replace the claim (decision-discipline: replace, don't layer).
+4. If a source flips from ❌ to ✅, say so in the report; it changes what future research can prove.
+5. **These facts are shared across every project on this fetch path.** When you correct a row, correct
+   the sibling projects' copies in the same turn (doctrine-loop universal backflow), or they drift into
+   disagreeing about the same observable fact.
+
+---
+
+## 5. Coverage bounding — a summariser's completeness claim is NOT the researcher's coverage claim
+
+A fetch summariser reports on **the payload it received**. It does not know the corpus size, it cannot
+see the pages it was not given, and it will volunteer confident totality language anyway. Relaying that
+as coverage converts a page-1 sample into a whole-corpus absence claim in one step, and the resulting
+NOT-FOUND reads as settled.
+
+**The rule.** Every NOT-FOUND, "no complaints about X", "nobody mentions Y", or "this is not a pain
+point" derived from a paginated source is **explicitly bounded to the pages actually retrieved**:
+
+> ✅ "Not found in pages 1–5 of an unknown total for <product>."
+> ❌ "Reviewers don't complain about this."
+
+- **Name the pages you fetched** and, when the source exposes it, the total. When it does not, say "of an
+  unknown total" — that is honest and falsifiable.
+- **Never repeat a summariser's totality language** ("all N reviews", "the full set", "across the corpus")
+  as your own coverage. If the number is worth citing, attribute it: *"the summariser asserted N; the page
+  paginates ~25, so that figure is unverified."*
+- **Absence needs more pages than presence.** One page can prove a complaint exists. No number of pages
+  proves a complaint does not exist — only that it was absent from the pages read. Scale the paging effort
+  to how load-bearing the absence is; when an absence is decision-relevant and you cannot bound it well,
+  escalate instead of shipping it.
+- **The bound travels with the claim** into every downstream artifact — the brief, the decision row, the
+  benchmark doc, the human-facing report. A bound dropped on the way to the summary is the failure, even
+  when the research itself was careful.
+
+*Fail-state:* a page-1 sample became a whole-corpus absence claim because a summariser's completeness
+language was relayed as the researcher's coverage — and a product decision was made on "nobody complains
+about this" when nobody had read past the first 25 reviews.
