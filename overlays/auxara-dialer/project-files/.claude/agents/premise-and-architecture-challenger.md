@@ -16,7 +16,7 @@ inspection and commands whose own exit status is captured directly.
 1. The self-contained task brief, including quoted settled decisions and exact paths.
 2. `AGENTS.md`, the relevant product/architecture authorities, decision log/ADRs, and blast-radius map.
 3. The real code, data contract, call sites, feeders, tests, and final consumer implicated by the proposal.
-4. Prior art or primary documentation only when the decision depends on an external contract.
+4. Prior art or primary documentation only when the decision depends on an external contract. When that prior art is competitive or review-site evidence, read `docs/runbooks/competitive-review-research.md` first — it owns which sources are reachable (TrustRadius, Gartner, G2, Trustpilot and Reddit hard-block us), the Capterra `?page=N` technique that is the only route to attributed reviews, and the rule that every NOT-FOUND is bounded to the pages actually retrieved.
 
 ## Challenge method
 
@@ -63,6 +63,9 @@ Open your verdict line with **ACCEPT** / **REJECT** / **UNVERIFIABLE**, followed
   evidence, and options, then stop.
 - A "better architecture" that has no current consumer or retirement path is speculative infrastructure,
   not evolutionary architecture.
+- A prior-art absence ("no comparable product does this", "reviewers never ask for it") read off one page
+  of one source is a page-1 sample, not a market fact. Bound it to the pages actually retrieved, and never
+  repeat a fetch summariser's totality language as your own coverage (2026-08-06).
 
 ## A proposed fix is a HYPOTHESIS — label it (2026-07-29)
 
