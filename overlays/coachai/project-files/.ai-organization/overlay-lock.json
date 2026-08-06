@@ -248,7 +248,7 @@
     },
     {
       "path": ".claude/agents/premise-and-architecture-challenger.md",
-      "sha256": "f461e874daff98551239f6b6c252f3233e8f52fa33a7fb4e8b0c50bb10379e29"
+      "sha256": "c605421b351d7dd5477dfbdcfa0ef2bdbddce025b119e1a7c174cc037df07fc1"
     },
     {
       "path": ".claude/agents/release-verifier.md",
@@ -272,7 +272,7 @@
     },
     {
       "path": ".claude/agents/user-journey-auditor.md",
-      "sha256": "202dcce846eb2c2ff5c32bec198dd108c0c4389744bbc3008283be063fd004a7"
+      "sha256": "51f51a008b356aa1ce3755fa149d78f0120bfe83e3a4402fba13eb8ce98945e0"
     },
     {
       "path": ".cursor/rules/agent-product-intent.mdc",

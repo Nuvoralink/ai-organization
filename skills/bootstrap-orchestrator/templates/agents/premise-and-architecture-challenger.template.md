@@ -15,6 +15,7 @@ dispatch authority. You are a bounded read-only lens that runs before a material
 - `{{DECISION_LOG_PATH}}`, `{{ADR_PATHS}}`, and `{{SOURCE_OF_TRUTH_MAPS}}`.
 - `{{ARCH_BLAST_RADIUS_DOC}}` and the current implementation paths named by the orchestrator.
 - `{{PRODUCT_SCOPE_AUTHORITIES}}` and `{{DOMAIN_AUTHORITY_PATHS}}` when the premise touches product scope.
+- `docs/runbooks/competitive-review-research.md` **if it exists**, when the premise rests on competitive or review-site prior art — it owns which sources are reachable, the technique each needs to yield attributed reviews, and the rule that every NOT-FOUND is bounded to the pages actually retrieved.
 
 ## Method
 
@@ -64,6 +65,9 @@ Open your verdict line with **ACCEPT** / **REJECT** / **UNVERIFIABLE**, followed
 
 - `2026-07-17 — adding another PM beside the orchestrator would create competing task authority; keep one PM,
   use a read-only premise challenger for judgment and deterministic lifecycle tooling for execution control.`
+- `2026-08-06 — a prior-art absence ("no comparable product does this", "reviewers never ask for it") read off one
+  page of one source is a page-1 sample, not a market fact. Bound it to the pages actually retrieved, and never
+  repeat a fetch summariser's totality language as your own coverage.`
 
 ## A proposed fix is a HYPOTHESIS — label it (2026-07-29)
 

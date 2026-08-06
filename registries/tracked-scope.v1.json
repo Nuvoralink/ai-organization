@@ -4303,6 +4303,10 @@
       "class": "reusable-skill"
     },
     {
+      "path": "skills/bootstrap-orchestrator/templates/docs/competitive-review-research.md.template",
+      "class": "reusable-skill"
+    },
+    {
       "path": "skills/bootstrap-orchestrator/templates/docs/decision-log.md.template",
       "class": "reusable-skill"
     },
