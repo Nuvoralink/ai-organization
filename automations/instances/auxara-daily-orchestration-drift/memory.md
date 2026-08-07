@@ -1,3 +1,21 @@
+# Organization weekday orchestration drift — 2026-08-07T09:17:30+04:00
+
+Read-only live audit completed for `${PROJECT:auxara-dialer|backslash}` and `${PROJECT:coachai|backslash}`.
+
+- Both root `main` worktrees are clean and exactly match their read-only `origin/main` tips. Dialer has PR #363 open and `CLEAN`, but no reviews and only a Vercel success status; it needs independent review and its exact local merge-gate evidence before merge. Dialer control-plane/rule/context/fleet/overlay gates all passed; `audit:project-ledger-live` passed with Project #7 at 201/201 and `gate:decision-sprint-linkage` passed for 181 decisions/20 sprints.
+- Dialer retains 14 non-root worktrees. `codex/dialer-neon-release` is dirty (`package-lock.json`); three attached worktrees track gone remotes, and eleven local branches track gone remotes. The Sprint 1.5 main and integration-tip documents still say B/C owes exact-HEAD CI despite the prior final-local-CI checkpoint, so the status/evidence needs singular-current reconciliation rather than a new handoff.
+- CoachAI root `main` is clean with no open PRs; `gate:organization` passed all five organization checks. Its `.claude/settings.json` has the complete lifecycle hook set, as does Dialer. CoachAI retains three GitHub workflow files while Dialer has none; both retain issue/PR templates.
+- CoachAI's live-labelled orchestrator handoff is last verified 2026-07-30 but still says superseded guidance is kept inline and describes user-relayed agent communication/branch switching. This conflicts with the current AGENTS authority and the decision log's stated retirement approach. CoachAI has 46 open issues; newest activity is 2026-05-29 and blocked operational issues #4-#6 plus master issues #30/#36/#38/#39 remain stale.
+- A combined lifecycle-test command sequence in each repo exceeded the 60-second audit ceiling and returned no raw output; no lifecycle-test pass is claimed. No repository, GitHub, worktree, deployment, or production state was mutated; this automation-memory update is required bookkeeping.
+
+# Organization weekday orchestration drift — 2026-08-06T19:44:35+04:00
+
+Read-only live audit completed for `${PROJECT:auxara-dialer|backslash}` and `${PROJECT:coachai|backslash}`.
+
+- Dialer root is clean but on untracked `chore/dead-control-gate`, one commit ahead of live `origin/main`; local `main` is 1 ahead/6 behind. Eleven registered worktrees remain; `codex/dialer-neon-release` has a modified `package-lock.json`, and `codex/dialer-owner-url-guard` plus `codex/s15bc-neon-integration` track gone remotes. No GitHub open PRs/issues. Organization context/rules/control-plane/fleet/overlay gates passed. Coordination/live-ledger and lifecycle regression commands did not complete within the bounded audit window, so their live result is unproven.
+- CoachAI root `main` is clean and equals `origin/main`; no open PRs. PR #238 is no longer open (verify its terminal state next run if needed). `gate:organization` passed. Forty-seven open issues remain, with the newest updated 2026-05-29; operational blockers #4-#6 and masters #30/#36/#38/#39 are still stale. Lifecycle regression did not complete within the bounded audit window.
+- Both projects retain lifecycle hook configuration and issue/PR templates. Dialer has no `.github/workflows` directory; CoachAI has three workflow files. No repository, GitHub, worktree, or production state was mutated by this audit; this automation-memory update is required bookkeeping.
+
 # Organization weekday orchestration drift — 2026-08-05T11:21:20+04:00
 
 Read-only live audit completed for `${PROJECT:auxara-dialer|backslash}` and `${PROJECT:coachai|backslash}`.

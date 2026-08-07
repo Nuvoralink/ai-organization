@@ -1,1 +1,5 @@
 2026-08-05T00:00:00+04:00 — Ran `node scripts/control-check-notify.mjs` from `${PROJECT:control-plane|backslash}`; exit 1, status `drift`. Reported portable metadata only. Findings included captured backups behind, global doctrine/rule drift, automation-instance drift/local-only entries, and extensive bootstrap-orchestrator skill drift/local-only entries. No assets were captured, installed, reconciled, or otherwise modified.
+
+2026-08-06T19:37:59+04:00 — Ran `node scripts/control-check-notify.mjs` from `${PROJECT:control-plane|backslash}`; exit 1, status `drift`. Portable metadata reported five captured backups behind, 11 excluded/denied dependency entries, and 11 drifted global rule/skill artifacts. No assets were captured, installed, reconciled, or otherwise modified.
+
+2026-08-07T00:00:00+04:00 — Ran `node scripts/control-check-notify.mjs` from `${PROJECT:control-plane|backslash}`; exit 1, status `drift`. Portable metadata reported five captured backups behind, 11 excluded/denied dependency entries, four automation-memory drifts, and 15 skill/template drifts or missing artifacts. No assets were captured, installed, reconciled, or otherwise modified.

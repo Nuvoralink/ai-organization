@@ -132,3 +132,41 @@ Report:
 7. skill-loop findings and any skill/routing improvement made.
 
 Do not call visible work complete from compilation, a generated file, or a tool status alone.
+
+## A mock covers the WORST realistic case, not the best — granular empty states are mandatory
+
+A mock built from the happy path is a wish list, and it hides exactly the work that makes a surface hard.
+Every mock is rejected until it shows what the surface looks like when the data is thin, absent, stale, or
+contradictory — because that is the state real users hit first and most often.
+
+**1 — Granular empty states, not just the page-level one.** "No calls yet" is the easy one and it is not
+sufficient. Every FIELD, ROW, SECTION and PANEL needs its own missing-data treatment, designed and shown:
+a row whose lead has no name (only a raw number), a detail panel with no notes, no recording, no
+disposition, no outcome; a section whose entire data source is unconfigured. The question to ask of every
+element in the mock is *"what renders here when this is null?"* — and the answer must be in the mock, not
+left to the implementer.
+
+**2 — Minimum-information variant.** For any surface built around a rich object, mock the version where
+almost nothing is known. In a dialer that is the **raw manual dial**: a phone number and nothing else — no
+name, no company, no timezone, no list, no history. If the layout only works with a fully-populated
+record, the layout is wrong, and that only becomes visible when the sparse variant is drawn.
+
+**3 — Adverse and in-between states, not just success and empty.** Cover: partial data (some fields
+known), stale/pending data (processing, awaiting provider, propagating), failed/unavailable (provider
+down, permission denied, deleted-with-tombstone), degraded (a capability turned off), conflicting
+(two sources disagree), and over-full (long names, 50 rows, a value that overflows its column). A state
+that can occur in production and is not in the mock will be improvised in code by whoever implements it.
+
+**4 — Show only what the system actually records.** Every field, badge, check, and status in a mock must
+trace to something the product genuinely stores or computes — verified against the schema/contract, not
+assumed from what a surface of this KIND usually shows. Inventing a plausible-looking row (a check we do
+not perform, a field we do not persist) is the fabrication class: it reads as authoritative, it will be
+implemented, and it makes a claim the system cannot back. Check the model before drawing the row.
+
+**5 — Name the states in the handoff.** The mock's own state inventory is part of the deliverable: list
+every state drawn and every state deliberately omitted with the reason. An unlisted state is an
+unanswered question the implementer will answer alone.
+
+*Fail-state:* a mock showed a fully-populated best case, so the sparse/partial/failed/degraded variants
+were designed ad-hoc during implementation — or it displayed a field, check, or badge the system does not
+actually record, which then got built as though it did.

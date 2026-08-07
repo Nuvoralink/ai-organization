@@ -44,3 +44,33 @@ Log enough to diagnose; never log secrets/tokens/payment payloads/{{PII_KINDS}}/
 
 ## Definition of done
 Blast-radius doc checked (+ updated if a relation was exposed); architecture still coherent; no duplicate abstraction; architecture/foundation work carries a future-consumer/seam matrix and proves every planted seam through a current path; no speculative framework or later parallel authority is authorized; types coherent; contracts stable; tests/regressions considered; security/privacy/tenant-isolation considered; {{SAFETY_INVARIANTS}} preserved where applicable; deferred follow-ups named with a reason, never silently dropped.
+
+## A founder/user request is captured DURABLY the turn it is made — chat is not a backlog
+
+A request that lives only in the conversation evaporates at the next compaction, crash, or session
+boundary. The next session starts without it, the person has to ask again, and each repetition costs
+them trust that anything they say is being tracked. This is the same silent-drop class as an approved
+mock with no home — but worse, because the human already believes it is on the list.
+
+**The rule.** Any request that is not being executed in the current turn is written to a durable
+authority the same turn it is made — a decision-log row (status `🟡 Requested`), a backlog row with an
+owner, or a plan/sprint item. "I'll do it after this" is not capture; the artifact is. If the request
+is ambiguous, capture the ambiguity and the question rather than waiting for clarity to capture
+anything at all.
+
+**Repetition is a defect signal, not a reminder.** The second time a person asks for the same thing,
+the failure is not that they forgot to follow up — it is that nothing recorded it the first time.
+Treat a repeat request as a process finding: capture it, and check whether other requests from the
+same period were also dropped.
+
+**Recording it is not the same as agreeing to it.** A durable row is a tracking act, not an approval or
+a scope commitment. A request that should not be built is recorded and then declined *with a reason*,
+which is still a durable record — a request that is silently dropped leaves nothing to disagree with.
+
+**Verify absence before claiming it.** When someone asks "was this built or ignored?", check code AND
+decisions AND mocks AND backlog before answering, and say which of those you checked. A word matching
+in a different context — a "quick access" row about something else, a "bubble" that means a chat
+message — is not evidence the request was captured. Name the near-miss so the answer is falsifiable.
+
+*Fail-state:* a person asked for something more than once, and it existed in no durable artifact — so
+every session began without it and each repetition looked to them like being ignored.

@@ -1,6 +1,6 @@
 # Daily orchestration drift memory
 
-Last run: 2026-08-05T11:20:29+04:00
+Last run: 2026-08-06T19:48:00+04:00
 
 - Read-only audit on `${WORKSPACE:dev|backslash}\Voice Agents`, branch `codex/phase1-foundation` at `4324bd46237453074ff7879c5c2a9a753980a0a1`; no remotes, `origin/main`, branch upstream, or additional worktrees are present. The tree has 33 modified tracked files and 6 untracked files from the in-flight Phase 1 extension/response-delivery slice.
 - Organization/read-only gates passed: control-plane parity (37 assets, canonical commit `2838251245052dc445123fd24fc3a06c1562b6d3`), fleet parity (23 effective roles, 19 project agents), rules wiring, context budget (~963/6000), agent-control-plane (21 artifacts), and test intent (12 files / 42 executable IDs).
@@ -8,3 +8,19 @@ Last run: 2026-08-05T11:20:29+04:00
 - Extension-manifest gate fails: source coverage/content and all three AIL registration digests are stale. The committed generated manifest names source digest `8ff0…`, while the current `packages/vertical-ail-booker/src/index.ts` SHA-256 is `554683…`. Regenerate/review the manifest after correcting source, then re-run the gate.
 - Effect-binding gate could not execute its PostgreSQL liveness tests because Docker Desktop's Linux engine pipe is unavailable. It is an environment blocker, not a gate pass/fail on the code.
 - Lifecycle drift: `scripts/claude-lifecycle-hook.mjs` hard-codes `origin/main` for implementation TaskCompleted changed-file preflight, but this checkout has neither remote nor ref. Any such completion hook will throw before its diff checks/completion gate. Restore the canonical tracked integration ref or make the resolver handle the configured integration authority fail-closed with an actionable message.
+
+## 2026-08-06 run
+
+- Live state: `codex/phase1-foundation` is at `caf79b3576df94d4479d9bff20cfed4b5e323e11`, has no remote/upstream and one uncommitted change in `tests/phase1-liveness.integration.test.ts`; one worktree only. The working change adds response-operation crash coverage but contains a lint-blocking non-null assertion at line 1637.
+- Structural control-plane checks pass: parity (37 assets), generated agent projections (23 roles/19 files), fleet parity, rules wiring, context budget (963/6000), agent-control-plane (21 artifacts), test intent (12 files, 44/44 executable IDs), and extension implementation manifest. Generated projection files have no diff.
+- `pnpm run verify` fails in lint only on the non-null assertion. `gate:effect-bindings` now executes with Docker but fails aggregate liveness (74/77): regulated/loop-cap timeout, caller-denial exact usage binding, and definitive-no-effect handoff availability freshness. The same `tests/phase1-liveness.integration.test.ts` passes isolated (16/16), so its aggregate proof lane is nondeterministic until shared-state/parallel interference is removed and an aggregate rerun passes.
+- Documentation authority drift: commits `a9d9eac` through `caf79b3` implement the durable response-operation authority, but the live continuation handoff (section 6.8) and session record (finding 10) still call it open/deferred. `docs/requirements.md` has response delivery but no response-operation requirement and `docs/decision-log.md` has no VA-DEC-014. Replace these stale claims with one current decision/requirement/blast-radius projection after gates are stable.
+- Lifecycle ref drift remains: `scripts/claude-lifecycle-hook.mjs` and the evidence runtime still derive implementation completion diffs from `origin/main`, which does not exist in this clone. TaskCompleted implementation preflight cannot work here.
+
+## 2026-08-07 run
+
+- Read-only audit at `2026-08-07T09:15:52+04:00`: branch `codex/phase1-foundation` remains at `caf79b3576df94d4479d9bff20cfed4b5e323e11`, with no remote/upstream and one worktree. The only dirty path is `tests/phase1-liveness.integration.test.ts` (+233/-6), and `git diff --check` passes.
+- Control-plane parity (37 assets / canonical `2838251245052dc445123fd24fc3a06c1562b6d3`), generated role projections (23 roles/19 agent files), fleet parity, rules wiring, context budget, agent-control-plane (21 artifacts), test intent (12 files, 44/44 executable IDs), implementation-manifest, and effect bindings all pass. Effect bindings executed 91 liveness tests; direct PostgreSQL integration passed 2 files / 77 tests.
+- Full `pnpm run verify` remains blocked at ESLint by the non-null assertion in `tests/phase1-liveness.integration.test.ts:1637` (`ports.responseOperations!`). Thus all later verify lanes are unproven in that aggregate despite their separately re-run evidence.
+- Documentation authority drift is now confirmed: committed response-operation implementation exists in contracts/runtime/platform migration and test, but `VA-DEC-014` and `VA-RESPONSE-OPERATION-001` occur only in the stale continuation handoff; they have no living rows in requirements, decision log, or architecture blast radius. The session record and handoff still call this implemented slice open/deferred. Replace those claims in the owning current authorities and re-project all living documentation.
+- Lifecycle ref drift persists: `scripts/claude-lifecycle-hook.mjs:379-389` uses `origin/main`, absent in this clone, before TaskCompleted's changed-file checks at 626-637. Implementation completion preflight cannot work here.
