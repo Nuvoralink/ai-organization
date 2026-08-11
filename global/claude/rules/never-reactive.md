@@ -36,6 +36,18 @@ for every input class: a request, a correction, a bug, a review finding, a quest
 
 - Plan the workstream GRAPH — parallel independent lanes, dependencies, sequencing — never one
   reactive dispatch per incoming message.
+- **Default to a parallel SWARM for independent lanes — and every swarm dispatch CARRIES its write-set
+  claim (Amin directive 2026-08-11).** When the graph has ≥2 genuinely independent lanes, dispatch them
+  as a parallel swarm by DEFAULT — not serially, not one agent per message — so the work parallelizes AND
+  the coordination engine accumulates the data it needs to earn its `observe→enforce` promotion. Carry
+  each lane's write-set on the dispatch so a real claim registers: `--brief <path>` on an `agent:run`
+  dispatch (deterministic), or a `TASK_CONTRACT_JSON: {"paths":{"edit":[…],"read":[…]}}` marker in a
+  Task/Agent prompt where the project's TaskCreated hook consumes it. An unclaimed dispatch registers
+  nothing, is honestly counted `skipped_no_editpaths`, and — under enforce — is invisible to the very
+  conflict detection protecting the other lanes. Judgment still gates it: swarm where the lanes are
+  truly independent and worth the dispatch overhead, never force-parallelized busywork. *Fail-state:* the
+  orchestrator ran serial or unclaimed dispatches for independently parallelizable work, so the swarm
+  engine never accumulated data — and the human had to keep asking for swarm design.
 - Every brief carries the INTENT and the map, not just the task; a sub-agent whose work surfaces an
   intent-conflict escalates rather than literal-executing the brief.
 - The response itself is planned like any artifact: what does the reader need to decide, in what
