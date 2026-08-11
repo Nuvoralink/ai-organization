@@ -80,5 +80,30 @@ decisions AND mocks AND backlog before answering, and say which of those you che
 in a different context — a "quick access" row about something else, a "bubble" that means a chat
 message — is not evidence the request was captured. Name the near-miss so the answer is falsifiable.
 
-*Fail-state:* a person asked for something more than once, and it existed in no durable artifact — so
-every session began without it and each repetition looked to them like being ignored.
+**One central tracking authority — no scattered or duplicate records (Amin directive 2026-08-09).** Outstanding
+work lives in exactly ONE place per project — a single work-tracker — each item recorded ONCE, with its STATUS
+owned there. Other docs (decision log, ADRs, mocks, sprint plans) hold DETAIL and reference the tracker; they
+never carry a competing status. A status that lives in two places drifts, and a reader who must check four docs
+to know what is outstanding is exactly how items get dropped (2026-08-09: a status board swept only the backlog
+and missed a request that lived in the decision log). When a project has no single tracker yet, creating one is
+the first capture act.
+
+**Compound-message capture — every discrete ask gets its own row, not just the headline (Amin directive
+2026-08-09).** When one message carries several asks ("do A, also B, also fix C"), the headline (A) gets
+actioned while B and C are silently swallowed — the single most common drop mechanism (2026-08-09: three
+founder asks dropped this exact way — each packed inside a larger instruction). Decompose every multi-part
+message and capture EACH discrete actionable ask as its own durable row the same turn, including the ones you
+action immediately (mark those done). A message is not "handled" until every ask in it is either done or on the
+list.
+
+**Update-on-fix — a fix is not done until its record reflects it (Amin directive 2026-08-09).** The SAME change
+that fixes or ships a tracked item updates that item's row to its resolved state (and flips the linked detail
+row's marker) — never a fix that merges while its tracker/backlog row still reads OPEN (2026-08-09: a
+dead-controls row read OPEN for a week after the fix shipped). A stale "open" record for done work is the mirror
+of a dropped request: it makes the tracker lie, so the next reader either re-does the work or stops trusting the
+tracker.
+
+*Fail-state:* a person asked for something more than once and it existed in no durable artifact; OR a
+multi-part message's headline was actioned while its other asks were swallowed; OR a fix shipped while its
+record still read OPEN; OR the same item lived in several trackers that drifted — so a session began without the
+truth, and each repetition looked to them like being ignored.

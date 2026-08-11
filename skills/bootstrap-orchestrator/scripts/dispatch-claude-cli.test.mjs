@@ -2899,24 +2899,25 @@ test("Proves: ORG-COORD-CLI-005; Test type: reserved-exit integration; Surface: 
   assert.equal(spawnCount, 1, "liveness: this is a real child result, not admission refusal");
 });
 
-test("Proves: ORG-COORD-CLI-006; Test type: promotion-readiness integration; Surface: coordination rollout gate; Authority: every instrumented dispatcher and healthy observe window; Killer mutation: retain the standing blocker or omit the Claude CLI dispatch path; Gated command: npm test", async (t) => {
+test("Proves: ORG-COORD-CLI-006; Test type: promotion-readiness integration; Surface: coordination rollout gate; Authority: claim volume + only-the-dispatch-paths-in-use instrumentation; Killer mutation: re-introduce the all-dispatch-paths-required loop (this single-path epoch regresses to DISPATCH_PATH_UNSEEN not-ready) or raise minimumClaimsRegistered above the seeded claim count; Gated command: npm test", async (t) => {
   const { root, runtimeRoot } = await createInstalledCoordinationRepository(t);
   const coverageModule = await importCoordinationModule(runtimeRoot, "coverage.mjs");
   const {
     COORDINATION_DISPATCH_PATHS,
     COORDINATION_PROMOTION_THRESHOLDS,
-    KNOWN_UNINSTRUMENTED_DISPATCHERS,
     countDispatch,
     promotionReadiness,
     readCoordinationCoverage,
   } = coverageModule;
-  assert.equal(KNOWN_UNINSTRUMENTED_DISPATCHERS.includes("dispatch-claude-cli"), false);
-  let modeEpoch;
-  for (const dispatchPath of Object.values(COORDINATION_DISPATCH_PATHS)) {
-    const counted = countDispatch("observe", { repoRoot: root, dispatchPath });
-    assert.equal(counted.error, undefined);
-    modeEpoch = counted.modeEpoch;
-  }
+  // Exercise ONLY the bounded-agent dispatcher — never dispatch-claude-cli or claude-task-created.
+  // Under the removed all-paths requirement this epoch was DISPATCH_PATH_UNSEEN (not ready); under
+  // "require only paths in use", enough claims on any single instrumented path must be ready.
+  const counted = countDispatch("observe", {
+    repoRoot: root,
+    dispatchPath: COORDINATION_DISPATCH_PATHS.boundedAgent,
+  });
+  assert.equal(counted.error, undefined);
+  const modeEpoch = counted.modeEpoch;
   const { openCoordinationLedger } = await importCoordinationModule(runtimeRoot, "ledger.mjs");
   const ledger = openCoordinationLedger({ cwd: root });
   try {
@@ -2931,12 +2932,58 @@ test("Proves: ORG-COORD-CLI-006; Test type: promotion-readiness integration; Sur
     ledger.close();
   }
   const coverage = readCoordinationCoverage({ repoRoot: root });
+  // Fixture divergence guard: the two other dispatch paths were never exercised, so the old
+  // all-paths code would have blocked here — this fixture is only "ready" under the new contract.
+  assert.equal(coverage.dispatch_path_hits[COORDINATION_DISPATCH_PATHS.claudeCli] ?? 0, 0);
+  assert.equal(coverage.dispatch_path_hits[COORDINATION_DISPATCH_PATHS.claudeTaskCreated] ?? 0, 0);
   const now = Date.parse(coverage.started_at)
     + COORDINATION_PROMOTION_THRESHOLDS.minimumObserveDurationMs;
   const readiness = promotionReadiness({ repoRoot: root, now });
   assert.equal(readiness.ready, true, JSON.stringify(readiness.reasons));
   assert.deepEqual(readiness.reasons, []);
-  assert.equal(readiness.observed.dispatchPathHits[COORDINATION_DISPATCH_PATHS.claudeCli], 1);
+});
+
+test("Proves: ORG-COORD-CLI-006; Test type: promotion-readiness blind-spot guard; Surface: coordination rollout gate; Authority: no uninstrumented dispatcher in use; Killer mutation: drop the UNINSTRUMENTED_PATH_SEEN check (an in-use uninstrumented dispatcher would wrongly read ready after the all-paths requirement was relaxed); Gated command: npm test", async (t) => {
+  const { root, runtimeRoot } = await createInstalledCoordinationRepository(t);
+  const coverageModule = await importCoordinationModule(runtimeRoot, "coverage.mjs");
+  const {
+    COORDINATION_DISPATCH_PATHS,
+    COORDINATION_PROMOTION_THRESHOLDS,
+    countDispatch,
+    promotionReadiness,
+    readCoordinationCoverage,
+  } = coverageModule;
+  // Otherwise-ready epoch (one instrumented path + enough claims) BUT a dispatcher that is actually
+  // used is NOT instrumented. Relaxing the all-paths rule must not open this blind spot.
+  const counted = countDispatch("observe", {
+    repoRoot: root,
+    dispatchPath: COORDINATION_DISPATCH_PATHS.boundedAgent,
+  });
+  assert.equal(counted.error, undefined);
+  const modeEpoch = counted.modeEpoch;
+  const { openCoordinationLedger } = await importCoordinationModule(runtimeRoot, "ledger.mjs");
+  const ledger = openCoordinationLedger({ cwd: root });
+  try {
+    ledger.incrementCoverage({
+      mode: "observe",
+      modeEpoch,
+      increments: {
+        claims_registered: COORDINATION_PROMOTION_THRESHOLDS.minimumClaimsRegistered,
+      },
+      uninstrumentedPath: "shadow-dispatcher",
+    });
+  } finally {
+    ledger.close();
+  }
+  const coverage = readCoordinationCoverage({ repoRoot: root });
+  const now = Date.parse(coverage.started_at)
+    + COORDINATION_PROMOTION_THRESHOLDS.minimumObserveDurationMs;
+  const readiness = promotionReadiness({ repoRoot: root, now });
+  assert.equal(readiness.ready, false);
+  assert.ok(
+    readiness.reasons.some((reason) => reason.code === "UNINSTRUMENTED_PATH_SEEN"),
+    JSON.stringify(readiness.reasons),
+  );
 });
 
 test("Proves Agent and Task events remain rejected instead of being normalized into authority", () => {

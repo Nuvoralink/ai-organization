@@ -12,14 +12,14 @@ export const COORDINATION_DISPATCH_PATHS = Object.freeze({
 });
 export const KNOWN_UNINSTRUMENTED_DISPATCHERS = Object.freeze([]);
 const MILLISECONDS_PER_HOUR = 60 * 60 * 1_000;
+// Recalibrated 2026-08-11 (Amin directive): 100 was unreachable for a solo-operator fleet that
+// dispatches a few parallel agents per session — observe could never earn its enforce flip through
+// organic use. 25 ≈ a handful of real parallel swarms; the observe→enforce flip stays human-gated.
 export const COORDINATION_PROMOTION_THRESHOLDS = Object.freeze({
-  minimumClaimsRegistered: 100,
+  minimumClaimsRegistered: 25,
   minimumObserveDurationMs: 24 * MILLISECONDS_PER_HOUR,
   maximumCoordinationErrorRate: 0.01,
 });
-const REQUIRED_INSTRUMENTED_DISPATCH_PATHS = Object.freeze(
-  Object.values(COORDINATION_DISPATCH_PATHS),
-);
 
 function errorMessage(error) {
   return error instanceof Error ? error.message : String(error);
@@ -300,19 +300,15 @@ export function promotionReadiness({
         ),
       );
     }
-    for (const dispatchPath of REQUIRED_INSTRUMENTED_DISPATCH_PATHS) {
-      const pathHits = coverage.dispatch_path_hits[dispatchPath] ?? 0;
-      if (pathHits === 0) {
-        reasons.push(
-          readinessReason(
-            'DISPATCH_PATH_UNSEEN',
-            `The current OBSERVE epoch has not seen dispatcher ${dispatchPath}.`,
-            pathHits,
-            1,
-          ),
-        );
-      }
-    }
+    // Readiness requires only the dispatch paths ACTUALLY IN USE to be instrumented — it does NOT
+    // require every known dispatcher to have been exercised. A project may legitimately never use a
+    // given dispatcher (e.g. dispatch-claude-cli in an interactive Task-tool workflow), so demanding
+    // that all of them be hit makes promotion permanently unreachable. The blind-spot guarantee is
+    // preserved below: any dispatcher that IS used but is not instrumented increments
+    // uninstrumented_path_hits (UNINSTRUMENTED_PATH_SEEN) or is named in KNOWN_UNINSTRUMENTED_DISPATCHERS
+    // (DISPATCHER_NOT_INSTRUMENTED), and either still blocks. Sufficient claim volume
+    // (INSUFFICIENT_CLAIMS) already proves at least one instrumented path carried real work.
+    // (Amin directive 2026-08-11: "require only paths in use".)
     for (const [dispatchPath, pathHits] of Object.entries(coverage.uninstrumented_path_hits)) {
       if (pathHits > 0) {
         reasons.push(
