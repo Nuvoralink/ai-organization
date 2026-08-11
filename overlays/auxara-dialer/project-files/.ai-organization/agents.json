@@ -49,6 +49,12 @@
       "roleContract": "Prove the delivery chain is decided, built, wired, called, reachable, and represented on every required consumer surface in both dependency directions."
     },
     {
+      "id": "build-integrity-auditor",
+      "file": ".claude/agents/build-integrity-auditor.md",
+      "mode": "read-only",
+      "roleContract": "Run the comprehensive post-build built-vs-locked-intent drift sweep by error class, routing deep findings to the specialist lenses, so no drift class is silently skipped after a build."
+    },
+    {
       "id": "ui-verifier",
       "file": ".claude/agents/ui-verifier.md",
       "mode": "read-only",

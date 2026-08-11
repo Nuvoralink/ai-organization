@@ -9,6 +9,7 @@ paths:
 
 ## The dialer's capture destinations (where each arm routes HERE)
 
+- **The single work-tracker (source of truth for ALL outstanding work)** → `docs/WORK_TRACKER.md`. Every outstanding item — bug, feature, request, unbuilt decision — appears there EXACTLY ONCE, with its **status owned there** (Amin directive 2026-08-09: one central location, no scattered or duplicate records). The detail destinations below are *referenced from* the tracker and hold DETAIL only; they never carry a competing status. **Update-on-fix:** the same change that resolves an item flips its tracker row (and the linked detail marker) — never a fix that ships while the row still reads OPEN. **Compound-capture:** every discrete ask inside a multi-part founder message becomes its own tracker row, not just the message's headline.
 - **Enforceable behavior** → a rule in `.claude/rules/` (always-on or contextual), with its named fail-state.
 - **A procedure** → a runbook under `docs/runbooks/`, referenced from the relevant rule (e.g. `docs/runbooks/prod-migrations.md`).
 - **A reusable narrative lesson / the why** → `docs/Journey/AI_BUILD_JOURNEY_LESSONS.md`.

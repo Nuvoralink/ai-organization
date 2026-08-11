@@ -2499,10 +2499,6 @@
       "class": "global-orchestration"
     },
     {
-      "path": "global/claude/plugins/known_marketplaces.json",
-      "class": "global-orchestration"
-    },
-    {
       "path": "global/claude/project-memory/C--dev-Nuvo-Dialer/MEMORY.md",
       "class": "global-orchestration"
     },
@@ -3128,6 +3124,10 @@
     },
     {
       "path": "overlays/auxara-dialer/project-files/.claude/agents/adversarial-reviewer.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/auxara-dialer/project-files/.claude/agents/build-integrity-auditor.md",
       "class": "project-orchestration-overlay"
     },
     {
