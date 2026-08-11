@@ -200,7 +200,8 @@
         "cache",
         "marketplaces",
         ".last_inuse_sweep",
-        "plugin-catalog-cache.json"
+        "plugin-catalog-cache.json",
+        "known_marketplaces.json"
       ],
       "detectLocalOnly": true,
       "ownership": "canonical",

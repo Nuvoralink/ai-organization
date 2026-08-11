@@ -4,7 +4,7 @@
   "managedFiles": [
     {
       "path": ".ai-organization/agents.json",
-      "sha256": "ba0432c0859e66178c762a2350980ac65a5ec444ddc0d8c6a1902a50ac28b63e"
+      "sha256": "21cc7a6e3250f0a3c724f6041e007dc9685f6f499cf080f06751da438b9f2b65"
     },
     {
       "path": ".ai-organization/completion-profiles.json",

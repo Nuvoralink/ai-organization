@@ -100,6 +100,34 @@
       }
     },
     {
+      "id": "build-integrity-auditor",
+      "purpose": "Run the comprehensive post-build built-vs-locked-intent drift sweep by error class (A silent-drop, B built-but-unreachable, C decision-drift, D dead-control, E fabricated-state, F journey-dead-end/asymmetry, G over-committed-decision, H stale-doc), routing deep findings to the specialist lenses, so no drift class is silently skipped after a build.",
+      "trigger": ["after any build — per-slice and whole-app at sprint or phase close — as the always-run breadth sweep of built-vs-locked intent"],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "claude",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": [
+        "findings by error class with role-by-state or surface, CONFIRMED or PLAUSIBLE, and the routed specialist",
+        "classes run and found clean",
+        "honesty clause bounding every absence claim to what was walked",
+        "doctrine-loop findings including any new drift class to add to the taxonomy"
+      ],
+      "execution": {
+        "tools": { "allow": ["Read", "Grep", "Glob", "Bash"], "deny": ["Edit", "Write", "NotebookEdit"] },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.7,
+        "criteria": [
+          { "id": "intent-fidelity", "weight": 30, "critical": true, "summary": "The built artifact matches the locked decisions, the approved mock, and the intended journey; nothing drifted from what was settled." },
+          { "id": "nothing-silently-dropped", "weight": 25, "critical": true, "summary": "Every locked or decided element maps to shipped, a plan-ID, or a cited deferral; no silent drop and no built-but-unreachable capability." },
+          { "id": "no-fabrication-no-dead-control", "weight": 25, "critical": true, "summary": "Every value traces to a real record or a marked-and-tracked placeholder; every control acts or is honestly disabled; no false claim or dead-end silence." },
+          { "id": "journey-completes", "weight": 20, "critical": false, "summary": "Every job completes end-to-end self-service including its reverse path; no dead-end, no-undo trap, or add-without-reduce asymmetry." }
+        ]
+      }
+    },
+    {
       "id": "test-runner",
       "purpose": "Run the serialized local CI-equivalent heavy gate as the sole local test-database user, preserve command-owned exit codes and nonzero test counts, and return a compact diagnosis without editing.",
       "trigger": ["after a finished dialer slice requires the heavy local proof ladder"],
