@@ -500,6 +500,43 @@
       "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json"
     },
     {
+      "id": "skill-assurance-pipeline",
+      "source": "skills/assurance-pipeline",
+      "captureFrom": "${HOME}/.codex/skills/assurance-pipeline",
+      "destinations": [
+        "${HOME}/.codex/skills/assurance-pipeline",
+        "${HOME}/.claude/skills/assurance-pipeline"
+      ],
+      "mode": "tree",
+      "allowInstalledRootLink": true,
+      "ownership": "canonical",
+      "allowedExtensions": [
+        "",
+        ".md",
+        ".txt",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".mjs",
+        ".js",
+        ".ts",
+        ".tsx",
+        ".py",
+        ".ps1",
+        ".sh",
+        ".css",
+        ".html",
+        ".csv",
+        ".toml",
+        ".lock",
+        ".template"
+      ],
+      "exclude": [],
+      "detectLocalOnly": true,
+      "allowRootLink": false,
+      "lock": "${HOME}/.nuvoralink-control-plane/installed-lock.json"
+    },
+    {
       "id": "skill-bootstrap-orchestrator",
       "source": "skills/bootstrap-orchestrator",
       "captureFrom": "${HOME}/.codex/skills/bootstrap-orchestrator",
