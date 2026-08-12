@@ -17,6 +17,7 @@ Its operating promise: **a clean machine clones it, registers its project locati
 1. **Git** installed and authenticated to GitHub for the `Nuvoralink` org (the repo is PRIVATE).
 2. **Node.js >= 22.5** — this is a hard floor, not the README's older "20+". The coordination runtime uses the built-in `node:sqlite` module (`DatabaseSync`), which landed in Node 22.5. Verify with `node --version`. If it is older, stop and tell the human to upgrade Node first; several gates will fail confusingly otherwise.
 3. **Claude Code** and (if the human uses it) **Codex CLI** installed and logged in. Auth/credentials are deliberately NOT in the repo.
+4. **Docker** — required only if this machine will RUN the assurance pipeline's security scans. Semgrep (the S2 static-evidence lens) runs via the `semgrep/semgrep` Docker image when no native `semgrep` binary is present (decision D-P1-7); this is machine-specific and deliberately NOT synced. After install, `node skills/assurance-pipeline/cli.mjs doctor` reports the Semgrep runtime — if it reports none, run `docker pull semgrep/semgrep` (or install a native `semgrep`). Skip this prerequisite on a machine that only edits the control plane and never runs scans.
 
 ## PROCEDURE
 

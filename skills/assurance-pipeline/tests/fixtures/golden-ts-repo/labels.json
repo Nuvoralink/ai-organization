@@ -1,0 +1,82 @@
+[
+  {
+    "file": "src/sql-injection.ts",
+    "startLine": 8,
+    "class": "sql-injection",
+    "expected": "vuln",
+    "cwe": "CWE-89",
+    "note": "Request input is concatenated directly into the SQL statement."
+  },
+  {
+    "file": "src/clean-parameterized-query.ts",
+    "startLine": 8,
+    "class": "sql-injection",
+    "expected": "clean",
+    "cwe": "CWE-89",
+    "note": "Only static SQL fragments are concatenated; request input is bound as a parameter."
+  },
+  {
+    "file": "src/missing-tenant-scope.ts",
+    "startLine": 9,
+    "class": "tenant-isolation",
+    "expected": "vuln",
+    "cwe": "CWE-862",
+    "note": "The row lookup omits the authenticated tenant predicate."
+  },
+  {
+    "file": "src/clean-tenant-scoped.ts",
+    "startLine": 9,
+    "class": "tenant-isolation",
+    "expected": "clean",
+    "cwe": "CWE-862",
+    "note": "The row lookup binds both the row id and authenticated tenant id."
+  },
+  {
+    "file": "src/hardcoded-secret.ts",
+    "startLine": 3,
+    "class": "hardcoded-secret",
+    "expected": "vuln",
+    "cwe": "CWE-798",
+    "note": "A fake credential value is assembled and stored directly in source code."
+  },
+  {
+    "file": "src/clean-env-credential.ts",
+    "startLine": 3,
+    "class": "hardcoded-secret",
+    "expected": "clean",
+    "cwe": "CWE-798",
+    "note": "The credential is read from the runtime environment instead of source code."
+  },
+  {
+    "file": "src/ssrf.ts",
+    "startLine": 5,
+    "class": "ssrf",
+    "expected": "vuln",
+    "cwe": "CWE-918",
+    "note": "A request-controlled URL reaches fetch without validation or an allowlist."
+  },
+  {
+    "file": "src/clean-trusted-fetch.ts",
+    "startLine": 5,
+    "class": "ssrf",
+    "expected": "clean",
+    "cwe": "CWE-918",
+    "note": "Fetch uses a fixed trusted test-domain URL and no request-controlled input."
+  },
+  {
+    "file": "src/authz-object-scope.ts",
+    "startLine": 8,
+    "class": "authz-object-scope",
+    "expected": "vuln",
+    "cwe": "CWE-639",
+    "note": "The record lookup trusts the client-supplied id without caller ownership scope."
+  },
+  {
+    "file": "src/clean-ownership-checked.ts",
+    "startLine": 8,
+    "class": "authz-object-scope",
+    "expected": "clean",
+    "cwe": "CWE-639",
+    "note": "The record lookup requires both the client-supplied id and authenticated owner id."
+  }
+]

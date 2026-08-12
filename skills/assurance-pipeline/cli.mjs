@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 /**
- * assurance CLI (Phase 0 spine component "f").
+ * assurance CLI (Phase 0 spine + Phase 1a deterministic static evidence).
  *
  *   assurance estimate --target <ref> [--via mock] [--config <file>]
  *       Preview scope + token/cost with ZERO backend calls.
  *   assurance scan --target <ref> [--run-id <id>] [--run-root <dir>] [--via mock] [--config <file>]
  *       Run the toy spine pipeline (produce -> verify -> emit), checkpointing + resuming by run id.
+ *   assurance scan --repo <path> [--run-id <id>] [--run-root <dir>] [--config <file>]
+ *       Run the deterministic S0 -> S2 -> S3 security pipeline with Semgrep OSS.
  *   assurance report --run-id <id> [--run-root <dir>]
  *       Re-emit SARIF + report from the persisted verify artifact (no re-run, no backend calls).
  *
@@ -27,11 +29,30 @@ import {
   TOY_PIPELINE_ID,
   TOY_DEFAULT_CONFIG,
 } from './pipelines/toy-pipeline.mjs';
+import {
+  DEFAULT_SECURITY_CONFIG,
+  runSecurityPipeline,
+  SECURITY_PIPELINE_ID,
+} from './pipelines/security-pipeline.mjs';
+import { runDoctor } from './lib/doctor.mjs';
 
 export function resolveConfig(config) {
   if (!config) return { ...TOY_DEFAULT_CONFIG };
   if (typeof config === 'object') return { ...TOY_DEFAULT_CONFIG, ...config };
   return { ...TOY_DEFAULT_CONFIG, ...readJsonFile(config) };
+}
+
+export function resolveSecurityConfig(config) {
+  const supplied = !config ? {} : typeof config === 'object' ? config : readJsonFile(config);
+  const rulesets = supplied.rulesets ?? DEFAULT_SECURITY_CONFIG.rulesets;
+  if (!Array.isArray(rulesets) || rulesets.some((ruleset) => typeof ruleset !== 'string' || ruleset.length === 0)) {
+    throw new Error('security config rulesets must be an array of non-empty strings');
+  }
+  return {
+    ...DEFAULT_SECURITY_CONFIG,
+    ...supplied,
+    rulesets: [...rulesets],
+  };
 }
 
 function makeStore({ runRoot, runId }) {
@@ -66,6 +87,30 @@ export async function runScan({ target, runRoot, runId, config, via = 'mock', ba
     executed: result.executed,
     skipped: result.skipped,
     output: result.output,
+  };
+}
+
+export async function runSecurityScan({ repo, runRoot, runId, config, adapters, now } = {}) {
+  if (!repo) throw new Error('security scan requires --repo');
+  const target = path.resolve(repo);
+  const effectiveConfig = resolveSecurityConfig(config);
+  const store = makeStore({ runRoot, runId: runId ?? `run-${crypto.randomBytes(8).toString('hex')}` });
+  const result = await runSecurityPipeline({
+    store,
+    target,
+    config: effectiveConfig,
+    adapters,
+    now,
+  });
+  return {
+    run_id: store.runId,
+    run_dir: store.runDir,
+    pipeline: SECURITY_PIPELINE_ID,
+    engine: 'oss',
+    executed: result.executed,
+    skipped: result.skipped,
+    output: result.output,
+    emit: result.emit,
   };
 }
 
@@ -120,6 +165,7 @@ export async function main(argv) {
   const { command, opts } = parsed;
   const common = {
     target: opts.target,
+    repo: opts.repo,
     runRoot: opts.run_root,
     runId: opts.run_id,
     via: opts.via,
@@ -131,6 +177,11 @@ export async function main(argv) {
       return 0;
     }
     if (command === 'scan') {
+      if (common.repo && common.target) throw new Error('scan accepts either --repo or --target, not both');
+      if (common.repo) {
+        console.log(JSON.stringify(await runSecurityScan(common), null, 2));
+        return 0;
+      }
       console.log(JSON.stringify(await runScan(common), null, 2));
       return 0;
     }
@@ -138,8 +189,13 @@ export async function main(argv) {
       console.log(JSON.stringify(runReport(common), null, 2));
       return 0;
     }
+    if (command === 'doctor') {
+      const result = runDoctor();
+      console.log(JSON.stringify(result, null, 2));
+      return result.ok ? 0 : 1;
+    }
     console.error(
-      'Usage: assurance <estimate|scan|report> --target <ref> [--run-id <id>] [--run-root <dir>] [--via mock|cli|codex-cli] [--config <file>]',
+      'Usage: assurance doctor | estimate|scan|report --target <ref> | scan --repo <path> [--run-id <id>] [--run-root <dir>] [--via mock|cli|codex-cli] [--config <file>]',
     );
     return 2;
   } catch (error) {

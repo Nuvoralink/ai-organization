@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nuvoralink.internal/schemas/assurance-static-finding.v1.schema.json",
+  "title": "Normalized static-analysis finding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "tool", "ruleId", "ruleName", "level", "message", "uri", "startLine"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "tool": { "type": "string", "minLength": 1 },
+    "ruleId": { "type": "string", "minLength": 1 },
+    "ruleName": { "type": "string", "minLength": 1 },
+    "ruleDescription": { "type": "string" },
+    "level": { "enum": ["none", "note", "warning", "error"] },
+    "message": { "type": "string" },
+    "uri": { "type": "string", "minLength": 1 },
+    "startLine": { "type": "integer" },
+    "startColumn": { "type": "integer" },
+    "endLine": { "type": "integer" },
+    "snippet": { "type": "string" },
+    "dataflow": { "type": "array" },
+    "confidence": { "type": "string" },
+    "cwe": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "engine": { "enum": ["oss"] }
+  }
+}
