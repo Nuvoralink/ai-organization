@@ -166,6 +166,14 @@ test('Proves: ORG-OVERLAY-002 and OVERLAY-HYBRID-COMPAT-001 shared chokepoint; T
     0,
     errors.join('\n'),
   );
+  // A real delivery surfaces the discovery-manifest regen advisory (the CoachAI gate:filemap +
+  // DCD-AUTHORITY-MANIFEST-1 class, 2026-08-12) so a delivered file cannot silently leave the
+  // target's REPO_FILEMAP/authority inventory stale until its own CI catches it. Killer mutation:
+  // drop the post-install-advisory emission, or move it inside the dry-run branch — this goes red.
+  assert.ok(
+    output.some((line) => line.startsWith('post-install-advisory\tcoachai')),
+    output.join('\n'),
+  );
   const canonicalRouter = fs.readFileSync(router, 'utf8');
   fs.writeFileSync(router, `${canonicalRouter}\nreviewed local divergence\n`);
   output.length = 0;

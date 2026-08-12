@@ -260,5 +260,5 @@ test('Proves: every canonical review and verify role across the universal and bo
       assert.equal(scoreVerdict(role.verdict_rubric, skipCriticals).verdict, 'UNVERIFIABLE', `${label}/${role.id}`);
     }
   }
-  assert.equal(lensCount, 17, 'expected 9 universal plus 4 dialer plus 4 CoachAI verdict-issuing lenses');
+  assert.equal(lensCount, 18, 'expected 9 universal plus 5 dialer plus 4 CoachAI verdict-issuing lenses');
 });
