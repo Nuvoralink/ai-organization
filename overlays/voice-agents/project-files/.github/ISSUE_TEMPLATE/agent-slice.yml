@@ -1,0 +1,51 @@
+name: Agent slice
+description: Six-part self-contained brief for one isolated agent/worktree slice
+title: '[agent] '
+body:
+  - type: markdown
+    attributes:
+      value: 'Every field is required and substantive. Quote settled MUST/MUST-NOT decisions inline.'
+  - type: dropdown
+    id: completion_tier
+    attributes:
+      label: Completion tier
+      options:
+        - read-only
+        - implementation
+    validations: { required: true }
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Product goal, settled decisions quoted inline, and crown-jewel invariants.
+    validations: { required: true }
+  - type: textarea
+    id: exact_paths
+    attributes:
+      label: Exact paths
+      description: Read, edit, read-but-never-modify, and output paths.
+    validations: { required: true }
+  - type: textarea
+    id: numbered_procedure
+    attributes:
+      label: Numbered procedure
+      description: Start at 1; include command-owned exit-code capture.
+    validations: { required: true }
+  - type: textarea
+    id: output_contract
+    attributes:
+      label: Output contract
+      description: Required report sections, proof lines, Doctrine-loop findings, and Honesty clause.
+    validations: { required: true }
+  - type: textarea
+    id: boundaries_escalation
+    attributes:
+      label: Boundaries and escalation
+      description: Scope/permission boundaries and the exact STOP/escalation path.
+    validations: { required: true }
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance criteria
+      description: Self-verifiable conditions, named gates, artifacts, and killer mutation.
+    validations: { required: true }

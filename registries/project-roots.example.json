@@ -10,5 +10,6 @@
   "DEPENDENCY:hormozi": "X:/example/dependencies/Skills/Hormozi",
   "WORKSPACE:dev": "X:/example/projects",
   "PROJECT:control-plane": "X:/example/projects/AI Organization",
-  "PROJECT:nuvora-link": "X:/example/projects/Nuvora Link"
+  "PROJECT:nuvora-link": "X:/example/projects/Nuvora Link",
+  "PROJECT:voice-agents": "X:/example/projects/Voice Agents"
 }

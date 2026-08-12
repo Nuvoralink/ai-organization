@@ -1,0 +1,8 @@
+{
+  "project": "voice-agent-platform",
+  "orchestrator": "single-pm",
+  "premiseChallenger": "required-for-material-work",
+  "productionEffectFromMainMerge": "unsettled-no-deployment-in-phase-1",
+  "autoMerge": false,
+  "branchProtection": "deferred"
+}

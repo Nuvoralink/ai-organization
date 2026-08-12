@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "dispatch_authority": "orchestrator",
+  "global_roles": [
+    {
+      "name": "orchestrator",
+      "kind": "orchestrator",
+      "dispatch": true,
+      "mutates_source": false
+    },
+    {
+      "name": "premise-and-architecture-challenger",
+      "file": ".claude/agents/premise-and-architecture-challenger.md",
+      "mode": "read-only",
+      "dispatch": false
+    },
+    {
+      "name": "codex-backend-implementer",
+      "kind": "global",
+      "dispatch": false,
+      "mutates_source": true
+    },
+    {
+      "name": "claude-frontend-implementer",
+      "kind": "global",
+      "dispatch": false,
+      "mutates_source": true
+    },
+    {
+      "name": "sprint-kickoff-auditor",
+      "file": ".claude/agents/sprint-kickoff-auditor.md",
+      "mode": "read-only",
+      "dispatch": false
+    },
+    {
+      "name": "adversarial-reviewer",
+      "file": ".claude/agents/adversarial-reviewer.md",
+      "mode": "read-only",
+      "dispatch": false
+    },
+    {
+      "name": "functionality-parity-auditor",
+      "file": ".claude/agents/functionality-parity-auditor.md",
+      "mode": "read-only",
+      "dispatch": false
+    },
+    {
+      "name": "ui-verifier",
+      "kind": "inherited-global-agent",
+      "dispatch": false,
+      "mutates_source": false
+    },
+    {
+      "name": "security-auditor",
+      "file": ".claude/agents/security-auditor.md",
+      "mode": "read-only",
+      "dispatch": false
+    },
+    {
+      "name": "performance-auditor",
+      "file": ".claude/agents/performance-auditor.md",
+      "mode": "read-only",
+      "dispatch": false
+    },
+    {
+      "name": "user-journey-auditor",
+      "file": ".claude/agents/user-journey-auditor.md",
+      "mode": "read-only",
+      "dispatch": false
+    },
+    {
+      "name": "release-verifier",
+      "file": ".claude/agents/release-verifier.md",
+      "mode": "read-only",
+      "dispatch": false
+    }
+  ],
+  "project_roles": [
+    {
+      "name": "phase1-backend-implementer",
+      "file": ".claude/agents/phase1-backend-implementer.md",
+      "mode": "implementation",
+      "dispatch": false
+    },
+    {
+      "name": "realtime-interaction-playout-auditor",
+      "file": ".claude/agents/realtime-interaction-playout-auditor.md",
+      "mode": "read-only",
+      "dispatch": false
+    },
+    {
+      "name": "grounding-decision-quality-auditor",
+      "file": ".claude/agents/grounding-decision-quality-auditor.md",
+      "mode": "read-only",
+      "dispatch": false
+    },
+    {
+      "name": "ail-booker-parity-auditor",
+      "file": ".claude/agents/ail-booker-parity-auditor.md",
+      "mode": "read-only",
+      "dispatch": false
+    },
+    {
+      "name": "telephony-compliance-integration-auditor",
+      "file": ".claude/agents/telephony-compliance-integration-auditor.md",
+      "mode": "read-only",
+      "dispatch": false
+    },
+    {
+      "name": "calendar-browser-effect-integrity-auditor",
+      "file": ".claude/agents/calendar-browser-effect-integrity-auditor.md",
+      "mode": "read-only",
+      "dispatch": false
+    },
+    {
+      "name": "privacy-security-context-readiness-auditor",
+      "file": ".claude/agents/privacy-security-context-readiness-auditor.md",
+      "mode": "read-only",
+      "dispatch": false
+    },
+    {
+      "name": "provider-portability-metering-auditor",
+      "file": ".claude/agents/provider-portability-metering-auditor.md",
+      "mode": "read-only",
+      "dispatch": false
+    },
+    {
+      "name": "source-to-action-outcome-parity-auditor",
+      "file": ".claude/agents/source-to-action-outcome-parity-auditor.md",
+      "mode": "read-only",
+      "dispatch": false
+    },
+    {
+      "name": "doctrine-drift-auditor",
+      "file": ".claude/agents/doctrine-drift-auditor.md",
+      "mode": "read-only",
+      "dispatch": false
+    },
+    {
+      "name": "test-runner",
+      "file": ".claude/agents/test-runner.md",
+      "mode": "read-only",
+      "dispatch": false
+    }
+  ]
+}

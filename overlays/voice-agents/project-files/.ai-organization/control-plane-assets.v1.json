@@ -1,0 +1,192 @@
+{
+  "version": 1,
+  "canonical_commit": "2838251245052dc445123fd24fc3a06c1562b6d3",
+  "source_checkout_role": "bootstrap-provenance-only-not-a-runtime-dependency",
+  "assets": [
+    {
+      "source": "policies/action-authority.v1.json",
+      "target": ".ai-organization/policies/action-authority.v1.json",
+      "sha256": "12c4b0ed89d5fad68c727d84c6aeb1cd41dc21ecddaecf6d83b2c4d7afd4c580"
+    },
+    {
+      "source": "policies/risk-controls.v1.json",
+      "target": ".ai-organization/policies/risk-controls.v1.json",
+      "sha256": "a3c50ca96df3368ad28ccc60826e4151067c38e74e333d7407906dafd5fc852b"
+    },
+    {
+      "source": "registries/agent-roles.v1.json",
+      "target": ".ai-organization/registries/agent-roles.v1.json",
+      "sha256": "29dc87521e4e776bfb3852301f0c37446183cbfaccd74deebe8a0a3772dbe616"
+    },
+    {
+      "source": "core/authority/assess-action.mjs",
+      "target": ".ai-organization/runtime/core/authority/assess-action.mjs",
+      "sha256": "c80793aa9f71dfb771930b22eac386333973beb1c184a3595bf004e6023d8747"
+    },
+    {
+      "source": "core/coordination/candidate.mjs",
+      "target": ".ai-organization/runtime/core/coordination/candidate.mjs",
+      "sha256": "dc576bbc92c42463c65041ddfd0cc35b48758e038b84b9969c7649e864cc3fb9"
+    },
+    {
+      "source": "core/coordination/candidate.test.mjs",
+      "target": ".ai-organization/runtime/core/coordination/candidate.test.mjs",
+      "sha256": "4e8330cff4c2aa44e0e323d7c6bfc2ce46f28a6dc08f167e86b93a8bc0b13164"
+    },
+    {
+      "source": "core/coordination/coordination.test.mjs",
+      "target": ".ai-organization/runtime/core/coordination/coordination.test.mjs",
+      "sha256": "2373c8002240b6501720b2c582abf99e43cde937eeb5a068e550fc768838f2eb"
+    },
+    {
+      "source": "core/coordination/coverage.mjs",
+      "target": ".ai-organization/runtime/core/coordination/coverage.mjs",
+      "sha256": "7f7b38f923becfcce3c40ebe30d9bdcd9df82da4adb0df69ef9429fcdec2ba16"
+    },
+    {
+      "source": "core/coordination/dependencyGraph.mjs",
+      "target": ".ai-organization/runtime/core/coordination/dependencyGraph.mjs",
+      "sha256": "050a8c91b7c6808de9a13f5adf0d719eabe541cf07fade9b3a5666ffda8008e4"
+    },
+    {
+      "source": "core/coordination/freeze.mjs",
+      "target": ".ai-organization/runtime/core/coordination/freeze.mjs",
+      "sha256": "ae3add33cf0bfaf51bb81257c53da275648f3bfc6d3fdd5beca44aa212e94255"
+    },
+    {
+      "source": "core/coordination/freeze.test.mjs",
+      "target": ".ai-organization/runtime/core/coordination/freeze.test.mjs",
+      "sha256": "fbd3f97c416407f26b4e6796f1ddcfe4057eaa676e59ddc2eb23d4fc10d43333"
+    },
+    {
+      "source": "core/coordination/ledger.mjs",
+      "target": ".ai-organization/runtime/core/coordination/ledger.mjs",
+      "sha256": "121ac385dbd0ebf99f94d61cfe3143c19d30d9a4c39e81da10e2c263b1ee435e"
+    },
+    {
+      "source": "core/coordination/mode.mjs",
+      "target": ".ai-organization/runtime/core/coordination/mode.mjs",
+      "sha256": "84621908dd229572f62cb6701fea06fd3ec04981fa392da80112dbf6ce0edbe3"
+    },
+    {
+      "source": "core/coordination/register.mjs",
+      "target": ".ai-organization/runtime/core/coordination/register.mjs",
+      "sha256": "8b1dec0a351aff642be35c1b6f4247af1fdf9123771ebf7c70752d9376036558"
+    },
+    {
+      "source": "core/coordination/resourceConfig.mjs",
+      "target": ".ai-organization/runtime/core/coordination/resourceConfig.mjs",
+      "sha256": "bff1dfa549454d3b14b98923f5b49b9dda9fd101178163d9045026cdf8b1c88b"
+    },
+    {
+      "source": "core/coordination/resourceKey.mjs",
+      "target": ".ai-organization/runtime/core/coordination/resourceKey.mjs",
+      "sha256": "985e988bb58d1550b464ae8619f1dedc33c90a737dd7f105bc6be1f0bfdbd624"
+    },
+    {
+      "source": "core/lifecycle/codex-task-status.mjs",
+      "target": ".ai-organization/runtime/core/lifecycle/codex-task-status.mjs",
+      "sha256": "8bf6d668bbc3e3b636f0d4c3a435c590d879bcf8b5ce3c741d9d5afc4b8d1c0a"
+    },
+    {
+      "source": "core/lifecycle/evidence-runtime.mjs",
+      "target": ".ai-organization/runtime/core/lifecycle/evidence-runtime.mjs",
+      "sha256": "e76271efa52397aae38ef040e5a0f0fdd2f03201812ef70b9076a32385ec62ed"
+    },
+    {
+      "source": "core/lifecycle/lifecycle-controller.mjs",
+      "target": ".ai-organization/runtime/core/lifecycle/lifecycle-controller.mjs",
+      "sha256": "9a45752533e4a565b41bf6d166013f6a27e4a1d6982ad6d7b1fc7b85af816345"
+    },
+    {
+      "source": "core/lifecycle/README.md",
+      "target": ".ai-organization/runtime/core/lifecycle/README.md",
+      "sha256": "a93506f699625e2521075bb102327341a558b081c2464edaca00530e29c9df33"
+    },
+    {
+      "source": "core/lifecycle/run-evidence-integrity-mutation.mjs",
+      "target": ".ai-organization/runtime/core/lifecycle/run-evidence-integrity-mutation.mjs",
+      "sha256": "c21bc62b78a981eca9e67806b321240e4fcf2c996bb960897f51bb238491b4fc"
+    },
+    {
+      "source": "core/lifecycle/task-assurance.test.mjs",
+      "target": ".ai-organization/runtime/core/lifecycle/task-assurance.test.mjs",
+      "sha256": "848e9a868bc5262df2a6200616657b717cfc24d365fb5aeae967306c10108720"
+    },
+    {
+      "source": "core/lifecycle/task-governor.mjs",
+      "target": ".ai-organization/runtime/core/lifecycle/task-governor.mjs",
+      "sha256": "cbc51f25734f5c932e5844021d99ac1b686e85a98b4699c75caa57f9c8cce6de"
+    },
+    {
+      "source": "core/roles/agent-role-registry.mjs",
+      "target": ".ai-organization/runtime/core/roles/agent-role-registry.mjs",
+      "sha256": "0901e6cd7c4d79a2be1f1ff575e8284c69e8067aeefd976d62ea4fcc1b6b136f"
+    },
+    {
+      "source": "core/roles/verdict-rubric.mjs",
+      "target": ".ai-organization/runtime/core/roles/verdict-rubric.mjs",
+      "sha256": "82ba40c8773b325f2f626906604d953cca6a7b53679c802f32a29c2d3d31e8be"
+    },
+    {
+      "source": "core/schema/task-assurance.mjs",
+      "target": ".ai-organization/runtime/core/schema/task-assurance.mjs",
+      "sha256": "a63568c084cb14f084c4ab74a048f2b0cff0d5fae350a479863897854ee4c734"
+    },
+    {
+      "source": "core/schema/validate-json-schema.mjs",
+      "target": ".ai-organization/runtime/core/schema/validate-json-schema.mjs",
+      "sha256": "70e98d860004091737bb589c009547fb4f5afed71d8793127bc585e6d2861a46"
+    },
+    {
+      "source": "schemas/action-authority.v1.schema.json",
+      "target": ".ai-organization/schemas/action-authority.v1.schema.json",
+      "sha256": "e281de325ece7c119e497d28f2dd8014f42eab30e45bfcbaa885594e2f543ea9"
+    },
+    {
+      "source": "schemas/agent-role-project-extension.v1.schema.json",
+      "target": ".ai-organization/schemas/agent-role-project-extension.v1.schema.json",
+      "sha256": "3d8a8f2d1bf8959694a677473b9dd91904f2459214b63f06ec0be3cc97113d18"
+    },
+    {
+      "source": "schemas/agent-role-registry.v1.schema.json",
+      "target": ".ai-organization/schemas/agent-role-registry.v1.schema.json",
+      "sha256": "9610a4f8f5c9a4e14629375891469d78deba8b3bd7b768994e2868294f0e26e2"
+    },
+    {
+      "source": "schemas/control-plane-manifest.v1.schema.json",
+      "target": ".ai-organization/schemas/control-plane-manifest.v1.schema.json",
+      "sha256": "503cad0aa4e60927c4e39ecb3d2532f33f569118871f47b3d811c11f129fd8d1"
+    },
+    {
+      "source": "schemas/project-overlay.v1.schema.json",
+      "target": ".ai-organization/schemas/project-overlay.v1.schema.json",
+      "sha256": "315075620866e8645db914855c2b257b9f0acea065783decbef91dad10d32573"
+    },
+    {
+      "source": "schemas/task-assurance.v2.schema.json",
+      "target": ".ai-organization/schemas/task-assurance.v2.schema.json",
+      "sha256": "df1b4b7578c9d4cf909bdbbcec41b81196dfbaad44f9fa42d73d3b8ff618312e"
+    },
+    {
+      "source": "schemas/task-assurance.v3.schema.json",
+      "target": ".ai-organization/schemas/task-assurance.v3.schema.json",
+      "sha256": "7c1848e0628dca0d3d644a147c0d7b398d89d52aa8423a93cce4d318cfd64941"
+    },
+    {
+      "source": "schemas/task-evidence.v2.schema.json",
+      "target": ".ai-organization/schemas/task-evidence.v2.schema.json",
+      "sha256": "51c1e08d38a5ce040a81bf088ff40a2c27bfa39c3b5b62add3d415b43b37f002"
+    },
+    {
+      "source": "schemas/task-evidence.v3.schema.json",
+      "target": ".ai-organization/schemas/task-evidence.v3.schema.json",
+      "sha256": "4843aa1c3ffc7de07947a79d0f738dc6e3b1b86d372f55137dd1c8189bcf171f"
+    },
+    {
+      "source": "scripts/check-fleet-parity.mjs",
+      "target": "scripts/check-fleet-parity.mjs",
+      "sha256": "1b1518407e6d21be9840b91cd1611e677e7b1ccc866de9cca91dfd13889f90e2"
+    }
+  ]
+}

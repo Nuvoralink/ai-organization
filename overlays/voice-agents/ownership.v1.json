@@ -1,0 +1,342 @@
+{
+  "version": "1.0.0",
+  "project": "voice-agents",
+  "assets": [
+    {
+      "id": "voice-agents-organization-metadata",
+      "mode": "generated",
+      "destination": ".ai-organization/control-plane"
+    },
+    {
+      "id": "voice-agents-action-authority",
+      "mode": "generated",
+      "destination": ".ai-organization/policies/action-authority.v1.json"
+    },
+    {
+      "id": "voice-agents-risk-controls",
+      "mode": "generated",
+      "destination": ".ai-organization/policies/risk-controls.v1.json"
+    },
+    {
+      "id": "voice-agents-agent-role-registry",
+      "mode": "generated",
+      "destination": ".ai-organization/registries/agent-roles.v1.json"
+    },
+    {
+      "id": "voice-agents-agent-role-extension-registry",
+      "mode": "generated",
+      "destination": ".ai-organization/registries/agent-roles.project.v1.json"
+    },
+    {
+      "id": "voice-agents-assurance-schemas",
+      "mode": "generated",
+      "destination": ".ai-organization/schemas"
+    },
+    {
+      "id": "voice-agents-shared-runtime",
+      "mode": "generated",
+      "destination": ".ai-organization/runtime/core"
+    },
+    {
+      "id": "voice-agents-fleet-parity-gate",
+      "mode": "generated",
+      "destination": "scripts/check-fleet-parity.mjs"
+    },
+    {
+      "id": "voice-agents-automation-specs",
+      "mode": "generated",
+      "destination": ".ai-organization/automations"
+    },
+    {
+      "id": "voice-agents-project-readme",
+      "mode": "generated",
+      "destination": ".ai-organization/README.md",
+      "sourcePath": ".ai-organization/README.md",
+      "installMode": "file",
+      "allowedExtensions": [".md"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-context-budget",
+      "mode": "generated",
+      "destination": ".ai-organization/context-budget.json",
+      "sourcePath": ".ai-organization/context-budget.json",
+      "installMode": "file",
+      "allowedExtensions": [".json"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-lifecycle-policy",
+      "mode": "generated",
+      "destination": ".ai-organization/lifecycle-policy.json",
+      "sourcePath": ".ai-organization/lifecycle-policy.json",
+      "installMode": "file",
+      "allowedExtensions": [".json"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-proof-profiles",
+      "mode": "generated",
+      "destination": ".ai-organization/proof-profiles.json",
+      "sourcePath": ".ai-organization/proof-profiles.json",
+      "installMode": "file",
+      "allowedExtensions": [".json"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-roles",
+      "mode": "generated",
+      "destination": ".ai-organization/roles.json",
+      "sourcePath": ".ai-organization/roles.json",
+      "installMode": "file",
+      "allowedExtensions": [".json"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-control-plane-assets",
+      "mode": "generated",
+      "destination": ".ai-organization/control-plane-assets.v1.json",
+      "sourcePath": ".ai-organization/control-plane-assets.v1.json",
+      "installMode": "file",
+      "allowedExtensions": [".json"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-agents",
+      "mode": "generated",
+      "destination": ".claude/agents",
+      "sourcePath": ".claude/agents",
+      "installMode": "tree",
+      "allowedExtensions": [".md"],
+      "detectLocalOnly": true
+    },
+    {
+      "id": "voice-agents-project-rules",
+      "mode": "generated",
+      "destination": ".claude/rules",
+      "sourcePath": ".claude/rules",
+      "installMode": "tree",
+      "allowedExtensions": [".md"],
+      "detectLocalOnly": true
+    },
+    {
+      "id": "voice-agents-project-settings",
+      "mode": "generated",
+      "destination": ".claude/settings.json",
+      "sourcePath": ".claude/settings.json",
+      "installMode": "file",
+      "allowedExtensions": [".json"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-loop",
+      "mode": "generated",
+      "destination": ".claude/loop.md",
+      "sourcePath": ".claude/loop.md",
+      "installMode": "file",
+      "allowedExtensions": [".md"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-workflow-drift-audit",
+      "mode": "generated",
+      "destination": ".claude/workflows/orchestration-drift-audit.js",
+      "sourcePath": ".claude/workflows/orchestration-drift-audit.js",
+      "installMode": "file",
+      "allowedExtensions": [".js"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-agents-router",
+      "mode": "generated",
+      "destination": "AGENTS.md",
+      "sourcePath": "AGENTS.md",
+      "installMode": "file",
+      "allowedExtensions": [".md"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-claude-router",
+      "mode": "generated",
+      "destination": "CLAUDE.md",
+      "sourcePath": "CLAUDE.md",
+      "installMode": "file",
+      "allowedExtensions": [".md"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-issue-template",
+      "mode": "generated",
+      "destination": ".github/ISSUE_TEMPLATE/agent-slice.yml",
+      "sourcePath": ".github/ISSUE_TEMPLATE/agent-slice.yml",
+      "installMode": "file",
+      "allowedExtensions": [".yml"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-pr-template",
+      "mode": "generated",
+      "destination": ".github/pull_request_template.md",
+      "sourcePath": ".github/pull_request_template.md",
+      "installMode": "file",
+      "allowedExtensions": [".md"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-check-agent-context",
+      "mode": "generated",
+      "destination": "scripts/check-agent-context.mjs",
+      "sourcePath": "scripts/check-agent-context.mjs",
+      "installMode": "file",
+      "allowedExtensions": [".mjs"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-check-agent-control",
+      "mode": "generated",
+      "destination": "scripts/check-agent-control-plane.mjs",
+      "sourcePath": "scripts/check-agent-control-plane.mjs",
+      "installMode": "file",
+      "allowedExtensions": [".mjs"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-check-control-plane-parity",
+      "mode": "generated",
+      "destination": "scripts/check-control-plane-parity.mjs",
+      "sourcePath": "scripts/check-control-plane-parity.mjs",
+      "installMode": "file",
+      "allowedExtensions": [".mjs"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-check-rules",
+      "mode": "generated",
+      "destination": "scripts/check-rules-wiring.mjs",
+      "sourcePath": "scripts/check-rules-wiring.mjs",
+      "installMode": "file",
+      "allowedExtensions": [".mjs"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-check-test-intent",
+      "mode": "generated",
+      "destination": "scripts/check-test-intent.mjs",
+      "sourcePath": "scripts/check-test-intent.mjs",
+      "installMode": "file",
+      "allowedExtensions": [".mjs"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-generate-agent-projections",
+      "mode": "generated",
+      "destination": "scripts/generate-agent-projections.mjs",
+      "sourcePath": "scripts/generate-agent-projections.mjs",
+      "installMode": "file",
+      "allowedExtensions": [".mjs"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-lifecycle-hook",
+      "mode": "generated",
+      "destination": "scripts/claude-lifecycle-hook.mjs",
+      "sourcePath": "scripts/claude-lifecycle-hook.mjs",
+      "installMode": "file",
+      "allowedExtensions": [".mjs"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-posttooluse-gate",
+      "mode": "generated",
+      "destination": "scripts/claude-posttooluse-gate.mjs",
+      "sourcePath": "scripts/claude-posttooluse-gate.mjs",
+      "installMode": "file",
+      "allowedExtensions": [".mjs"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-bounded-runner",
+      "mode": "generated",
+      "destination": "scripts/run-bounded-agent.mjs",
+      "sourcePath": "scripts/run-bounded-agent.mjs",
+      "installMode": "file",
+      "allowedExtensions": [".mjs"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-bounded-process-lib",
+      "mode": "generated",
+      "destination": "scripts/lib/boundedProcess.mjs",
+      "sourcePath": "scripts/lib/boundedProcess.mjs",
+      "installMode": "file",
+      "allowedExtensions": [".mjs"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-dispatch-boundary-lib",
+      "mode": "generated",
+      "destination": "scripts/lib/dispatchBoundary.mjs",
+      "sourcePath": "scripts/lib/dispatchBoundary.mjs",
+      "installMode": "file",
+      "allowedExtensions": [".mjs"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-test-file-match-lib",
+      "mode": "generated",
+      "destination": "scripts/lib/test-file-match.mjs",
+      "sourcePath": "scripts/lib/test-file-match.mjs",
+      "installMode": "file",
+      "allowedExtensions": [".mjs"],
+      "detectLocalOnly": false
+    },
+    {
+      "id": "voice-agents-project-package-wiring",
+      "mode": "project-owned-reference",
+      "destination": "package.json#scripts",
+      "managedSections": [
+        "scripts.agent:run",
+        "scripts.gate:organization",
+        "scripts.gate:agent-projections",
+        "scripts.gate:fleet-parity",
+        "scripts.gate:agent-context",
+        "scripts.gate:rules-wiring",
+        "scripts.gate:agent-control-plane",
+        "scripts.gate:control-plane-parity",
+        "scripts.gate:test-intent",
+        "scripts.gates:all",
+        "scripts.verify"
+      ]
+    },
+    {
+      "id": "voice-agents-product-authority",
+      "mode": "project-owned-reference",
+      "destination": "platform-design|docs/requirements.md|docs/decision-log.md|docs/adr"
+    },
+    {
+      "id": "voice-agents-effect-release-authority",
+      "mode": "project-owned-reference",
+      "destination": "registries/effect-release-bindings.v1.json"
+    },
+    {
+      "id": "voice-agents-bootstrap-provenance",
+      "mode": "project-owned-reference",
+      "destination": ".ai-organization/ownership.json"
+    },
+    {
+      "id": "voice-agents-application-source",
+      "mode": "project-owned-reference",
+      "destination": "packages"
+    },
+    {
+      "id": "voice-agents-github-runtime",
+      "mode": "external-state",
+      "destination": "GitHub settings and formal review objects"
+    },
+    {
+      "id": "voice-agents-local-runtime",
+      "mode": "retired",
+      "destination": "logs|telemetry|cache|worktrees|build output"
+    }
+  ]
+}

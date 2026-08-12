@@ -264,7 +264,7 @@ test('Proves: ORG-OVERLAY-003; Test type: ownership counterexample; Surface: pro
 
 test('Proves: ORG-OVERLAY-004; Test type: registry mutation; Surface: overlay ownership; Authority: ownership.v1.json; Killer mutation: omit an installable mapping owner; Gated command: npm test', () => {
   const discovered = discoverProjectOverlays(repoRoot);
-  assert.deepEqual(discovered, ['auxara-dialer', 'coachai', 'nuvora-link']);
+  assert.deepEqual(discovered, ['auxara-dialer', 'coachai', 'nuvora-link', 'voice-agents']);
   for (const project of discovered) {
     assert.deepEqual(
       validateOverlay(project).map((failure) => failure.message ?? failure),

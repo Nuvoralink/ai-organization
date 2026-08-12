@@ -3959,6 +3959,234 @@
       "class": "project-orchestration-overlay"
     },
     {
+      "path": "overlays/voice-agents/automations/project-automations.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/control-plane/action-authority.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/control-plane/project-profile.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/control-plane/registries/agent-roles.project.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/exclusions.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/manifest.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/migrations/import-baseline.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/ownership.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/profile.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.ai-organization/README.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.ai-organization/context-budget.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.ai-organization/control-plane-assets.v1.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.ai-organization/lifecycle-policy.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.ai-organization/proof-profiles.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.ai-organization/roles.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/agents/adversarial-reviewer.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/agents/ail-booker-parity-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/agents/calendar-browser-effect-integrity-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/agents/doctrine-drift-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/agents/functionality-parity-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/agents/grounding-decision-quality-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/agents/performance-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/agents/phase1-backend-implementer.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/agents/premise-and-architecture-challenger.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/agents/privacy-security-context-readiness-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/agents/provider-portability-metering-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/agents/realtime-interaction-playout-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/agents/release-verifier.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/agents/security-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/agents/source-to-action-outcome-parity-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/agents/sprint-kickoff-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/agents/telephony-compliance-integration-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/agents/test-runner.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/agents/user-journey-auditor.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/loop.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/rules/architecture-authority.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/rules/security-data-authority.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/rules/test-intent.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/rules/voice-domain-authority.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/settings.json",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.claude/workflows/orchestration-drift-audit.js",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.github/ISSUE_TEMPLATE/agent-slice.yml",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/.github/pull_request_template.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/AGENTS.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/CLAUDE.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/scripts/check-agent-context.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/scripts/check-agent-control-plane.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/scripts/check-control-plane-parity.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/scripts/check-rules-wiring.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/scripts/check-test-intent.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/scripts/claude-lifecycle-hook.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/scripts/claude-posttooluse-gate.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/scripts/generate-agent-projections.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/scripts/lib/boundedProcess.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/scripts/lib/dispatchBoundary.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/scripts/lib/test-file-match.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
+      "path": "overlays/voice-agents/project-files/scripts/run-bounded-agent.mjs",
+      "class": "project-orchestration-overlay"
+    },
+    {
       "path": "package.json",
       "class": "repository-metadata"
     },

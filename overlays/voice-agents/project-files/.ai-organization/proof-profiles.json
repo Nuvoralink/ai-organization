@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "integration_branch": "main",
+  "lifecycle_hook_timeout_ms": 900000,
+  "lifecycle_timeout_safety_margin_ms": 60000,
+  "lifecycle_roles_by_completion_mode": {
+    "read-only": ["adversarial-reviewer", "test-runner"],
+    "implementation": ["phase1-backend-implementer"]
+  },
+  "lifecycle_supported_risk_classes": ["control_plane"],
+  "risk_path_rules": [{ "risk_class": "control_plane", "profile_id": "organization-control" }],
+  "profiles": [
+    {
+      "id": "organization-control",
+      "lane": "static",
+      "risk": "control_plane",
+      "include": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        ".gitignore",
+        ".ai-organization/**",
+        ".claude/agents/**",
+        ".claude/rules/**",
+        ".claude/settings.json",
+        ".claude/workflows/**",
+        ".github/**",
+        "docs/agent-prompts/**",
+        "scripts/check-agent-*.mjs",
+        "scripts/check-fleet-parity.mjs",
+        "scripts/check-rules-wiring.mjs",
+        "scripts/check-test-intent.mjs",
+        "scripts/claude-lifecycle-hook.mjs",
+        "scripts/claude-posttooluse-gate.mjs",
+        "scripts/generate-agent-projections.mjs",
+        "scripts/lib/test-file-match.mjs",
+        "scripts/tests/**",
+        "package.json"
+      ],
+      "commands": ["npm run gate:organization", "npm run test:organization-control-plane"],
+      "assurance": {
+        "version": 1,
+        "classification": "local_non_mutating",
+        "safe_local_only": true,
+        "capabilities": ["control_plane_completion"],
+        "env_allowlist": [],
+        "commands": [
+          {
+            "id": "organization-gates",
+            "argv": ["npm", "run", "gate:organization"],
+            "timeout_ms": 240000,
+            "parser": {
+              "kind": "patterns",
+              "minimum_output_bytes": 1,
+              "minimum_executed": 1,
+              "required_patterns": [
+                "agent-projections: PASS",
+                "fleet-parity: PASS",
+                "agent-control-plane:"
+              ]
+            }
+          },
+          {
+            "id": "organization-regressions",
+            "argv": ["npm", "run", "test:organization-control-plane"],
+            "timeout_ms": 120000,
+            "parser": {
+              "kind": "tap",
+              "minimum_output_bytes": 1,
+              "minimum_executed": 1,
+              "forbid_skips": true
+            }
+          }
+        ],
+        "mutation": {
+          "case_id": "forged-runner-attestation-rejected",
+          "argv": ["npm", "run", "test:evidence-integrity-mutation"],
+          "timeout_ms": 60000,
+          "receipt_marker": "MUTATION_RECEIPT_JSON:",
+          "expected_diagnostic": "forged runner attestation was accepted"
+        }
+      }
+    },
+    {
+      "id": "internal-read-only",
+      "lane": "internal",
+      "risk": "read_only_integrity",
+      "include": [],
+      "commands": [],
+      "assurance": {
+        "version": 1,
+        "classification": "internal_read_only",
+        "safe_local_only": true,
+        "capabilities": ["read_only_integrity"],
+        "commands": [
+          {
+            "id": "repository-binding",
+            "argv": ["internal", "repository-binding"],
+            "timeout_ms": 1000,
+            "parser": {
+              "kind": "patterns",
+              "minimum_output_bytes": 1,
+              "minimum_executed": 1,
+              "required_patterns": ["READ_ONLY_REPOSITORY_BINDING:"]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "phase1-documentation",
+      "lane": "static",
+      "risk": "documentation_contract",
+      "include": ["docs/**", "platform-design/**", "*.md"],
+      "commands": ["npm run gate:rules-wiring", "npm run gate:test-intent"]
+    },
+    {
+      "id": "phase1-code",
+      "lane": "local",
+      "risk": "phase1_runtime_or_persistence",
+      "include": [
+        "packages/**",
+        "tests/**",
+        "registries/effect-release-bindings.v1.json",
+        "scripts/check-effect-release-bindings.ts",
+        "scripts/run-postgres-integration.mjs"
+      ],
+      "commands": ["npm run verify"]
+    }
+  ],
+  "unknown_path_policy": "fail"
+}

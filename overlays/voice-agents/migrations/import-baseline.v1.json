@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "status": "in_progress",
+  "knownGaps": [
+    "The installed shared runtime core tree predates the current canonical control plane (bootstrapped at canonical commit 2838251) and is missing later canonical modules.",
+    "The bounded runner is present but not yet wired to a scripts.agent:run entry in the product package.json.",
+    "The project automation targetRoot is stored as a machine-absolute path in the repo and is tokenized on capture for portability."
+  ],
+  "mustNotCanonizeAsCorrect": true
+}

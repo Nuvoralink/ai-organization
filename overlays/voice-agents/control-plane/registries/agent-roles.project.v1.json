@@ -1,0 +1,574 @@
+{
+  "$schema": "https://nuvoralink.internal/schemas/agent-role-project-extension.v1.schema.json",
+  "version": "1.1.0",
+  "agent_file_exceptions": [
+    {
+      "role_id": "ui-verifier",
+      "source": "inherited_global_agent",
+      "reason": "Phase 1 has no frontend or visible surface; the global UI verifier remains available when a later approved phase introduces one."
+    }
+  ],
+  "roles": [
+    {
+      "id": "phase1-backend-implementer",
+      "purpose": "Implement a settled non-visual Voice Agent slice end to end, including contracts, persistence, tests, gates, docs, and a pre-report self-audit.",
+      "trigger": [
+        "settled Phase 1 backend, contract, kernel, vertical, testkit, persistence, or control-plane implementation brief"
+      ],
+      "mode": "implement",
+      "strength": "strongest_available",
+      "vendor_preference": "codex",
+      "incompatible_with": ["reviewer-for-same-slice", "concurrent-editor-of-claimed-paths"],
+      "required_outputs": [
+        "implemented product outcome",
+        "command-owned proof exits",
+        "blast-radius and retirement sweep",
+        "self-audit residuals",
+        "doctrine-loop findings"
+      ],
+      "execution": {
+        "tools": {
+          "allow": ["Read", "Grep", "Glob", "Bash", "Edit", "Write"],
+          "deny": ["NotebookEdit"]
+        },
+        "budget": { "max_usd": 20, "enforcement": "dormant" }
+      }
+    },
+    {
+      "id": "realtime-interaction-playout-auditor",
+      "purpose": "Audit ordered voice observations, revisions, committed turns, interruption, playout evidence, checkpoints, replay, and latency boundaries.",
+      "trigger": [
+        "interaction, media, transcription, playout, interruption, checkpoint, replay, or latency change"
+      ],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "either",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": [
+        "interaction timeline",
+        "playout evidence audit",
+        "replay verdict",
+        "not-reached surfaces",
+        "doctrine-loop findings"
+      ],
+      "execution": {
+        "tools": {
+          "allow": ["Read", "Grep", "Glob", "Bash"],
+          "deny": ["Edit", "Write", "NotebookEdit"]
+        },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.75,
+        "criteria": [
+          {
+            "id": "event-order-and-replay",
+            "weight": 30,
+            "critical": true,
+            "summary": "Every source event is tenant-bound, ordered, duplicate-safe, writer-fenced, and replay-equivalent."
+          },
+          {
+            "id": "playout-evidence",
+            "weight": 30,
+            "critical": true,
+            "summary": "Only closed normal-drain evidence advances played speech; clear, ambiguity, and estimation cannot fabricate hearing."
+          },
+          {
+            "id": "interruption-consistency",
+            "weight": 20,
+            "critical": false,
+            "summary": "Barge-in clears queued audio and every downstream consumer sees the corrected played prefix."
+          },
+          {
+            "id": "latency-boundedness",
+            "weight": 20,
+            "critical": false,
+            "summary": "Streaming paths and buffers are bounded and measured without bypassing correctness."
+          }
+        ]
+      }
+    },
+    {
+      "id": "grounding-decision-quality-auditor",
+      "purpose": "Audit evidence-grounded semantic decisions, provenance, bounded repair, strategy routing, and response-plan quality without moving meaning into deterministic heuristics.",
+      "trigger": [
+        "prompt, model, grounding, retrieval, strategy, objection, decision, repair, or response-plan change"
+      ],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "either",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": [
+        "decision matrix audit",
+        "provenance trace",
+        "repair verdict",
+        "quality counterexamples",
+        "doctrine-loop findings"
+      ],
+      "execution": {
+        "tools": {
+          "allow": ["Read", "Grep", "Glob", "Bash"],
+          "deny": ["Edit", "Write", "NotebookEdit"]
+        },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.75,
+        "criteria": [
+          {
+            "id": "evidence-and-provenance",
+            "weight": 30,
+            "critical": true,
+            "summary": "Every semantic claim cites admitted current evidence and released corpus provenance."
+          },
+          {
+            "id": "semantic-authority",
+            "weight": 30,
+            "critical": true,
+            "summary": "AI owns contextual meaning while deterministic code validates schema, authority, safety, grounding, and provenance."
+          },
+          {
+            "id": "bounded-field-repair",
+            "weight": 20,
+            "critical": false,
+            "summary": "Validation teaches a bounded failed-field retry and merges validated-good fields without silent rewriting."
+          },
+          {
+            "id": "response-quality",
+            "weight": 20,
+            "critical": false,
+            "summary": "Accepted response plans are specific, useful, non-generic, and consistent with the chosen strategy and vertical step."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ail-booker-parity-auditor",
+      "purpose": "Audit the complete AIL booker job: purpose, qualification boundaries, objections, lead fields, availability, confirmation, booking, handoff, cementing, and outcome.",
+      "trigger": [
+        "AIL vertical, objection, lead field, booking, handoff, call outcome, or booker-parity change"
+      ],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "either",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": [
+        "booker job matrix",
+        "scope-boundary findings",
+        "objection progression",
+        "fallback verdict",
+        "doctrine-loop findings"
+      ],
+      "execution": {
+        "tools": {
+          "allow": ["Read", "Grep", "Glob", "Bash"],
+          "deny": ["Edit", "Write", "NotebookEdit"]
+        },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.75,
+        "criteria": [
+          {
+            "id": "appointment-only-scope",
+            "weight": 30,
+            "critical": true,
+            "summary": "The AI books appointments and never sells, advises, quotes coverage, or performs licensed insurance work."
+          },
+          {
+            "id": "objection-progression",
+            "weight": 30,
+            "critical": true,
+            "summary": "Objections are paraphrased and handled through bounded strategy progression rather than repeated scripts or loops."
+          },
+          {
+            "id": "booking-field-integrity",
+            "weight": 20,
+            "critical": false,
+            "summary": "Required lead fields and availability remain exact through confirmation and execution."
+          },
+          {
+            "id": "human-handoff",
+            "weight": 20,
+            "critical": false,
+            "summary": "Blocked, licensed, or unreconciled paths create a complete durable human work item instead of pretending success."
+          }
+        ]
+      }
+    },
+    {
+      "id": "telephony-compliance-integration-auditor",
+      "purpose": "Audit Nuvo admission, one-use grants, deployment binding, disclosure playout, activation, telephony ownership, and the structural sandbox ceiling.",
+      "trigger": [
+        "Nuvo, telephony, admission, disclosure, activation, compliance, deployment, or sandbox change"
+      ],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "either",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": [
+        "admission chain",
+        "disclosure proof",
+        "host-boundary audit",
+        "sandbox negative proof",
+        "doctrine-loop findings"
+      ],
+      "execution": {
+        "tools": {
+          "allow": ["Read", "Grep", "Glob", "Bash"],
+          "deny": ["Edit", "Write", "NotebookEdit"]
+        },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.75,
+        "criteria": [
+          {
+            "id": "exact-one-use-admission",
+            "weight": 30,
+            "critical": true,
+            "summary": "The consumed Nuvo grant is one-use and exact-bound to request, preparation, call, dispatch, deployment, and expiry."
+          },
+          {
+            "id": "disclosure-before-activation",
+            "weight": 30,
+            "critical": true,
+            "summary": "Required disclosure is proven through completed normal-drain playout before live AI activation."
+          },
+          {
+            "id": "sandbox-non-contact",
+            "weight": 20,
+            "critical": false,
+            "summary": "Sandbox admission structurally forbids provider session, carrier audio, browser effects, and external contact."
+          },
+          {
+            "id": "host-authority-boundary",
+            "weight": 20,
+            "critical": false,
+            "summary": "Nuvo remains the telephony/compliance authority; provider adapters cannot self-admit or widen policy."
+          }
+        ]
+      }
+    },
+    {
+      "id": "calendar-browser-effect-integrity-auditor",
+      "purpose": "Audit typed availability, immutable booking terms, later caller authorization, constrained browser commands, idempotent claims, exact receipts, reconciliation, and human fallback.",
+      "trigger": [
+        "Calendly, browser, availability, booking intent, caller confirmation, action, receipt, reconciliation, or handoff change"
+      ],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "either",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": [
+        "effect coordinate audit",
+        "browser capability audit",
+        "idempotency proof",
+        "fallback audit",
+        "doctrine-loop findings"
+      ],
+      "execution": {
+        "tools": {
+          "allow": ["Read", "Grep", "Glob", "Bash"],
+          "deny": ["Edit", "Write", "NotebookEdit"]
+        },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.75,
+        "criteria": [
+          {
+            "id": "typed-browser-boundary",
+            "weight": 30,
+            "critical": true,
+            "summary": "The model receives typed availability and intent tools, never generic DOM or browser control."
+          },
+          {
+            "id": "immutable-terms-and-later-authorization",
+            "weight": 30,
+            "critical": true,
+            "summary": "Exact immutable terms precede a different later committed caller turn authorizing the action."
+          },
+          {
+            "id": "exact-effect-receipt",
+            "weight": 20,
+            "critical": false,
+            "summary": "Proposal, authorization, precondition, writer, fence, idempotency, command, and terminal receipt coordinates all match."
+          },
+          {
+            "id": "reconciliation-and-handoff",
+            "weight": 20,
+            "critical": false,
+            "summary": "Unknown effects block retries pending reconciliation; automated and human create paths consume one persisted fulfillment owner; terminal retries re-prove the canonical event, receipt, and projection; browser failure creates a complete least-privilege human fallback."
+          }
+        ]
+      }
+    },
+    {
+      "id": "privacy-security-context-readiness-auditor",
+      "purpose": "Audit tenant isolation, PII minimization, material ownership/versioning, extraction, privacy and deletion releases, corpus readiness, learning quarantine, and retention lineage.",
+      "trigger": [
+        "tenant, RLS, PII, transcript, corpus, retrieval, derivative, deletion, retention, or learning change"
+      ],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "either",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": [
+        "tenant-scope audit",
+        "corpus release chain",
+        "retention lineage",
+        "PII findings",
+        "doctrine-loop findings"
+      ],
+      "execution": {
+        "tools": {
+          "allow": ["Read", "Grep", "Glob", "Bash"],
+          "deny": ["Edit", "Write", "NotebookEdit"]
+        },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.75,
+        "criteria": [
+          {
+            "id": "tenant-isolation",
+            "weight": 30,
+            "critical": true,
+            "summary": "Every scoped query carries tenant identity and forced RLS prevents cross-tenant reads and writes."
+          },
+          {
+            "id": "corpus-readiness",
+            "weight": 30,
+            "critical": true,
+            "summary": "Retrieval uses only current owner/version material with extraction, privacy, deletion-lineage, freshness, and golden-set releases."
+          },
+          {
+            "id": "derivative-lifecycle",
+            "weight": 20,
+            "critical": false,
+            "summary": "Every derivative is registered and deletion yields an exact evidence-bearing receipt or an honest pending state."
+          },
+          {
+            "id": "pii-minimization",
+            "weight": 20,
+            "critical": false,
+            "summary": "Logs, usage, proof, prompts, and provider metadata minimize and redact customer data and secrets."
+          }
+        ]
+      }
+    },
+    {
+      "id": "provider-portability-metering-auditor",
+      "purpose": "Audit narrow provider ports, policy-driven primary/fallback routing, capability equivalence, attempt-level metering, pricing snapshots, and provider-neutral prompts/contracts.",
+      "trigger": [
+        "provider, adapter, model, STT, TTS, fallback, repair, routing, pricing, reservation, or usage change"
+      ],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "either",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": [
+        "port/adaptor inventory",
+        "fallback chain",
+        "metering reconciliation",
+        "vendor-coupling findings",
+        "doctrine-loop findings"
+      ],
+      "execution": {
+        "tools": {
+          "allow": ["Read", "Grep", "Glob", "Bash"],
+          "deny": ["Edit", "Write", "NotebookEdit"]
+        },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.75,
+        "criteria": [
+          {
+            "id": "narrow-adapter-seams",
+            "weight": 30,
+            "critical": true,
+            "summary": "Each provider implements a domain-owned narrow port and cannot own prompts, state, policy, or effects."
+          },
+          {
+            "id": "all-attempt-metering",
+            "weight": 30,
+            "critical": true,
+            "summary": "Primary, retry, repair, fallback, and unknown attempts consume one reservation and reconcile against its pricing snapshot."
+          },
+          {
+            "id": "fallback-equivalence",
+            "weight": 20,
+            "critical": false,
+            "summary": "Fallbacks preserve the same contract and safety semantics or fail closed as an unsupported capability."
+          },
+          {
+            "id": "provider-neutral-authority",
+            "weight": 20,
+            "critical": false,
+            "summary": "Prompts, schemas, decisions, and persisted evidence are provider-neutral; vendor identifiers stay at adapter edges."
+          }
+        ]
+      }
+    },
+    {
+      "id": "source-to-action-outcome-parity-auditor",
+      "purpose": "Trace authoritative input through events, reducers, decisions, actions, receipts, accepted outcomes, and Nuvo/local projections in both Nuvo and sandbox shapes.",
+      "trigger": [
+        "event, reducer, DTO, action, receipt, outcome, mapping, integration, liveness, or projection change"
+      ],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "either",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": [
+        "forward/backward delivery chain",
+        "producer inventory",
+        "Nuvo liveness",
+        "sandbox negative liveness",
+        "doctrine-loop findings"
+      ],
+      "execution": {
+        "tools": {
+          "allow": ["Read", "Grep", "Glob", "Bash"],
+          "deny": ["Edit", "Write", "NotebookEdit"]
+        },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.75,
+        "criteria": [
+          {
+            "id": "source-through-outcome",
+            "weight": 30,
+            "critical": true,
+            "summary": "Every accepted outcome traces to ordered source events, reducer state, evidence, decision, authorization, and exact receipt."
+          },
+          {
+            "id": "durable-mapping",
+            "weight": 30,
+            "critical": true,
+            "summary": "The accepted outcome reaches exactly one Nuvo or local-test mapping with its source receipt hash and release ID."
+          },
+          {
+            "id": "single-producer",
+            "weight": 20,
+            "critical": false,
+            "summary": "No alternate producer, fallback, or compatibility path can create a conflicting state, effect, or outcome."
+          },
+          {
+            "id": "both-shapes-live",
+            "weight": 20,
+            "critical": false,
+            "summary": "Nuvo-shaped execution reaches a durable effect and sandbox-shaped execution reaches replay with zero contact/effects."
+          }
+        ]
+      }
+    },
+    {
+      "id": "doctrine-drift-auditor",
+      "purpose": "Audit code and living documents against settled Voice Agent decisions, authority maps, role routing, and retired assumptions.",
+      "trigger": ["decision-log, ADR, authority, registry, contract, or retired-path change"],
+      "mode": "review_read_only",
+      "strength": "strongest_available",
+      "vendor_preference": "either",
+      "incompatible_with": ["implementer-for-same-slice"],
+      "required_outputs": [
+        "authority quotes",
+        "code/doc contradictions",
+        "retired-claim sweep",
+        "not-reached surfaces",
+        "doctrine-loop findings"
+      ],
+      "execution": {
+        "tools": {
+          "allow": ["Read", "Grep", "Glob", "Bash"],
+          "deny": ["Edit", "Write", "NotebookEdit"]
+        },
+        "budget": { "max_usd": 10, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.75,
+        "criteria": [
+          {
+            "id": "decision-authority-consistency",
+            "weight": 30,
+            "critical": true,
+            "summary": "Behavior matches the current owning decision and architecture authority quoted in the report."
+          },
+          {
+            "id": "registry-centralization",
+            "weight": 30,
+            "critical": true,
+            "summary": "Registered reducers, effects, roles, IDs, and policies remain singular sources rather than duplicated leaf literals."
+          },
+          {
+            "id": "living-doc-consistency",
+            "weight": 20,
+            "critical": false,
+            "summary": "Architecture, state, plan, decision, requirements, journey, and blast-radius documents express one current truth."
+          },
+          {
+            "id": "retired-assumption-sweep",
+            "weight": 20,
+            "critical": false,
+            "summary": "Superseded vendors, paths, states, prompts, and decisions are absent from all living projections."
+          }
+        ]
+      }
+    },
+    {
+      "id": "test-runner",
+      "purpose": "Run the complete Voice Agent verification ladder as the sole disposable PostgreSQL runner and return command-owned exits plus nonzero proof counts without editing.",
+      "trigger": ["finished implementation slice requires full verification"],
+      "mode": "verify_runtime",
+      "strength": "strongest_available",
+      "vendor_preference": "either",
+      "incompatible_with": ["concurrent-test-db-user", "source-editor-for-same-run"],
+      "required_outputs": [
+        "exact command exits",
+        "nonzero file/test counts",
+        "raw failure cause",
+        "not-run surfaces",
+        "doctrine-loop findings"
+      ],
+      "execution": {
+        "tools": {
+          "allow": ["Read", "Grep", "Glob", "Bash"],
+          "deny": ["Edit", "Write", "NotebookEdit"]
+        },
+        "budget": { "max_usd": 15, "enforcement": "dormant" }
+      },
+      "verdict_rubric": {
+        "coverage_floor": 0.75,
+        "criteria": [
+          {
+            "id": "command-owned-exits",
+            "weight": 30,
+            "critical": true,
+            "summary": "Every named command's own exit is captured before any pipe or log summarization."
+          },
+          {
+            "id": "nonzero-proof-counts",
+            "weight": 30,
+            "critical": true,
+            "summary": "Each suite reports nonzero discovered files and executed cases; conditional skips are unrun, never green."
+          },
+          {
+            "id": "sole-postgres-runner",
+            "weight": 20,
+            "critical": false,
+            "summary": "Only one disposable loopback PostgreSQL integration run uses the local Docker authority at a time."
+          },
+          {
+            "id": "failure-root-cause",
+            "weight": 20,
+            "critical": false,
+            "summary": "Each failure is traced to raw output and one earliest plausible source; the runner does not edit or quick-fix."
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "excluded": [
+    ".env*", "**/secrets/**", "**/credentials/**", "**/logs/**", "**/telemetry/**", "**/cache/**",
+    "**/history/**", "**/sessions/**", "**/worktrees/**", "**/node_modules/**", "**/dist/**", "**/build/**",
+    "**/__pycache__/**", "**/*.pyc", "packages/**", "platform-design/**", "docs/**", "customer-data/**",
+    "provider-payloads/**", "recordings/**", "transcripts/**"
+  ],
+  "reason": "The overlay owns orchestration only; Voice Agent platform application truth, product design docs, runtime state, data, and secrets remain project-owned."
+}

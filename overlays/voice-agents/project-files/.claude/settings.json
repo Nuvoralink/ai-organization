@@ -1,0 +1,143 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build)",
+      "Bash(npm run lint)",
+      "Bash(npm run format:check)",
+      "Bash(npm run typecheck)",
+      "Bash(npm run test)",
+      "Bash(npm run test:unit)",
+      "Bash(npm run test:mutations)",
+      "Bash(npm run test:integration)",
+      "Bash(npm run test:organization-control-plane)",
+      "Bash(npm run gates:all)",
+      "Bash(npm run gate:organization)",
+      "Bash(npm run gate:agent-projections)",
+      "Bash(npm run gate:fleet-parity)",
+      "Bash(npm run gate:rules-wiring)",
+      "Bash(npm run gate:agent-context)",
+      "Bash(npm run gate:agent-control-plane)",
+      "Bash(npm run gate:control-plane-parity)",
+      "Bash(npm run gate:test-intent)",
+      "Bash(npm run gate:effect-bindings)",
+      "PowerShell(npm run build)",
+      "PowerShell(npm run lint)",
+      "PowerShell(npm run format:check)",
+      "PowerShell(npm run typecheck)",
+      "PowerShell(npm run test)",
+      "PowerShell(npm run test:unit)",
+      "PowerShell(npm run test:mutations)",
+      "PowerShell(npm run test:integration)",
+      "PowerShell(npm run test:organization-control-plane)",
+      "PowerShell(npm run gates:all)",
+      "PowerShell(npm run gate:organization)",
+      "PowerShell(npm run gate:agent-projections)",
+      "PowerShell(npm run gate:fleet-parity)",
+      "PowerShell(npm run gate:rules-wiring)",
+      "PowerShell(npm run gate:agent-context)",
+      "PowerShell(npm run gate:agent-control-plane)",
+      "PowerShell(npm run gate:control-plane-parity)",
+      "PowerShell(npm run gate:test-intent)",
+      "PowerShell(npm run gate:effect-bindings)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "TaskCreated": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"],
+            "timeout": 900
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"],
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-lifecycle-hook.mjs"],
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/scripts/claude-posttooluse-gate.mjs"],
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}

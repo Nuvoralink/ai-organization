@@ -1,0 +1,140 @@
+#!/usr/bin/env node
+/**
+ * gate:rules-wiring — the agent-rules loader wiring is intact + single-sourced.
+ *
+ * Installed from the canonical bootstrap template for this repository's `.claude/rules` authority.
+ *
+ * WHY THIS EXISTS (origin incident): rules kept in TWO hand-synced dirs (a primary + a manual mirror) DRIFT silently —
+ * files diverge and one agent goes weeks without a rule. The fix single-sources the rules and points BOTH agents at
+ * one dir (Claude lazy-loads official path-scoped rules; Codex discovers via a path list in AGENTS.md). This gate replaces
+ * mirror-sync vigilance with a mechanical check.
+ *
+ * THE RULE:
+ *   1. Every optional `.claude/rules/*.md` reference in CLAUDE.md resolves to an existing file.
+ *   2. Every `.claude/rules/*.md` path listed in AGENTS.md resolves to an existing file.
+ *   3. Every file present in `.claude/rules/` is referenced from AGENTS.md.
+ *   4. Every Claude `.md` rule carries official `paths:` frontmatter; an accidentally unscoped rule is startup-context drift.
+ *   5. The retired `.codex/rules` mirror does not exist.
+ *
+ * Exit 0 = pass; 1 = fail.  Run: `npm run gate:rules-wiring`
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import process from 'node:process';
+
+const root = process.cwd();
+const RULES_DIR = '.claude/rules';
+const RULE_EXT = '.md';
+const CLAUDE_MD = 'CLAUDE.md';
+const AGENTS_MD = 'AGENTS.md';
+const RETIRED_MIRROR = '.codex/rules';
+
+const failures = [];
+const read = (rel) => {
+  try {
+    return fs.readFileSync(path.join(root, rel), 'utf8');
+  } catch {
+    return null;
+  }
+};
+const extRe = RULE_EXT.replace('.', '\\.');
+const refRe = new RegExp(
+  RULES_DIR.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '/([A-Za-z0-9._-]+' + extRe + ')',
+  'g',
+);
+
+function referencedRulePaths(text) {
+  const out = new Set();
+  if (!text) return out;
+  for (const m of text.matchAll(refRe)) out.add(m[1]);
+  return out;
+}
+
+// ----- 4. The retired mirror must not silently return (checked first + unconditionally) -----
+if (RETIRED_MIRROR && fs.existsSync(path.join(root, RETIRED_MIRROR))) {
+  failures.push(
+    `The retired \`${RETIRED_MIRROR}/\` mirror exists again — rules are single-sourced under \`${RULES_DIR}/\`. ` +
+      `Delete \`${RETIRED_MIRROR}/\` and keep the single source.`,
+  );
+}
+
+const rulesDirAbs = path.join(root, RULES_DIR);
+if (!fs.existsSync(rulesDirAbs)) {
+  if (failures.length === 0) {
+    console.log(`check-rules-wiring: ${RULES_DIR}/ not present yet — skipping (bootstrap).`);
+    process.exit(0);
+  }
+} else {
+  const ruleFiles = new Set(
+    fs.readdirSync(rulesDirAbs).filter((f) => f.endsWith(RULE_EXT) && !f.startsWith('.')),
+  );
+  const ruleExists = (name) => ruleFiles.has(name);
+
+  const claudeText = read(CLAUDE_MD);
+  const agentsText = read(AGENTS_MD);
+  if (claudeText === null) failures.push(`Missing entry doc: ${CLAUDE_MD}`);
+  if (agentsText === null) failures.push(`Missing entry doc: ${AGENTS_MD}`);
+
+  // ----- 1. Every optional rule ref in CLAUDE.md resolves -----
+  const atRe = new RegExp(
+    '@' + RULES_DIR.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '/([A-Za-z0-9._-]+' + extRe + ')',
+    'g',
+  );
+  const claudeAtRefs = new Set();
+  if (claudeText) {
+    for (const m of claudeText.matchAll(atRe)) claudeAtRefs.add(m[1]);
+    for (const name of [...claudeAtRefs].sort()) {
+      if (!ruleExists(name))
+        failures.push(
+          `${CLAUDE_MD} @-loads \`${RULES_DIR}/${name}\` which does not exist (dangling rule reference).`,
+        );
+    }
+  }
+
+  // ----- 2. Every rule path in AGENTS.md resolves -----
+  const agentsRefs = referencedRulePaths(agentsText);
+  for (const name of [...agentsRefs].sort()) {
+    if (!ruleExists(name))
+      failures.push(
+        `${AGENTS_MD} lists \`${RULES_DIR}/${name}\` which does not exist (dangling rule reference).`,
+      );
+  }
+
+  // ----- 3. Every rule file is discoverable from AGENTS.md -----
+  for (const name of [...ruleFiles].sort()) {
+    if (!agentsRefs.has(name)) {
+      failures.push(
+        `${RULES_DIR}/${name} is not referenced from ${AGENTS_MD} — Codex cannot discover it. ` +
+          `Add it to the always-on or the contextual rules list.`,
+      );
+    }
+  }
+
+  // ----- 4. Claude rules must be path-scoped so task detail does not load at startup -----
+  if (RULE_EXT === '.md') {
+    for (const name of [...ruleFiles].sort()) {
+      const source = read(`${RULES_DIR}/${name}`) ?? '';
+      const frontmatterEnd = source.startsWith('---') ? source.indexOf('\n---', 3) : -1;
+      const frontmatter = frontmatterEnd === -1 ? '' : source.slice(3, frontmatterEnd);
+      if (!/^paths\s*:/m.test(frontmatter)) {
+        failures.push(
+          `${RULES_DIR}/${name} has no official \`paths:\` frontmatter — Claude would load it at startup.`,
+        );
+      }
+    }
+  }
+}
+
+if (failures.length > 0) {
+  console.error('check-rules-wiring: FAILED — agent-rules loader wiring is broken:\n');
+  for (const f of failures) console.error('  x ' + f);
+  console.error(
+    `\nRules are single-sourced under \`${RULES_DIR}/\` and discovered by Codex via AGENTS.md.`,
+  );
+  process.exit(1);
+}
+console.log(
+  `check-rules-wiring: OK — every ${RULES_DIR}/*${RULE_EXT} is discoverable from ${AGENTS_MD}, every CLAUDE.md/AGENTS.md ` +
+    `rule reference resolves${RETIRED_MIRROR ? `, and the retired ${RETIRED_MIRROR}/ mirror is absent` : ''}.`,
+);
+process.exit(0);

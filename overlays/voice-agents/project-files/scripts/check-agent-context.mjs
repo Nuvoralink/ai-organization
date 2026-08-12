@@ -1,0 +1,149 @@
+#!/usr/bin/env node
+/**
+ * gate:agent-context — generated Claude startup context stays within a measured budget.
+ * Installed as scripts/check-agent-context.mjs and wired into gates:all.
+ * Startup authority: CLAUDE.md files + recursive line-form @ imports + every `.claude/rules/*.md`
+ * without official `paths:` frontmatter. Imported files count once. External imports fail closed because
+ * CI cannot measure them deterministically. Duplicate reachability fails instead of being silently
+ * deduplicated. Add a temp-tree bite test: oversized import/unscoped rule/duplicate import fail; large
+ * path-scoped rule stays outside startup; dangling/external import fails.
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+export const DEFAULT_MAX_STARTUP_TOKENS = 6000;
+export const APPROXIMATE_CHARS_PER_TOKEN = 4;
+
+function findMarkdown(directory) {
+  if (!fs.existsSync(directory)) return [];
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const absolute = path.join(directory, entry.name);
+    if (entry.isDirectory()) return findMarkdown(absolute);
+    return entry.isFile() && entry.name.endsWith('.md') ? [absolute] : [];
+  });
+}
+
+function hasPathsFrontmatter(source) {
+  if (!source.startsWith('---')) return false;
+  const end = source.indexOf('\n---', 3);
+  return end !== -1 && /^paths\s*:/m.test(source.slice(3, end));
+}
+
+function imports(source) {
+  return source
+    .split(/\r?\n/u)
+    .map((line) => line.match(/^\s*@([^\s]+)\s*$/u)?.[1])
+    .filter(Boolean);
+}
+
+export function inspectAgentStartupContext(root, maxTokens = DEFAULT_MAX_STARTUP_TOKENS) {
+  const repoRoot = path.resolve(root);
+  const included = new Map();
+  const firstParent = new Map();
+  const failures = [];
+
+  function include(absolute, depth = 0, parent = '<entry>') {
+    const resolved = path.resolve(absolute);
+    if (included.has(resolved)) {
+      failures.push(
+        `Duplicate startup import: ${path.relative(repoRoot, resolved)} is reached from ${firstParent.get(resolved)} and ${parent}`,
+      );
+      return;
+    }
+    if (depth >= 5) {
+      failures.push(`Import exceeds Claude's five-hop limit: ${path.relative(repoRoot, resolved)}`);
+      return;
+    }
+    if (!resolved.startsWith(`${repoRoot}${path.sep}`) && resolved !== repoRoot) {
+      failures.push(`External startup import cannot be budgeted: ${resolved}`);
+      return;
+    }
+    if (!fs.existsSync(resolved) || !fs.statSync(resolved).isFile()) {
+      failures.push(`Startup import does not resolve: ${path.relative(repoRoot, resolved)}`);
+      return;
+    }
+    const source = fs.readFileSync(resolved, 'utf8');
+    included.set(resolved, source.length);
+    firstParent.set(resolved, parent);
+    for (const target of imports(source)) {
+      if (target.startsWith('~') || path.isAbsolute(target)) {
+        failures.push(`External startup import cannot be budgeted: ${target}`);
+      } else {
+        include(
+          path.resolve(path.dirname(resolved), target),
+          depth + 1,
+          path.relative(repoRoot, resolved),
+        );
+      }
+    }
+  }
+
+  for (const entry of ['CLAUDE.md', path.join('.claude', 'CLAUDE.md')]) {
+    const absolute = path.join(repoRoot, entry);
+    if (fs.existsSync(absolute)) include(absolute, 0, '<entry>');
+  }
+  if (included.size === 0) failures.push('No project CLAUDE.md entry file was found.');
+
+  for (const rule of findMarkdown(path.join(repoRoot, '.claude', 'rules'))) {
+    const source = fs.readFileSync(rule, 'utf8');
+    if (!hasPathsFrontmatter(source)) {
+      failures.push(
+        `Rule lacks official \`paths:\` and would load at startup: ${path.relative(repoRoot, rule)}`,
+      );
+      include(rule, 0, '<unscoped-rule>');
+    }
+  }
+
+  const files = [...included.entries()]
+    .map(([absolute, chars]) => ({
+      path: path.relative(repoRoot, absolute).replaceAll(path.sep, '/'),
+      chars,
+      approximateTokens: Math.ceil(chars / APPROXIMATE_CHARS_PER_TOKEN),
+    }))
+    .sort((a, b) => a.path.localeCompare(b.path));
+  const totalChars = files.reduce((sum, file) => sum + file.chars, 0);
+  const approximateTokens = Math.ceil(totalChars / APPROXIMATE_CHARS_PER_TOKEN);
+  if (approximateTokens > maxTokens) {
+    failures.push(
+      `Startup context is ~${approximateTokens} tokens; budget is ${maxTokens}. Path-scope task detail.`,
+    );
+  }
+  return { ok: failures.length === 0, maxTokens, totalChars, approximateTokens, files, failures };
+}
+
+function options(argv) {
+  let root = process.cwd();
+  let maxTokens = DEFAULT_MAX_STARTUP_TOKENS;
+  let json = false;
+  for (let i = 0; i < argv.length; i += 1) {
+    if (argv[i] === '--root') root = path.resolve(argv[++i] ?? '');
+    else if (argv[i] === '--max-tokens') maxTokens = Number(argv[++i]);
+    else if (argv[i] === '--json') json = true;
+    else throw new Error(`Unknown argument: ${argv[i]}`);
+  }
+  if (!Number.isFinite(maxTokens) || maxTokens <= 0) throw new Error('max tokens must be positive');
+  return { root, maxTokens, json };
+}
+
+function cli() {
+  try {
+    const config = options(process.argv.slice(2));
+    const report = inspectAgentStartupContext(config.root, config.maxTokens);
+    if (config.json) console.log(JSON.stringify(report, null, 2));
+    else if (report.ok)
+      console.log(
+        `gate:agent-context OK — ~${report.approximateTokens} startup tokens / ${report.maxTokens}.`,
+      );
+    else {
+      console.error('gate:agent-context FAILED');
+      report.failures.forEach((failure) => console.error(`- ${failure}`));
+    }
+    process.exitCode = report.ok ? 0 : 1;
+  } catch (error) {
+    console.error(`gate:agent-context FAILED — ${error.message}`);
+    process.exitCode = 1;
+  }
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) cli();
