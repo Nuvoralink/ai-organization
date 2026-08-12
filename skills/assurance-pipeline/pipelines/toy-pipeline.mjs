@@ -17,6 +17,7 @@ import { runVotingPanel } from '../lib/voting-panel.mjs';
 import { emitSarif } from '../lib/emit-sarif.mjs';
 import { emitReport } from '../lib/emit-report.mjs';
 import { schemaPath } from '../lib/paths.mjs';
+import { DEFAULT_TOKENS_PER_CALL, DEFAULT_USD_PER_MILLION_TOKENS } from '../lib/estimate.mjs';
 
 export const TOY_PIPELINE_ID = 'toy-spine-proof';
 export const TOY_STAGE_NAMES = Object.freeze(['produce', 'verify', 'emit']);
@@ -32,7 +33,7 @@ export const TOY_UNREACHED_SURFACES = Object.freeze([
 export const TOY_DEFAULT_CONFIG = Object.freeze({
   lenses: ['correctness', 'exploitability', 'reproduces'],
   vote_threshold: 2,
-  estimate: { tokens_per_call: 2000, usd_per_million_tokens: 3 },
+  estimate: { tokens_per_call: DEFAULT_TOKENS_PER_CALL, usd_per_million_tokens: DEFAULT_USD_PER_MILLION_TOKENS },
 });
 
 /**

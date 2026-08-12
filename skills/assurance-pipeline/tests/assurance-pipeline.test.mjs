@@ -23,6 +23,7 @@ import { createBackend } from '../lib/backend.mjs';
 import { previewScope } from '../lib/estimate.mjs';
 import { digestObject } from '../lib/artifacts.mjs';
 import { RunStore } from '../lib/run-store.mjs';
+import { runPipeline, defineStage } from '../lib/stage-runner.mjs';
 import { SARIF_SCHEMA } from '../lib/paths.mjs';
 import { emitSarif } from '../lib/emit-sarif.mjs';
 import { runScan, runEstimate, runReport } from '../cli.mjs';
@@ -293,4 +294,28 @@ test('report re-emits from the persisted verify artifact with zero backend calls
   assert.equal(first.sarif_sha256, second.sarif_sha256, 're-emit is deterministic from persisted evidence');
   assert.equal(first.confirmed_count, 2);
   assert.equal(spy.calls(), 0, 'report must not touch a backend');
+});
+
+// ---------------------------------------------------------------------------------------------
+// D7: inter-stage input is always the redacted persisted artifact (fresh == resume)
+// ---------------------------------------------------------------------------------------------
+test('D7: a downstream stage receives the REDACTED upstream artifact on a FRESH run', async () => {
+  // Without D7 (input = output), a fresh run feeds the next stage the RAW upstream value while a
+  // resume feeds the redacted persisted one — a latent non-determinism for value-sensitive lenses.
+  // This asserts the fresh path is already redacted; reverting to `input = output` reddens it.
+  const runRoot = tempRunRoot();
+  let downstreamInput;
+  const upstream = defineStage({ name: 'up', kind: 'det', run: async () => ({ evidence: `card ${PLANTED_PAN}` }) });
+  const downstream = defineStage({
+    name: 'down',
+    kind: 'det',
+    run: async (ctx, input) => {
+      downstreamInput = input;
+      return { ok: true };
+    },
+  });
+  const store = new RunStore({ runRoot, runId: 'd7flow' });
+  await runPipeline({ store, pipeline: 'd7', config: {}, target: 't', stages: [upstream, downstream], initialInput: {}, ctx: {} });
+  assert.ok(!JSON.stringify(downstreamInput).includes(PLANTED_PAN), 'downstream must NOT receive the raw PAN on a fresh run');
+  assert.match(JSON.stringify(downstreamInput), /REDACTED:pan/u, 'downstream receives the redacted upstream artifact');
 });

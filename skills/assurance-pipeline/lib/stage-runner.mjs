@@ -13,6 +13,9 @@
  *     differ, EVERY stage after it re-executes too (dependency-correct resume).
  *   - A changed config (config_sha256 mismatch) or a changed stage list invalidates the whole run,
  *     so it re-initializes from stage 0.
+ *   - Inter-stage input is ALWAYS the redacted persisted artifact (in fresh AND resume runs), so a
+ *     resumed run is byte-identical to a fresh one and no unredacted secret crosses a stage boundary
+ *     (plan decision D7). Lenses therefore judge on structure/metadata, never raw secret bytes.
  *
  * `runPipeline` returns `{ executed, skipped }` so callers/tests can assert exactly which stages ran
  * — that is the signal the checkpoint/resume killer mutation flips.
@@ -79,7 +82,9 @@ export async function runPipeline({ store, pipeline, config, target, stages, ini
     if (stage.outputSchema) validateArtifact(stage.outputSchema, output, `${stage.name} stage output`);
     store.completeStage({ manifest, stageName: stage.name, value: output, startedAt, now: clock() });
     executed.push(stage.name);
-    input = output;
+    // D7: downstream input is ALWAYS the redacted persisted artifact — identical in fresh and resume
+    // runs, so resume is transparent and no unredacted secret crosses a stage boundary.
+    input = store.readStage(stage.name);
   }
 
   return {

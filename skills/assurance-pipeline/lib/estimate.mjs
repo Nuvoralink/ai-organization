@@ -7,8 +7,8 @@
  * never invokes it. The DoD test passes a spy backend and asserts its invocation count stays 0.
  */
 
-const DEFAULT_TOKENS_PER_CALL = 2000;
-const DEFAULT_USD_PER_MILLION_TOKENS = 3;
+export const DEFAULT_TOKENS_PER_CALL = 2000;
+export const DEFAULT_USD_PER_MILLION_TOKENS = 3;
 
 /**
  * @param {object}   args
