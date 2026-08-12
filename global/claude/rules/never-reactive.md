@@ -40,9 +40,14 @@ for every input class: a request, a correction, a bug, a review finding, a quest
   claim (Amin directive 2026-08-11).** When the graph has ≥2 genuinely independent lanes, dispatch them
   as a parallel swarm by DEFAULT — not serially, not one agent per message — so the work parallelizes AND
   the coordination engine accumulates the data it needs to earn its `observe→enforce` promotion. Carry
-  each lane's write-set on the dispatch so a real claim registers: `--brief <path>` on an `agent:run`
-  dispatch (deterministic), or a `TASK_CONTRACT_JSON: {"paths":{"edit":[…],"read":[…]}}` marker in a
-  Task/Agent prompt where the project's TaskCreated hook consumes it. An unclaimed dispatch registers
+  each lane's write-set so a real claim registers — the two forms are NOT co-equal: **`--brief <path>` on
+  an `agent:run` dispatch is the GUARANTEED path** (deterministic; registers headless AND interactive).
+  The `TASK_CONTRACT_JSON: {"paths":{"edit":[…]}}` marker in a Task/Agent prompt is interactive-only and
+  UNCONFIRMED — a 2026-08-12 probe proved the marker reaches the subagent prompt verbatim but that a
+  headless `claude -p` subagent spawn fires NO `TaskCreated` hook (0 claims, ledger unmoved), and the
+  interactive `task_description`↔prompt link is still unverified. Use `--brief` for any claim you must
+  count on and for ALL headless/scripted dispatch; treat the marker as best-effort pending a live
+  interactive confirmation. An unclaimed dispatch registers
   nothing, is honestly counted `skipped_no_editpaths`, and — under enforce — is invisible to the very
   conflict detection protecting the other lanes. Judgment still gates it: swarm where the lanes are
   truly independent and worth the dispatch overhead, never force-parallelized busywork. *Fail-state:* the
