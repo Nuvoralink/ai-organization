@@ -4351,6 +4351,90 @@
       "class": "reusable-skill"
     },
     {
+      "path": "skills/assurance-pipeline/README.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/SKILL.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/cli.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/lib/artifacts.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/lib/backend.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/lib/emit-report.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/lib/emit-sarif.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/lib/estimate.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/lib/paths.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/lib/redaction.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/lib/run-store.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/lib/stage-runner.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/lib/voting-panel.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/pipelines/toy-pipeline.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/schemas/run-manifest.v1.schema.json",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/schemas/sarif-2.1.0.schema.json",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/schemas/toy-emit.v1.schema.json",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/schemas/toy-findings.v1.schema.json",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/schemas/toy-scope.v1.schema.json",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/schemas/toy-verdicts.v1.schema.json",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/tests/assurance-pipeline.test.mjs",
+      "class": "reusable-skill"
+    },
+    {
       "path": "skills/bootstrap-orchestrator/ARCHITECTURE.md",
       "class": "reusable-skill"
     },

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nuvoralink.internal/schemas/assurance-toy-emit.v1.schema.json",
+  "title": "Toy pipeline emit result (emit stage output)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sarif_path",
+    "report_path",
+    "sarif_sha256",
+    "report_bytes",
+    "confirmed_count",
+    "total_count"
+  ],
+  "properties": {
+    "sarif_path": { "type": "string", "minLength": 1 },
+    "report_path": { "type": "string", "minLength": 1 },
+    "sarif_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "report_bytes": { "type": "integer" },
+    "confirmed_count": { "type": "integer" },
+    "total_count": { "type": "integer" }
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nuvoralink.internal/schemas/assurance-toy-verdicts.v1.schema.json",
+  "title": "Toy pipeline verified findings (verify stage output)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["findings"],
+  "properties": {
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/verifiedFinding" }
+    }
+  },
+  "$defs": {
+    "verifiedFinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "ruleId",
+        "ruleName",
+        "ruleDescription",
+        "level",
+        "uri",
+        "startLine",
+        "message",
+        "verdict",
+        "evidenceTier",
+        "panel"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "ruleId": { "type": "string", "minLength": 1 },
+        "ruleName": { "type": "string", "minLength": 1 },
+        "ruleDescription": { "type": "string" },
+        "level": { "enum": ["none", "note", "warning", "error"] },
+        "uri": { "type": "string", "minLength": 1 },
+        "startLine": { "type": "integer" },
+        "message": { "type": "string" },
+        "evidence": { "type": "string" },
+        "fixSummary": { "type": "string" },
+        "fixLabel": { "enum": ["FIX-PROVEN", "FIX-PLAUSIBLE"] },
+        "verdict": { "enum": ["confirmed", "rejected", "needs_review"] },
+        "evidenceTier": { "enum": ["PRODUCT-VERIFIED", "WIRING-FACT", "RELAYED"] },
+        "panel": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method", "agreeing", "lens_count", "threshold"],
+          "properties": {
+            "method": { "enum": ["vote", "deterministic-fallback"] },
+            "agreeing": { "type": "integer" },
+            "lens_count": { "type": "integer" },
+            "threshold": { "type": "integer" }
+          }
+        }
+      }
+    }
+  }
+}

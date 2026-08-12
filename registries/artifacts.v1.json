@@ -250,6 +250,23 @@
       "license": "review-required"
     },
     {
+      "id": "skill-assurance-pipeline",
+      "family": "skill",
+      "lifecycle": "active",
+      "owner": "organization",
+      "source": "skills/assurance-pipeline",
+      "destinations": [
+        "${HOME}/.codex/skills/assurance-pipeline",
+        "${HOME}/.claude/skills/assurance-pipeline"
+      ],
+      "declaredName": "assurance-pipeline",
+      "installDirectory": "assurance-pipeline",
+      "aliases": [],
+      "provenance": "user-authored-codex-home",
+      "sensitivity": "orchestration-only",
+      "license": "review-required"
+    },
+    {
       "id": "skill-bootstrap-orchestrator",
       "family": "skill",
       "lifecycle": "active",

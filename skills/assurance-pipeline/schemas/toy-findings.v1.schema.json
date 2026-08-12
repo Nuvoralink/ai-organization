@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nuvoralink.internal/schemas/assurance-toy-findings.v1.schema.json",
+  "title": "Toy pipeline candidate findings (produce stage output)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["candidates"],
+  "properties": {
+    "candidates": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/candidate" }
+    }
+  },
+  "$defs": {
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "ruleId", "ruleName", "ruleDescription", "level", "uri", "startLine", "message"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "ruleId": { "type": "string", "minLength": 1 },
+        "ruleName": { "type": "string", "minLength": 1 },
+        "ruleDescription": { "type": "string" },
+        "level": { "enum": ["none", "note", "warning", "error"] },
+        "uri": { "type": "string", "minLength": 1 },
+        "startLine": { "type": "integer" },
+        "message": { "type": "string" },
+        "evidence": { "type": "string" },
+        "fixSummary": { "type": "string" },
+        "fixLabel": { "enum": ["FIX-PROVEN", "FIX-PLAUSIBLE"] }
+      }
+    }
+  }
+}
