@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nuvoralink.internal/schemas/assurance-static-findings.v1.schema.json",
+  "title": "Static-evidence stage output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["staticFindings"],
+  "properties": {
+    "staticFindings": {
+      "type": "array",
+      "items": { "$ref": "static-finding.v1.schema.json" }
+    }
+  }
+}

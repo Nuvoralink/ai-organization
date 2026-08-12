@@ -1,58 +1,65 @@
 ---
 name: assurance-pipeline
-description: Staged, resumable pipeline spine for security-vulnerability discovery and code review, built on the control plane's own hardened primitives. Phase 0 ships ONLY the reusable spine (stage-runner + resumable run-state store, backend abstraction with a mock backend, voting panel, scope/cost estimate, redaction-on-write, SARIF 2.1.0 + human-report emitters, CLI) proven by a deterministic 3-stage toy pipeline. Use when composing a staged assurance/review run, adding a stage, or wiring a real lens/backend in a later phase. Not itself a security scanner yet — Phase 0 carries no real lenses and no real model calls.
+description: Staged, resumable pipeline for security-vulnerability discovery and code review, built on the control plane's own hardened primitives. Phase 0 is the reusable spine (stage-runner + resumable run-state store, backend abstraction, voting panel, scope/cost estimate, redaction-on-write, SARIF 2.1.0 + human-report emitters, CLI). Phase 1a adds the S2 static-evidence stage — a Semgrep-OSS adapter (native binary or the semgrep/semgrep Docker image), a stack-parametric adapter registry, a SARIF→StaticFinding normalizer, and a minimal S0→S2→S3 detection pipeline. Use when composing a staged assurance/review run, adding a stage/lens/adapter, running a static scan, or wiring a real backend in a later phase.
 ---
 
-# Assurance Pipeline (Phase 0 — the spine)
+# Assurance Pipeline (Phase 0 spine + Phase 1a static evidence)
 
-A staged, resumable pipeline that will later host security-vuln discovery and code review. **Phase 0
-is the reusable spine plus a deterministic toy pipeline that proves it** — no security lenses, no real
-model calls, no product repositories. The plan is `docs/assurance-pipeline-plan.md`.
+A staged, resumable pipeline for security-vuln discovery and code review. **Phase 0 is the reusable
+spine** (proven by a deterministic toy pipeline). **Phase 1a adds the S2 static-evidence stage** — a
+Semgrep-OSS adapter that normalizes SARIF into `StaticFinding`s, a stack-parametric adapter registry,
+and a minimal S0→S2→S3 detection pipeline. It closes VVAH caveat (a) — native TS/Node static analysis —
+via a mature tool rather than an LLM. Design authority: `docs/assurance-pipeline-plan.md` +
+`docs/assurance-pipeline-phase1-plan.md` (locked decisions D1–D7, D-P1-1…7).
 
 ## When to use
-- Composing or extending a staged assurance/review run (add a stage, a lens, a backend).
-- Running the toy spine end-to-end to verify the primitive after a change.
-- Wiring a real static-analysis lens, a real backend, or overlay install (Phase 1+, per the plan).
+- Composing or extending a staged assurance/review run (add a stage, a lens, a static adapter, a backend).
+- Running a deterministic static scan over a target repo (`scan --repo`).
+- Verifying the machine can run the pipeline's dependencies (`doctor`).
 
-## What Phase 0 gives you
+## What the spine gives you (Phase 0)
 - **Stage-runner** — chains `async (ctx, input) => output` stages, validates each declared artifact
   against its JSON schema (reusing `core/schema/validate-json-schema.mjs`), and checkpoints every
-  stage to a resumable run-state store.
-- **Run-state store** — the spine's OWN lightweight store (NOT task-assurance, which is a closed
-  completion-proof contract): a `run-manifest.json` + one JSON artifact per stage under a run
-  directory, following the artifacts-dir + hashing convention of `core/lifecycle/evidence-runtime.mjs`.
-  Resume reuses any stage whose artifact still hashes to its recorded sha256; the first changed or
-  missing stage (and every stage after it) re-runs.
-- **Backend abstraction** — `via ∈ {mock, cli, codex-cli}`. Phase 0 implements the **mock** backend
-  (deterministic, offline). `cli` (Claude) and `codex-cli` (Codex) are documented, fail-closed stubs.
-  `via: sdk` / `via: openai` (raw API endpoints) are OFF by default and throw.
-- **Voting panel** — N lenses, majority threshold, and a deterministic prefilter fallback at N=1
-  (a single lens is never trusted as a vote-of-one).
-- **Estimate** — a scope + token/cost preview that makes **zero** backend calls.
-- **Redaction-on-write** — every artifact (stage artifacts, SARIF, report) is masked before it
-  touches disk: PAN (Luhn + issuer prefix), SSN, and common secret/token shapes.
-- **Emitters** — SARIF 2.1.0 (validated against the vendored official schema) + a human Markdown
-  report with FIX-PROVEN / FIX-PLAUSIBLE labels and an honesty clause naming unreached surfaces.
-- **CLI** — `assurance estimate | scan | report`.
+  stage to a resumable run-state store. Inter-stage input is always the redacted persisted artifact
+  (D7: fresh ≡ resume; no unredacted secret crosses a stage boundary; lenses are redaction-invariant).
+- **Run-state store** — the spine's OWN lightweight store (NOT task-assurance, a closed
+  completion-proof contract): a `run-manifest.json` + one JSON artifact per stage, hashed for resume.
+- **Backend abstraction** — `via ∈ {mock, cli, codex-cli}`; Phase 0 implements **mock** (deterministic,
+  offline); `cli`/`codex-cli` are fail-closed stubs; `sdk`/`openai` raw API are OFF and throw.
+- **Voting panel** (N lenses, majority threshold, N=1 deterministic fallback), **estimate** (zero-spend),
+  **redaction-on-write** (PAN/SSN/secret masking on every artifact), **SARIF 2.1.0 + report emitters**.
+
+## What Phase 1a adds (S2 static evidence)
+- **`StaticFinding` contract** (`schemas/static-finding.v1.schema.json`) + a **SARIF normalizer**
+  (`lib/adapters/static/normalize.mjs`): a tool's SARIF 2.1.0 → normalized findings with a stable
+  structural `fingerprint` (D7-invariant — identity is tool/rule/location, never raw snippet bytes);
+  a malformed/wrong-version envelope is rejected.
+- **Semgrep OSS adapter** (`lib/adapters/static/semgrep.mjs`): builds the exact argv
+  (`--metrics=off`, explicit rulesets; never `--pro`, never `--config auto`) and runs Semgrep. Execution
+  is **portable (D-P1-7): a native `semgrep` binary is used when present, else the `semgrep/semgrep`
+  Docker image** (Windows-with-Docker, Linux CI). No runtime → fail-closed `SEMGREP_UNAVAILABLE`.
+- **Stack-parametric registry** (`lib/adapters/static/registry.mjs`) — adapters declare their stacks;
+  nothing is hardcoded to one project.
+- **S2 stage** (`lib/stages/s2-static-evidence.mjs`) + a minimal **S0→S2→S3 security pipeline**
+  (`pipelines/security-pipeline.mjs`) emitting SARIF + a report via the spine's emitters.
 
 ## CLI
-
 ```
+node skills/assurance-pipeline/cli.mjs doctor                             # check the Semgrep runtime (D-P1-7)
 node skills/assurance-pipeline/cli.mjs estimate --target <ref>            # zero-spend scope preview
+node skills/assurance-pipeline/cli.mjs scan --repo <path>                 # deterministic S0→S2→S3 static scan
 node skills/assurance-pipeline/cli.mjs scan --target <ref> [--run-id X]   # run the toy spine, checkpoint + resume
 node skills/assurance-pipeline/cli.mjs report --run-id X                  # re-emit SARIF + report, no re-run
 ```
-
-Phase 0 ships only the `mock` backend, so `scan` runs the deterministic toy pipeline
-(produce → verify → emit). Passing `--via cli` or `--via codex-cli` fails closed (Phase-1 stubs).
+`scan --repo` needs a Semgrep runtime; run `doctor` first. If it reports none, `docker pull semgrep/semgrep`
+(or install a native `semgrep`). Machines that run scans provision this in initialization — see
+`docs/new-machine-bootstrap.md`. `--via cli` / `--via codex-cli` still fail closed (Phase-1b backends).
 
 ## Runtime is repo-resident
-The spine imports control-plane primitives from `core/` (per plan decision D1: a repo-resident Node
-stage-runner). Run it from the control-plane repo. Overlay/install packaging is a Phase-1 concern.
+The pipeline imports control-plane primitives from `core/` (plan D1). Run it from the control-plane repo;
+overlay/install packaging into a product repo is Phase 1d.
 
 ## Extending it (later phases)
-Add stages via `defineStage({ name, kind, inputSchema, outputSchema, run })` and pass them to
-`runPipeline`. Real security lenses (Semgrep/CodeQL/osv/gitleaks adapters), execution-proven
-validation, and the Claude/Codex backend adapters are Phase 1 — see `README.md` and the plan.
-
-See `README.md` for the architecture and the reuse/seam map.
+Add stages via `defineStage(...)` + `runPipeline`. The LLM deep-dive/verify lenses (Phase 1b), osv-scanner
++ gitleaks adapters (Phase 1a.2), execution-proven validation (Phase 1c), and overlay wiring (Phase 1d)
+are per the plan. See `README.md` for the architecture and the reuse/seam map.

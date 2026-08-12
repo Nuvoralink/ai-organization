@@ -4363,11 +4363,27 @@
       "class": "reusable-skill"
     },
     {
+      "path": "skills/assurance-pipeline/lib/adapters/static/normalize.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/lib/adapters/static/registry.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/lib/adapters/static/semgrep.mjs",
+      "class": "reusable-skill"
+    },
+    {
       "path": "skills/assurance-pipeline/lib/artifacts.mjs",
       "class": "reusable-skill"
     },
     {
       "path": "skills/assurance-pipeline/lib/backend.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/lib/doctor.mjs",
       "class": "reusable-skill"
     },
     {
@@ -4399,7 +4415,15 @@
       "class": "reusable-skill"
     },
     {
+      "path": "skills/assurance-pipeline/lib/stages/s2-static-evidence.mjs",
+      "class": "reusable-skill"
+    },
+    {
       "path": "skills/assurance-pipeline/lib/voting-panel.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/pipelines/security-pipeline.mjs",
       "class": "reusable-skill"
     },
     {
@@ -4412,6 +4436,14 @@
     },
     {
       "path": "skills/assurance-pipeline/schemas/sarif-2.1.0.schema.json",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/schemas/static-finding.v1.schema.json",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/schemas/static-findings.v1.schema.json",
       "class": "reusable-skill"
     },
     {
@@ -4432,6 +4464,70 @@
     },
     {
       "path": "skills/assurance-pipeline/tests/assurance-pipeline.test.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/tests/doctor.test.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/tests/fixtures/golden-ts-repo/README.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/tests/fixtures/golden-ts-repo/fixture-rules.yml",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/tests/fixtures/golden-ts-repo/labels.json",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/tests/fixtures/golden-ts-repo/src/authz-object-scope.ts",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/tests/fixtures/golden-ts-repo/src/clean-env-credential.ts",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/tests/fixtures/golden-ts-repo/src/clean-ownership-checked.ts",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/tests/fixtures/golden-ts-repo/src/clean-parameterized-query.ts",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/tests/fixtures/golden-ts-repo/src/clean-tenant-scoped.ts",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/tests/fixtures/golden-ts-repo/src/clean-trusted-fetch.ts",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/tests/fixtures/golden-ts-repo/src/hardcoded-secret.ts",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/tests/fixtures/golden-ts-repo/src/missing-tenant-scope.ts",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/tests/fixtures/golden-ts-repo/src/sql-injection.ts",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/tests/fixtures/golden-ts-repo/src/ssrf.ts",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/tests/s2-golden-e2e.test.mjs",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/assurance-pipeline/tests/s2-static-evidence.test.mjs",
       "class": "reusable-skill"
     },
     {
