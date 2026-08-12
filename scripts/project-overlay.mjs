@@ -661,6 +661,18 @@ export function runProjectOverlayCli(argv, context = {}) {
       );
     });
     stdout(`operations=${operations.length} dryRun=${dryRun}`);
+    if (command === 'install' && !dryRun && operations.length > 0) {
+      // A delivery can leave the TARGET's own discovery manifests stale (REPO_FILEMAP, the authority
+      // inventory) because the control plane delivers managed files but does not own those manifests —
+      // the class that produced CoachAI's pre-existing gate:filemap + DCD-AUTHORITY-MANIFEST-1 failures
+      // (2026-08-12). Surface it at install time (it was previously silent until the target's own CI)
+      // so the operator regenerates and re-checks before committing. Advisory only: it never runs the
+      // target's scripts from here (that couples the control plane to each target's environment and
+      // breaks parity-test installs) and never fails the delivery.
+      stdout(
+        `post-install-advisory\t${loaded.manifest.project}\tdelivered ${operations.length} managed file(s) — if any are new scripts/rules, regenerate the target's discovery manifests (REPO_FILEMAP + authority inventory) and re-run its gates before committing`,
+      );
+    }
     return 0;
   } catch (error) {
     stderr(error.message);
