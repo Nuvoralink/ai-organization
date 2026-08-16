@@ -112,6 +112,32 @@ body:
       required: true
 
   - type: textarea
+    id: functional_acceptance
+    attributes:
+      label: Functional acceptance
+      description: Define the original deployed user journey, deploy-safety boundary, acceptance observer, and which audit findings remain queue-only until it works.
+      placeholder: |
+        Original journey: <exact user action -> deployed effect>
+        Deploy safety: <migration/schema, DB integrity, build/startup, Railway readiness>
+        Acceptance authority: <human observer or runtime artifact>
+        Pre-acceptance audits: queue without remediation except bounded interruption classes
+    validations:
+      required: true
+
+  - type: textarea
+    id: provider_documentation_evidence
+    attributes:
+      label: Provider documentation evidence
+      description: Required for provider-facing changes; otherwise state N/A with the provider-path census.
+      placeholder: |
+        Official leaf docs: <current provider URLs>
+        Installed SDK source/types inspected: <paths, methods, types>
+        Exact contract claims: <request, response/webhook, idempotency, ordering>
+        Deployed provider smoke: <real post-deploy effect>
+    validations:
+      required: true
+
+  - type: textarea
     id: implementation_authority_proof
     attributes:
       label: Implementation authority and proof matrices

@@ -13,6 +13,11 @@
       "destination": ".ai-organization/policies/action-authority.v1.json"
     },
     {
+      "id": "auxara-delivery-lifecycle",
+      "mode": "generated",
+      "destination": ".ai-organization/policies/delivery-lifecycle.v1.json"
+    },
+    {
       "id": "auxara-risk-controls",
       "mode": "generated",
       "destination": ".ai-organization/policies/risk-controls.v1.json"

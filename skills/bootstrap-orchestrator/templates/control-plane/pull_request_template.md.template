@@ -20,6 +20,18 @@
 | --- | ---: | --- | --- |
 |  |  |  |  |
 
+## Delivery mode and functional acceptance
+
+- Delivery stage: <!-- targeted proof / deploy safety / deployed functional proof / hardening -->
+- Original user journey: <!-- exact deployed behavior this change must make work -->
+- Deploy-safety evidence: <!-- migration/schema, DB integrity, build/startup, deploy readiness -->
+- Deployed functional proof: <!-- observed result and human acceptance, or explicitly pending -->
+- Pre-acceptance audit findings: <!-- queue without remediation unless an interruption class applies -->
+
+## Provider documentation evidence
+
+<!-- For provider changes, link the exact provider-proof evidence entry ({{PROVIDER_EVIDENCE_PATH}}). State N/A only when no production provider path changed. -->
+
 ## Killer mutation
 
 ## Rendered evidence (when relevant)

@@ -59,6 +59,13 @@ still pass against a regressed version of your change is theater).
 
 ## §5 Closure checklist (real commands + lenses)
 
+For a functional/product-behavior slice, `.cursor/rules/functionality-first-delivery.mdc` orders this
+section: run the focused biting proof first; auditors may run in parallel, but their ordinary findings
+queue without remediation until the original deployed journey is accepted at coach.nuvoralink.com (only
+the policy's bounded interruption classes may block); the broad/full verification below is the
+POST-acceptance closure gate, not the pre-deploy gate for functional feedback work. Non-functional slices
+(docs, mocks, planning) take neither the staged lifecycle nor added ceremony.
+
 - [ ] `npm run verify` green — quote its real summary line, never a `| tail` exit. (Local prereq: `DATABASE_URL` set — a placeholder value works; `prisma generate` reads it but never connects.)
 - [ ] `npm run gates:all` green.
 - [ ] Area-triggered batteries: the security battery (CLAUDE.md §"Security/Auth/RBAC Verification Gates")
@@ -86,8 +93,10 @@ still pass against a regressed version of your change is theater).
   `user-journey-auditor` (walk BOTH day-zeros first, then the persona × moment inventory) over the merged
   result (not just per-slice diffs), plus a re-triage of the OPEN `docs/COACHING_BUG_BACKLOG.md` rows
   (deferred findings that may now be exploitable, newly in-scope, or whose deferral reason has lapsed).
-- [ ] Findings → fixed this turn, or a `docs/COACHING_BUG_BACKLOG.md` row with a tier (exploitable-now →
-      fix now; deferred → row + reason).
+- [ ] Findings → before functional acceptance of a functional slice, queued per
+      `functionality-first-delivery.mdc` (only its bounded interruption classes block); after acceptance —
+      fixed this turn, or a `docs/COACHING_BUG_BACKLOG.md` row with a tier (exploitable-now → fix now;
+      deferred → row + reason).
 
 ## §6 STOP conditions
 

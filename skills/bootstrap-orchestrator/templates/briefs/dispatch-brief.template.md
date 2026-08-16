@@ -72,3 +72,15 @@ The agent's final report must contain: <the exact fields — for an implementer:
 
 ## 6. ACCEPTANCE CRITERIA (the agent can self-verify from its own seat)
 - <the specific, checkable conditions that mean the slice is done — a passing gate with its real exit, a rendered surface measured correct, a test that bites named>.
+
+## Functional acceptance (required for functional code changes; docs/mocks/planning briefs omit it)
+- **Original journey:** <the exact user action → deployed effect this change must make work>.
+- **Deploy-safety boundary:** <only migration/schema, DB integrity, build/startup, deploy readiness — not the full hardening suite>.
+- **Acceptance observer:** <the human or runtime artifact whose observed deployed journey is the functional-acceptance authority>.
+- **Queue-only note:** pre-acceptance auditor findings queue without remediation; only the bounded interruption classes in `.ai-organization/policies/delivery-lifecycle.v1.json` may interrupt.
+
+## Provider documentation evidence (required when the slice touches a provider contract; otherwise "N/A — no provider path changed", source-derived)
+- **Official leaf docs:** <current provider doc URLs for the exact capability + retrieval date>.
+- **Installed SDK inventory:** <SDK source/type paths, methods, types inspected>.
+- **Exact contract claims:** <request/response/webhook identifiers, idempotency/retry, ordering>.
+- **Deployed smoke:** <the real post-deploy provider effect that will be observed>.

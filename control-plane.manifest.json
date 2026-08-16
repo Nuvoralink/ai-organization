@@ -201,7 +201,9 @@
         "marketplaces",
         ".last_inuse_sweep",
         "plugin-catalog-cache.json",
-        "known_marketplaces.json"
+        "known_marketplaces.json",
+        "installed_plugins.json",
+        ".install-manifests"
       ],
       "detectLocalOnly": true,
       "ownership": "canonical",

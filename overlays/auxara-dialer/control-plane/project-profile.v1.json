@@ -3,6 +3,7 @@
   "orchestrator": "single-pm",
   "premiseChallenger": "required-for-material-work",
   "productionEffectFromMainMerge": true,
+  "deliveryLifecyclePolicy": ".ai-organization/policies/delivery-lifecycle.v1.json",
   "autoMerge": false,
   "branchProtection": "deferred"
 }

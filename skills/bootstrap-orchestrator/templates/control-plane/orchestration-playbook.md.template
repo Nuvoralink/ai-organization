@@ -30,6 +30,27 @@ Production-affecting push, deploy/publish, production mutation or configuration,
 billed actions or purchases, external contact, secrets, and unresolved product/design/material-architecture
 decisions remain human-gated. A merge that auto-deploys or otherwise mutates production is human-gated.
 
+Required merge/release gates remain indivisible and green, but closure means zero verified release blockers,
+not zero findings. Treat unknown/unverified, release/core-journey, security/tenancy/privacy, compliance,
+data-integrity, irreversible/external/billed, and proof-trust defects as BLOCK. A residual is FIX-NEXT only
+when evidence proves it bounded, fail-safe, and unable to affect any BLOCK class. File FIX-NEXT evidence,
+impact, owner, fix direction, and validation in the durable backlog before merge, then repair it on a
+follow-up branch. A red mandatory gate cannot be downgraded; fix the product or a proven-stale gate and rerun.
+Unknown is never low severity.
+
+## Functionality-first delivery loop
+
+For functional code changes (product behavior and controls/gates): root cause + current provider/contract
+truth → exact biting tests as targeted implementation proof → proportional deploy-safety proof
+(migration/schema, DB integrity, build/startup, deploy readiness only) → human-authorized merge/deploy +
+**deployed functional proof** of the original user journey → remediate queued findings and run the broad
+closure gate on the hardened candidate. The motive is efficiency: prove the intended behavior — ideally on
+the real surface — before any time/tokens go to hardening, broad audits, cleanup, or edge-polish. Auditors
+may inspect in parallel before acceptance, but findings remain queue-only unless they identify a bounded
+interruption class in `.ai-organization/policies/delivery-lifecycle.v1.json`. Docs, mocks, and planning
+are exempt from the staged lifecycle. Never let review ceremony substitute for proving the feature works
+on the deployed artifact.
+
 ## Evidence
 
 Open real outputs/artifacts. A status, report, grep-zero, green test, or critic verdict is a lead. Re-run

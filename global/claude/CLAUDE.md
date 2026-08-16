@@ -476,6 +476,23 @@ the user's job.
 - When replacing old code, remove the dead path; don't leave no-op shims or stale wiring. If a
   compatibility bridge must stay, mark why it exists and when it can go.
 
+## Functionality-first delivery — prove the intended behavior before hardening (2026-08-16)
+
+- For CODE work: prove the intended behavior actually happens — the targeted biting test, then the real
+  surface (the deployed user journey when one exists) — BEFORE spending time/tokens on security
+  hardening, broad audits, cleanup, or edge-polish. **Working-but-unhardened beats hardened-but-unproven.**
+- Auditors may run in parallel, but their ordinary findings queue without remediation until the original
+  behavior is proven; only deploy-safety classes interrupt (migration/schema failure, DB-integrity /
+  irreversible-data-loss, build/startup failure, deploy/readiness failure, catastrophic irreversible
+  security risk). After acceptance, remediate the queue and run broad closure verification ONCE.
+- Provider integrations are docs-and-SDK-first: consult the current official leaf docs AND inspect the
+  installed SDK source/types before writing provider code — never invent provider behavior from training
+  memory or tutorials; the evidence travels in the same diff, gate-enforced where the project has gates.
+- Docs, mocks, planning, and other non-functional tasks are exempt — no staged lifecycle, no ceremony.
+
+*Fail-state:* a branch accumulates audits/full CI while nobody has proven the user-visible behavior works
+— or provider code is invented from memory while an official SDK capability exists.
+
 ## Evidence over assumption — never guess, verify against the source
 
 - Back every **load-bearing claim** with evidence from the actual code, data, or runtime output —

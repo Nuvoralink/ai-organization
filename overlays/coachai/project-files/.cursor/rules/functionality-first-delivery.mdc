@@ -1,0 +1,61 @@
+---
+description: Functionality-first delivery — prove the intended code behavior on the real surface before hardening, broad audits, cleanup, or polish; queue-only auditors pre-acceptance; docs-and-SDK-first provider work
+alwaysApply: false
+---
+# Functionality-first delivery
+
+`.ai-organization/policies/delivery-lifecycle.v1.json` is the machine-readable authority. This rule
+explains how to execute it for CoachAI.
+
+## The principle — prove the intended behavior first (founder directive, 2026-08-16)
+
+Functionality-first exists to make delivery fast and cheap in time and tokens: prove the INTENDED CODE
+BEHAVIOR actually happens — ideally on the real surface — BEFORE spending on security hardening, broad
+audits, cleanup, or edge-polish. Working-but-unhardened beats hardened-but-unproven. This ordering
+governs code: product behavior (real surface = the deployed journey at coach.nuvoralink.com) and
+controls/gates (cheap proof = the red-on-mutation run). Docs, mocks, planning, and other non-functional
+tasks are exempt — no staged lifecycle, no added ceremony. Hardening remains mandatory; it follows
+proven behavior instead of impersonating it.
+
+## Functional changes use one ordered lifecycle
+
+A feature or functionality bug fix moves through these stages in order:
+
+1. **Root cause and current contract.** Reproduce the real user-visible failure (deployed surface when
+   reachable), trace the production source-to-effect path, and consult current official provider docs plus
+   the installed SDK source/types before designing any provider behavior.
+2. **Targeted implementation proof.** Implement the smallest durable root correction. Run the exact
+   positive/negative test that bites the reported behavior and name its killer mutation.
+3. **Deploy safety.** Prove only what is needed to avoid breaking migration/schema application, database
+   integrity, build/startup, deploy/readiness, or irreversible data. Do not spend the full hardening
+   suite as a substitute for functional proof.
+4. **Deployed functional proof.** With explicit human authority for production-affecting merge/deploy
+   (ORG-007's pre-customer standing authorization applies while it stands), deploy promptly and repeat the
+   original user journey at coach.nuvoralink.com. Read its actual output: persisted row/artifact, coaching
+   output, and visible behavior as applicable. When the human can exercise the journey, human acceptance is
+   the functional-acceptance authority.
+5. **Hardening and broad assurance.** Only after stage 4 passes, remediate queued audit findings and run
+   the broad security battery, doctrine, parity, full-verify/closure, cleanup, and optimization work.
+
+Auditors may run in parallel before stage 4 and report findings. Their findings are queued without
+remediation until functional acceptance. Only these classes interrupt stages 1–4: migration/schema apply
+failure, database-integrity or irreversible-data-loss risk, build/startup failure, deploy/readiness
+failure, or catastrophic irreversible security risk. A normal hardening finding is not permission to
+change the implementation before the original function is proven.
+
+This lifecycle does not grant production authority beyond `action-authority.v1.json` (including ORG-007's
+recorded exception); once authorized, ceremony must not delay the functional feedback loop.
+
+## Provider work is docs-and-SDK-first
+
+Any production change that touches a provider contract MUST, before code: open the current official leaf
+documentation for the exact capability; inventory the installed SDK's exported methods/types and prefer the
+supported SDK capability; record exact request/response/webhook identifiers, idempotency/retry semantics,
+event ordering, and what the docs do not state; and plan one deployed smoke that proves the provider
+effect, not merely a mocked adapter. The evidence travels in the same diff. Training data, recollection,
+third-party tutorials, and tests shaped from the implementation are leads, not provider authority. Custom
+protocol/signing/serialization code is forbidden when the installed SDK already owns the capability unless
+the evidence names the verified SDK gap.
+
+*Fail-state:* a branch spends hours in auditors/full verify before anyone proves the original feature
+works at coach.nuvoralink.com, or provider code is invented from memory while an official SDK method exists.

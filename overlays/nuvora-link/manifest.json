@@ -53,6 +53,20 @@
       "lock": "${HOME}/.nuvoralink-control-plane/project-locks/nuvora-link/overlay-lock.json"
     },
     {
+      "id": "nuvora-link-delivery-lifecycle",
+      "source": "policies/delivery-lifecycle.v1.json",
+      "captureFrom": "${PROJECT:nuvora-link}/.ai-organization/policies/delivery-lifecycle.v1.json",
+      "destinations": ["${PROJECT:nuvora-link}/.ai-organization/policies/delivery-lifecycle.v1.json"],
+      "mode": "file",
+      "ownership": "generated",
+      "allowedExtensions": [".json"],
+      "exclude": [],
+      "detectLocalOnly": false,
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "lock": "${HOME}/.nuvoralink-control-plane/project-locks/nuvora-link/overlay-lock.json"
+    },
+    {
       "id": "nuvora-link-agent-role-registry",
       "source": "registries/agent-roles.v1.json",
       "captureFrom": "${PROJECT:nuvora-link}/.ai-organization/registries/agent-roles.v1.json",

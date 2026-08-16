@@ -25,3 +25,6 @@ build/
 coverage/
 artifacts/rendered/
 registries/project-roots.local.json
+
+# Claude Code session worktree state; live git worktrees register via .git, never as repo content.
+.claude/worktrees/

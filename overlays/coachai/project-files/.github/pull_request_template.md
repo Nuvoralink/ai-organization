@@ -28,6 +28,18 @@
 - Independent reviewer/verifier:
 - [ ] Tests name the behavior, authority, surface, and mutation they defend.
 
+## Delivery mode and functional acceptance
+
+- Delivery stage: <!-- targeted proof / deploy safety / deployed functional proof / hardening -->
+- Original user journey: <!-- exact deployed behavior this change must make work -->
+- Deploy-safety evidence: <!-- migration/schema, DB integrity, build/startup, deploy readiness -->
+- Deployed functional proof: <!-- observed result at coach.nuvoralink.com and human acceptance, or explicitly pending -->
+- Pre-acceptance audit findings: <!-- queue without remediation unless an interruption class applies -->
+
+## Provider documentation evidence
+
+- Official leaf docs / installed SDK source-and-types inspected / exact contract claims / deployed smoke, or N/A with the provider-path census:
+
 ## Action authority
 
 - [ ] No production/deploy/config/migration mutation, destructive/billed action, external contact/message, secret action, or product/design/material-architecture decision occurred without human approval.

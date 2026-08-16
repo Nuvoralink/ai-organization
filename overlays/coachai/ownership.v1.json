@@ -18,6 +18,11 @@
       "destination": ".ai-organization/policies/risk-controls.v1.json"
     },
     {
+      "id": "coachai-delivery-lifecycle",
+      "mode": "generated",
+      "destination": ".ai-organization/policies/delivery-lifecycle.v1.json"
+    },
+    {
       "id": "coachai-agent-role-registry",
       "mode": "generated",
       "destination": ".ai-organization/registries/agent-roles.v1.json"

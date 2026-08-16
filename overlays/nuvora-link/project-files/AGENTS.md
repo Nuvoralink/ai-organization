@@ -29,6 +29,7 @@ The universal orchestration doctrine applies. The single orchestrator owns decom
 - `.claude/rules/frontend-rules.md` — visible web work; Claude Design approval is blocking before implementation.
 - `.claude/rules/centralization-doctrine.md` — registries, shared contracts, configuration, duplicated decisions, and replacement work.
 - `.claude/rules/test-intent.md` — every test-bearing path.
+- `.claude/rules/functionality-first-delivery.md` — functional/product-behavior code: prove the intended behavior on the deployed Nuvora Link site before hardening or broad audits; ordinary pre-acceptance auditor findings queue outside the policy's bounded interruption classes; docs/mocks/planning are exempt.
 
 ## Fleet
 

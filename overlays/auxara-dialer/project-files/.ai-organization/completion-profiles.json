@@ -36,13 +36,20 @@
   "profiles": {
     "control": {
       "commands": [
+        "typecheck",
+        "lint",
+        "format:check",
         "gate:rules-wiring",
         "gate:agent-context",
         "gate:agent-control-plane",
         "gate:fleet-parity",
         "gate:organization-overlay",
         "gate:task-assurance",
-        "gate:decision-sprint-linkage"
+        "gate:decision-sprint-linkage",
+        "gate:local-ci-contract",
+        "gate:delivery-lifecycle",
+        "gate:provider-doc-evidence",
+        "gate:filemap"
       ],
       "assurance": {
         "version": 1,
@@ -162,15 +169,19 @@
     },
     "backend": {
       "commands": [
+        "prisma:generate",
         "typecheck",
         "lint",
-        "gate:test-intent"
+        "format:check",
+        "gate:test-intent",
+        "gate:provider-doc-evidence"
       ]
     },
     "frontend": {
       "commands": [
         "typecheck",
         "lint",
+        "format:check",
         "check:ui",
         "check:layout",
         "gate:test-intent",
@@ -181,22 +192,27 @@
       "commands": [
         "typecheck",
         "lint",
+        "format:check",
         "gate:test-intent",
         "gate:endpoint-wiring"
       ]
     },
     "database": {
       "commands": [
+        "prisma:generate",
         "typecheck",
         "lint",
+        "format:check",
         "gate:test-intent",
         "gate:tx-seam",
         "gate:tx-rollback",
-        "gate:lifecycle-write"
+        "gate:lifecycle-write",
+        "gate:provider-doc-evidence"
       ]
     },
     "docs": {
       "commands": [
+        "format:check",
         "gate:doc-code-drift",
         "gate:doc-registry-refs",
         "gate:decision-sprint-linkage"
@@ -205,7 +221,8 @@
     "project": {
       "commands": [
         "typecheck",
-        "lint"
+        "lint",
+        "format:check"
       ]
     }
   }

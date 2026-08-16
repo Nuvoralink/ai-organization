@@ -4,11 +4,11 @@
   "managedFiles": [
     {
       "path": ".ai-organization/agents.json",
-      "sha256": "21cc7a6e3250f0a3c724f6041e007dc9685f6f499cf080f06751da438b9f2b65"
+      "sha256": "519389c6d20dd703a038718f330e04ccc979c26a6efdaecb406672c9d878d84f"
     },
     {
       "path": ".ai-organization/completion-profiles.json",
-      "sha256": "00093eceb99545704c52e154eecb194515e360647d76428241c811871a421b77"
+      "sha256": "bc54b48530b46f73d09179c5cf48a20bbc594c9a36f804d407daf66a34f7580e"
     },
     {
       "path": ".ai-organization/policies/action-authority.v1.json",
@@ -16,7 +16,7 @@
     },
     {
       "path": ".ai-organization/policies/risk-controls.v1.json",
-      "sha256": "a3c50ca96df3368ad28ccc60826e4151067c38e74e333d7407906dafd5fc852b"
+      "sha256": "41d9b43fc8c44934a82b3b2b25ca5d97037fdf1c7e55ca91b19be66739f0bc8f"
     },
     {
       "path": ".ai-organization/schemas/task-assurance.v2.schema.json",
@@ -128,7 +128,7 @@
     },
     {
       "path": "scripts/check-agent-control-plane.mjs",
-      "sha256": "8a04f67c9cff34b32fbeaeccaf70736cd80a409f172ebb02bd1e632611f1360b"
+      "sha256": "ea59448b880b9aae5a262b974a5f870e1a5986e0fcc2e0a12179f72c635ae8d1"
     },
     {
       "path": "scripts/check-organization-overlay.mjs",
@@ -180,11 +180,11 @@
     },
     {
       "path": ".github/ISSUE_TEMPLATE/agent-slice.yml",
-      "sha256": "6ebe3581f5763bfa640110beac62110c2e39115ea6d8c6019a720b275c453fcc"
+      "sha256": "dd083abf81ce213c6e87c40c8a5aadd50367dcc7864f880501b450fbba4f0b50"
     },
     {
       "path": ".github/PULL_REQUEST_TEMPLATE.md",
-      "sha256": "bbe3b3144569e449ba1f21ebcb87204e91c97417c96aaa3d467e70d1a8883083"
+      "sha256": "54734f9a25d230dee6e18b5635f04d57fd9c1509216b0d7269f84712974424ad"
     }
   ],
   "projectOwnedRoots": [

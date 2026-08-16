@@ -110,9 +110,13 @@ Choose the smallest test ladder that proves the risk:
 - browser/source-to-UI smoke when the final surface matters (softphone, wallboard),
 - one final authority rerun only after local proof is clean and the question requires a live provider (Telnyx test sub-account, Stripe test mode) or deployed behavior.
 
+For a functional bug or feature, this ladder is ordered by product feedback: targeted regression proof → deploy-safety proof → deployed reproduction of the original journey → broad hardening. Provider-facing tests must be derived from current official leaf docs and the installed SDK source/types, with same-diff evidence in `docs/app-plan/auditability/provider-proof/change-evidence.json`; a mock shaped from the implementation is not provider-contract proof.
+
 Do not require every rung for every change. Do require enough proof that a sloppy version of the same fix would fail.
 
 When persisted derived state, queues, dispatch rows, retryable provider side effects, projections, aggregates, or lifecycle statuses are involved (Telnyx CDR ingestion, recording-rehoming jobs, SMS send rows, 10DLC vetting status, DNC scrub timestamps, number-health events), tests must cover the row-state matrix. Include fresh eligible rows, stale rows after source changes, retryable failed rows, terminal evidence rows, duplicate triggers (same `telnyx_event_id`), source revoked after row creation (number flagged spam mid-sequence), and provider unavailable/disabled states where applicable. Map tests to every relevant source authority, producer/reconciliation path, state transition, unavailable/disabled provider state, provider evidence, idempotency path, final UI/output, and docs. Prove stale or retryable rows cannot produce future side effects after source changes, and prove terminal evidence (a finalized recording, a written `compliance_audit_log` row) cannot be overwritten by repair/reconciliation.
+
+**Split terminal evidence requires an event-order matrix (inbound voicemail review, 2026-08-15).** When one provider event ends media/work and another event persists or terminalizes its artifact, test every supported order: end→artifact, artifact→end, duplicate/replay, and missing/error. Each valid order must converge to the same route/command/artifact truth; the end event alone must never fabricate availability, and an early generic terminal transition must not make a later signed artifact unreachable. Prefer persisting the authoritative winner before enqueue when the producer can withhold a successful response until queue durability; provider redelivery then retries the same idempotent winner and enqueue without making worker timing part of authority. When the producer nevertheless enqueues work before the authoritative winner is persisted, the same matrix MUST exercise producer→queue→worker→reducer interleavings: pause after enqueue before winner commit and after worker claim before final artifact stamp, then race success/error/deadline. A test double that only records `queue.add()` is insufficient. The worker must either require and recheck the exact persisted winner around external/storage effects or prove an equivalent single-winner fence and existing cleanup path. A finite bounded retry horizon is sufficient only when producer-to-winner latency is itself source-bounded below that horizon and the test enforces the bound; one real attempt after a reconciliation deadline proves timing coverage, not durable ownership. Otherwise persist the winner before enqueue or prove a separate durable deterministic re-enqueue owner. Manually invoking the worker again is not queue-liveness proof. Boundary tests cover the last-attempt window, the deadline, the first post-deadline attempt, and same-ID replay after retained failure when enqueue still precedes the winner. Killer mutations: restore the generic end-state transition before checking whether a provider-admitted artifact is still recovery-owned, let the worker accept a queued job without the persisted winner, return success after reconciliation but before queue durability, remove the producer-to-winner latency bound, or let a retained failed job consume same-ID replay; the end→artifact and queue-worker race cases must go red while the pre-admission end case remains terminal and effect-free.
 
 **Redis-backed counters/limiters are derived state too — their TTL is their lifecycle (security audit 2026-07-03, MEDIUM-1).** A rate-limit window, a dials-today counter, a claim key: the TTL IS the row's expiry semantics, and the classic INCR-then-EXPIRE pair is non-atomic — if the INCR lands and the EXPIRE is lost (timeout-abandoned, rejected, process restart between the two), the key lives forever and a fixed window never resets (a whole office NAT 429'd on login until an ops key-delete). Tests for any Redis-backed counter must prove **TTL exists after every failure path** (incr-lands-late, expire-abandoned, restart mid-pair) — the strongest shape seeds a TTL-less key against a real Redis and asserts the next request self-heals it. Prefer an atomic Lua op (INCR + set-TTL-if-absent) or `EXPIRE … NX` over the split pair; canonical fixture: `rate-limit-fail-closed.test.ts` §"TTL self-healing against a real Redis (MEDIUM-1)".
 
@@ -333,6 +337,22 @@ contract it exercises; isolate it from unrelated global fixture identity.
 
 *Fail-state:* an interrupted prior test run poisons a later run through a fixed UUID before any product
 assertion executes.
+
+**Shared platform-account fixtures must select a named identity, never global cardinality (2026-08-16).**
+Parallel DB suites may legitimately create additional platform telephony accounts to prove historical
+account pinning, repointing, or ambiguity failure. Ordinary fixtures therefore resolve and pin the
+migration-owned Standard identity through `helpers/telephonyAccountFixture.ts`; they never select an
+arbitrary active row or assert whole-table singleton cardinality in the shared DB. A test whose product
+claim is specifically null-pointer/sole-account fallback or exact migration seed cardinality runs in an
+isolated scratch-migration database. Pair an uncapped source census that rejects non-exact selectors
+outside the central helper with a DB mutation that keeps a sibling account alive while an ordinary
+fixture resolves Standard. Killer mutations: restore a bare `findFirstOrThrow`, `where: { status:
+'active' }`, or whole-table `findMany` in an ordinary test; remove the exact ID predicate from a
+documented direct lookup; or run the singleton fallback claim against the shared database.
+
+*Fail-state:* an ordinary fixture passes or fails depending on whether a sibling test's active account
+exists at the instant an arbitrary selector runs, or a shared-DB singleton assertion serializes the
+suite by assumption.
 
 ## 18. Multi-operation mocks dispatch by observable identity; exact inputs are checked at construction (2026-07-19)
 

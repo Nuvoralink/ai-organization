@@ -55,7 +55,7 @@
     },
     "provider": {
       "required_roles": ["security-auditor", "adversarial-reviewer"],
-      "required_proofs": ["official_contract_or_repo_truth", "messy_payload_cases", "signature_and_replay_protection", "redaction"],
+      "required_proofs": ["current_official_provider_docs", "installed_sdk_source_or_types", "same_diff_provider_evidence", "messy_payload_cases", "signature_and_replay_protection", "redaction"],
       "human_gate": []
     },
     "ai_semantics": {

@@ -140,6 +140,32 @@ A `run_in_background` agent that must commit/verify/PR itself can **produce its 
 ## Verify the critic before a gated or conditional action
 A reviewer/gate/sub-agent reporting "clean / done / merge" is a **lead, not proof** (see the loop-discipline rule). Branch/commit/PR are autonomous in scope. A push is autonomous only after live repository evidence proves that the ref update cannot trigger a preview/production deployment, publish, billed build, production write, or external contact; when branch pushes auto-deploy, the push inherits that action's human gate unless an exact no-deploy path is proven. A preview deployment still counts as a deployment. Killer mutation: call a Vercel/Netlify/Railway-integrated PR push "git-only" and push without inspecting current checks/integration configuration. Counterexample: a branch push to a repository with verified no push-triggered external effect remains autonomous. Merge is conditional and may proceed only when every capability-matrix proof is re-derived from the actual diff, including no deploy/production effect; uncertainty requires a human. Production-affecting push/merge, publish, prod-write/config, migration, delete, deploy, billed action, external contact, and unresolved product/design/material-architecture decisions are human-gated. **The action lives in its own tool call, never chained after the sensor in one command** — `check; act` or `grep result; merge` executes the act regardless of what the sensor said. 2026-07-12, twice in one session: a `;`-chained `gh pr merge` fired after a VERIFY_EXIT: 1 grep. Sequence: run the sensor → READ it → only then issue a separately authorized action. A critic fails two ways and both are caught here: *confidently wrong* and *incomplete*.
 
+## Severity-calibrated merge closure
+
+Required merge/release gates remain indivisible and green, but closure targets **zero verified release blockers**, not zero findings. Every residual is evidence-classified:
+
+- **BLOCK:** unknown or unverified; can break build, migration, deployment, readiness, or a core user journey; affects security/auth/tenant isolation/privacy/secrets, compliance, data integrity/loss, irreversible/external/billed effects; or reveals a defective proof surface that makes any of those claims untrustworthy.
+- **FIX-NEXT:** verified and bounded, fails safely, leaves the core product functional, and cannot affect any BLOCK class.
+
+A FIX-NEXT residual does not hold an otherwise releasable slice. Before merge, create a durable backlog row with evidence, impact, owner, fix direction, and validation, report the limitation, then merge and repair it on a follow-up branch. A red mandatory gate is not a FIX-NEXT residual: fix the product, or prove the gate contract stale, correct it, and rerun. Unknown is never low severity. Review loops stop when blockers reach zero; they do not spin until every cosmetic or low-risk finding disappears.
+
+*Fail-state:* safe value waits through endless reviewer rounds for cosmetic perfection, or an unproven/serious defect is renamed “minor” to ship around a red gate.
+
+## Functionality-first delivery ordering (2026-08-16)
+
+For CODE work the orchestrator sequences: root cause / current provider contract → targeted biting proof
+→ proportional deploy-safety proof (migrations/DB/startup/deploy readiness only) → human-authorized
+merge/deploy → **deployed/real-surface functional proof of the original intent** → only then queued-finding
+remediation and ONE broad closure verification. Auditors run in parallel from implementation onward, but
+ordinary findings are queue-only — they never redirect implementation before functional acceptance; only
+the deploy-safety classes above or a catastrophic irreversible security risk interrupts. The motive is
+time/token efficiency: never spend broad assurance on behavior nobody has proven. Docs, mocks, planning,
+and other non-functional tasks are exempt from this lifecycle. Where a project carries a machine policy
+(`delivery-lifecycle.v1.json`) and gates, those are the enforcement — keep them, don't restate them.
+
+*Fail-state:* review/audit ceremony redirects a branch for hours while the original user-visible behavior
+remains unproven — or a "deployed" claim is accepted as "functionally proven" without the journey run.
+
 ## Claim discipline in human-facing reports — the tier travels with the claim (2026-07-30)
 
 The verification doctrine above governs what the orchestrator ACCEPTS (agent reports, gate greens, diffs). This section governs what it SAYS. The orchestrator's synthesis to the human is itself a claim surface, and it fails by **level conflation**: evidence verified at one level, claim shipped at a stronger one. Anchor (CoachAI, 2026-07-30, three reversals in one day): parity-auditor no-caller rows relayed as "alerts are dead", "the agent-mapping screen is missing", "no way to delete promo codes" — the human's own inspection reversed all three (a different working pipe served the alerts and they self-clear; the screen exists and the unwired pipe duplicated it; a deactivate toggle already covered deletion). Each grep was TRUE; each shipped claim was one the grep cannot prove. The cost was not three wrong rows — it was the human declaring the whole report channel untrustworthy.

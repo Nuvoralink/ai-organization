@@ -51,10 +51,13 @@ Only `agent-product-intent.mdc` and `authority-boundary.mdc` are always loaded. 
 | Internal admin | `.cursor/rules/internal-admin-full-experience.mdc` |
 | Auth, privacy, recordings, provider, billing, secrets | `.cursor/rules/coachai-security-rules.mdc` |
 | User-facing route/page/component or analytics | `.cursor/rules/instrumentation.mdc` |
+| Functional/product-behavior code delivery ordering | `.cursor/rules/functionality-first-delivery.mdc` |
 
 ## Fleet and evidence
 
 Role authority and installed-role inventory live in `.ai-organization/roles.json`. Project agent definitions live in `.claude/agents/`; global implementer and security roles are inherited and must not be duplicated locally. Every report names paths not reached and ends with `Doctrine-loop findings: none` or a routed control improvement.
+
+Functional code changes follow `.cursor/rules/functionality-first-delivery.mdc` (machine authority: `.ai-organization/policies/delivery-lifecycle.v1.json`): prove the intended behavior — on the deployed surface at coach.nuvoralink.com when reachable — before hardening or broad audits; auditors may run in parallel, but ordinary pre-acceptance findings are queue-only outside the policy's bounded interruption classes; docs, mocks, and planning are exempt.
 
 Use the smallest proof profile that fully covers the risk:
 

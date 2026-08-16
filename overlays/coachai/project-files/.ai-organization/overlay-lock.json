@@ -39,8 +39,12 @@
       "sha256": "3de4b7aa0094e8a3fe01f0bde3032a8a2b32cf665ab7af32bf87fab40d259f28"
     },
     {
+      "path": ".ai-organization/policies/delivery-lifecycle.v1.json",
+      "sha256": "484a15124598f8dc5139642528f5b6430d1884e98eefada83ea5b76682025844"
+    },
+    {
       "path": ".ai-organization/policies/risk-controls.v1.json",
-      "sha256": "a3c50ca96df3368ad28ccc60826e4151067c38e74e333d7407906dafd5fc852b"
+      "sha256": "41d9b43fc8c44934a82b3b2b25ca5d97037fdf1c7e55ca91b19be66739f0bc8f"
     },
     {
       "path": ".ai-organization/proof-profiles.json",
@@ -52,7 +56,7 @@
     },
     {
       "path": ".ai-organization/registries/agent-roles.v1.json",
-      "sha256": "f6d8915c60894387a8090e4183c6f36b81c83194544fa7aef3584c7c8288beec"
+      "sha256": "54e8de12c3ed8794b2f50ef9c5312ae51063c4d599649aa0673a050d46c69fbe"
     },
     {
       "path": ".ai-organization/roles.json",
@@ -207,6 +211,10 @@
       "sha256": "503cad0aa4e60927c4e39ecb3d2532f33f569118871f47b3d811c11f129fd8d1"
     },
     {
+      "path": ".ai-organization/schemas/delivery-lifecycle.v1.schema.json",
+      "sha256": "5ae84c2620575764d9515fc3570ee0f48386000465eefab9e2a98387719b0164"
+    },
+    {
       "path": ".ai-organization/schemas/project-overlay.v1.schema.json",
       "sha256": "315075620866e8645db914855c2b257b9f0acea065783decbef91dad10d32573"
     },
@@ -228,23 +236,23 @@
     },
     {
       "path": ".claude/agents/adversarial-reviewer.md",
-      "sha256": "bb36b4098a14ef4a41a68e7a496c50715f7f38891cabf123e766782592ff9a40"
+      "sha256": "fc02eb238e8e0e076851b79a53e32d4b1ff99b4cfc77523d93d601847b157dac"
     },
     {
       "path": ".claude/agents/ai-decision-boundary-auditor.md",
-      "sha256": "39774beacd6e59f02e96914609c605e4314e7e42ec4ff77c5f11aa0a472e194e"
+      "sha256": "4f8f1865e3725795717e39db8cffb5b4c65c793e5833cf5f5c7a2bc0ac6735c6"
     },
     {
       "path": ".claude/agents/doctrine-drift-auditor.md",
-      "sha256": "88325985f16ea0499b88e8f58238fbb92941e0f26bf57d1e5281602ac4d0e556"
+      "sha256": "9d95dff8676e27b09736f1ad683779ba4b4b31ffe0728fa763bde3e4e41ed9ee"
     },
     {
       "path": ".claude/agents/functionality-parity-auditor.md",
-      "sha256": "3ae5584fe84f2a0b7d3cfcaa1a099479c6522cace0e59ebd8baeee0d63995607"
+      "sha256": "54887eb4398633e4931a48b1bb19154e366b2a5b67e108e05651cb993b917913"
     },
     {
       "path": ".claude/agents/performance-auditor.md",
-      "sha256": "08036442511dd96689c33ec0954872ab8c9067537c3c829f2aed6ebd798d07c3"
+      "sha256": "eed1ae12d27412613f9b5407ae3622941ea27bf41312a3a29118e0ca833ad8c5"
     },
     {
       "path": ".claude/agents/premise-and-architecture-challenger.md",
@@ -252,11 +260,11 @@
     },
     {
       "path": ".claude/agents/release-verifier.md",
-      "sha256": "c107f188ec88f50e3bb4820fbd30b486e30ea126067a3143a621453f4ebc4644"
+      "sha256": "66faaf1032cad14a3f1940ee4ffd4840d03a7c35aa2c83cac1115787269135c4"
     },
     {
       "path": ".claude/agents/source-to-screen-auditor.md",
-      "sha256": "418b4e4f62f80de960573a0bea7dfe82a17ace6df70151fe64eb175123e91011"
+      "sha256": "b4c36bcfc8d2b088dfdc4b59875123eb1514d380718be5f182ba490843dcf72c"
     },
     {
       "path": ".claude/agents/sprint-kickoff-auditor.md",
@@ -268,11 +276,11 @@
     },
     {
       "path": ".claude/agents/ui-verifier.md",
-      "sha256": "5c4b3559acfe91c01e5ddffcc9bd378c50d55fb74ea65de39c95268b5dfb308e"
+      "sha256": "478b401b39e71b552b51dfd46dfd762d2855c586dc70040460f413a4839e19fd"
     },
     {
       "path": ".claude/agents/user-journey-auditor.md",
-      "sha256": "51f51a008b356aa1ce3755fa149d78f0120bfe83e3a4402fba13eb8ce98945e0"
+      "sha256": "e1fa56e987bf34d8e0783f47f916f0b974d2c17fcfa336167119f518e0174e43"
     },
     {
       "path": ".cursor/rules/agent-product-intent.mdc",
@@ -323,6 +331,10 @@
       "sha256": "aa8402bc7e8764870c2436c465181053dc5514a4bd0040ed102d794870f3d3c4"
     },
     {
+      "path": ".cursor/rules/functionality-first-delivery.mdc",
+      "sha256": "4ecae94b00aeb49be957ae6c59faed61fc324988df57e3b9fc2e8a69be105c32"
+    },
+    {
       "path": ".cursor/rules/instrumentation.mdc",
       "sha256": "cdf8aa469a82809a410b9154285fe31fa648abcaac769c03f9d5c089f493e05b"
     },
@@ -344,7 +356,7 @@
     },
     {
       "path": ".cursor/rules/slice-rigor.mdc",
-      "sha256": "5eedf88f02fe3fc0b69c446611e96d0ae8b6f07ce9aabd061a3b3fc474f7e200"
+      "sha256": "3a18b8a07eb20d826f8b0249af16f45cd25f9960a63118b733cee2632a5e4257"
     },
     {
       "path": ".cursor/rules/testing-guardrails.mdc",
@@ -360,11 +372,11 @@
     },
     {
       "path": ".github/ISSUE_TEMPLATE/agent-slice.yml",
-      "sha256": "e20cee856877df33dae44cbf83a9a03387f44d5d60048ee99b123156427901ea"
+      "sha256": "4b818dd8e292d1289d1b6f38ecea194ca107c177c59f14ac96d081a7c78edc80"
     },
     {
       "path": ".github/pull_request_template.md",
-      "sha256": "3abbf9948fdcefb3c48d712728862d0a218b19d7858da5831c07e4fe5d1fffaa"
+      "sha256": "6d1e449372e59f9f8d0c0f3daba133b69e7dba32d01073f891ed0d42bb163e5c"
     },
     {
       "path": ".github/workflows/backend-db-regressions.yml",
@@ -376,11 +388,11 @@
     },
     {
       "path": "AGENTS.md",
-      "sha256": "87019f53a25d1f2c8c0048032d05ebfc166002027f9c8379a02d6dcdb75ec719"
+      "sha256": "0c4d872c208de79d976c47b97f421292e8f84d37321ff2b243ba2729377569a1"
     },
     {
       "path": "CLAUDE.md",
-      "sha256": "20abca9962c321fc4aad2c51cad30fa3626c09fbb01bdb947f61ff011ddfebd0"
+      "sha256": "c2971e9c680d4ae56fec5a66c30c8be08b02a23d47799186d7947f87191236c2"
     },
     {
       "path": "scripts/check-agent-context.mjs",
@@ -476,20 +488,20 @@
       "hooks": "21083269743c943ef38bf49f037afbf17e4fd2709aa7e4e375b3381980e1fee2"
     },
     "package.json": {
-      "scripts.agent:run": "a8e3be98df0d5406d91588e1cefc5924397ce80fa742c893afddcea7a2e9a9d5",
-      "scripts.gate:agent-context": "83eb407ace5d068cf5b56062e8ad67563294fee055375a78d5be8601f4627ed8",
-      "scripts.gate:rules-wiring": "1201d76e9fd70ad4ddd74ab80998421ffac4ddde0cffad8f370ef3e595247b9b",
-      "scripts.gate:agent-control-plane": "41571d360522ef6506e743f8a4e4fb3f59578b412ae970038907b080ab646e16",
-      "scripts.gate:fleet-parity": "0c52db346e952ce8a20715558c836c3b5a4468850482b642b69d83b62d653a5c",
-      "scripts.gate:overlay-parity": "1a8628d10ac232722aad9b376f7a2b1b957703716595b0e3f3ae294f316e5926",
-      "scripts.gate:organization": "b2304c7fbbe7f7380708e38a92d498dcbd2da96820703589fa8b65899c233632",
-      "scripts.proof:changed": "4bfc520d777a10dc90733e32aadec7d92b0a9b7266227eb27a87f1de6816b82d",
-      "scripts.test:organization-control-plane": "1c097a3b80598bc3bb156d3239afa4bb1f42bde973db652bcdc5168e62c5cb01",
-      "scripts.test:evidence-integrity-mutation": "2b7ec9ebecd833ee23c906b81349d676eb418e18991b8517a1f1f3335723cbfb",
-      "scripts.gates:all": "edff820e7b001a16614131f9635897b3733c41d8c8242cbf84f0051149c29932",
-      "scripts.verify": "217cf314de5043c85b05401ecd1e3294077067f3b1f45edc3248d3c82d2ff46e",
-      "scripts.verify:db": "2d3ccef8d9cccd97181a33d76be74f762a501883ce1533d54cd8ee80a7d421cb",
-      "scripts.ci:local": "47db5601b61ff94cbd4ce34cd9a40217d0ffeec299b35d85321d747649f39a3b"
+      "scripts.agent:run": "08332342619da2455cf39a40138d9fe1c41115db913abf10ff549c45596d842e",
+      "scripts.gate:agent-context": "e822d25951b9b7556b46be16ed2ea2f9e35ec1f303386d07f4b657019e24a312",
+      "scripts.gate:rules-wiring": "fed01dafe12799c3341eee47eb9e24905bdda77a50d3e637f4ec96f2e6f6066c",
+      "scripts.gate:agent-control-plane": "698f16fc09153ee9a5cd8286ddfb64d55f439008c15f90ba343d5db5a4cdae09",
+      "scripts.gate:fleet-parity": "5ce7e359bbd6ab2f677e01fb2a31c02c016e2e072d1dc0daa36efeb118cd8a28",
+      "scripts.gate:overlay-parity": "af9146f4c6a1c2b82eb9b172c11551354743863fa028598a7befb926dad714af",
+      "scripts.gate:organization": "461edef5dde5d166c1f1ab1073cef816e33345b8d9bf0fa3de22536a7b388573",
+      "scripts.proof:changed": "6dbbd6ff73ce75de5bf25e3202f8b70823eaf36ad4c60624b67e124926c30610",
+      "scripts.test:organization-control-plane": "1a36000796183c9f6f4c84f1def13a68224165a91a79c13a4df3031c30f3e046",
+      "scripts.test:evidence-integrity-mutation": "b9f4464c0408f9269759970e5eb253247186e05b7aa9edf5ff71ed634f0a4975",
+      "scripts.gates:all": "bf81ad5946d388af5d3578bbfc22aa2feb4fde28a04abb9cfd7427888a621ed7",
+      "scripts.verify": "cd0a5a8b5d9a13fbf027ce24e33ce5483b2493c0b9a45a4f030dfb45d8b3be92",
+      "scripts.verify:db": "8dc368bb11bf1cb89452a8a234285db7a108e53124931a13c421f46ef0eb656c",
+      "scripts.ci:local": "4cd0407ab3f6926de694401d9982430343a95ec37eb8ab4e229d0e40c7ee410a"
     }
   }
 }

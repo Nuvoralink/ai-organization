@@ -11,7 +11,7 @@ Convene a multi-LLM marketing studio (research analyst, strategist, three framew
 Run the engine and show the user the package it prints. Works from any directory:
 
 ```
-uv run --directory "${DEPENDENCY:council-studio}" python run_studio.py "<the offer, in the user's own words>" [--channel "Meta (Facebook/Instagram)"] [--assets "ad copy,landing page"] [--audience "..."] [--market "United States"] [--voice "..."] [--fast]
+uv run --directory "G:/Projects/Skills/LLM Councel" python run_studio.py "<the offer, in the user's own words>" [--channel "Meta (Facebook/Instagram)"] [--assets "ad copy,landing page"] [--audience "..."] [--market "United States"] [--voice "..."] [--fast]
 ```
 
 Pass `--offer-file` and `--context-file` as ABSOLUTE paths (relative paths resolve against the tool's root, not your cwd).

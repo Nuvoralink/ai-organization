@@ -9,6 +9,7 @@ Load only the irreducible execution core at startup. `AGENTS.md` routes every la
 @.claude/rules/loop-discipline.md
 @.claude/rules/doctrine-loop.md
 @.claude/rules/never-reactive.md
+@.claude/rules/functionality-first-delivery.md
 
 Claude Design is the approved design authority for visible frontend work. Do not use Figma or implement a visible change before the user approves its Claude Design mock/reference.
 

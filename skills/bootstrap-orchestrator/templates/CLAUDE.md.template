@@ -49,6 +49,7 @@ Every project rule under `{{RULES_DIR}}/` carries official `paths:` frontmatter 
 | `{{DECISION_LOG_DOC}}` + `{{ADR_DIR}}` | The decision authority (settled + scrapped) |
 
 ## Definition of done (every change)
+Functional code changes follow `{{RULES_DIR}}/functionality-first-delivery.<ext>`: intended behavior proven — ideally on the real surface — before hardening or broad audits; pre-acceptance auditor findings queue; docs/mocks/planning are exempt.
 Architecture still coherent; the intended source of truth drives the final user-visible behavior; tests prove product logic not just compilation; blast-radius docs updated if a relation was exposed; {{SAFETY_INVARIANTS}} preserved where applicable; security/privacy/tenant-isolation considered; any deferred follow-up named with a reason, never silently dropped.
 
 For visible frontend work, load the global `frontend-design-director` before any prompt, mock, critique, or implementation. Route marketing/editorial surfaces to `design-taste-frontend` and dashboards, admin, analytics, or product workflows to `product-ui-design-taste`; preserve the project's mock-approval gate.
