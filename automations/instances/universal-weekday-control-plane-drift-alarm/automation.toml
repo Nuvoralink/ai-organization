@@ -2,7 +2,7 @@ version = 1
 id = "universal-weekday-control-plane-drift-alarm"
 kind = "cron"
 name = "Universal weekday control-plane drift alarm"
-prompt = "Read-only weekday control-plane parity alarm. From the canonical checkout at C:\\dev\\AI Organization, run `node scripts/control-check-notify.mjs` and return its portable metadata report. On a non-zero result, recommend inspection and reconciliation of the named mapping-relative findings; never auto-capture or install. Do not edit files, mutate git refs, enable or modify scheduled tasks, open or modify issues or pull requests, merge, deploy, publish, delete, purchase, mutate production, or send external messages."
+prompt = "Read-only weekday control-plane + all-projects source-parity alarm. From the canonical control-plane checkout, run `node scripts/control-check-notify.mjs` and return its portable metadata report. It compares canonical against BOTH the global installs and every project overlay's delivered files, surfacing a delivered-copy fork whose own digest was updated to match itself (the fork trap gate:organization-overlay cannot see). On a non-zero result, recommend inspection and reconciliation of the named project/mapping-relative findings per docs/runbooks/control-plane-fork-trap.md; never auto-capture or install. Do not edit files, mutate git refs, enable or modify scheduled tasks, open or modify issues or pull requests, merge, deploy, publish, delete, purchase, mutate production, or send external messages."
 status = "ACTIVE"
 rrule = "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0"
 model = "gpt-5.6-terra"

@@ -22,7 +22,7 @@
       "mode": "read-only",
       "activation": "recommend-only",
       "targetRoot": "${PROJECT:control-plane}",
-      "prompt": "Read-only weekday control-plane parity alarm. Run `node scripts/control-check-notify.mjs` from the canonical control-plane checkout and return its portable metadata report. On a non-zero result, recommend inspection and reconciliation of the named mapping-relative findings; never auto-capture or install. Do not edit files, mutate git refs, enable or modify scheduled tasks, open or modify issues or pull requests, merge, deploy, publish, delete, purchase, mutate production, or send external messages."
+      "prompt": "Read-only weekday control-plane + all-projects source-parity alarm. Run `node scripts/control-check-notify.mjs` from the canonical control-plane checkout and return its portable metadata report. It compares canonical against BOTH the global installs (~/.claude, ~/.codex, skills) AND every project overlay's delivered files (auxara-dialer, coachai, nuvora-link, voice-agents), so a delivered-copy fork whose own digest was updated to match itself (the fork trap gate:organization-overlay cannot see) is surfaced. On a non-zero result, recommend inspection and reconciliation of the named project/mapping-relative findings per docs/runbooks/control-plane-fork-trap.md; never auto-capture or install. Do not edit files, mutate git refs, enable or modify scheduled tasks, open or modify issues or pull requests, merge, deploy, publish, delete, purchase, mutate production, or send external messages."
     },
     {
       "id": "project-daily-orchestration-drift",
