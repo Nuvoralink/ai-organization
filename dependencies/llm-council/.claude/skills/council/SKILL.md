@@ -11,7 +11,7 @@ Convene a 5-seat multi-LLM council (Champion, Skeptic, Red-Teamer, Domain-Expert
 Run the engine and show the user the memo it prints. Works from any directory:
 
 ```
-uv run --directory "${DEPENDENCY:council-studio}" python run_council.py "<the idea, in the user's own words>" [--outcome "<what success looks like>"] [--stakes one-way|two-way] [--fast]
+uv run --directory "G:/Projects/Skills/LLM Councel" python run_council.py "<the idea, in the user's own words>" [--outcome "<what success looks like>"] [--stakes one-way|two-way] [--fast]
 ```
 
 Pass `--idea-file` as an ABSOLUTE path (relative paths resolve against the tool's root, not your cwd).

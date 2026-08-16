@@ -5,7 +5,6 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 35cf4fde-df64-497f-b223-842c0340d2fd
-  modified: 2026-07-30T09:14:54.324Z
 ---
 
 A fresh CoachAI git worktree needs FOUR steps before backend scripts/tests work (each missing step produced a real failure on 2026-07-08):
@@ -21,8 +20,6 @@ A fresh CoachAI git worktree needs FOUR steps before backend scripts/tests work 
 **Read-only reviewers don't need the full setup** (adversarial-reviewer lesson, 2026-07-12): even when `backend/node_modules/.bin/tsx` is absent, the worktree ROOT usually carries the hoisted `node_modules/.bin/tsx` and an already-built `shared` — so `../node_modules/.bin/tsx scripts/X.ts` from `backend/` runs every regression + `tsc --noEmit` with zero install. Check the root `.bin` and the `@ail-sales-coach/shared` resolution before concluding a worktree "can't be exercised".
 
 **NEVER `git stash` in a worktree** (footgun hit 2026-07-12): the stash stack is PER-REPOSITORY and SHARED across all worktrees. A `git stash push -- <files>` + `git stash pop` collided with a pre-existing foreign WIP stash (`codex/dialpad-ingest-adapter`) and merged ~20 unrelated files into the tree as `UU` conflicts. To A/B a change against base, don't stash — use `git show <sha>:<path>`, a separate worktree, or read the committed base directly. Recovery if it happens: `git checkout HEAD -- <the UU files only>` (path-limited, never a blanket reset), leave your own ` M` files and the foreign stash untouched.
-
-**`proof:changed` forces the DB lane for ANY new `backend/scripts/*Regression*` file** (2026-07-30): `.ai-organization/proof-profiles.json` maps that glob to the `backend-db` profile, so adding a purely-static gate meta-regression (e.g. `gateApiMethodConsumersMetaRegression.ts`) makes `proof:changed` demand `CI_LOCAL_DB_URL`/`DIALER_INGEST_TEST_DATABASE_URL` even when the diff touches zero `backend/src`/`prisma` files. Verified pre-existing: `--file backend/scripts/gateDeadExportsMetaRegression.ts` selects `backend-db` too. The profile duplicates lane knowledge that discovery + `backend/scripts/regression-lanes.json` already own — two sources of truth. Workaround while that stands: run `node scripts/run-risk-selected-proof.mjs --lane static` for the lane the change actually implicates, and say so explicitly rather than claiming a full `proof:changed`. Also note `unknown_path_policy: fail` — a NEW root `scripts/*.mjs` gate must be added to the `organization-control` include list or it blocks `proof:changed` as an unmapped path.
 
 **`typecheck:scripts` has ~233 pre-existing tolerated errors** (2026-07-12): the backend scripts tsconfig (`tsc -p tsconfig.scripts.json`) is NOT in the merge gate — `verify` runs `typecheck` (src only, `tsc --noEmit`). `check:script-imports` explicitly tolerates the 233 fixture type-drift errors. So a red `typecheck:scripts` is expected; only judge NEW errors your diff adds (diff the error set, don't treat any red as a regression).
 

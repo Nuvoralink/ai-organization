@@ -32,7 +32,7 @@
     },
     {
       "path": ".claude/agents/adversarial-reviewer.md",
-      "sha256": "7760c35eaf72d210fb5ba8b3f97d09eab42fbf50a558db382d81209adc6cd6b0"
+      "sha256": "c706d64b9093f2e5d52966947f623f1c392b662283c130ce75d239a590ef7a36"
     },
     {
       "path": ".claude/agents/doctrine-drift-auditor.md",
@@ -56,7 +56,7 @@
     },
     {
       "path": ".claude/agents/release-verifier.md",
-      "sha256": "ec7da97b0fe7be733d0f728de32c09dd5edcfba6f5ea9df65898431a7a3b32cf"
+      "sha256": "6e3c00b80ff7b135cfd8bf2019b1067b521f3ccd8d7ae650152ead2c393b3dc2"
     },
     {
       "path": ".claude/agents/sprint-kickoff-auditor.md",
@@ -81,6 +81,10 @@
     {
       "path": ".claude/rules/frontend-rules.md",
       "sha256": "e903aa1633c6c5a7a34890169ffa9578f604b7e6732c1f42ab96887842c1c7ea"
+    },
+    {
+      "path": ".claude/rules/functionality-first-delivery.md",
+      "sha256": "4844807238d2a8f8dfb3dff8e4bdd39e4dc582da6b42717e2f4eecf5be23be0e"
     },
     {
       "path": ".claude/rules/nuvo-governance.md",
@@ -108,11 +112,11 @@
     },
     {
       "path": "AGENTS.md",
-      "sha256": "9c4e003c5c399536339484c701af0a5c53ba5115260473a7d7effa5ad3168de8"
+      "sha256": "843180e385a1c1c5415b5adf7e7a16d4c3149e496f87e3edc3ed5fca212b7a68"
     },
     {
       "path": "CLAUDE.md",
-      "sha256": "f1721c1b8d7cd06319634b77cab56a590693d1d35e002ad52c1cb4eb8d2dde8e"
+      "sha256": "5abaf1e2cc9b75012ab3976cd207180c0859ab4a866f3f30ee8cfb5a0942b5af"
     },
     {
       "path": "scripts/check-agent-context.mjs",
@@ -176,19 +180,19 @@
       "hooks": "21083269743c943ef38bf49f037afbf17e4fd2709aa7e4e375b3381980e1fee2"
     },
     "package.json": {
-      "scripts.agent:run": "a8e3be98df0d5406d91588e1cefc5924397ce80fa742c893afddcea7a2e9a9d5",
-      "scripts.gate:rules-wiring": "1201d76e9fd70ad4ddd74ab80998421ffac4ddde0cffad8f370ef3e595247b9b",
-      "scripts.gate:agent-context": "83eb407ace5d068cf5b56062e8ad67563294fee055375a78d5be8601f4627ed8",
-      "scripts.gate:agent-control-plane": "41571d360522ef6506e743f8a4e4fb3f59578b412ae970038907b080ab646e16",
-      "scripts.gate:fleet-parity": "0c52db346e952ce8a20715558c836c3b5a4468850482b642b69d83b62d653a5c",
-      "scripts.gate:overlay-parity": "1a8628d10ac232722aad9b376f7a2b1b957703716595b0e3f3ae294f316e5926",
-      "scripts.gate:test-intent": "a681675ab78e06daa7f6bbd1db7d1768a7fb508019029ae5c89a539ce3361761",
-      "scripts.gate:test-workspace-coverage": "0784dcb195ff59b2adda18ad417305028f1d8e985fe180c3ce579ceea8c1825c",
-      "scripts.gate:documentation-authority": "9878b973e15bef08c49522d6f312b5c3970bca70751c728647c08d111f36093c",
-      "scripts.test:workspace-build-contracts": "834ca960ef149307d2e0cc2fcb46010ef886541ebd799c8e7b9cb2153679821e",
-      "scripts.test:all": "8dd398c254ccceafd578194a206b283170e80a9781f9ca4c7c308ec32dafa382",
-      "scripts.gates:all": "837b65ade3da29760ff464043df31dd564c3ca98d7ab197e1b4604562a71230d",
-      "scripts.verify": "db578a61020c18c17bf1bbf6fce0eedc49dcd5e506d774255e353c405a02f9d3"
+      "scripts.agent:run": "08332342619da2455cf39a40138d9fe1c41115db913abf10ff549c45596d842e",
+      "scripts.gate:rules-wiring": "fed01dafe12799c3341eee47eb9e24905bdda77a50d3e637f4ec96f2e6f6066c",
+      "scripts.gate:agent-context": "e822d25951b9b7556b46be16ed2ea2f9e35ec1f303386d07f4b657019e24a312",
+      "scripts.gate:agent-control-plane": "698f16fc09153ee9a5cd8286ddfb64d55f439008c15f90ba343d5db5a4cdae09",
+      "scripts.gate:fleet-parity": "5ce7e359bbd6ab2f677e01fb2a31c02c016e2e072d1dc0daa36efeb118cd8a28",
+      "scripts.gate:overlay-parity": "af9146f4c6a1c2b82eb9b172c11551354743863fa028598a7befb926dad714af",
+      "scripts.gate:test-intent": "7741e66da7afe5f887264f2f284df19022f6ab4f8270bfc3d58c92e6cc39452b",
+      "scripts.gate:test-workspace-coverage": "15ee4762141347a7daa0b485a1481bf6a3c00a2e28e4717b5bab9fee92fe0c3a",
+      "scripts.gate:documentation-authority": "5d7b4af2fe3e2a94623aeb8b6f1ab4acf4cbf54bd8db0f46c0780a7b39a948b8",
+      "scripts.test:workspace-build-contracts": "c4f1d0726c400dc60099687a966780eed9c01b72287aba17097dd6f778655c76",
+      "scripts.test:all": "d708dfdf1143d5eb91dd0dc09790a8e6c91bb358446406f400ac03bf5796bcdd",
+      "scripts.gates:all": "bf81ad5946d388af5d3578bbfc22aa2feb4fde28a04abb9cfd7427888a621ed7",
+      "scripts.verify": "cd0a5a8b5d9a13fbf027ce24e33ce5483b2493c0b9a45a4f030dfb45d8b3be92"
     }
   }
 }
