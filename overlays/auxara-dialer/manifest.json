@@ -102,6 +102,24 @@
       "lock": "${HOME}/.nuvoralink-control-plane/project-locks/auxara-dialer/overlay-lock.json"
     },
     {
+      "id": "auxara-delivery-lifecycle",
+      "source": "policies/delivery-lifecycle.v1.json",
+      "captureFrom": "${PROJECT:auxara-dialer}/.ai-organization/policies/delivery-lifecycle.v1.json",
+      "destinations": [
+        "${PROJECT:auxara-dialer}/.ai-organization/policies/delivery-lifecycle.v1.json"
+      ],
+      "mode": "file",
+      "ownership": "generated",
+      "allowedExtensions": [
+        ".json"
+      ],
+      "exclude": [],
+      "detectLocalOnly": false,
+      "allowRootLink": false,
+      "allowInstalledRootLink": false,
+      "lock": "${HOME}/.nuvoralink-control-plane/project-locks/auxara-dialer/overlay-lock.json"
+    },
+    {
       "id": "auxara-agent-role-registry",
       "source": "registries/agent-roles.v1.json",
       "captureFrom": "${PROJECT:auxara-dialer}/.ai-organization/registries/agent-roles.v1.json",

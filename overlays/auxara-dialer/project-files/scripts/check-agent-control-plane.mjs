@@ -38,6 +38,8 @@ export const CONTROL_PLANE_POLICY = Object.freeze({
     actionAuthoritySchema: '.ai-organization/schemas/action-authority.v1.schema.json',
     agentRegistry: '.ai-organization/agents.json',
     completionProfiles: '.ai-organization/completion-profiles.json',
+    deliveryLifecycle: '.ai-organization/policies/delivery-lifecycle.v1.json',
+    deliveryLifecycleSchema: '.ai-organization/schemas/delivery-lifecycle.v1.schema.json',
     package: 'package.json',
   }),
   issue: Object.freeze({
@@ -49,6 +51,8 @@ export const CONTROL_PLANE_POLICY = Object.freeze({
       'output_contract',
       'boundaries_escalation',
       'acceptance_criteria',
+      'functional_acceptance',
+      'provider_documentation_evidence',
       'irreversible_boundary',
     ]),
     requiredText: Object.freeze([
@@ -60,6 +64,8 @@ export const CONTROL_PLANE_POLICY = Object.freeze({
       'self-verifiable acceptance criteria',
       'action-authority.v1.json',
       'conditional merge',
+      'functional acceptance',
+      'provider documentation evidence',
     ]),
     completionTierOptions: Object.freeze(['read-only', 'implementation']),
   }),
@@ -71,6 +77,8 @@ export const CONTROL_PLANE_POLICY = Object.freeze({
       'upstream feeders',
       'downstream consumers',
       'verification evidence',
+      'delivery mode and functional acceptance',
+      'provider documentation evidence',
       'killer mutation',
       'rendered evidence (when relevant)',
       'security, tenant, compliance, and authority checks',
@@ -156,6 +164,8 @@ export const CONTROL_PLANE_POLICY = Object.freeze({
       '/orchestration-drift-audit',
       'plan mode is the tool-permission boundary',
       'prompt text alone is not enforcement',
+      'npm run proof:changed',
+      'one `npm run ci`',
     ]),
   }),
   settings: AUXARA_HOOK_POLICY,
@@ -309,6 +319,16 @@ function validateAgentRegistry(root, source, file) {
   }
   const ids = new Set();
   const registeredFiles = new Set();
+  const requiredAgentText = new Map([
+    [
+      'sprint-implementer',
+      ['npm run proof:changed', 'Do NOT run `npm run gates:all`', 'exact tests named in your proof matrix'],
+    ],
+    [
+      'test-runner',
+      ['npm run ci', '40-minute minimum process budget', 'freshest integration-base SHA'],
+    ],
+  ]);
   for (const agent of registry.agents) {
     if (typeof agent?.id !== 'string' || !/^[a-z0-9-]+$/.test(agent.id)) {
       errors.push(`${file}: agent has invalid id`);
@@ -337,6 +357,11 @@ function validateAgentRegistry(root, source, file) {
     const frontmatterName = agentSource.match(/^---\s*\r?\n[\s\S]*?^name:\s*([^\r\n]+)\s*$/m)?.[1];
     if (frontmatterName !== agent.id) {
       errors.push(`${agent.file}: frontmatter name must equal ${agent.id}`);
+    }
+    for (const required of requiredAgentText.get(agent.id) ?? []) {
+      if (!agentSource.includes(required)) {
+        errors.push(`${agent.file}: missing proof-cadence contract: ${required}`);
+      }
     }
   }
   const directory = path.join(root, '.claude', 'agents');

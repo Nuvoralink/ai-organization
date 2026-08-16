@@ -100,13 +100,13 @@
       "id": "test-runner",
       "file": ".claude/agents/test-runner.md",
       "mode": "read-only",
-      "roleContract": "Run the serialized local CI-equivalent heavy gate as the sole local test-database user, preserve command-owned exit codes and nonzero test counts, and return a compact diagnosis without editing."
+      "roleContract": "Run one serialized npm run ci only for a clean, reviewed candidate rebased onto the freshest integration base, as the sole local test-database user; preserve the command-owned exit and nonzero counts, and return a compact diagnosis without editing."
     },
     {
       "id": "sprint-implementer",
       "file": ".claude/agents/sprint-implementer.md",
       "mode": "implementation",
-      "roleContract": "Implement one settled bounded dialer slice completely in an isolated worktree, self-audit the actual diff, run the authorized fast gates, and return evidence to the orchestrator."
+      "roleContract": "Implement one settled bounded dialer slice completely in an isolated worktree, self-audit the actual diff, run exact biting tests plus diff-routed proof:changed, and return focused evidence without invoking heavy closure gates."
     }
   ]
 }

@@ -26,6 +26,18 @@
 
 <!-- Never report a pipe/tail/tee status as the command's status. Link or paste the load-bearing output. -->
 
+## Delivery mode and functional acceptance
+
+- Delivery stage: <!-- targeted proof / deploy safety / deployed functional proof / hardening -->
+- Original user journey: <!-- exact deployed behavior this change must make work -->
+- Deploy-safety evidence: <!-- migration/schema, DB integrity, build/startup, Railway readiness -->
+- Deployed functional proof: <!-- observed result and human acceptance, or explicitly pending -->
+- Pre-acceptance audit findings: <!-- queue without remediation unless an interruption class applies -->
+
+## Provider documentation evidence
+
+<!-- For provider changes, link the exact entry in docs/app-plan/auditability/provider-proof/change-evidence.json. State N/A only when no production provider path changed. -->
+
 ## Killer mutation
 
 <!-- Name the deliberate TEMP-fixture mutation, the test/gate that went red, and why this catches regression. -->

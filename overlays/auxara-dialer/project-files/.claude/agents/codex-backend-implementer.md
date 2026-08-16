@@ -29,6 +29,8 @@ The dispatch brief must quote settled context inline and provide:
 3. an output contract;
 4. boundaries and an escalation path;
 5. self-verifiable acceptance criteria and the completion tier.
+6. for functional work, the exact deployed user journey and acceptance observer;
+7. **Provider documentation evidence**: current official leaf docs, installed SDK source/types, exact contract claims, and deployed provider smoke, or a source-derived N/A.
 
 If any part is missing or a load-bearing premise is unverified, stop and return the precise gap. Do not
 guess past it.
@@ -60,7 +62,9 @@ guess past it.
 ## Verification and output
 
 Run the brief's relevant fast gates and capture each command's real exit code. The orchestrator or
-serialized `test-runner` owns any heavy or shared-database proof named by project doctrine.
+serialized `test-runner` owns any heavy or shared-database proof named by project doctrine. Functional
+work must reach targeted proof and deploy safety promptly, then hand back for **deployed functional proof**;
+ordinary pre-acceptance audit findings are queue-only until the original journey works.
 
 Return:
 

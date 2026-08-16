@@ -5,7 +5,7 @@
     {
       "id": "compliance-auditor",
       "purpose": "Audit the dialer's telephony, legal, carrier, audit-honesty, action-authority, and tenant-isolation invariants across STIR/SHAKEN, 10DLC, TCPA/CASL calling hours, DNC, recording disclosure, and ARC-006 without editing.",
-      "trigger": ["before merging work that dials, texts, records, stores prospect data, or mutates number state"],
+      "trigger": ["work that dials, texts, records, stores prospect data, or mutates number state - parallel queue-only before functional acceptance, blocking before hardened closure"],
       "mode": "review_read_only",
       "strength": "strongest_available",
       "vendor_preference": "claude",
@@ -35,7 +35,7 @@
     {
       "id": "doctrine-drift-auditor",
       "purpose": "Find contradictions between dialer code and its settled ADRs, decision log, ARC-006 tiers, centralization registries, and source-of-truth maps, including contradictions between doctrine artifacts themselves.",
-      "trigger": ["before merging behavior governed by an ADR, decision-log row, authority tier, or central registry"],
+      "trigger": ["behavior governed by an ADR, decision-log row, authority tier, or central registry - parallel queue-only before functional acceptance, blocking before hardened closure"],
       "mode": "review_read_only",
       "strength": "strongest_available",
       "vendor_preference": "claude",
@@ -64,7 +64,7 @@
     {
       "id": "cybersecurity-auditor",
       "purpose": "Audit the internet-exposed multi-tenant dialer from an attacker's perspective across auth, CSRF, RBAC and object scope, tenant isolation and RLS, untrusted input, secrets, PII telemetry, abuse controls, provider boundaries, and dependency risk.",
-      "trigger": ["before merging auth, security, privacy, billing, upload, provider, tenant-data, or prospect-data changes"],
+      "trigger": ["auth, security, privacy, billing, upload, provider, tenant-data, or prospect-data changes - parallel queue-only before functional acceptance, blocking before hardened closure"],
       "mode": "review_read_only",
       "strength": "strongest_available",
       "vendor_preference": "claude",
@@ -129,7 +129,7 @@
     },
     {
       "id": "test-runner",
-      "purpose": "Run the serialized local CI-equivalent heavy gate as the sole local test-database user, preserve command-owned exit codes and nonzero test counts, and return a compact diagnosis without editing.",
+      "purpose": "Run one serialized npm run ci only for a clean, reviewed candidate rebased onto the freshest integration base, as the sole local test-database user; preserve the command-owned exit and nonzero counts, and return a compact diagnosis without editing.",
       "trigger": ["after a finished dialer slice requires the heavy local proof ladder"],
       "mode": "verify_runtime",
       "strength": "strongest_available",
@@ -158,7 +158,7 @@
     },
     {
       "id": "sprint-implementer",
-      "purpose": "Implement one settled bounded dialer slice completely in an isolated worktree, self-audit the actual diff, run the authorized fast gates, and return evidence to the orchestrator.",
+      "purpose": "Implement one settled bounded dialer slice completely in an isolated worktree, self-audit the actual diff, run exact biting tests plus diff-routed proof:changed, and return focused evidence without invoking heavy closure gates.",
       "trigger": ["a settled self-contained dialer sprint slice"],
       "mode": "implement",
       "strength": "implementation",

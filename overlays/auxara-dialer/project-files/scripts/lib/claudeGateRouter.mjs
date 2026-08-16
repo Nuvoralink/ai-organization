@@ -29,6 +29,8 @@ export const GATE_ORDER = Object.freeze([
   'gate:doc-registry-refs',
   'gate:endpoint-wiring',
   'gate:page-reachability',
+  'gate:delivery-lifecycle',
+  'gate:provider-doc-evidence',
 ]);
 
 export function normalizeGatePath(filePath) {
@@ -103,6 +105,23 @@ export function gatesForFile(filePath) {
     gates.add('gate:authority-placeholders');
   }
   if (/\/frontend\/src\/(pages|components)\//.test(p)) gates.add('check:call-drop-gate');
+  if (
+    /\/(?:AGENTS|CLAUDE)\.md$/.test(p) ||
+    /\/\.claude\/(?:rules|agents)\//.test(p) ||
+    /\/\.ai-organization\/(?:policies|schemas)\/delivery-lifecycle\.v1\.(?:json|schema\.json)$/.test(p) ||
+    /\/\.github\/(?:PULL_REQUEST_TEMPLATE\.md|ISSUE_TEMPLATE\/agent-slice\.yml)$/.test(p) ||
+    /\/docs\/agent-prompts\/orchestration-playbook\.md$/.test(p) ||
+    /\/scripts\/check-delivery-lifecycle(?:\.test)?\.mjs$/.test(p)
+  ) {
+    gates.add('gate:delivery-lifecycle');
+  }
+  if (
+    /\/(?:backend|shared)\/src\//.test(p) ||
+    /\/docs\/app-plan\/auditability\/provider-proof\/change-evidence\.json$/.test(p) ||
+    /\/scripts\/check-provider-doc-evidence(?:\.test)?\.mjs$/.test(p)
+  ) {
+    gates.add('gate:provider-doc-evidence');
+  }
   if (/\/frontend\/src\/components\/ui\//.test(p)) gates.add('check:ui-testid');
   if (/\.(test|spec)\.(ts|tsx|mts|mjs)$/.test(p) || /Regression[^/]*\.(ts|mjs)$/.test(p)) {
     gates.add('gate:test-intent');
@@ -181,7 +200,16 @@ export function completionProofForFiles(filePaths) {
     }
     for (const command of configured) commands.add(command);
   }
-  return { profiles: [...profiles].sort(), commands: [...commands] };
+  const orderedCommands = [...commands];
+  const prioritizedCommands = ['prisma:generate', 'format:check'];
+  for (const command of prioritizedCommands.toReversed()) {
+    const commandIndex = orderedCommands.indexOf(command);
+    if (commandIndex >= 0) {
+      orderedCommands.splice(commandIndex, 1);
+      orderedCommands.unshift(command);
+    }
+  }
+  return { profiles: [...profiles].sort(), commands: orderedCommands };
 }
 
 function outputText(value) {
@@ -266,7 +294,7 @@ export function runCompletionProofForFiles(filePaths, options = {}) {
   return { ...result, profiles: proof.profiles };
 }
 
-function runNamedCommands(
+export function runNamedCommands(
   commands,
   {
     cwd = process.cwd(),
@@ -274,11 +302,14 @@ function runNamedCommands(
     timeoutMs = 120_000,
     outputLimit = GATE_OUTPUT_LIMIT,
     totalOutputLimit = TOTAL_FAILURE_OUTPUT_LIMIT,
+    stopOnFailure = false,
   } = {},
 ) {
   const failures = [];
+  let executedCount = 0;
   let remainingOutput = totalOutputLimit;
   for (const gate of commands) {
+    executedCount += 1;
     const executable = process.platform === 'win32' ? (process.env.ComSpec ?? 'cmd.exe') : 'npm';
     const args =
       process.platform === 'win32' ? ['/d', '/s', '/c', 'npm', 'run', gate] : ['run', gate];
@@ -296,6 +327,12 @@ function runNamedCommands(
     const bounded = tail(rawOutput, Math.min(outputLimit, Math.max(remainingOutput, 0)));
     remainingOutput = Math.max(remainingOutput - bounded.length, 0);
     failures.push({ gate, status: result.status, output: bounded });
+    if (stopOnFailure) break;
   }
-  return { gates: commands, failures, passedCount: commands.length - failures.length };
+  return {
+    gates: commands,
+    failures,
+    passedCount: executedCount - failures.length,
+    skippedCount: commands.length - executedCount,
+  };
 }

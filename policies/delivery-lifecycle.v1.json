@@ -1,0 +1,41 @@
+{
+  "$schema": "../schemas/delivery-lifecycle.v1.schema.json",
+  "version": "1.1.0",
+  "principle": "prove_intended_behavior_on_the_real_surface_before_hardening_audits_cleanup_polish",
+  "functional_change": {
+    "ordered_stages": [
+      "root_cause_and_current_contract",
+      "targeted_implementation_proof",
+      "deploy_safety",
+      "deployed_functional_proof",
+      "hardening_and_broad_assurance"
+    ],
+    "pre_acceptance_auditor_mode": {
+      "may_run_in_parallel": true,
+      "finding_disposition": "queue_without_remediation"
+    },
+    "pre_acceptance_interruptions": [
+      "migration_or_schema_apply_failure",
+      "database_integrity_or_irreversible_data_loss",
+      "build_or_startup_failure",
+      "railway_deploy_or_readiness_failure",
+      "catastrophic_irreversible_security_risk"
+    ],
+    "acceptance_authority": "observed_deployed_user_journey_and_human_acceptance_when_human_reachable"
+  },
+  "provider_evidence": {
+    "required_for_provider_touch": true,
+    "accepted_sources": ["current_official_developer_docs", "installed_sdk_source_or_types"],
+    "required_fields": [
+      "change_id",
+      "provider",
+      "verified_at",
+      "official_sources",
+      "sdk_inventory",
+      "contract_claims",
+      "affected_paths",
+      "deployed_smoke"
+    ],
+    "forbidden_bases": ["training_data_only", "invented_protocol_when_supported_sdk_capability_exists"]
+  }
+}

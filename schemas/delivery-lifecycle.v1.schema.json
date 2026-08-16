@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nuvoralink.internal/schemas/delivery-lifecycle.v1.schema.json",
+  "title": "Functionality-first delivery lifecycle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "principle", "functional_change", "provider_evidence"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "principle": {
+      "const": "prove_intended_behavior_on_the_real_surface_before_hardening_audits_cleanup_polish"
+    },
+    "functional_change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ordered_stages",
+        "pre_acceptance_auditor_mode",
+        "pre_acceptance_interruptions",
+        "acceptance_authority"
+      ],
+      "properties": {
+        "ordered_stages": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "pre_acceptance_auditor_mode": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["may_run_in_parallel", "finding_disposition"],
+          "properties": {
+            "may_run_in_parallel": { "const": true },
+            "finding_disposition": { "const": "queue_without_remediation" }
+          }
+        },
+        "pre_acceptance_interruptions": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 5,
+          "items": {
+            "enum": [
+              "migration_or_schema_apply_failure",
+              "database_integrity_or_irreversible_data_loss",
+              "build_or_startup_failure",
+              "railway_deploy_or_readiness_failure",
+              "catastrophic_irreversible_security_risk"
+            ]
+          }
+        },
+        "acceptance_authority": {
+          "const": "observed_deployed_user_journey_and_human_acceptance_when_human_reachable"
+        }
+      }
+    },
+    "provider_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_for_provider_touch", "accepted_sources", "required_fields", "forbidden_bases"],
+      "properties": {
+        "required_for_provider_touch": { "const": true },
+        "accepted_sources": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "required_fields": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "forbidden_bases": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

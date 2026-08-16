@@ -57,3 +57,15 @@ body:
       label: Decision authority
       description: Link decision-log rows, ADRs, plans, requirements, or explicit human approvals. Name unsettled decisions.
     validations: { required: true }
+  - type: textarea
+    id: functional_acceptance
+    attributes:
+      label: Functional acceptance
+      description: Original deployed user journey, deploy-safety boundary (migration/schema, DB integrity, build/startup, deploy readiness), acceptance observer, and which audit findings remain queue-only until it works.
+    validations: { required: true }
+  - type: textarea
+    id: provider_documentation_evidence
+    attributes:
+      label: Provider documentation evidence
+      description: Official leaf docs, installed SDK source/types inspected, exact contract claims, and deployed smoke — or N/A with the provider-path census.
+    validations: { required: true }

@@ -2439,6 +2439,14 @@
       "class": "documentation"
     },
     {
+      "path": "docs/assurance-pipeline-phase1-plan.md",
+      "class": "documentation"
+    },
+    {
+      "path": "docs/assurance-pipeline-plan.md",
+      "class": "documentation"
+    },
+    {
       "path": "docs/implementation-plan.md",
       "class": "documentation"
     },
@@ -3231,6 +3239,10 @@
       "class": "project-orchestration-overlay"
     },
     {
+      "path": "overlays/auxara-dialer/project-files/.claude/rules/functionality-first-delivery.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
       "path": "overlays/auxara-dialer/project-files/.claude/rules/instrumentation.md",
       "class": "project-orchestration-overlay"
     },
@@ -3607,6 +3619,10 @@
       "class": "project-orchestration-overlay"
     },
     {
+      "path": "overlays/coachai/project-files/.cursor/rules/functionality-first-delivery.mdc",
+      "class": "project-orchestration-overlay"
+    },
+    {
       "path": "overlays/coachai/project-files/.cursor/rules/instrumentation.mdc",
       "class": "project-orchestration-overlay"
     },
@@ -3871,6 +3887,10 @@
       "class": "project-orchestration-overlay"
     },
     {
+      "path": "overlays/nuvora-link/project-files/.claude/rules/functionality-first-delivery.md",
+      "class": "project-orchestration-overlay"
+    },
+    {
       "path": "overlays/nuvora-link/project-files/.claude/rules/nuvo-governance.md",
       "class": "project-orchestration-overlay"
     },
@@ -3967,6 +3987,10 @@
       "class": "policy"
     },
     {
+      "path": "policies/delivery-lifecycle.v1.json",
+      "class": "policy"
+    },
+    {
       "path": "policies/risk-controls.v1.json",
       "class": "policy"
     },
@@ -4004,6 +4028,10 @@
     },
     {
       "path": "schemas/control-plane-manifest.v1.schema.json",
+      "class": "schema"
+    },
+    {
+      "path": "schemas/delivery-lifecycle.v1.schema.json",
       "class": "schema"
     },
     {
@@ -4420,6 +4448,10 @@
     },
     {
       "path": "skills/bootstrap-orchestrator/templates/rules/frontend-rules.template.md",
+      "class": "reusable-skill"
+    },
+    {
+      "path": "skills/bootstrap-orchestrator/templates/rules/functionality-first-delivery.template.md",
       "class": "reusable-skill"
     },
     {
