@@ -392,7 +392,7 @@
     },
     {
       "path": "CLAUDE.md",
-      "sha256": "c2971e9c680d4ae56fec5a66c30c8be08b02a23d47799186d7947f87191236c2"
+      "sha256": "20abca9962c321fc4aad2c51cad30fa3626c09fbb01bdb947f61ff011ddfebd0"
     },
     {
       "path": "scripts/check-agent-context.mjs",
@@ -488,20 +488,20 @@
       "hooks": "21083269743c943ef38bf49f037afbf17e4fd2709aa7e4e375b3381980e1fee2"
     },
     "package.json": {
-      "scripts.agent:run": "08332342619da2455cf39a40138d9fe1c41115db913abf10ff549c45596d842e",
-      "scripts.gate:agent-context": "e822d25951b9b7556b46be16ed2ea2f9e35ec1f303386d07f4b657019e24a312",
-      "scripts.gate:rules-wiring": "fed01dafe12799c3341eee47eb9e24905bdda77a50d3e637f4ec96f2e6f6066c",
-      "scripts.gate:agent-control-plane": "698f16fc09153ee9a5cd8286ddfb64d55f439008c15f90ba343d5db5a4cdae09",
-      "scripts.gate:fleet-parity": "5ce7e359bbd6ab2f677e01fb2a31c02c016e2e072d1dc0daa36efeb118cd8a28",
-      "scripts.gate:overlay-parity": "af9146f4c6a1c2b82eb9b172c11551354743863fa028598a7befb926dad714af",
-      "scripts.gate:organization": "461edef5dde5d166c1f1ab1073cef816e33345b8d9bf0fa3de22536a7b388573",
-      "scripts.proof:changed": "6dbbd6ff73ce75de5bf25e3202f8b70823eaf36ad4c60624b67e124926c30610",
-      "scripts.test:organization-control-plane": "1a36000796183c9f6f4c84f1def13a68224165a91a79c13a4df3031c30f3e046",
-      "scripts.test:evidence-integrity-mutation": "b9f4464c0408f9269759970e5eb253247186e05b7aa9edf5ff71ed634f0a4975",
-      "scripts.gates:all": "bf81ad5946d388af5d3578bbfc22aa2feb4fde28a04abb9cfd7427888a621ed7",
-      "scripts.verify": "cd0a5a8b5d9a13fbf027ce24e33ce5483b2493c0b9a45a4f030dfb45d8b3be92",
-      "scripts.verify:db": "8dc368bb11bf1cb89452a8a234285db7a108e53124931a13c421f46ef0eb656c",
-      "scripts.ci:local": "4cd0407ab3f6926de694401d9982430343a95ec37eb8ab4e229d0e40c7ee410a"
+      "scripts.agent:run": "a8e3be98df0d5406d91588e1cefc5924397ce80fa742c893afddcea7a2e9a9d5",
+      "scripts.gate:agent-context": "83eb407ace5d068cf5b56062e8ad67563294fee055375a78d5be8601f4627ed8",
+      "scripts.gate:rules-wiring": "1201d76e9fd70ad4ddd74ab80998421ffac4ddde0cffad8f370ef3e595247b9b",
+      "scripts.gate:agent-control-plane": "41571d360522ef6506e743f8a4e4fb3f59578b412ae970038907b080ab646e16",
+      "scripts.gate:fleet-parity": "0c52db346e952ce8a20715558c836c3b5a4468850482b642b69d83b62d653a5c",
+      "scripts.gate:overlay-parity": "1a8628d10ac232722aad9b376f7a2b1b957703716595b0e3f3ae294f316e5926",
+      "scripts.gate:organization": "b2304c7fbbe7f7380708e38a92d498dcbd2da96820703589fa8b65899c233632",
+      "scripts.proof:changed": "4bfc520d777a10dc90733e32aadec7d92b0a9b7266227eb27a87f1de6816b82d",
+      "scripts.test:organization-control-plane": "1c097a3b80598bc3bb156d3239afa4bb1f42bde973db652bcdc5168e62c5cb01",
+      "scripts.test:evidence-integrity-mutation": "2b7ec9ebecd833ee23c906b81349d676eb418e18991b8517a1f1f3335723cbfb",
+      "scripts.gates:all": "edff820e7b001a16614131f9635897b3733c41d8c8242cbf84f0051149c29932",
+      "scripts.verify": "217cf314de5043c85b05401ecd1e3294077067f3b1f45edc3248d3c82d2ff46e",
+      "scripts.verify:db": "2d3ccef8d9cccd97181a33d76be74f762a501883ce1533d54cd8ee80a7d421cb",
+      "scripts.ci:local": "47db5601b61ff94cbd4ce34cd9a40217d0ffeec299b35d85321d747649f39a3b"
     }
   }
 }
