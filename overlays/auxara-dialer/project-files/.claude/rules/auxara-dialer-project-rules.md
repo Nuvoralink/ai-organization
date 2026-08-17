@@ -22,7 +22,7 @@ Before non-trivial architecture work, read `docs/app-plan/product/01-product-bri
 
 The dialer ships ONE dialing mode — **single-line power** (ADR-DLR-001). Parallel and predictive are **scrapped** (not deferred); do not build pacing, multi-line, or AMD-to-bridge seams for them. DLR-014 separately owns the passive post-bridge AMD policy.
 
-- **Power dialer (the only mode):** fetch next prospect → validate compliance gates (calling hours, DNC, recording disclosure, consent) → dial via Telnyx Call Control → on disposition save, fetch next. One line per agent; agent-initiated, so it **cannot abandon**.
+- **Power dialer (the only mode):** fetch next prospect → validate compliance gates (calling hours, DNC, recording disclosure) → dial via Telnyx Call Control → on disposition save, fetch next. One line per agent; agent-initiated, so it **cannot abandon**. Consent-to-contact remains the tenant's Terms/AUP warranty under CMP-003, never an Auxara per-call verdict.
 - **VM-drop is agent-triggered:** the centralized DLR-014 AMD policy has exactly three states (`off`, `standard`, `premium`). Standard is active; premium is a retained dormant option; off omits the provider AMD field and AMD usage. Any AMD fact may provide an advisory cue only after the agent is already bridged; it never hangs up, dispositions, drops, or advances on its own. The agent hears/recognizes voicemail and explicitly starts playback of one of their own recorded/uploaded clips (DLR-014; ARC-006). VM-drop of prerecorded marketing requires documented prior express written consent.
 
 The stable cross-consumer contract is the ARC-002 `call_events` stream — manager wallboard / billing meter / compliance audit all read it. The power engine is concrete; there is no multi-mode interface (DLR-002 dropped).
@@ -33,7 +33,7 @@ The line is **who is the legal actor**: the platform (we sign/register or the ca
 
 **Set A — platform/carrier-enforced and non-disableable** (neither tenant nor human can turn the capability off):
 - **STIR/SHAKEN** A-attestation on US/CA DIDs (Telnyx-provisioned).
-- **10DLC** brand + ≥1 campaign per tenant before any **US** A2P SMS (US carriers block unregistered at the network); toll-free verified fallback. Vetting state visible + registered in-app (ADM-002). **Canada SMS needs no 10DLC** — it works immediately (CASL mechanics + attestation).
+- **10DLC** brand + ≥1 campaign per tenant before any A2P SMS whose **actual selected sender OR recipient is US** (US carriers block unregistered at the network); toll-free verified fallback. Vetting state visible + registered in-app (ADM-002). **CA→CA needs no 10DLC** and works subject to the same STOP/DNC/CASL sender-ID and functional-unsubscribe mechanics; recipient consent remains the tenant's Terms/AUP warranty. Invalid/unsupported numbers retain their own error class and are never treated as US or mislabeled as 10DLC.
 - **CASL** SMS sender-ID + functional unsubscribe mechanics (≤10 business days) for SMS into/from Canada.
 - **STOP / opt-out** auto-suppression (always on; one tenant-wide internal-DNC authority). Power/automatic/SMS stay blocked while active. Sprint-1.4 S14-PF-G permits only a separately authorized human manual-voice action: factual warning + effective `calls.dial_internal_dnc` + required reason + server-bound single-use challenge after all other gates recheck. It never clears DNC and records an exception, not a pass.
 
@@ -41,8 +41,12 @@ The line is **who is the legal actor**: the platform (we sign/register or the ca
 - **Calling-hours** by prospect-local TZ, **country-aware** (US default 8am–9pm + per-state stricter; **Canada** CRTC day-of-week windows Mon–Fri 9:00am–9:30pm / Sat–Sun 10:00am–6:00pm via `CANADA_CALLING_HOURS`, CMP-CA-WINDOW-001; tenant may narrow or disable at own risk). **Enforcement differs by dial mode (ADR-CMP-012 / CMP-012):** the power dialer **hard-blocks** out-of-window leads (skip/defer → next in-window); **manual / click-to-dial** is a per-tenant setting — **block / confirm** (default; a speed-bump popup states the prospect's local time + window, the human decides) **/ off**. This simple confirmation is **calling-hours only** and captures **no reason**. The distinct internal-DNC manual-voice exception above requires permission + reason + a one-call server challenge; consent/PEWC is never converted into a client bypass.
 - **External federal/state DNC scrubbing** (CMP-005; Sprint 2.0; default ON once tenant-configured; scrub-on-import + ≤31-day re-scrub + dial-time freshness). It is separate from the always-on Sprint-1 internal-DNC authority.
 - **Recording disclosure** at call start for all-party-consent states (CA, CT, DE, FL, IL, MD, MA, MI, MT, NV, NH, PA, WA, +VT) + a disclose-always option; **PIPEDA** → disclose on every Canadian call. Fail-safe = disclose when state uncertain.
-- **Per-recipient consent / PEWC** — tenant attestation only (`consent_attestations`); never per-lead tracked. VM-drop of prerecorded fires only when the tenant enabled the capability + attested PEWC.
 - *(No predictive-abandonment cap — predictive scrapped; a single-line, agent-initiated power dialer cannot abandon. ADR-DLR-001.)*
+
+**Terms/AUP allocation, not Set B:** the tenant warrants per-recipient consent / PEWC in Terms/AUP.
+Auxara never asks, tracks, attests, or gates on it, and no consent table is to be built. Carrier
+Campaign opt-in method/evidence remains a distinct TCR requirement. Human-triggered prerecorded
+VM-drop remains the tenant's PEWC responsibility; no dialer verdict fabricates that proof.
 
 **Posture for Set B + shared-account protection:** safe defaults ON + a ToS/AUP that puts compliance responsibility on the tenant + abuse/anomaly monitoring with suspend rights — **not** per-call platform enforcement.
 
