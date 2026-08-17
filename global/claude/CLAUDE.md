@@ -553,7 +553,71 @@ I run **OpenAI Codex alongside Claude Code** and want the same tooling in both, 
 
 ---
 
+## Dispatch calibration — right-size model, effort & execution shape (cost gate)
+
+The budget is burned by **two things, and neither of them is parallelism itself**: (1) every
+sub-agent boots with the full heavy always-on context, and (2) high effort applied everywhere. So the
+lever is **cheaper boots and right-sized effort — NOT serializing work.** Parallelism is *free of extra
+context cost per lane* — three agents running concurrently cost the same context as three run
+sequentially, but finish in a third of the wall-clock. So:
+
+**Run independent work in parallel, aggressively.** Whenever two or more pieces of work don't depend on
+each other's output, dispatch them in the SAME turn so they run concurrently — never make Amin wait for
+lane A to finish before lane B starts when they could have run together. Waiting serially on
+independent lanes is a defect, not caution. When I have N independent slices, I fan them out at once.
+
+What I actually calibrate is the *execution shape and cost per lane*, using this ladder:
+
+- **Solo, main thread.** A single focused task I can hold in one context — a bug fix, a focused edit, a
+  question, one bounded feature. Do it directly; spawning an agent to do what the main thread could do
+  is a redundant full-context boot for nothing. (This is about avoiding a *pointless* agent, not about
+  avoiding parallelism — if there are independent lanes, parallelize them.)
+- **One sub-agent (bounded delegation).** A self-contained slice I want implemented/reviewed off the
+  main context, or one background lane while I keep working.
+- **A parallel set (fan out as many as there are genuinely independent lanes).** The normal shape for
+  real work: implement + audit lenses, several independent files/slices, research across separate
+  questions. If the lanes are independent, run them together — 3, 5, 8 at once is fine when the work is
+  actually that wide. The constraint is *real independence*, not a headcount cap. Right-size each
+  lane's model+effort (Haiku/Sonnet for read/research lanes, Opus 4.8 for code lanes) so breadth is cheap.
+- **A full swarm / `Workflow` / `ultracode`.** For work whose breadth one context can't cover: a sprint
+  with many slices, a repo-wide multi-lens audit, a migration over dozens of sites. Use it when the
+  breadth is real. `ultracode` stays OFF unless Amin invokes it.
+
+The anti-pattern to kill is not "too many agents" — it's **a full-context boot or high effort spent
+where it added nothing.** Parallelize freely; economize on boot weight (JIT context, below) and effort.
+
+**Model policy: Opus 4.8 is REQUIRED for code implementation and code review — nothing weaker.**
+Sonnet is too weak to write or review this codebase's code. But cheaper models are correct for
+lighter work — match the model to what the task actually demands. **Opus 5 is banned outright: never
+use it; when I'd reach for Opus, it is always `claude-opus-4-8`.**
+
+- **Haiku** — genuinely mechanical, settled, single-node: read-only lookups, grep-and-report, simple
+  file reads, renames, formatting, running a known command, trivial doc tweaks. Fast and cheap.
+- **Sonnet** — light-to-moderate work that isn't code authorship/review: scoped research, exploration
+  and mapping, non-code edits (docs, config, copy), summarization, straightforward planning input.
+- **Opus 4.8 — REQUIRED for the two things that must be good: writing code (implementation slices) and
+  reviewing code (adversarial review, correctness/security review).** Also the right call for genuinely
+  hard reasoning: ambiguous architecture, tricky root-cause debugging, security-critical logic, plans
+  with real tradeoffs. Vary EFFORT within Opus 4.8 — low for a clear-spec implementation slice, high
+  for hard reasoning or a review that must not miss.
+- **Match model+effort per dispatched agent:** a code-implementer or code-reviewer → Opus 4.8 (low or
+  high by difficulty); an `Explore`/research/mapping lane → Sonnet; a mechanical read/report lane →
+  Haiku. Don't put Opus on read-only scouting, and never put Sonnet on code authorship or review.
+
+**Codex note:** Codex runs as a separate CLI on the OpenAI account — its *own* token use does not hit
+my Claude budget. What hits my budget is the Claude orchestration *around* it (auditors, reviewers,
+verification agents I spawn to check its work). So if Codex "fanned out," the Claude-side cost is
+however many Claude agents I wrapped around it — keep that wrapper lean.
+
+**Fail-state (two directions):** I spawned a redundant agent for what the main thread could do, or ran
+high effort where low would do — OR I made independent lanes wait in series when they could have run in
+parallel, wasting Amin's time for no cost saving.
+
 ## Orchestrator mode & the agent fleet
+
+The orchestrator/PM model below is the *machinery* the dispatch-calibration gate above draws on — it
+does not override that gate: parallelize independent lanes freely, and economize on boot weight (JIT
+context) and effort, never on parallelism itself.
 
 I run multi-agent builds as one person: the main Claude/Codex session acts as **orchestrator / PM** —
 it decomposes work into bounded slices, delegates them to sub-agents, adversarially verifies the
