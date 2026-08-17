@@ -138,10 +138,6 @@ function safeCoverageIncrement({
       dispatchPath,
       uninstrumentedPath,
     });
-    return {
-      coverage: writeCoverageProjection(file, snapshot),
-      modeEpoch: snapshot.mode_epoch,
-    };
   } catch (error) {
     const failureSnapshot = countFailure
       ? recordFailureBestEffort({
@@ -153,6 +149,23 @@ function safeCoverageIncrement({
     return {
       error: errorMessage(error),
       modeEpoch: failureSnapshot?.mode_epoch ?? snapshot?.mode_epoch ?? modeEpoch,
+    };
+  }
+  // Projection publication is DECOUPLED from the authoritative SQLite increment above: the ledger
+  // increment has already committed, so a JSON projection write failure (a transient Windows EPERM on
+  // the temp→final rename, or an unwritable projection path) is a NON-FATAL `projectionError`, never a
+  // fabricated coordination `error` and never a `coordination_errors` bump. SQLite stays authoritative;
+  // `readCoordinationCoverage` re-publishes the projection best-effort on the next read.
+  try {
+    return {
+      coverage: writeCoverageProjection(file, snapshot),
+      modeEpoch: snapshot.mode_epoch,
+    };
+  } catch (error) {
+    return {
+      coverage: projectionFrom(snapshot),
+      modeEpoch: snapshot.mode_epoch,
+      projectionError: errorMessage(error),
     };
   }
 }

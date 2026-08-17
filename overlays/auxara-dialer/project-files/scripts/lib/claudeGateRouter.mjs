@@ -29,8 +29,6 @@ export const GATE_ORDER = Object.freeze([
   'gate:doc-registry-refs',
   'gate:endpoint-wiring',
   'gate:page-reachability',
-  'gate:delivery-lifecycle',
-  'gate:provider-doc-evidence',
 ]);
 
 export function normalizeGatePath(filePath) {
@@ -105,23 +103,13 @@ export function gatesForFile(filePath) {
     gates.add('gate:authority-placeholders');
   }
   if (/\/frontend\/src\/(pages|components)\//.test(p)) gates.add('check:call-drop-gate');
-  if (
-    /\/(?:AGENTS|CLAUDE)\.md$/.test(p) ||
-    /\/\.claude\/(?:rules|agents)\//.test(p) ||
-    /\/\.ai-organization\/(?:policies|schemas)\/delivery-lifecycle\.v1\.(?:json|schema\.json)$/.test(p) ||
-    /\/\.github\/(?:PULL_REQUEST_TEMPLATE\.md|ISSUE_TEMPLATE\/agent-slice\.yml)$/.test(p) ||
-    /\/docs\/agent-prompts\/orchestration-playbook\.md$/.test(p) ||
-    /\/scripts\/check-delivery-lifecycle(?:\.test)?\.mjs$/.test(p)
-  ) {
-    gates.add('gate:delivery-lifecycle');
-  }
-  if (
-    /\/(?:backend|shared)\/src\//.test(p) ||
-    /\/docs\/app-plan\/auditability\/provider-proof\/change-evidence\.json$/.test(p) ||
-    /\/scripts\/check-provider-doc-evidence(?:\.test)?\.mjs$/.test(p)
-  ) {
-    gates.add('gate:provider-doc-evidence');
-  }
+  // gate:delivery-lifecycle and gate:provider-doc-evidence are WHOLE-REPO structural gates (they read
+  // the policy + every binding, and scan the entire changed-file set for provider markers). They are
+  // deliberately NOT routed here: per-file PostToolUse is the wrong grain (a single edit is not the
+  // diff), and a backend edit must route to NO PostToolUse gate because completion profiles own backend
+  // proof (backend/frontend/database/control profiles run them at TaskCompleted, and gates:all runs them
+  // at the closure boundary). Routing them per-edit fired gate:provider-doc-evidence on every backend/src
+  // edit — the exact over-route the posttooluse-gate backend case forbids.
   if (/\/frontend\/src\/components\/ui\//.test(p)) gates.add('check:ui-testid');
   if (/\.(test|spec)\.(ts|tsx|mts|mjs)$/.test(p) || /Regression[^/]*\.(ts|mjs)$/.test(p)) {
     gates.add('gate:test-intent');

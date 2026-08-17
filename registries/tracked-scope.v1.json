@@ -2467,6 +2467,10 @@
       "class": "documentation"
     },
     {
+      "path": "docs/runbooks/control-plane-fork-trap.md",
+      "class": "documentation"
+    },
+    {
       "path": "global/claude/CLAUDE.md",
       "class": "global-orchestration"
     },
@@ -3048,6 +3052,10 @@
     },
     {
       "path": "global/codex/memories/extensions/ad_hoc/notes/2026-08-01T23-52-45-auxara-s15-control-plane-final-checkpoint.md",
+      "class": "global-orchestration"
+    },
+    {
+      "path": "global/codex/memories/extensions/ad_hoc/notes/2026-08-16-auxara-inbound-terminal-and-guardrail-checkpoint.md",
       "class": "global-orchestration"
     },
     {

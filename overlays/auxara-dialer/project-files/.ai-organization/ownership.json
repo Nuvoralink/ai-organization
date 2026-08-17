@@ -48,7 +48,7 @@
     },
     {
       "path": ".ai-organization/runtime/core/coordination/coverage.mjs",
-      "sha256": "d088a8db3c3f40ae53a6f4baeb9c881d7d91354fad23a9ff36a8e4395069a30b"
+      "sha256": "2137822ba6ad4026f0195451e1262c0d3a70524f6bed5182fd7243d53e03ba88"
     },
     {
       "path": ".ai-organization/runtime/core/coordination/dependencyGraph.mjs",

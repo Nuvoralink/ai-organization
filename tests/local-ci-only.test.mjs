@@ -53,7 +53,7 @@ test('Proves: GitHub-hosted workflows stay retired and local CI retains every co
   );
   assert.match(
     auxaraEngineeringRule,
-    /ci` command exposes no lane-skip option/u,
-    'generated Auxara doctrine must explicitly preserve the indivisible merge gate',
+    /Smaller checks never impersonate closure proof/u,
+    'generated Auxara doctrine must explicitly preserve the indivisible closure gate (no lane-skip)',
   );
 });
