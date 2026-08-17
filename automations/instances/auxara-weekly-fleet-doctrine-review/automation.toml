@@ -9,6 +9,6 @@ model = "gpt-5.6-terra"
 reasoning_effort = "high"
 execution_environment = "local"
 target = { type = "project", project_id = "local-981fa41819cafa1bf63ebf558f8ea804" }
-cwds = ["C:\\dev\\Nuvo Dialer"]
+cwds = ["${PROJECT:auxara-dialer}"]
 created_at = 1784043052778
 updated_at = 1785547867112

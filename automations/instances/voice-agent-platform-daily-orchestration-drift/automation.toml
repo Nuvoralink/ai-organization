@@ -10,6 +10,6 @@ reasoning_effort = "medium"
 notification_policy = "failed_runs_only"
 execution_environment = "local"
 target = { type = "project", project_id = "ab7ca06a-b610-4550-aa4b-2c77e5b91ad9" }
-cwds = ["C:\\dev\\Voice Agents"]
+cwds = ["${PROJECT:voice-agents}"]
 created_at = 1785603292246
 updated_at = 1785603292246

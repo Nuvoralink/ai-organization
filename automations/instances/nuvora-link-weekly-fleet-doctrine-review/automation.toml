@@ -9,6 +9,6 @@ model = "gpt-5.6-sol"
 reasoning_effort = "high"
 execution_environment = "local"
 target = { type = "project", project_id = "local-25117aafc9baf60b12d81e5a39dea89c" }
-cwds = ["C:\\dev\\Nuvora Link"]
+cwds = ["${PROJECT:nuvora-link}"]
 created_at = 1785494223444
 updated_at = 1785547728650
