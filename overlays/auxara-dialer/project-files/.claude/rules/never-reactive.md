@@ -5,12 +5,7 @@ paths:
 
 # Never Reactive — Dialer Adapter
 
-**The universal `never-reactive` rule governs in full** — always-on at user level for Claude
-(`~/.claude/rules/never-reactive.md`); Codex carries its compact twin (Gate 12 + the doctrine bullet) in
-`~/.codex/AGENTS.md`. This adapter does not restate the ladder (zoom out → infer the general
-intent/class → explore ≥2 approaches incl. hybrids → map the whole structure grounded at every node →
-act once; mid-task input re-enters the ladder); it binds it to the dialer's surfaces and records the
-founding anchor.
+**The universal `never-reactive` rule governs in full** (always-on at user level; Codex twin in `~/.codex/AGENTS.md`). This adapter does not restate its ladder — it only binds it to the dialer's surfaces and records the founding anchor.
 
 ## Dialer bindings
 

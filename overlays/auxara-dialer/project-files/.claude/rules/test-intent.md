@@ -211,7 +211,7 @@ For every existing test that doesn't have the header: it's grandfathered ONLY un
  * Proves: REQ-CMP-010, BENCH-PRO-COMPLIANCE-AUDIT
  * Test type: compliance-audit
  * Surface: backend/src/services/complianceGate.ts + complianceAuditWriter
- * Authority: per-dial deterministic gate (calling hours TZ math, DNC scrub freshness, consent_proof, recording-disclosure trigger)
+ * Authority: per-dial deterministic gate (calling hours TZ math, DNC scrub freshness, recording-disclosure trigger); CMP-003 consent is a Terms/AUP warranty, not a per-dial gate
  *
  * What this test proves about the product:
  * - Every dial attempt (allowed OR blocked) writes exactly one compliance_audit_log row.

@@ -5,7 +5,7 @@ paths:
 
 # Doctrine Loop — Dialer Adapter
 
-**The universal `doctrine-loop` rule governs in full** — for Claude it is installed at user level (`~/.claude/rules/doctrine-loop.md`, AI-Organization control plane); Codex carries its compact twin in `~/.codex/AGENTS.md`. This adapter does not restate the three arms (PREVENT: failure → gate > rule > doc-fix; PROPAGATE: better method → captured same turn; KEEP DOCS LIVE: stale-on-sight = fix-now), the closed-loop fleet learning wiring, or the universal-backflow discipline. It binds the arms to the dialer's own capture destinations and records this project's founding anchors.
+**The universal `doctrine-loop` rule governs in full** (always-on at user level; Codex twin in `~/.codex/AGENTS.md`). This adapter does not restate its three arms — it only binds them to the dialer's capture destinations and records this project's founding anchors.
 
 ## The dialer's capture destinations (where each arm routes HERE)
 

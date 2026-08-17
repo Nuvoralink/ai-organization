@@ -63,7 +63,7 @@ Purpose: reduce the chance of building insecure SaaS features, shipping privacy 
 
 ## 7. Privacy and data minimization
 
-- Only collect prospect data needed for product behavior (dialing, dispositioning, callback routing), legal compliance (consent proof, DNC status), or analytics aggregates.
+- Only collect prospect data needed for product behavior (dialing, dispositioning, callback routing), legal compliance (for example DNC status), or analytics aggregates. CMP-003 forbids building prospect-consent evidence collection; the covered `consentProofId` compatibility field stays permanently null.
 - New personal data fields require a clear purpose.
 - New stored artifacts require a retention reason and a retention horizon. Recordings, transcripts, and call audit rows have compliance/litigation retention requirements — do not delete blindly.
 - Deletion behavior must consider primary records, derived artifacts (transcriptions, AI drafts), and the external CoachAI consumer (notify it of deletion or fail closed).
