@@ -184,7 +184,7 @@ Tests must assert each of these against meaningful fixtures, including:
 - Provider unavailable / provider returning malformed
 - Cross-tenant access attempt
 - Token-version mismatch
-- Compliance gate fail-closed (DNC freshness lapsed, calling-hours overshoot, consent missing)
+- Compliance gate fail-closed (DNC freshness lapsed, calling-hours overshoot, disclosure audio missing); CMP-003 consent remains a Terms/AUP warranty, not a runtime verdict
 
 ## 8. Data that makes logical sense (anti-fabrication)
 
