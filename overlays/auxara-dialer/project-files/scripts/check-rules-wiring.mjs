@@ -12,11 +12,12 @@
  *   deleted `.codex/rules/` mirror silently returns.
  *
  * THE RULE (see AGENTS.md + CLAUDE.md "Cross-Agent Parity" + docs/Journey L15):
- *   1. Every `@.claude/rules/*.md` reference in CLAUDE.md resolves to an existing file.
+ *   1. Every optional `@.claude/rules/*.md` reference in CLAUDE.md resolves to an existing file.
  *   2. Every `.claude/rules/*.md` path listed in AGENTS.md resolves to an existing file.
  *   3. Every file present in `.claude/rules/` is referenced at least once from AGENTS.md (always-on
  *      OR contextual) — so Codex can discover every rule.
- *   4. `.codex/rules/` does NOT exist (the retired mirror must not silently come back).
+ *   4. Every Claude rule has official `paths:` frontmatter, so task detail remains just-in-time.
+ *   5. `.codex/rules/` does NOT exist (the retired mirror must not silently come back).
  *
  * Exit code 0 = pass; 1 = fail.
  *
@@ -80,7 +81,7 @@ if (!fs.existsSync(rulesDirAbs)) {
   if (claudeText === null) failures.push(`Missing entry doc: ${CLAUDE_MD}`);
   if (agentsText === null) failures.push(`Missing entry doc: ${AGENTS_MD}`);
 
-  // ----- 1. Every @.claude/rules/*.md ref in CLAUDE.md resolves --------------
+  // ----- 1. Every optional @.claude/rules/*.md ref in CLAUDE.md resolves -----
   const claudeAtRefs = new Set();
   if (claudeText) {
     for (const m of claudeText.matchAll(/@\.claude\/rules\/([A-Za-z0-9._-]+\.md)/g)) {
@@ -92,11 +93,6 @@ if (!fs.existsSync(rulesDirAbs)) {
           `${CLAUDE_MD} @-loads \`${RULES_DIR}/${name}\` which does not exist (dangling rule reference).`,
         );
       }
-    }
-    if (claudeAtRefs.size === 0) {
-      failures.push(
-        `${CLAUDE_MD} has no \`@${RULES_DIR}/*.md\` always-on rule references — the loader wiring is missing.`,
-      );
     }
   }
 
@@ -121,6 +117,18 @@ if (!fs.existsSync(rulesDirAbs)) {
       );
     }
   }
+
+  // ----- 4. Every Claude rule stays path-scoped/JIT -------------------------
+  for (const name of [...ruleFiles].sort()) {
+    const source = read(`${RULES_DIR}/${name}`) ?? '';
+    const frontmatterEnd = source.startsWith('---') ? source.indexOf('\n---', 3) : -1;
+    const frontmatter = frontmatterEnd === -1 ? '' : source.slice(3, frontmatterEnd);
+    if (!/^paths\s*:/m.test(frontmatter)) {
+      failures.push(
+        `${RULES_DIR}/${name} has no official \`paths:\` frontmatter — Claude would load it at startup.`,
+      );
+    }
+  }
 }
 
 // ----- Report ---------------------------------------------------------------
@@ -135,7 +143,7 @@ if (failures.length > 0) {
 }
 
 console.log(
-  `check-rules-wiring: OK — every ${RULES_DIR}/*.md is discoverable from ${AGENTS_MD}, every ` +
-    `CLAUDE.md/AGENTS.md rule reference resolves, and the retired ${RETIRED_MIRROR}/ mirror is absent.`,
+  `check-rules-wiring: OK — every ${RULES_DIR}/*.md is path-scoped and discoverable from ${AGENTS_MD}, every ` +
+    `optional CLAUDE.md/AGENTS.md rule reference resolves, and the retired ${RETIRED_MIRROR}/ mirror is absent.`,
 );
 process.exit(0);
