@@ -41,10 +41,15 @@ A feature or functionality bug fix moves through these stages in order:
 Functionality-first changes remediation order, never auditor cadence. The adversarial reviewer and every
 applicable domain/security/performance lens are **required before merge**, though they may start in parallel.
 Classify every finding before merge. **BLOCK and fix now** when it affects intended behavior or a core journey,
-is unknown/unverified, breaks a mandatory gate/proof surface, or enters any build/migration/readiness,
+is unknown/unverified, invalidates functional or release-safety evidence, or enters any build/migration/readiness,
 security/auth/tenant/privacy/compliance, data-integrity/loss, irreversible/external/billed blocker class.
 **FIX-NEXT** may wait until after deployed functional proof only when evidence proves it is bounded, fails safely,
 leaves core functionality working, is outside every blocker class, and has a durable backlog row before merge.
+
+Merge preparation is concurrent. If a red gate is proven to be only documentation, file-map, or another
+non-functional projection drift, assign that repair in parallel and keep implementation, focused proof,
+auditing, and real-blocker repair moving. This is not a waiver: every required gate must be green before final
+merge, and an unclassified gate failure or one that undermines functional/release-safety evidence stays BLOCK.
 
 This lifecycle does not grant production authority. Production-affecting merge/deploy remains human-gated
 by `action-authority.v1.json`; once authorized, ceremony must not delay the functional feedback loop.
@@ -66,12 +71,13 @@ provider authority. Custom protocol/signing/serialization code is forbidden when
 owns the capability unless the evidence entry names the verified SDK gap and why the custom path is needed.
 
 *Fail-state:* “functionality-first” is used to skip an applicable auditor or backlog an unverified/core-
-functionality finding; broad closure runs before anyone proves the original behavior; or provider code is invented
+functionality finding; proven non-functional drift serializes all merge preparation; broad closure runs before anyone proves the original behavior; or provider code is invented
 from memory while an official SDK method exists.
 
 *Killer mutations:* reorder broad hardening before deployed functional proof; set `required_before_merge=false`;
+allow final merge with a required gate red; make proven file-map drift freeze merge preparation;
 classify a core-journey failure as FIX-NEXT; change provider evidence to training-data-only; or modify a provider
 production path without same-diff official-doc/SDK evidence. The two delivery gates must turn red.
 
-*Counterexample:* a verified bounded edge-case polish item that fails safely and cannot affect a blocker class may
-be backlogged without delaying real-surface proof.
+*Counterexamples:* a verified bounded edge-case polish item may be backlogged; proven stale file-map drift is
+repaired concurrently without pausing functional work, but final merge still waits for that gate to turn green.

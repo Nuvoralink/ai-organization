@@ -17,6 +17,7 @@
       "required": [
         "ordered_stages",
         "pre_acceptance_auditor_mode",
+        "merge_preparation_concurrency",
         "pre_acceptance_interruptions",
         "acceptance_authority"
       ],
@@ -61,6 +62,35 @@
             }
           }
         },
+        "merge_preparation_concurrency": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "continue_during_proven_nonfunctional_control_drift",
+            "repair_in_parallel_before_merge",
+            "final_merge_requires_required_gates_green",
+            "parallel_repair_requirements"
+          ],
+          "properties": {
+            "continue_during_proven_nonfunctional_control_drift": { "const": true },
+            "repair_in_parallel_before_merge": { "const": true },
+            "final_merge_requires_required_gates_green": { "const": true },
+            "parallel_repair_requirements": {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "failure_is_proven_documentation_filemap_or_nonfunctional_projection_drift",
+                  "targeted_functional_and_release_safety_proofs_remain_trustworthy",
+                  "outside_release_blocker_classes",
+                  "repair_has_active_owner"
+                ]
+              }
+            }
+          }
+        },
         "pre_acceptance_interruptions": {
           "type": "array",
           "uniqueItems": true,
@@ -76,7 +106,7 @@
               "unknown_or_unverified_risk",
               "security_auth_tenant_privacy_compliance_or_data_integrity_risk",
               "irreversible_external_or_billed_effect_risk",
-              "mandatory_gate_or_proof_surface_failure"
+              "mandatory_gate_or_proof_surface_failure_that_invalidates_functional_or_release_safety_evidence"
             ]
           }
         },

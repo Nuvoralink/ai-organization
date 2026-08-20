@@ -29,7 +29,7 @@ The universal orchestration doctrine applies. The single orchestrator owns decom
 - `.claude/rules/frontend-rules.md` — visible web work; Claude Design approval is blocking before implementation.
 - `.claude/rules/centralization-doctrine.md` — registries, shared contracts, configuration, duplicated decisions, and replacement work.
 - `.claude/rules/test-intent.md` — every test-bearing path.
-- `.claude/rules/functionality-first-delivery.md` — functional/product-behavior code: prove intended behavior on the deployed Nuvora Link site before broad hardening; applicable independent auditors are required before merge and classify BLOCK versus verified durably-backlogged FIX-NEXT; docs/mocks/planning are exempt.
+- `.claude/rules/functionality-first-delivery.md` — functional/product-behavior code: prove intended behavior on the deployed Nuvora Link site before broad hardening; applicable independent auditors are required before merge and classify BLOCK versus verified durably-backlogged FIX-NEXT. Proven documentation/file-map/non-functional projection drift is repaired in parallel without freezing merge preparation, while final merge still requires every mandatory gate green. Docs/mocks/planning are exempt.
 
 ## Fleet
 

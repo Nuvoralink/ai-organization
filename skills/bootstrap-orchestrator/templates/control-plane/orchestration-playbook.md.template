@@ -35,8 +35,10 @@ not zero findings. Treat unknown/unverified, release/core-journey, security/tena
 data-integrity, irreversible/external/billed, and proof-trust defects as BLOCK. A residual is FIX-NEXT only
 when evidence proves it bounded, fail-safe, and unable to affect any BLOCK class. File FIX-NEXT evidence,
 impact, owner, fix direction, and validation in the durable backlog before merge, then repair it on a
-follow-up branch. A red mandatory gate cannot be downgraded; fix the product or a proven-stale gate and rerun.
-Unknown is never low severity.
+follow-up branch. A red mandatory gate cannot be waived and must be green before final merge. When it is proven to
+be only documentation, file-map, or non-functional projection drift, repair it with an active parallel owner while
+implementation, focused proof, auditing, and real-blocker repair continue. An unclassified or proof-invalidating
+red gate remains a critical-path BLOCK. Unknown is never low severity.
 
 ## Functionality-first delivery loop
 

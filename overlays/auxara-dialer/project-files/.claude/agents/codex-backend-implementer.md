@@ -66,7 +66,7 @@ Any shared success/admission predicate over a finite registry owes an exhaustive
 Run the brief's relevant fast gates and capture each command's real exit code. The orchestrator or
 serialized `test-runner` owns any heavy or shared-database proof named by project doctrine. Functional
 work must reach targeted proof and deploy safety promptly, then hand back for **deployed functional proof**;
-applicable independent auditors are required before merge; fix BLOCK findings now and queue only verified bounded fail-safe FIX-NEXT residuals outside every blocker class, with durable backlog rows before merge.
+applicable independent auditors are required before merge; fix BLOCK findings now and queue only verified bounded fail-safe FIX-NEXT residuals outside every blocker class, with durable backlog rows before merge. Proven documentation/file-map/non-functional projection drift gets a parallel repair owner and must not freeze implementation or focused proof, while final merge still requires every mandatory gate green.
 
 Return:
 

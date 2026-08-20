@@ -34,6 +34,11 @@ required before merge and may run in parallel. Classify every finding before mer
 queue only verified bounded fail-safe FIX-NEXT residuals outside every blocker class, each with a durable
 backlog row before merge.
 
+Merge preparation is concurrent. Proven documentation/file-map/non-functional projection drift gets an active
+parallel repair owner and does not pause implementation, focused proof, auditors, or real-blocker repair. Every
+required gate must still be green before final merge; an unclassified or functional/release-proof-invalidating
+gate failure remains BLOCK.
+
 Provider-touching code is docs-and-SDK-first: open the current official leaf documentation for the exact
 capability, inventory the installed SDK's exported methods/types, record exact contract claims
 (request/response/webhook identifiers, idempotency/retry, ordering), and plan one deployed smoke — with
@@ -41,8 +46,9 @@ the evidence in the same diff. Never invent provider behavior from training memo
 protocol code is forbidden when a supported SDK capability exists.
 
 This rule grants no production authority; `.ai-organization/policies/action-authority.v1.json` still
-gates production-affecting actions. *Fail-state:* functionality-first is used to skip an applicable auditor
-or queue an unverified/core-journey finding; broad closure runs before behavior proof; or provider code is
-invented from memory while an official SDK method exists. Killer mutations: set `required_before_merge=false`
-or remove the core-journey blocker class. Counterexample: verified bounded fail-safe edge polish outside all
-blocker classes may be FIX-NEXT.
+gates production-affecting actions. *Fail-state:* functionality-first is used to skip an applicable auditor,
+queue an unverified/core-journey finding, or serialize merge preparation behind proven non-functional drift;
+broad closure runs before behavior proof; or provider code is invented from memory while an official SDK method
+exists. Killer mutations: set `required_before_merge=false`, permit final merge while a required gate is red,
+make proven file-map drift freeze merge preparation, or remove the core-journey blocker class. Counterexample:
+proven stale file-map drift is repaired concurrently, but final merge still waits for green.

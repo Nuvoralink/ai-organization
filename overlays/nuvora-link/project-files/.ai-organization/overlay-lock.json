@@ -84,7 +84,7 @@
     },
     {
       "path": ".claude/rules/functionality-first-delivery.md",
-      "sha256": "0c615f14ca9eb49cd518c795a1bb3ba89bd158fbd7b76197be42ce23cd146c7a"
+      "sha256": "e2031fa1f688199a0e161077a8f6d4111bb1aa6ee159120fc6f6a7bda70f8950"
     },
     {
       "path": ".claude/rules/nuvo-governance.md",
@@ -112,11 +112,11 @@
     },
     {
       "path": "AGENTS.md",
-      "sha256": "6799ca1635020c60061d1979883de21a61d7b37c50da78ebda1fb8db5d9f34b2"
+      "sha256": "e14c325d2aaa07de6f3d032a4405a59b295eadaf079df3ac4debffbb7ed323a2"
     },
     {
       "path": "CLAUDE.md",
-      "sha256": "477658292cea10ec7905291222c0b4e9d0382c714a920b583a675cf066f1b179"
+      "sha256": "45446ca49c211a3663f113e4a63b9bf017958b4e6877622e6d066de17336f3a9"
     },
     {
       "path": "scripts/check-agent-context.mjs",

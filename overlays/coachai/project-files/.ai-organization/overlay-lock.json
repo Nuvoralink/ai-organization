@@ -40,7 +40,7 @@
     },
     {
       "path": ".ai-organization/policies/delivery-lifecycle.v1.json",
-      "sha256": "2c6710111b6843fb3a0afc3dcfcd1eb4b89fd8378d95af28404b2aa678c4566e"
+      "sha256": "36d40b4a6985a244522adf9cca66878db0b781611c937e469e237b553c44a082"
     },
     {
       "path": ".ai-organization/policies/risk-controls.v1.json",
@@ -212,7 +212,7 @@
     },
     {
       "path": ".ai-organization/schemas/delivery-lifecycle.v1.schema.json",
-      "sha256": "b3cff80b27523a8a7af7bd46cbbb99dbc9cb7f05257aae9d0fc1cacdd66f2b13"
+      "sha256": "005379d47bb76bf61ed0abd7eba5de9bf7f6dda40ee90fdf9270be050b761f49"
     },
     {
       "path": ".ai-organization/schemas/project-overlay.v1.schema.json",
@@ -236,23 +236,23 @@
     },
     {
       "path": ".claude/agents/adversarial-reviewer.md",
-      "sha256": "9f14c60e514ad0cce8334ca2986289099a90da77b5656c4b1b5781baa6335842"
+      "sha256": "d2e4a613ae9f663dc94661e43349d2296392c45cd0fb00d67c34584c26ba3d9d"
     },
     {
       "path": ".claude/agents/ai-decision-boundary-auditor.md",
-      "sha256": "ecee68ecd154fa8b1de4e1e56faa957e18548cf1ff8dd719b396421c0232d768"
+      "sha256": "50675250cdde7a9f5561185302c12a5bc96fd694083c53ceb2520fb3fafc2821"
     },
     {
       "path": ".claude/agents/doctrine-drift-auditor.md",
-      "sha256": "37f6fe03704a4a155fc2b8f685270a53545de2070b790581a3cfb3442cbd4631"
+      "sha256": "2c47e8a0b17286b8c689af7539f3f728129686eac9a755c68d243b06674a20db"
     },
     {
       "path": ".claude/agents/functionality-parity-auditor.md",
-      "sha256": "8940e3db5ac77434d65b6eefddef26c234ddb6ce8ba2c6497fa78e150b36355a"
+      "sha256": "3a318e5a05d2dfcebcec43035692a3697e73fc072836bc62ff5541b74dd049dc"
     },
     {
       "path": ".claude/agents/performance-auditor.md",
-      "sha256": "b89bedb8feb5f9706857ae1538cc96a08e849c539425e21e140fa0da60893e3a"
+      "sha256": "167b3ecd3bd51079d3da4d7cf1cb579042dd3d244e42e32769ba54e77fad6020"
     },
     {
       "path": ".claude/agents/premise-and-architecture-challenger.md",
@@ -264,7 +264,7 @@
     },
     {
       "path": ".claude/agents/source-to-screen-auditor.md",
-      "sha256": "ff6c73c1cde658ccf12c4af48aa49f1352bf8d315b94dc454367747dfc3137d0"
+      "sha256": "4c160ce03e66105e0dc0fc55ba11c46eacbcf6590bc44e38004737c157707aed"
     },
     {
       "path": ".claude/agents/sprint-kickoff-auditor.md",
@@ -276,11 +276,11 @@
     },
     {
       "path": ".claude/agents/ui-verifier.md",
-      "sha256": "506eda8e7613a146c29af57e3870317a4780d3e10b220e57ef02ffbc38a3c851"
+      "sha256": "46736eadfcb6f2c6f110bafc77b10536e91681c5f64b646541849ab2055e9197"
     },
     {
       "path": ".claude/agents/user-journey-auditor.md",
-      "sha256": "65fdffa2ce1b7f9980e95dca48b41717740ff9b7d00cea4cad94832e7c8dee48"
+      "sha256": "b20864859ef3d74ce1717bd25f93efcacebe7d4ecbf66d6a4fa0c226c4db7888"
     },
     {
       "path": ".cursor/rules/agent-product-intent.mdc",
@@ -332,7 +332,7 @@
     },
     {
       "path": ".cursor/rules/functionality-first-delivery.mdc",
-      "sha256": "0a1bf031f320fdbf0b46d29d7f2e59a30e4ac99b46135111264a283dd9e32b08"
+      "sha256": "c05cd8deeeb7121fefb820f76d5499b8ed0bfbd8a053e2e76ad269f30f62ceeb"
     },
     {
       "path": ".cursor/rules/instrumentation.mdc",
@@ -388,7 +388,7 @@
     },
     {
       "path": "AGENTS.md",
-      "sha256": "c43d947bb4c31149e2f6d8bd650bd1d839b9061507a931cc6ca031bf3d33082f"
+      "sha256": "9799a5acc6fe04a219c937d872f81f0d484b4bb39430c7f64b13e3b570931218"
     },
     {
       "path": "CLAUDE.md",

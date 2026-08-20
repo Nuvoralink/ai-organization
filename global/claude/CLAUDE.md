@@ -487,24 +487,29 @@ the user's job.
 - Functionality-first changes remediation order, never auditor cadence. The adversarial reviewer and every
   applicable domain/security/performance lens are **required before merge**, though they may start in parallel.
   Classify every finding before merge: **BLOCK and fix now** when it affects intended behavior or a core journey,
-  is unknown/unverified, breaks a mandatory gate/proof surface, or enters any build/migration/readiness,
+  is unknown/unverified, invalidates a functional or release-safety proof surface, or enters any build/migration/readiness,
   security/auth/tenant/privacy/compliance, data-integrity/loss, irreversible/external/billed blocker class.
   **FIX-NEXT** may wait until after deployed functional proof only when evidence proves it is bounded, fails
   safely, leaves core functionality working, is outside every blocker class, and has a durable backlog row before
   merge. After acceptance, remediate that queue and run broad closure verification ONCE.
+- Merge preparation stays concurrent. If a red gate is proven to be only stale documentation, file-map, or another
+  non-functional projection, assign that repair in parallel and keep implementation, focused proof, auditing, and
+  real-blocker repair moving. This does not waive the gate: final merge still waits for every required gate to be
+  green. An unclassified red gate or one that undermines functionality/release-safety evidence stays a BLOCK.
 - Provider integrations are docs-and-SDK-first: consult the current official leaf docs AND inspect the
   installed SDK source/types before writing provider code — never invent provider behavior from training
   memory or tutorials; the evidence travels in the same diff, gate-enforced where the project has gates.
 - Docs, mocks, planning, and other non-functional tasks are exempt — no staged lifecycle, no ceremony.
 
 *Fail-state:* “functionality-first” is used to skip an applicable auditor or backlog an unverified/core-
-functionality finding; or a branch accumulates broad-closure work while nobody proves the user-visible behavior.
+functionality finding; proven non-functional drift serializes all merge preparation; or a branch accumulates
+broad-closure work while nobody proves the user-visible behavior.
 
 *Regression mutation:* set `required_before_merge=false` or classify a core-journey failure as FIX-NEXT;
 the delivery gate must turn red.
 
-*Counterexample:* a verified bounded edge-case polish item that fails safely and cannot affect a blocker
-class may be backlogged without delaying real-surface proof.
+*Counterexamples:* a verified bounded edge-case polish item may be backlogged; a proven stale file-map gate is
+repaired concurrently while the functional lane continues, but final merge still waits for that gate to turn green.
 
 ## Evidence over assumption — never guess, verify against the source
 

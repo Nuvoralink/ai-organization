@@ -147,7 +147,7 @@ Required merge/release gates remain indivisible and green, but closure targets *
 - **BLOCK:** unknown or unverified; can break build, migration, deployment, readiness, or a core user journey; affects security/auth/tenant isolation/privacy/secrets, compliance, data integrity/loss, irreversible/external/billed effects; or reveals a defective proof surface that makes any of those claims untrustworthy.
 - **FIX-NEXT:** verified and bounded, fails safely, leaves the core product functional, and cannot affect any BLOCK class.
 
-A FIX-NEXT residual does not hold an otherwise releasable slice. Before merge, create a durable backlog row with evidence, impact, owner, fix direction, and validation, report the limitation, then merge and repair it on a follow-up branch. A red mandatory gate is not a FIX-NEXT residual: fix the product, or prove the gate contract stale, correct it, and rerun. Unknown is never low severity. Review loops stop when blockers reach zero; they do not spin until every cosmetic or low-risk finding disappears.
+A FIX-NEXT residual does not hold an otherwise releasable slice. Before merge, create a durable backlog row with evidence, impact, owner, fix direction, and validation, report the limitation, then merge and repair it on a follow-up branch. A red mandatory gate still prevents the final merge until green. It does **not** freeze merge preparation when the failure has been proven to be only documentation, file-map, or other non-functional projection drift: give that repair an active parallel owner while implementation, focused proof, auditing, and blocker repair continue. An unclassified red gate, or one that invalidates functional/release-safety evidence, remains a critical-path BLOCK. Unknown is never low severity. Review loops stop when blockers reach zero; they do not spin until every cosmetic or low-risk finding disappears.
 
 *Fail-state:* safe value waits through endless reviewer rounds for cosmetic perfection, or an unproven/serious defect is renamed “minor” to ship around a red gate.
 
@@ -159,7 +159,7 @@ merge/deploy → **deployed/real-surface functional proof of the original intent
 remediation and ONE broad closure verification. Functionality-first changes remediation order, never auditor
 cadence: the adversarial reviewer and every applicable specialist lens are required before merge, though they may
 start in parallel from implementation onward. Classify every finding before merge. BLOCK and fix now any finding
-that affects intended behavior/core journey, is unknown/unverified, breaks a mandatory gate/proof surface, or enters
+that affects intended behavior/core journey, is unknown/unverified, invalidates a functional or release-safety proof surface, or enters
 a build/migration/readiness, security/auth/tenant/privacy/compliance, data-integrity/loss, or irreversible/external/
 billed blocker class. FIX-NEXT may wait only when verified bounded, fail-safe, core-function-preserving, outside all
 blocker classes, and durably backlogged before merge. The motive is
@@ -167,11 +167,16 @@ time/token efficiency: never spend broad assurance on behavior nobody has proven
 and other non-functional tasks are exempt from this lifecycle. Where a project carries a machine policy
 (`delivery-lifecycle.v1.json`) and gates, those are the enforcement — keep them, don't restate them.
 
+Merge preparation is concurrent. A proven documentation/file-map/non-functional projection failure is repaired in
+parallel and must be green before the final merge, but it does not pause functional implementation, biting tests,
+auditors, or repair of real blockers. This is sequencing, not a waiver: an unclassified failure or a gate that can
+undermine functionality, build, migration, security, data, readiness, or proof trust still interrupts the lane.
+
 *Fail-state:* “functionality-first” is used to skip an applicable auditor or queue an unverified/core-functionality
-defect; broad-closure ceremony redirects a branch for hours while original behavior remains unproven; or a deployed
+defect; proven non-functional drift serializes all merge preparation; broad-closure ceremony redirects a branch for hours while original behavior remains unproven; or a deployed
 claim is accepted without the journey run. Regression mutation: set `required_before_merge=false` or classify a
-core-journey failure as FIX-NEXT; the delivery gate must turn red. Counterexample: verified bounded fail-safe edge
-polish outside every blocker class may be queued.
+core-journey failure as FIX-NEXT; the delivery gate must turn red. Counterexamples: verified bounded fail-safe edge
+polish may be queued; proven stale file-map drift is repaired concurrently, but the final merge still waits for its gate to turn green.
 
 ## Claim discipline in human-facing reports — the tier travels with the claim (2026-07-30)
 
