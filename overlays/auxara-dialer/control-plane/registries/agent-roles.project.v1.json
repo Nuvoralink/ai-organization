@@ -5,7 +5,7 @@
     {
       "id": "compliance-auditor",
       "purpose": "Audit the dialer's telephony, legal, carrier, audit-honesty, action-authority, and tenant-isolation invariants across STIR/SHAKEN, 10DLC, TCPA/CASL calling hours, DNC, recording disclosure, and ARC-006 without editing.",
-      "trigger": ["work that dials, texts, records, stores prospect data, or mutates number state - parallel queue-only before functional acceptance, blocking before hardened closure"],
+      "trigger": ["work that dials, texts, records, stores prospect data, or mutates number state - required before merge; may run in parallel; classify BLOCK versus verified durably-backlogged FIX-NEXT"],
       "mode": "review_read_only",
       "strength": "strongest_available",
       "vendor_preference": "claude",
@@ -35,7 +35,7 @@
     {
       "id": "doctrine-drift-auditor",
       "purpose": "Find contradictions between dialer code and its settled ADRs, decision log, ARC-006 tiers, centralization registries, and source-of-truth maps, including contradictions between doctrine artifacts themselves.",
-      "trigger": ["behavior governed by an ADR, decision-log row, authority tier, or central registry - parallel queue-only before functional acceptance, blocking before hardened closure"],
+      "trigger": ["behavior governed by an ADR, decision-log row, authority tier, or central registry - required before merge; may run in parallel; classify BLOCK versus verified durably-backlogged FIX-NEXT"],
       "mode": "review_read_only",
       "strength": "strongest_available",
       "vendor_preference": "claude",
@@ -64,7 +64,7 @@
     {
       "id": "cybersecurity-auditor",
       "purpose": "Audit the internet-exposed multi-tenant dialer from an attacker's perspective across auth, CSRF, RBAC and object scope, tenant isolation and RLS, untrusted input, secrets, PII telemetry, abuse controls, provider boundaries, and dependency risk.",
-      "trigger": ["auth, security, privacy, billing, upload, provider, tenant-data, or prospect-data changes - parallel queue-only before functional acceptance, blocking before hardened closure"],
+      "trigger": ["auth, security, privacy, billing, upload, provider, tenant-data, or prospect-data changes - required before merge; may run in parallel; classify BLOCK versus verified durably-backlogged FIX-NEXT"],
       "mode": "review_read_only",
       "strength": "strongest_available",
       "vendor_preference": "claude",

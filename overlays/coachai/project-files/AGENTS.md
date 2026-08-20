@@ -57,7 +57,7 @@ Only `agent-product-intent.mdc` and `authority-boundary.mdc` are always loaded. 
 
 Role authority and installed-role inventory live in `.ai-organization/roles.json`. Project agent definitions live in `.claude/agents/`; global implementer and security roles are inherited and must not be duplicated locally. Every report names paths not reached and ends with `Doctrine-loop findings: none` or a routed control improvement.
 
-Functional code changes follow `.cursor/rules/functionality-first-delivery.mdc` (machine authority: `.ai-organization/policies/delivery-lifecycle.v1.json`): prove the intended behavior — on the deployed surface at coach.nuvoralink.com when reachable — before hardening or broad audits; auditors may run in parallel, but ordinary pre-acceptance findings are queue-only outside the policy's bounded interruption classes; docs, mocks, and planning are exempt.
+Functional code changes follow `.cursor/rules/functionality-first-delivery.mdc` (machine authority: `.ai-organization/policies/delivery-lifecycle.v1.json`): prove the intended behavior — on the deployed surface at coach.nuvoralink.com when reachable — before broad hardening. Applicable independent auditors are required before merge and may run in parallel; fix BLOCK findings now, and queue only verified bounded fail-safe FIX-NEXT residuals outside every blocker class with durable backlog rows. Functionality-first changes remediation order, never auditor cadence; docs, mocks, and planning are exempt.
 
 Use the smallest proof profile that fully covers the risk:
 

@@ -156,15 +156,22 @@ A FIX-NEXT residual does not hold an otherwise releasable slice. Before merge, c
 For CODE work the orchestrator sequences: root cause / current provider contract → targeted biting proof
 → proportional deploy-safety proof (migrations/DB/startup/deploy readiness only) → human-authorized
 merge/deploy → **deployed/real-surface functional proof of the original intent** → only then queued-finding
-remediation and ONE broad closure verification. Auditors run in parallel from implementation onward, but
-ordinary findings are queue-only — they never redirect implementation before functional acceptance; only
-the deploy-safety classes above or a catastrophic irreversible security risk interrupts. The motive is
+remediation and ONE broad closure verification. Functionality-first changes remediation order, never auditor
+cadence: the adversarial reviewer and every applicable specialist lens are required before merge, though they may
+start in parallel from implementation onward. Classify every finding before merge. BLOCK and fix now any finding
+that affects intended behavior/core journey, is unknown/unverified, breaks a mandatory gate/proof surface, or enters
+a build/migration/readiness, security/auth/tenant/privacy/compliance, data-integrity/loss, or irreversible/external/
+billed blocker class. FIX-NEXT may wait only when verified bounded, fail-safe, core-function-preserving, outside all
+blocker classes, and durably backlogged before merge. The motive is
 time/token efficiency: never spend broad assurance on behavior nobody has proven. Docs, mocks, planning,
 and other non-functional tasks are exempt from this lifecycle. Where a project carries a machine policy
 (`delivery-lifecycle.v1.json`) and gates, those are the enforcement — keep them, don't restate them.
 
-*Fail-state:* review/audit ceremony redirects a branch for hours while the original user-visible behavior
-remains unproven — or a "deployed" claim is accepted as "functionally proven" without the journey run.
+*Fail-state:* “functionality-first” is used to skip an applicable auditor or queue an unverified/core-functionality
+defect; broad-closure ceremony redirects a branch for hours while original behavior remains unproven; or a deployed
+claim is accepted without the journey run. Regression mutation: set `required_before_merge=false` or classify a
+core-journey failure as FIX-NEXT; the delivery gate must turn red. Counterexample: verified bounded fail-safe edge
+polish outside every blocker class may be queued.
 
 ## Claim discipline in human-facing reports — the tier travels with the claim (2026-07-30)
 

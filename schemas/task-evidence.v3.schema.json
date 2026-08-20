@@ -54,8 +54,16 @@
         "verdict": { "enum": ["ACCEPT", "REJECT", "UNVERIFIABLE"] },
         "unevaluated_criteria": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
         "verdict_reasons": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-        "finding_count": { "type": "integer", "minimum": 0 },
-        "unresolved_finding_count": { "type": "integer", "minimum": 0 },
+        "finding_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "All verified findings reported by this review, including durably dispositioned FIX-NEXT residuals."
+        },
+        "unresolved_finding_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "BLOCK, unclassified, or not-durably-backlogged findings. A verified bounded fail-safe FIX-NEXT residual with its required backlog row is resolved for the current functional-feedback merge and remains in finding_count."
+        },
         "reviewed_at": { "$ref": "task-evidence.v2.schema.json#/$defs/timestamp" },
         "supersedes_review_id": { "type": "string", "pattern": "^review-[a-f0-9]{32}$" },
         "attestation_hmac_sha256": { "$ref": "task-evidence.v2.schema.json#/$defs/sha256" }

@@ -60,9 +60,9 @@ still pass against a regressed version of your change is theater).
 ## §5 Closure checklist (real commands + lenses)
 
 For a functional/product-behavior slice, `.cursor/rules/functionality-first-delivery.mdc` orders this
-section: run the focused biting proof first; auditors may run in parallel, but their ordinary findings
-queue without remediation until the original deployed journey is accepted at coach.nuvoralink.com (only
-the policy's bounded interruption classes may block); the broad/full verification below is the
+section: run the focused biting proof first; applicable auditors are required before merge and may run in
+parallel; fix BLOCK findings now, while verified bounded fail-safe FIX-NEXT findings with durable backlog
+rows may wait until the original deployed journey is accepted at coach.nuvoralink.com; the broad/full verification below is the
 POST-acceptance closure gate, not the pre-deploy gate for functional feedback work. Non-functional slices
 (docs, mocks, planning) take neither the staged lifecycle nor added ceremony.
 

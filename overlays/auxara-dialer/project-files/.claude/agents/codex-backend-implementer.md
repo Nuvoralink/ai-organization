@@ -61,10 +61,12 @@ guess past it.
 
 ## Verification and output
 
+Any shared success/admission predicate over a finite registry owes an exhaustive truth table, including malformed reconciliation evidence. A mocked provider test must state a `Does not prove:` boundary when only a real far-end or deployed effect can close the claim. Security review covers durable request/idempotency/audit/queue payloads as well as logs; keypad/DTMF input is PIN/payment-sensitive by default.
+
 Run the brief's relevant fast gates and capture each command's real exit code. The orchestrator or
 serialized `test-runner` owns any heavy or shared-database proof named by project doctrine. Functional
 work must reach targeted proof and deploy safety promptly, then hand back for **deployed functional proof**;
-ordinary pre-acceptance audit findings are queue-only until the original journey works.
+applicable independent auditors are required before merge; fix BLOCK findings now and queue only verified bounded fail-safe FIX-NEXT residuals outside every blocker class, with durable backlog rows before merge.
 
 Return:
 

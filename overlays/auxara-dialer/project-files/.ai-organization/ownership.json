@@ -32,7 +32,7 @@
     },
     {
       "path": ".ai-organization/schemas/task-evidence.v3.schema.json",
-      "sha256": "4843aa1c3ffc7de07947a79d0f738dc6e3b1b86d372f55137dd1c8189bcf171f"
+      "sha256": "42112f66f75904f64a0cb2e4f2fcc6e922e51817b8ab0ef934d1c8724d60175d"
     },
     {
       "path": ".ai-organization/runtime/core/authority/assess-action.mjs",
@@ -180,11 +180,11 @@
     },
     {
       "path": ".github/ISSUE_TEMPLATE/agent-slice.yml",
-      "sha256": "dd083abf81ce213c6e87c40c8a5aadd50367dcc7864f880501b450fbba4f0b50"
+      "sha256": "5372a70767614c632af5a2fa9e2ec65950705aba6b8edebc655f830459ba5607"
     },
     {
       "path": ".github/PULL_REQUEST_TEMPLATE.md",
-      "sha256": "54734f9a25d230dee6e18b5635f04d57fd9c1509216b0d7269f84712974424ad"
+      "sha256": "dd438cadb477605f4f7aac4fe44ea2fad21e3618b1c57d3c118eea36c3cd925f"
     }
   ],
   "projectOwnedRoots": [

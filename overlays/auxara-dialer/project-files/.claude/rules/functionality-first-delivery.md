@@ -38,11 +38,13 @@ A feature or functionality bug fix moves through these stages in order:
 5. **Hardening and broad assurance.** Only after stage 4 passes, remediate queued audit findings and run
    broad security, compliance, performance, doctrine, parity, full-CI, cleanup, and optimization work.
 
-Auditors may run in parallel before stage 4 and report findings. Their findings are queued without
-remediation until functional acceptance. Only these classes interrupt stages 1–4: migration/schema apply
-failure, database-integrity or irreversible-data-loss risk, build/startup failure, Railway deploy/readiness
-failure, or catastrophic irreversible security risk. A normal security/compliance/performance/hardening
-finding is not permission to change the implementation before the original function is proven.
+Functionality-first changes remediation order, never auditor cadence. The adversarial reviewer and every
+applicable domain/security/performance lens are **required before merge**, though they may start in parallel.
+Classify every finding before merge. **BLOCK and fix now** when it affects intended behavior or a core journey,
+is unknown/unverified, breaks a mandatory gate/proof surface, or enters any build/migration/readiness,
+security/auth/tenant/privacy/compliance, data-integrity/loss, irreversible/external/billed blocker class.
+**FIX-NEXT** may wait until after deployed functional proof only when evidence proves it is bounded, fails safely,
+leaves core functionality working, is outside every blocker class, and has a durable backlog row before merge.
 
 This lifecycle does not grant production authority. Production-affecting merge/deploy remains human-gated
 by `action-authority.v1.json`; once authorized, ceremony must not delay the functional feedback loop.
@@ -63,9 +65,13 @@ Training data, recollection, third-party tutorials, and tests shaped from the im
 provider authority. Custom protocol/signing/serialization code is forbidden when the installed SDK already
 owns the capability unless the evidence entry names the verified SDK gap and why the custom path is needed.
 
-*Fail-state:* a branch spends hours in auditors/full CI before anyone proves the original feature works, or
-provider code is invented from memory while an official SDK method exists.
+*Fail-state:* “functionality-first” is used to skip an applicable auditor or backlog an unverified/core-
+functionality finding; broad closure runs before anyone proves the original behavior; or provider code is invented
+from memory while an official SDK method exists.
 
-*Killer mutations:* reorder hardening before deployed functional proof; allow audit findings to be remediated
-pre-acceptance; change provider evidence to training-data-only; or modify a provider production path without
-same-diff official-doc/SDK evidence. The two delivery gates must turn red.
+*Killer mutations:* reorder broad hardening before deployed functional proof; set `required_before_merge=false`;
+classify a core-journey failure as FIX-NEXT; change provider evidence to training-data-only; or modify a provider
+production path without same-diff official-doc/SDK evidence. The two delivery gates must turn red.
+
+*Counterexample:* a verified bounded edge-case polish item that fails safely and cannot affect a blocker class may
+be backlogged without delaying real-surface proof.

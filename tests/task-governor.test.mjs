@@ -206,7 +206,13 @@ function attachExternallyAuthenticatedHumanGateForTest({ stateDirectory, taskId,
   return receipt;
 }
 
-function acceptedFixture({ riskPolicy = loadRiskPolicy(), humanGates = [], claim = true } = {}) {
+function acceptedFixture({
+  riskPolicy = loadRiskPolicy(),
+  humanGates = [],
+  claim = true,
+  findingCount = 0,
+  unresolvedFindingCount = 0,
+} = {}) {
   const root = fixtureRepository();
   const stateDirectory = defaultAssuranceStateDirectory(root);
   const actionAuthority = loadActionAuthority();
@@ -244,6 +250,8 @@ function acceptedFixture({ riskPolicy = loadRiskPolicy(), humanGates = [], claim
     reviewerSessionId: 'review-session',
     role: 'adversarial-reviewer',
     criterionStatuses: reviewStatuses(root),
+    findingCount,
+    unresolvedFindingCount,
     cwd: root,
     repositoryProvider: () => current,
   });
@@ -262,6 +270,19 @@ function acceptedFixture({ riskPolicy = loadRiskPolicy(), humanGates = [], claim
     : loadTaskAttempt(stateDirectory, 'ORG-001');
   return { root, stateDirectory, riskPolicy, actionAuthority, profileRegistry, roleRegistry, attempt: currentAttempt, current };
 }
+
+test('Proves: FUNCTIONALITY-FIRST-REVIEW-DISPOSITION-001; Test type: lifecycle authority integration; Surface: review receipt completion; Authority: delivery-lifecycle.v1.json plus task-evidence.v3.schema.json; Killer mutation: treat every finding as unresolved so a verified durably-backlogged FIX-NEXT residual blocks functional-feedback merge; Counterexample: any BLOCK or unbacklogged finding keeps unresolved_finding_count nonzero and completion red; Gated command: npm test', () => {
+  const fixNext = generateValidCompletion({ findingCount: 1, unresolvedFindingCount: 0 });
+  assert.equal(fixNext.evidence.review_receipts[0].finding_count, 1);
+  assert.equal(fixNext.evidence.review_receipts[0].unresolved_finding_count, 0);
+  assert.deepEqual(validateCompletion(contract(), fixNext.evidence, fixNext.context), []);
+
+  const blocked = generateValidCompletion({ findingCount: 1, unresolvedFindingCount: 1 });
+  assert.match(
+    validateCompletion(contract(), blocked.evidence, blocked.context).join('\n'),
+    /not an accepted resolved review/u,
+  );
+});
 
 function generateValidCompletion(options = {}) {
   const fixture = acceptedFixture(options);

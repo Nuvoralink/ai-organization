@@ -26,7 +26,7 @@
 - Original user journey: <!-- exact deployed behavior this change must make work -->
 - Deploy-safety evidence: <!-- migration/schema, DB integrity, build/startup, deploy readiness -->
 - Deployed functional proof: <!-- observed result and human acceptance, or explicitly pending -->
-- Pre-acceptance audit findings: <!-- queue without remediation unless an interruption class applies -->
+- Pre-merge audit findings: <!-- every applicable auditor; classify each as BLOCK or verified, durably backlogged FIX-NEXT; fix every BLOCK before merge -->
 
 ## Provider documentation evidence
 

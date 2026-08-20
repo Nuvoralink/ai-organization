@@ -95,7 +95,7 @@
     {
       "id": "adversarial-reviewer",
       "purpose": "Adversarially compare a committed implementation with its settled plan, actual authority graph, blast radius, and required proof without trusting status claims.",
-      "trigger": ["after implementation - parallel queue-only before functional acceptance, blocking before hardened closure"],
+      "trigger": ["every non-trivial implementation before merge - may run in parallel; classify BLOCK versus verified durably-backlogged FIX-NEXT"],
       "mode": "review_read_only",
       "strength": "strongest_available",
       "vendor_preference": "either",
@@ -144,7 +144,7 @@
     {
       "id": "ui-verifier",
       "purpose": "Verify an approved visible implementation on the rendered surface at named breakpoints, states, and interactions rather than relying on static checks.",
-      "trigger": ["any visible frontend change - functional-acceptance evidence when the rendered surface is the intent, otherwise queue-only before acceptance"],
+      "trigger": ["any visible frontend change before merge - functional-acceptance evidence when rendered behavior is the intent; otherwise classify BLOCK versus verified durably-backlogged FIX-NEXT"],
       "mode": "verify_runtime",
       "strength": "strongest_available",
       "vendor_preference": "claude",

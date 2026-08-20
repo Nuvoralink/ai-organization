@@ -40,7 +40,7 @@
     },
     {
       "path": ".ai-organization/policies/delivery-lifecycle.v1.json",
-      "sha256": "484a15124598f8dc5139642528f5b6430d1884e98eefada83ea5b76682025844"
+      "sha256": "2c6710111b6843fb3a0afc3dcfcd1eb4b89fd8378d95af28404b2aa678c4566e"
     },
     {
       "path": ".ai-organization/policies/risk-controls.v1.json",
@@ -56,7 +56,7 @@
     },
     {
       "path": ".ai-organization/registries/agent-roles.v1.json",
-      "sha256": "54e8de12c3ed8794b2f50ef9c5312ae51063c4d599649aa0673a050d46c69fbe"
+      "sha256": "08ecc5e6afe85f2f121a6ba9d9f596e2324244de59f0df1afbc84defc8c43d5d"
     },
     {
       "path": ".ai-organization/roles.json",
@@ -212,7 +212,7 @@
     },
     {
       "path": ".ai-organization/schemas/delivery-lifecycle.v1.schema.json",
-      "sha256": "5ae84c2620575764d9515fc3570ee0f48386000465eefab9e2a98387719b0164"
+      "sha256": "b3cff80b27523a8a7af7bd46cbbb99dbc9cb7f05257aae9d0fc1cacdd66f2b13"
     },
     {
       "path": ".ai-organization/schemas/project-overlay.v1.schema.json",
@@ -232,27 +232,27 @@
     },
     {
       "path": ".ai-organization/schemas/task-evidence.v3.schema.json",
-      "sha256": "4843aa1c3ffc7de07947a79d0f738dc6e3b1b86d372f55137dd1c8189bcf171f"
+      "sha256": "42112f66f75904f64a0cb2e4f2fcc6e922e51817b8ab0ef934d1c8724d60175d"
     },
     {
       "path": ".claude/agents/adversarial-reviewer.md",
-      "sha256": "fc02eb238e8e0e076851b79a53e32d4b1ff99b4cfc77523d93d601847b157dac"
+      "sha256": "9f14c60e514ad0cce8334ca2986289099a90da77b5656c4b1b5781baa6335842"
     },
     {
       "path": ".claude/agents/ai-decision-boundary-auditor.md",
-      "sha256": "4f8f1865e3725795717e39db8cffb5b4c65c793e5833cf5f5c7a2bc0ac6735c6"
+      "sha256": "ecee68ecd154fa8b1de4e1e56faa957e18548cf1ff8dd719b396421c0232d768"
     },
     {
       "path": ".claude/agents/doctrine-drift-auditor.md",
-      "sha256": "9d95dff8676e27b09736f1ad683779ba4b4b31ffe0728fa763bde3e4e41ed9ee"
+      "sha256": "37f6fe03704a4a155fc2b8f685270a53545de2070b790581a3cfb3442cbd4631"
     },
     {
       "path": ".claude/agents/functionality-parity-auditor.md",
-      "sha256": "54887eb4398633e4931a48b1bb19154e366b2a5b67e108e05651cb993b917913"
+      "sha256": "8940e3db5ac77434d65b6eefddef26c234ddb6ce8ba2c6497fa78e150b36355a"
     },
     {
       "path": ".claude/agents/performance-auditor.md",
-      "sha256": "eed1ae12d27412613f9b5407ae3622941ea27bf41312a3a29118e0ca833ad8c5"
+      "sha256": "b89bedb8feb5f9706857ae1538cc96a08e849c539425e21e140fa0da60893e3a"
     },
     {
       "path": ".claude/agents/premise-and-architecture-challenger.md",
@@ -264,7 +264,7 @@
     },
     {
       "path": ".claude/agents/source-to-screen-auditor.md",
-      "sha256": "b4c36bcfc8d2b088dfdc4b59875123eb1514d380718be5f182ba490843dcf72c"
+      "sha256": "ff6c73c1cde658ccf12c4af48aa49f1352bf8d315b94dc454367747dfc3137d0"
     },
     {
       "path": ".claude/agents/sprint-kickoff-auditor.md",
@@ -276,11 +276,11 @@
     },
     {
       "path": ".claude/agents/ui-verifier.md",
-      "sha256": "478b401b39e71b552b51dfd46dfd762d2855c586dc70040460f413a4839e19fd"
+      "sha256": "506eda8e7613a146c29af57e3870317a4780d3e10b220e57ef02ffbc38a3c851"
     },
     {
       "path": ".claude/agents/user-journey-auditor.md",
-      "sha256": "e1fa56e987bf34d8e0783f47f916f0b974d2c17fcfa336167119f518e0174e43"
+      "sha256": "65fdffa2ce1b7f9980e95dca48b41717740ff9b7d00cea4cad94832e7c8dee48"
     },
     {
       "path": ".cursor/rules/agent-product-intent.mdc",
@@ -332,7 +332,7 @@
     },
     {
       "path": ".cursor/rules/functionality-first-delivery.mdc",
-      "sha256": "4ecae94b00aeb49be957ae6c59faed61fc324988df57e3b9fc2e8a69be105c32"
+      "sha256": "0a1bf031f320fdbf0b46d29d7f2e59a30e4ac99b46135111264a283dd9e32b08"
     },
     {
       "path": ".cursor/rules/instrumentation.mdc",
@@ -356,7 +356,7 @@
     },
     {
       "path": ".cursor/rules/slice-rigor.mdc",
-      "sha256": "3a18b8a07eb20d826f8b0249af16f45cd25f9960a63118b733cee2632a5e4257"
+      "sha256": "9edeaf900102fcb123bd6a0f1da1acb87a80c69407afa0850864656761f29255"
     },
     {
       "path": ".cursor/rules/testing-guardrails.mdc",
@@ -388,7 +388,7 @@
     },
     {
       "path": "AGENTS.md",
-      "sha256": "0c4d872c208de79d976c47b97f421292e8f84d37321ff2b243ba2729377569a1"
+      "sha256": "c43d947bb4c31149e2f6d8bd650bd1d839b9061507a931cc6ca031bf3d33082f"
     },
     {
       "path": "CLAUDE.md",

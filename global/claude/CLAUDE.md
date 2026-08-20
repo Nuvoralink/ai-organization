@@ -42,6 +42,9 @@ catches. The deeper sections below expand the gates; this list governs that I ac
    nothing. (2026-07-30: two mutations silently no-op'd, and a third flipped nothing because an earlier
    early-return fired first — the "protection" under test was never exercised.) *Fail-state:* the test
    still passes against a regressed version of my own change — or I never ran the mutation to find out.
+   A shared success/admission predicate over a finite lifecycle registry owes an exhaustive truth table,
+   including malformed reconciliation evidence; a mocked provider test must state what it **does not
+   prove** when only a real far-end/deployed effect can close the claim.
 4. **Whole blast radius — trace every caller and every feeder, in every file.** I trace the full
    dependency graph of whatever I touch, *both directions*: every consumer/caller/usage site that reads or
    invokes it **and** every input/feeder/dependency that supplies it. I grep the name across the *whole
@@ -476,22 +479,32 @@ the user's job.
 - When replacing old code, remove the dead path; don't leave no-op shims or stale wiring. If a
   compatibility bridge must stay, mark why it exists and when it can go.
 
-## Functionality-first delivery — prove the intended behavior before hardening (2026-08-16)
+## Functionality-first delivery — prove the intended behavior before hardening (2026-08-16; clarified 2026-08-20)
 
 - For CODE work: prove the intended behavior actually happens — the targeted biting test, then the real
   surface (the deployed user journey when one exists) — BEFORE spending time/tokens on security
   hardening, broad audits, cleanup, or edge-polish. **Working-but-unhardened beats hardened-but-unproven.**
-- Auditors may run in parallel, but their ordinary findings queue without remediation until the original
-  behavior is proven; only deploy-safety classes interrupt (migration/schema failure, DB-integrity /
-  irreversible-data-loss, build/startup failure, deploy/readiness failure, catastrophic irreversible
-  security risk). After acceptance, remediate the queue and run broad closure verification ONCE.
+- Functionality-first changes remediation order, never auditor cadence. The adversarial reviewer and every
+  applicable domain/security/performance lens are **required before merge**, though they may start in parallel.
+  Classify every finding before merge: **BLOCK and fix now** when it affects intended behavior or a core journey,
+  is unknown/unverified, breaks a mandatory gate/proof surface, or enters any build/migration/readiness,
+  security/auth/tenant/privacy/compliance, data-integrity/loss, irreversible/external/billed blocker class.
+  **FIX-NEXT** may wait until after deployed functional proof only when evidence proves it is bounded, fails
+  safely, leaves core functionality working, is outside every blocker class, and has a durable backlog row before
+  merge. After acceptance, remediate that queue and run broad closure verification ONCE.
 - Provider integrations are docs-and-SDK-first: consult the current official leaf docs AND inspect the
   installed SDK source/types before writing provider code — never invent provider behavior from training
   memory or tutorials; the evidence travels in the same diff, gate-enforced where the project has gates.
 - Docs, mocks, planning, and other non-functional tasks are exempt — no staged lifecycle, no ceremony.
 
-*Fail-state:* a branch accumulates audits/full CI while nobody has proven the user-visible behavior works
-— or provider code is invented from memory while an official SDK capability exists.
+*Fail-state:* “functionality-first” is used to skip an applicable auditor or backlog an unverified/core-
+functionality finding; or a branch accumulates broad-closure work while nobody proves the user-visible behavior.
+
+*Regression mutation:* set `required_before_merge=false` or classify a core-journey failure as FIX-NEXT;
+the delivery gate must turn red.
+
+*Counterexample:* a verified bounded edge-case polish item that fails safely and cannot affect a blocker
+class may be backlogged without delaying real-surface proof.
 
 ## Evidence over assumption — never guess, verify against the source
 
@@ -532,6 +545,9 @@ the user's job.
 - Validate and normalize all external input before use. Treat uploads and AI/model output as untrusted.
 - Never hardcode secrets/keys; never log secrets, tokens, or PII. Recompute sensitive values
   (pricing, entitlements, permissions) on the server.
+- Privacy inspection covers every durable sink, not only logs: database JSON, idempotency payloads,
+  audit rows, queues, and smoke artifacts. Keypad/DTMF input may contain PIN or payment/account digits
+  and must never be retained raw merely because a generic command envelope persists its request.
 
 ## Tooling & cross-tool parity (Codex ↔ Claude Code)
 
