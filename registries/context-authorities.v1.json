@@ -1,0 +1,197 @@
+{
+  "version": "1.0.0",
+  "approximateCharsPerToken": 4,
+  "routers": [
+    {
+      "path": "global/codex/AGENTS.md",
+      "maxApproximateTokens": 4000
+    },
+    {
+      "path": "global/claude/CLAUDE.md",
+      "maxApproximateTokens": 4000
+    }
+  ],
+  "dispatchAuthorities": [
+    "global/codex/AGENTS.md",
+    "global/claude/CLAUDE.md",
+    "global/claude/rules/orchestrator-mode.md",
+    "skills/bootstrap-orchestrator/templates/CLAUDE.md.template",
+    "skills/bootstrap-orchestrator/templates/AGENTS.md.template"
+  ],
+  "topics": [
+    {
+      "id": "verify-output",
+      "trigger": "Any load-bearing premise, claim, external contract, or completion status",
+      "routerMarker": "context-topic:verify-output",
+      "authority": "global/claude/rules/slice-rigor.md"
+    },
+    {
+      "id": "provider-primary-contract",
+      "trigger": "Provider, SDK, external specification, webhook, or unfamiliar in-repo contract",
+      "routerMarker": "Read the full relevant primary provider/spec/SDK source",
+      "authority": "global/claude/rules/slice-rigor.md"
+    },
+    {
+      "id": "test-intent",
+      "trigger": "Any test, gate, proof catalog, idempotent mutation, or external adapter",
+      "routerMarker": "context-topic:test-intent",
+      "authority": "global/claude/rules/test-intent.md"
+    },
+    {
+      "id": "blast-radius",
+      "trigger": "Any non-trivial change or retirement",
+      "routerMarker": "context-topic:blast-radius",
+      "authority": "global/claude/rules/slice-rigor.md"
+    },
+    {
+      "id": "single-authority",
+      "trigger": "Create, replace, rename, consolidate, or retire an authority/decision/path",
+      "routerMarker": "context-topic:single-authority",
+      "authority": "global/claude/rules/slice-rigor.md"
+    },
+    {
+      "id": "root-fix",
+      "trigger": "Bug, oddity, workaround concern, new architecture, or force-fit risk",
+      "routerMarker": "context-topic:root-fix",
+      "authority": "global/claude/rules/never-reactive.md"
+    },
+    {
+      "id": "relational-values",
+      "trigger": "Token, style, size, route, key, threshold, registry, or structural assumption",
+      "routerMarker": "context-topic:relational-values",
+      "authority": "global/claude/rules/design-tokens-and-scales.md"
+    },
+    {
+      "id": "never-reactive",
+      "trigger": "Any non-trivial request, correction, finding, or mid-task input",
+      "routerMarker": "context-topic:never-reactive",
+      "authority": "global/claude/rules/never-reactive.md"
+    },
+    {
+      "id": "architecture-design",
+      "trigger": "Architecture, platform, foundation, phase seam, or cross-layer architectural refactor",
+      "routerMarker": "architecture-saas-design",
+      "authority": "skills/architecture-saas-design/SKILL.md"
+    },
+    {
+      "id": "full-slice-planning",
+      "trigger": "Authoring or refining an implementation-ready full-slice plan",
+      "routerMarker": "full-slice-planner",
+      "authority": "skills/full-slice-planner/SKILL.md"
+    },
+    {
+      "id": "decision-discipline",
+      "trigger": "Any unsettled choice, new design, material tradeoff, or authority amendment",
+      "routerMarker": "Any unsettled choice, new design, or material tradeoff",
+      "authority": "global/claude/rules/decision-discipline.md"
+    },
+    {
+      "id": "loop-discipline",
+      "trigger": "Any iterative review, repair, monitoring, refinement, or convergence loop",
+      "routerMarker": "Any iterative/review/monitoring loop",
+      "authority": "global/claude/rules/loop-discipline.md"
+    },
+    {
+      "id": "action-authority",
+      "trigger": "AI authority, autonomy, compliance, billing, or external/irreversible action",
+      "routerMarker": "context-topic:security-authority",
+      "authority": "global/claude/rules/authority-boundary.md"
+    },
+    {
+      "id": "security-hardening",
+      "trigger": "Auth, RBAC, tenancy, privacy, secrets, or security review",
+      "routerMarker": "Auth/RBAC/tenancy/privacy/secrets/security review",
+      "authority": "skills/security-review-hardening/SKILL.md"
+    },
+    {
+      "id": "functionality-first",
+      "trigger": "Functional code delivery, audit cadence, blocker classification, deploy, or release closure",
+      "routerMarker": "context-topic:functionality-first",
+      "authority": "global/claude/rules/orchestrator-mode.md"
+    },
+    {
+      "id": "agent-orchestration",
+      "trigger": "Agent dispatch, fleet work, worktrees, review, merge/release, or human-facing claims",
+      "routerMarker": "Agent dispatch, fleet work, worktrees, review, merge/release, claims",
+      "authority": "global/claude/rules/orchestrator-mode.md"
+    },
+    {
+      "id": "review-verdict",
+      "trigger": "Any read-only or runtime reviewer verdict and its coverage calculation",
+      "routerMarker": "review roles also read `~/.claude/rules/verdict-rubric.md`",
+      "authority": "global/claude/rules/verdict-rubric.md"
+    },
+    {
+      "id": "ai-semantic-contract",
+      "trigger": "AI semantic judgment, grounding, validation, provenance, or bounded failed-field repair",
+      "routerMarker": "use `ai-decision-contract-builder` for semantic contracts",
+      "authority": "skills/ai-decision-contract-builder/SKILL.md"
+    },
+    {
+      "id": "frontend-approval",
+      "trigger": "Any visible UI, mock, design prompt, copy-in-context, or rendered behavior",
+      "routerMarker": "context-topic:frontend",
+      "authority": "skills/frontend-design-director/SKILL.md"
+    },
+    {
+      "id": "design-tokens",
+      "trigger": "Styling, design tokens, scales, motion, layout values, or visual constants",
+      "routerMarker": "Styling, tokens, visible UI, copy-in-context",
+      "authority": "global/claude/rules/design-tokens-and-scales.md"
+    },
+    {
+      "id": "doctrine-loop",
+      "trigger": "A finding changes a rule, gate, brief, fleet control, or living doc",
+      "routerMarker": "context-topic:learning-loop",
+      "authority": "global/claude/rules/doctrine-loop.md"
+    },
+    {
+      "id": "skill-evolution",
+      "trigger": "A used skill exposes a reusable loophole, trigger miss, ambiguity, or better method",
+      "routerMarker": "skill-evolution-loop",
+      "authority": "skills/skill-evolution-loop/SKILL.md"
+    },
+    {
+      "id": "closure-honesty",
+      "trigger": "Before done, pause, handoff, or any degraded/unproven claim",
+      "routerMarker": "context-topic:closure-honesty",
+      "authority": "global/claude/rules/slice-rigor.md"
+    },
+    {
+      "id": "clean-dispatch",
+      "trigger": "Any bounded explorer, implementer, auditor, or reviewer dispatch",
+      "routerMarker": "context-topic:clean-dispatch",
+      "authority": "global/claude/rules/orchestrator-mode.md"
+    },
+    {
+      "id": "memory-context",
+      "trigger": "Agent startup context, memory, history, retrieval, RAG, or compaction",
+      "routerMarker": "Memory is machine-local background, never authority",
+      "authority": "skills/context-engineering/SKILL.md"
+    },
+    {
+      "id": "documents",
+      "trigger": "Document creation, editing, redlining, rendering, or QA",
+      "routerMarker": "Document, presentation, or spreadsheet creation/editing",
+      "authority": "builtin-skill:documents"
+    },
+    {
+      "id": "presentations",
+      "trigger": "Presentation or slide-deck creation, editing, rendering, or QA",
+      "routerMarker": "Document, presentation, or spreadsheet creation/editing",
+      "authority": "builtin-skill:presentations"
+    },
+    {
+      "id": "spreadsheets",
+      "trigger": "Spreadsheet creation, editing, analysis, formula work, or QA",
+      "routerMarker": "Document, presentation, or spreadsheet creation/editing",
+      "authority": "builtin-skill:spreadsheets"
+    },
+    {
+      "id": "bootstrap-control-plane",
+      "trigger": "New repository, fleet, gate, lifecycle, or orchestration control-plane bootstrap",
+      "routerMarker": "New project/fleet/control-plane bootstrap",
+      "authority": "skills/bootstrap-orchestrator/SKILL.md"
+    }
+  ]
+}

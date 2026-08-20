@@ -26,12 +26,15 @@ This file is the shared project entry point for Codex and Claude Code. It stays 
 
 ## Just-in-time rule routing
 
-The five compact execution rules imported by `CLAUDE.md` are always active for Claude and must be read by Codex: `.claude/rules/agent-product-intent.md`, `.claude/rules/decision-discipline.md`, `.claude/rules/loop-discipline.md`, `.claude/rules/doctrine-loop.md`, and `.claude/rules/never-reactive.md`.
-
-Load the remaining rule only when its topic/path applies:
+No path-scoped rule is explicitly imported at startup. Claude reaches it through official `paths:` frontmatter; Codex and manual reads use the exact topic triggers below. Read every selected rule completely.
 
 | Trigger | Required rule |
 | --- | --- |
+| Any non-trivial request, correction, plan, implementation, or review | `.claude/rules/agent-product-intent.md`, `.claude/rules/never-reactive.md` |
+| Any unsettled implementation/product/architecture choice | `.claude/rules/decision-discipline.md` |
+| Any iterative review, repair, monitoring, or convergence loop | `.claude/rules/loop-discipline.md` |
+| Any bug/finding that changes a rule, gate, brief, doc, or fleet control | `.claude/rules/doctrine-loop.md` |
+| Functional code behavior, delivery ordering, auditor cadence, or merge closure | `.claude/rules/functionality-first-delivery.md` |
 | Product authority, compliance, autonomy, AI decision boundaries | `.claude/rules/authority-boundary.md`, `.claude/rules/auxara-dialer-project-rules.md` |
 | Non-trivial implementation or architecture | `.claude/rules/auxara-dialer-engineering-rules.md`, `.claude/rules/product-first-planning.md` |
 | Sprint/epic planning or closure | `.claude/rules/sprint-rigor.md` |

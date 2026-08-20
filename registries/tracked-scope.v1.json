@@ -4239,6 +4239,10 @@
       "class": "registry"
     },
     {
+      "path": "registries/context-authorities.v1.json",
+      "class": "registry"
+    },
+    {
       "path": "registries/project-roots.example.json",
       "class": "registry"
     },
@@ -5868,6 +5872,10 @@
     },
     {
       "path": "tests/bootstrap-templates.test.mjs",
+      "class": "control-plane-test"
+    },
+    {
+      "path": "tests/context-authority-routing.test.mjs",
       "class": "control-plane-test"
     },
     {

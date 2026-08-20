@@ -3,7 +3,8 @@
      FILL every {{PLACEHOLDER}}. Do NOT copy the global orchestration doctrine in — it loads user-level automatically.
      CONTEXT BUDGET (SKILL.md Step 2.5): this file + every @ import + every .claude/rules file WITHOUT official `paths:`
      frontmatter is ALWAYS-ON context, paid on every agent turn. Splitting a large file into imports does NOT save tokens.
-     Keep it pointer-based, path-scope every task rule, measure chars ÷ 4, and wire gate:agent-context. -->
+     Keep it pointer-based, path-scope every task rule, import no path-scoped rule explicitly, measure chars ÷ 4, and wire
+     gate:agent-context. -->
 
 @AGENTS.md
 
@@ -34,10 +35,10 @@ This project is run as an orchestrator/PM over a fleet (the global model; see `~
 The auditor cadence, dispatch-brief contract, closed-loop learning, and integration model are the global doctrine — this section only names THIS project's members.
 
 ## Just-in-time rules
-Every project rule under `{{RULES_DIR}}/` carries official `paths:` frontmatter and lazy-loads when Claude reads a matching file. `AGENTS.md` lists every rule and its trigger for Codex. Keep startup imports exceptional: if a compact project rule is truly irreducible, add it below AND keep `paths:` on the file so it does not auto-load a second way. `gate:rules-wiring` + `gate:agent-context` enforce both contracts.
+Every project rule under `{{RULES_DIR}}/` carries official `paths:` frontmatter and lazy-loads when Claude reads a matching file. `AGENTS.md` lists every rule and its exact trigger for Codex. Do not `@`-import a path-scoped rule: that gives one authority both explicit startup reachability and rules-engine reachability even when a byte counter deduplicates it. An explicit import is allowed only for an irreducible authority that is not rules-engine reachable. Keep detailed doctrine in one JIT rule. `gate:rules-wiring` + `gate:agent-context` enforce both contracts.
 
-{{IRREDUCIBLE_RULE_AT_REFS}}
-<!-- FILL with zero to four deliberate `@{{RULES_DIR}}/<file>` lines. Prefer zero: global doctrine + AGENTS.md should carry the startup core. Never @-import every generated rule. -->
+## Context-efficient dispatch
+Bounded explorers, implementers, and auditors receive a complete self-contained six-part brief in clean context: quoted settled context; exact read/edit/read-only/output paths; numbered procedure with real exit codes; output contract; boundaries/escalation; self-verifiable acceptance criteria. Default `fork_turns: "none"`. A positive integer is allowed only when the brief names the exact recent turns required. `fork_turns: "all"` is an explicit exception with a recorded reason, never a default. Context isolation does not weaken strong reviewer tier, implementer self-audit, applicable independent auditors, blocker classes, biting tests, or final green gates.
 
 ## Authoritative source-of-truth docs
 | Doc | When to read |

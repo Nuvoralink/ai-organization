@@ -3,10 +3,11 @@
  * gate:agent-context — generated Claude startup context stays within a measured budget.
  * Save as {{SCRIPTS_DIR}}/check-agent-context-budget.mjs and wire into gates:all.
  * Startup authority: CLAUDE.md files + recursive line-form @ imports + every `.claude/rules/*.md`
- * without official `paths:` frontmatter. Imported files count once. External imports fail closed because
- * CI cannot measure them deterministically. Duplicate reachability fails instead of being silently
- * deduplicated. Add a temp-tree bite test: oversized import/unscoped rule/duplicate import fail; large
- * path-scoped rule stays outside startup; dangling/external import fails.
+ * without official `paths:` frontmatter. Imported bytes count once, but duplicate delivery paths fail:
+ * repeated explicit imports and explicit imports of rules already reachable through official `paths:`.
+ * External imports fail closed because CI cannot measure them deterministically. Add a temp-tree bite
+ * test: oversized import/unscoped rule/duplicate import/explicit-plus-path-scoped reachability fail;
+ * a large path-scoped-only rule stays outside startup; dangling/external import fails.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -81,7 +82,14 @@ export function inspectAgentStartupContext(root, maxTokens = DEFAULT_MAX_STARTUP
 
   for (const rule of findMarkdown(path.join(repoRoot, '.claude', 'rules'))) {
     const source = fs.readFileSync(rule, 'utf8');
-    if (!hasPathsFrontmatter(source)) {
+    if (hasPathsFrontmatter(source)) {
+      const resolved = path.resolve(rule);
+      if (included.has(resolved)) {
+        failures.push(
+          `Duplicate startup/rules-engine reachability: ${path.relative(repoRoot, resolved)} is explicitly reached from ${firstParent.get(resolved)} and is also reachable through official paths: frontmatter`,
+        );
+      }
+    } else {
       failures.push(`Rule lacks official \`paths:\` and would load at startup: ${path.relative(repoRoot, rule)}`);
       include(rule, 0, '<unscoped-rule>');
     }

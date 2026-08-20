@@ -6,14 +6,10 @@ import { fileURLToPath } from 'node:url';
 
 // Startup-context budget for the always-loaded layer (CLAUDE.md + its `@` imports).
 //
-// Raised 10,000 -> 11,000 on 2026-07-27 by founder direction, to admit the AGENTS.md routing row
-// for parallel-agent coordination (the swarm engine had no startup-discoverable pointer, so an
-// orchestrator only found it by already reading the blast-radius doc). The budget exists to stop
-// silent startup bloat, not to block a deliberate routing addition — but it is still a HARD ceiling:
-// raise it only by an explicit decision like this one, never to make a failing gate go away. The
-// cheap alternative always comes first — give a rule `paths:` frontmatter so it loads on demand
-// instead of at startup.
-export const DEFAULT_MAX_STARTUP_TOKENS = 11_000;
+// The measured post-router startup is ~2.6K tokens. The 6K hard ceiling leaves reviewed growth room
+// while keeping the project near its ~4K target. Path-scoped rules load only on demand and must not
+// also be imported explicitly; duplicate delivery fails even when unique-byte accounting is unchanged.
+export const DEFAULT_MAX_STARTUP_TOKENS = 6_000;
 export const APPROXIMATE_CHARS_PER_TOKEN = 4;
 
 function parseArgs(argv) {
@@ -71,11 +67,17 @@ function importTargets(source) {
 export function inspectAgentStartupContext(root, maxTokens = DEFAULT_MAX_STARTUP_TOKENS) {
   const repoRoot = path.resolve(root);
   const included = new Map();
+  const firstParent = new Map();
   const failures = [];
 
-  function includeFile(absolute, ancestry = []) {
+  function includeFile(absolute, ancestry = [], parent = '<entry>') {
     const resolved = path.resolve(absolute);
-    if (included.has(resolved)) return;
+    if (included.has(resolved)) {
+      failures.push(
+        `Duplicate startup import: ${path.relative(repoRoot, resolved)} is reached from ${firstParent.get(resolved)} and ${parent}`,
+      );
+      return;
+    }
     if (!resolved.startsWith(`${repoRoot}${path.sep}`) && resolved !== repoRoot) {
       failures.push(
         `External startup import is outside the measurable repository budget: ${resolved}`,
@@ -97,12 +99,17 @@ export function inspectAgentStartupContext(root, maxTokens = DEFAULT_MAX_STARTUP
 
     const source = fs.readFileSync(resolved, 'utf8');
     included.set(resolved, source.length);
+    firstParent.set(resolved, parent);
     for (const target of importTargets(source)) {
       if (target.startsWith('~') || path.isAbsolute(target)) {
         failures.push(`External startup import cannot be budgeted deterministically: ${target}`);
         continue;
       }
-      includeFile(path.resolve(path.dirname(resolved), target), [...ancestry, resolved]);
+      includeFile(
+        path.resolve(path.dirname(resolved), target),
+        [...ancestry, resolved],
+        path.relative(repoRoot, resolved),
+      );
     }
   }
 
@@ -115,7 +122,14 @@ export function inspectAgentStartupContext(root, maxTokens = DEFAULT_MAX_STARTUP
 
   for (const rule of findRuleFiles(path.join(repoRoot, '.claude', 'rules'))) {
     const source = fs.readFileSync(rule, 'utf8');
-    if (!hasPathsFrontmatter(source)) {
+    if (hasPathsFrontmatter(source)) {
+      const resolved = path.resolve(rule);
+      if (included.has(resolved)) {
+        failures.push(
+          `Duplicate startup/rules-engine reachability: ${path.relative(repoRoot, resolved)} is explicitly reached from ${firstParent.get(resolved)} and is also reachable through official paths: frontmatter`,
+        );
+      }
+    } else {
       failures.push(
         `Rule lacks official \`paths:\` frontmatter and would load at startup: ${path.relative(repoRoot, rule)}`,
       );
