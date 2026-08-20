@@ -21,7 +21,8 @@ This is the compact user-level entry point loaded in every project and after com
 
 | Trigger | Read completely |
 | --- | --- |
-| Any non-trivial feature/fix/refactor or architecture/foundation slice | `~/.claude/rules/never-reactive.md`, `~/.claude/rules/slice-rigor.md`; for architecture also `architecture-saas-design` or `full-slice-planner` |
+| Any non-trivial request, correction, finding, question, or mid-task input | `~/.claude/rules/never-reactive.md` |
+| Any non-trivial feature/fix/refactor or architecture/foundation slice | `~/.claude/rules/slice-rigor.md`; for architecture also `architecture-saas-design` or `full-slice-planner` |
 | Any unsettled choice, new design, or material tradeoff | `~/.claude/rules/decision-discipline.md`; research prior art before deciding; dual-model consensus only for material high-consequence unsettled decisions |
 | Any iterative/review/monitoring loop | `~/.claude/rules/loop-discipline.md` |
 | Tests, gates, verification, proof catalogs | `~/.claude/rules/test-intent.md` |

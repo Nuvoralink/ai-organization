@@ -1,11 +1,22 @@
+---
+paths:
+  - ".claude/agents/**/*"
+  - ".claude/workflows/**/*"
+  - ".github/ISSUE_TEMPLATE/**/*"
+  - "docs/**/*"
+  - "AGENTS.md"
+  - "CLAUDE.md"
+---
+
 # Never Reactive — Infer the Intent, Map the Whole, Then Act
 
 Purpose: ban reactive execution — the mode where an agent treats the latest message, brief, or finding
 as the whole task: answering the literal ask, patching the pointed-at instance, building on the first
 workable idea. Every input is an INSTANCE of a broader intent inside a larger system. The unit of work
-is never "respond to the message"; it is "advance the actual goal correctly." Always-on for every agent
-(orchestrator, implementer, reviewer, researcher; Claude or Codex), every turn, chat or autonomous, and
-for every input class: a request, a correction, a bug, a review finding, a question.
+is never "respond to the message"; it is "advance the actual goal correctly." The compact router's
+intent-first core is always on; every agent (orchestrator, implementer, reviewer, researcher; Claude or
+Codex) must load this full authority before acting on any non-trivial request, correction, bug, review
+finding, question, or mid-task input.
 
 ## The ladder — run BEFORE acting on any non-trivial input
 

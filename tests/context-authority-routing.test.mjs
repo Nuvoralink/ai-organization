@@ -1,9 +1,9 @@
 /**
  * Proves: ORG-CONTEXT-ROUTING-001
  * Test type: authority-reachability and physical source mutation
- * Surface: compact global routers plus clean-context dispatch authorities
+ * Surface: compact global routers, complete global Claude startup graph, and clean-context dispatch authorities
  * Authority: registries/context-authorities.v1.json
- * Killer mutation: delete one load-bearing router trigger or make full-history inheritance the bounded-agent default
+ * Killer mutation: delete one router trigger, make full-history the default, or remove paths from a global Claude rule
  * Gated command: npm test
  */
 import assert from 'node:assert/strict';
@@ -23,6 +23,106 @@ const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
 
 function read(relative) {
   return fs.readFileSync(path.join(repoRoot, relative), 'utf8');
+}
+
+function findMarkdown(relativeRoot) {
+  const absoluteRoot = path.join(repoRoot, relativeRoot);
+  if (!fs.existsSync(absoluteRoot)) return [];
+  return fs.readdirSync(absoluteRoot, { withFileTypes: true }).flatMap((entry) => {
+    const relative = path.join(relativeRoot, entry.name).replaceAll(path.sep, '/');
+    if (entry.isDirectory()) return findMarkdown(relative);
+    return entry.isFile() && entry.name.endsWith('.md') ? [relative] : [];
+  });
+}
+
+function hasPathsFrontmatter(source) {
+  if (!source.startsWith('---')) return false;
+  const end = source.indexOf('\n---', 3);
+  return end !== -1 && /^paths\s*:/mu.test(source.slice(3, end));
+}
+
+function importTargets(source) {
+  return source
+    .split(/\r?\n/u)
+    .map((line) => line.match(/^\s*@([^\s]+)\s*$/u)?.[1])
+    .filter(Boolean);
+}
+
+function inspectGlobalClaudeStartup({ sourceOverrides = new Map(), extraRules = new Map() } = {}) {
+  const config = registry.globalClaudeStartup;
+  const failures = [];
+  const registered = new Map();
+  for (const row of config.rules) {
+    if (registered.has(row.path)) failures.push(`Duplicate registered global Claude rule: ${row.path}`);
+    registered.set(row.path, row);
+  }
+
+  const actualRules = new Set([...findMarkdown(config.rulesRoot), ...extraRules.keys()]);
+  for (const relative of actualRules) {
+    if (!registered.has(relative)) failures.push(`Unregistered global Claude rule: ${relative}`);
+  }
+  for (const relative of registered.keys()) {
+    if (!actualRules.has(relative)) failures.push(`Registered global Claude rule is missing: ${relative}`);
+  }
+
+  const included = new Map();
+  const firstParent = new Map();
+  const readSource = (relative) => sourceOverrides.get(relative) ?? extraRules.get(relative) ?? read(relative);
+  const include = (relative, ancestry = [], parent = '<entry>') => {
+    const normalized = path.posix.normalize(relative.replaceAll('\\', '/'));
+    const absolute = path.resolve(repoRoot, normalized);
+    if (!absolute.startsWith(`${repoRoot}${path.sep}`)) {
+      failures.push(`External global Claude startup import: ${relative}`);
+      return;
+    }
+    if (included.has(normalized)) {
+      failures.push(`Duplicate global Claude startup import: ${normalized} from ${firstParent.get(normalized)} and ${parent}`);
+      return;
+    }
+    if (ancestry.includes(normalized)) {
+      failures.push(`Cyclic global Claude startup import: ${[...ancestry, normalized].join(' -> ')}`);
+      return;
+    }
+    if (!sourceOverrides.has(normalized) && !extraRules.has(normalized) && !fs.existsSync(absolute)) {
+      failures.push(`Missing global Claude startup import: ${normalized}`);
+      return;
+    }
+    const source = readSource(normalized);
+    included.set(normalized, { path: normalized, chars: source.length, reachability: normalized === config.entryPath ? 'router' : 'explicit-import' });
+    firstParent.set(normalized, parent);
+    for (const target of importTargets(source)) {
+      if (target.startsWith('~') || path.isAbsolute(target)) {
+        failures.push(`External global Claude startup import: ${target}`);
+      } else {
+        include(path.posix.join(path.posix.dirname(normalized), target), [...ancestry, normalized], normalized);
+      }
+    }
+  };
+  include(config.entryPath);
+
+  for (const relative of actualRules) {
+    const source = readSource(relative);
+    const hasPaths = hasPathsFrontmatter(source);
+    const declared = registered.get(relative)?.reachability;
+    const actual = hasPaths ? 'path-scoped' : 'startup';
+    if (declared && declared !== actual) {
+      failures.push(`Global Claude rule reachability drift: ${relative} is ${actual}, registry declares ${declared}`);
+    }
+    if (hasPaths && included.has(relative)) {
+      failures.push(`Duplicate global Claude explicit/rules-engine reachability: ${relative}`);
+    }
+    if (!hasPaths && !included.has(relative)) {
+      included.set(relative, { path: relative, chars: source.length, reachability: 'unscoped-rule' });
+    }
+  }
+
+  const files = [...included.values()].sort((a, b) => a.path.localeCompare(b.path));
+  const totalChars = files.reduce((sum, file) => sum + file.chars, 0);
+  const approximateTokens = Math.ceil(totalChars / registry.approximateCharsPerToken);
+  if (approximateTokens >= config.maxApproximateTokens) {
+    failures.push(`Global Claude fixed startup is ~${approximateTokens} tokens; target requires <${config.maxApproximateTokens}`);
+  }
+  return { approximateTokens, failures, files };
 }
 
 function authorityRouterMarker(authority) {
@@ -60,7 +160,7 @@ function validateRouter(relative, source) {
 }
 
 test('global routers stay compact and route every semantic class to one canonical JIT authority', () => {
-  assert.equal(registry.version, '1.0.0');
+  assert.equal(registry.version, '1.1.0');
   assert.equal(new Set(registry.topics.map((topic) => topic.id)).size, registry.topics.length);
   for (const topic of registry.topics) {
     assert.ok(topic.trigger.length > 0, `${topic.id} needs an exact trigger`);
@@ -74,6 +174,37 @@ test('global routers stay compact and route every semantic class to one canonica
   for (const router of registry.routers) {
     assert.deepEqual(validateRouter(router.path, read(router.path)), [], router.path);
   }
+});
+
+test('global Claude startup inventories every rule and contains no unscoped rule', () => {
+  const result = inspectGlobalClaudeStartup();
+  assert.deepEqual(result.failures, []);
+  assert.deepEqual(result.files.map((file) => file.path), [registry.globalClaudeStartup.entryPath]);
+  assert.equal(result.approximateTokens, Math.ceil(read(registry.globalClaudeStartup.entryPath).length / 4));
+});
+
+test('global Claude startup gate catches removed paths and unknown rules while preserving path-scoped JIT rules', () => {
+  const relative = 'global/claude/rules/decision-discipline.md';
+  const unscoped = read(relative).replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/u, '');
+  const mutation = inspectGlobalClaudeStartup({ sourceOverrides: new Map([[relative, unscoped]]) });
+  assert.ok(mutation.files.some((file) => file.path === relative && file.reachability === 'unscoped-rule'));
+  assert.ok(mutation.failures.some((failure) => failure.includes(`${relative} is startup`)));
+
+  const unknown = inspectGlobalClaudeStartup({
+    extraRules: new Map([['global/claude/rules/unregistered.md', '---\npaths:\n  - "src/**/*"\n---\n']]),
+  });
+  assert.ok(unknown.failures.some((failure) => failure.includes('Unregistered global Claude rule')));
+
+  const duplicate = inspectGlobalClaudeStartup({
+    sourceOverrides: new Map([
+      [registry.globalClaudeStartup.entryPath, `${read(registry.globalClaudeStartup.entryPath)}\n@rules/decision-discipline.md\n`],
+    ]),
+  });
+  assert.equal(duplicate.files.filter((file) => file.path === relative).length, 1);
+  assert.ok(duplicate.failures.some((failure) => failure.includes('Duplicate global Claude explicit/rules-engine reachability')));
+
+  const counterexample = inspectGlobalClaudeStartup();
+  assert.equal(counterexample.files.some((file) => file.path === relative), false);
 });
 
 test('clean-context dispatch stays present in every global/template authority', () => {

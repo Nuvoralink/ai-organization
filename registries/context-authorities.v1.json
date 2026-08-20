@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "approximateCharsPerToken": 4,
   "routers": [
     {
@@ -11,6 +11,23 @@
       "maxApproximateTokens": 4000
     }
   ],
+  "globalClaudeStartup": {
+    "entryPath": "global/claude/CLAUDE.md",
+    "rulesRoot": "global/claude/rules",
+    "maxApproximateTokens": 4000,
+    "rules": [
+      { "path": "global/claude/rules/authority-boundary.md", "reachability": "path-scoped" },
+      { "path": "global/claude/rules/decision-discipline.md", "reachability": "path-scoped" },
+      { "path": "global/claude/rules/design-tokens-and-scales.md", "reachability": "path-scoped" },
+      { "path": "global/claude/rules/doctrine-loop.md", "reachability": "path-scoped" },
+      { "path": "global/claude/rules/loop-discipline.md", "reachability": "path-scoped" },
+      { "path": "global/claude/rules/never-reactive.md", "reachability": "path-scoped" },
+      { "path": "global/claude/rules/orchestrator-mode.md", "reachability": "path-scoped" },
+      { "path": "global/claude/rules/slice-rigor.md", "reachability": "path-scoped" },
+      { "path": "global/claude/rules/test-intent.md", "reachability": "path-scoped" },
+      { "path": "global/claude/rules/verdict-rubric.md", "reachability": "path-scoped" }
+    ]
+  },
   "dispatchAuthorities": [
     "global/codex/AGENTS.md",
     "global/claude/CLAUDE.md",
@@ -64,7 +81,7 @@
     {
       "id": "never-reactive",
       "trigger": "Any non-trivial request, correction, finding, or mid-task input",
-      "routerMarker": "context-topic:never-reactive",
+      "routerMarker": "Any non-trivial request, correction, finding, question, or mid-task input | `~/.claude/rules/never-reactive.md`",
       "authority": "global/claude/rules/never-reactive.md"
     },
     {
@@ -82,13 +99,13 @@
     {
       "id": "decision-discipline",
       "trigger": "Any unsettled choice, new design, material tradeoff, or authority amendment",
-      "routerMarker": "Any unsettled choice, new design, or material tradeoff",
+      "routerMarker": "Any unsettled choice, new design, or material tradeoff | `~/.claude/rules/decision-discipline.md`",
       "authority": "global/claude/rules/decision-discipline.md"
     },
     {
       "id": "loop-discipline",
       "trigger": "Any iterative review, repair, monitoring, refinement, or convergence loop",
-      "routerMarker": "Any iterative/review/monitoring loop",
+      "routerMarker": "Any iterative/review/monitoring loop | `~/.claude/rules/loop-discipline.md`",
       "authority": "global/claude/rules/loop-discipline.md"
     },
     {
