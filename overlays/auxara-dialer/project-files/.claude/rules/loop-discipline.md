@@ -5,7 +5,7 @@ paths:
 
 # Loop Discipline — Dialer Adapter
 
-**The universal `loop-discipline` rule governs in full** — always-on at user level for Claude (`~/.claude/rules/loop-discipline.md`, installed by the AI-Organization control plane); Codex carries its compact twin in `~/.codex/AGENTS.md`. This adapter does not restate the universal loop contract (measurable exit + hard cap + monotonic progress + budget bound), the anti-infinite-loop guardrails (no oscillation, dedup-vs-everything-seen, no moving targets, verify-the-critic, escalate-don't-spin), the terminal-state rule, or the cadence/report shapes. It binds them to the dialer's action boundary and records the anchors this project learned them from.
+**The universal `loop-discipline` rule governs in full** (always-on at user level; Codex twin in `~/.codex/AGENTS.md`). This adapter does not restate its loop contract/guardrails — it only binds them to the dialer's action boundary and records the anchors this project learned them from.
 
 ## The dialer's action boundary (what makes autonomous iteration safe HERE)
 

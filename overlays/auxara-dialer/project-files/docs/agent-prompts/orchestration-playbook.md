@@ -119,19 +119,22 @@ For Claude `TaskCreated`, an ENFORCE refusal is decided before lifecycle accepta
 For functionality and bug fixes: current contract/root cause → exact biting tests + **`npm run proof:changed`**
 → deploy-safety proof → human-authorized merge/deploy → **deployed functional proof** of the original user
 journey → remediate queued findings → one broad **`npm run ci`** closure run on the final hardened candidate.
-Auditors may inspect in parallel before acceptance, but findings remain queue-only unless they identify one
-of the bounded deployment/catastrophic interruption classes. Never let review ceremony substitute for proving
-that the feature works on the deployed artifact.
+Applicable auditors are required before merge and may inspect in parallel. Classify every finding before merge:
+fix BLOCK findings now, and queue only verified bounded fail-safe FIX-NEXT residuals outside every blocker class
+with durable backlog rows. Functionality-first changes remediation order, never auditor cadence; never let broad
+closure ceremony substitute for proving that the feature works on the deployed artifact.
 
 The complete CI runner mechanically refuses a dirty worktree or a HEAD not based on the freshest known
 local/origin `main`. This is not a skip: it prevents paying global proof for a branch that must still be
 rebased. Cross-commit lane caching is intentionally absent until each lane has a proven complete input
 dependency hash; an unsafe cache hit would be worse than a slow run.
 
-After functional acceptance, run/remediate the **adversarial-reviewer** and relevant domain auditors, then
-freeze the hardened candidate for the complete local `npm run ci` sprint/release closure proof. GitHub-hosted
-CI remains retired. Implementer reports are leads; deployed observed output is the functional authority.
-The final hardened closure uses one `npm run ci`; it is not repeated inside the functional repair loop.
+Before merge, run the **adversarial-reviewer** and every applicable specialist auditor; classify every
+finding, fix every BLOCK, and durably backlog only verified bounded fail-safe FIX-NEXT residuals. After
+deployed functional acceptance, remediate those queued FIX-NEXT findings, then freeze the hardened
+candidate for the complete local `npm run ci` sprint/release closure proof. GitHub-hosted CI remains
+retired. Implementer reports are leads; deployed observed output is the functional authority. The final
+hardened closure uses one `npm run ci`; it is not repeated inside the functional repair loop.
 
 Two specific loophole checks are now mandatory in that verification, because they bit Sprint 1.3:
 

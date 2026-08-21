@@ -29,10 +29,15 @@ A feature or functionality bug fix moves through these stages in order:
 5. **Hardening and broad assurance** — only after stage 4, remediate queued audit findings and run broad
    security, doctrine, parity, full-CI, cleanup, and optimization work.
 
-Auditors may run in parallel before stage 4; their ordinary findings are queued without remediation until
-functional acceptance and never redirect implementation. Only migration/schema apply failure,
-database-integrity or irreversible-data-loss risk, build/startup failure, deploy/readiness failure, or
-catastrophic irreversible security risk interrupts stages 1–4.
+Functionality-first changes remediation order, never auditor cadence. Applicable independent auditors are
+required before merge and may run in parallel. Classify every finding before merge: fix BLOCK findings now;
+queue only verified bounded fail-safe FIX-NEXT residuals outside every blocker class, each with a durable
+backlog row before merge.
+
+Merge preparation is concurrent. Proven documentation/file-map/non-functional projection drift gets an active
+parallel repair owner and does not pause implementation, focused proof, auditors, or real-blocker repair. Every
+required gate must still be green before final merge; an unclassified or functional/release-proof-invalidating
+gate failure remains BLOCK.
 
 Provider-touching code is docs-and-SDK-first: open the current official leaf documentation for the exact
 capability, inventory the installed SDK's exported methods/types, record exact contract claims
@@ -41,6 +46,9 @@ the evidence in the same diff. Never invent provider behavior from training memo
 protocol code is forbidden when a supported SDK capability exists.
 
 This rule grants no production authority; `.ai-organization/policies/action-authority.v1.json` still
-gates production-affecting actions. *Fail-state:* a branch spends hours in auditors/full CI before anyone
-proves the original feature works, or provider code is invented from memory while an official SDK method
-exists.
+gates production-affecting actions. *Fail-state:* functionality-first is used to skip an applicable auditor,
+queue an unverified/core-journey finding, or serialize merge preparation behind proven non-functional drift;
+broad closure runs before behavior proof; or provider code is invented from memory while an official SDK method
+exists. Killer mutations: set `required_before_merge=false`, permit final merge while a required gate is red,
+make proven file-map drift freeze merge preparation, or remove the core-journey blocker class. Counterexample:
+proven stale file-map drift is repaired concurrently, but final merge still waits for green.

@@ -5,7 +5,7 @@ paths:
 
 # Decision Discipline — Dialer Adapter
 
-**The universal `decision-discipline` rule governs in full** — it is always-on at user level for Claude (`~/.claude/rules/decision-discipline.md`, installed by the AI-Organization control plane), and Codex carries its compact twin in `~/.codex/AGENTS.md`. This adapter does not restate the universal ladder (authorities-first → research-before-inventing → visible structural reasoning → escalate-on-thin-evidence, nothing decided silently); it binds that ladder to the dialer's own authorities and escalation triggers. Read it WITH the universal rule, never instead of it.
+**The universal `decision-discipline` rule governs in full** (always-on at user level; Codex twin in `~/.codex/AGENTS.md`). This adapter does not restate its ladder — it only binds it to the dialer's authorities and escalation triggers below.
 
 ## Rung 1 — the dialer's authority set (check BEFORE deciding anything)
 

@@ -77,7 +77,7 @@ The agent's final report must contain: <the exact fields — for an implementer:
 - **Original journey:** <the exact user action → deployed effect this change must make work>.
 - **Deploy-safety boundary:** <only migration/schema, DB integrity, build/startup, deploy readiness — not the full hardening suite>.
 - **Acceptance observer:** <the human or runtime artifact whose observed deployed journey is the functional-acceptance authority>.
-- **Queue-only note:** pre-acceptance auditor findings queue without remediation; only the bounded interruption classes in `.ai-organization/policies/delivery-lifecycle.v1.json` may interrupt.
+- **Required-audit note:** applicable independent auditors run before merge. Classify every finding: BLOCK is fixed now; only a verified bounded fail-safe residual outside every blocker class may be FIX-NEXT, with a durable backlog row before merge. Functionality-first changes remediation order, never auditor cadence.
 
 ## Provider documentation evidence (required when the slice touches a provider contract; otherwise "N/A — no provider path changed", source-derived)
 - **Official leaf docs:** <current provider doc URLs for the exact capability + retrieval date>.

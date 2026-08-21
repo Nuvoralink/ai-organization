@@ -17,6 +17,7 @@
       "required": [
         "ordered_stages",
         "pre_acceptance_auditor_mode",
+        "merge_preparation_concurrency",
         "pre_acceptance_interruptions",
         "acceptance_authority"
       ],
@@ -31,23 +32,81 @@
         "pre_acceptance_auditor_mode": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["may_run_in_parallel", "finding_disposition"],
+          "required": [
+            "required_before_merge",
+            "may_run_in_parallel",
+            "finding_disposition",
+            "fix_next_requirements"
+          ],
           "properties": {
+            "required_before_merge": { "const": true },
             "may_run_in_parallel": { "const": true },
-            "finding_disposition": { "const": "queue_without_remediation" }
+            "finding_disposition": {
+              "const": "classify_before_merge_fix_blockers_queue_verified_fix_next"
+            },
+            "fix_next_requirements": {
+              "type": "array",
+              "minItems": 6,
+              "maxItems": 6,
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "verified",
+                  "bounded",
+                  "fails_safely",
+                  "core_functionality_remains_working",
+                  "outside_release_blocker_classes",
+                  "durable_backlog_row_before_merge"
+                ]
+              }
+            }
+          }
+        },
+        "merge_preparation_concurrency": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "continue_during_proven_nonfunctional_control_drift",
+            "repair_in_parallel_before_merge",
+            "final_merge_requires_required_gates_green",
+            "parallel_repair_requirements"
+          ],
+          "properties": {
+            "continue_during_proven_nonfunctional_control_drift": { "const": true },
+            "repair_in_parallel_before_merge": { "const": true },
+            "final_merge_requires_required_gates_green": { "const": true },
+            "parallel_repair_requirements": {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "failure_is_proven_documentation_filemap_or_nonfunctional_projection_drift",
+                  "targeted_functional_and_release_safety_proofs_remain_trustworthy",
+                  "outside_release_blocker_classes",
+                  "repair_has_active_owner"
+                ]
+              }
+            }
           }
         },
         "pre_acceptance_interruptions": {
           "type": "array",
           "uniqueItems": true,
-          "minItems": 5,
+          "minItems": 10,
           "items": {
             "enum": [
               "migration_or_schema_apply_failure",
               "database_integrity_or_irreversible_data_loss",
               "build_or_startup_failure",
               "railway_deploy_or_readiness_failure",
-              "catastrophic_irreversible_security_risk"
+              "catastrophic_irreversible_security_risk",
+              "intended_behavior_or_core_user_journey_failure",
+              "unknown_or_unverified_risk",
+              "security_auth_tenant_privacy_compliance_or_data_integrity_risk",
+              "irreversible_external_or_billed_effect_risk",
+              "mandatory_gate_or_proof_surface_failure_that_invalidates_functional_or_release_safety_evidence"
             ]
           }
         },

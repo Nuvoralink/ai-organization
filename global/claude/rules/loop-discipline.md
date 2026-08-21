@@ -1,6 +1,17 @@
+---
+paths:
+  - ".claude/agents/**/*"
+  - ".claude/workflows/**/*"
+  - ".github/workflows/**/*"
+  - "scripts/**/*"
+  - "**/*.test.*"
+  - "**/*.spec.*"
+  - "**/e2e/**/*"
+---
+
 # Loop Discipline — Iterate to Convergence, Never to Infinity
 
-Purpose: a loop (do → verify against a bar → refine → repeat until the bar is met) is the highest-leverage way to reach quality — a review→fix→re-verify loop, a find-until-dry bug hunt, a converge-on-a-spec/golden/visual-match refinement, a bounded self-repair. **Default to looping whenever iterating beats one-shot.** But an *unbounded* loop is a footgun: it burns budget, thrashes in place, oscillates between two states, chases a moving target, or exits by trusting an unverified "done." This rule makes loops a standard tool **and wires the guardrails so no loop ever runs away.** Always-on for every agent. It is the execution-loop sibling of the doctrine-loop rule (which loops *the rules/docs* better each session).
+Purpose: a loop (do → verify against a bar → refine → repeat until the bar is met) is the highest-leverage way to reach quality — a review→fix→re-verify loop, a find-until-dry bug hunt, a converge-on-a-spec/golden/visual-match refinement, a bounded self-repair. **Default to looping whenever iterating beats one-shot.** But an *unbounded* loop is a footgun: it burns budget, thrashes in place, oscillates between two states, chases a moving target, or exits by trusting an unverified "done." The compact router's loop core is always on; every agent must load this full authority before any iterative review, repair, monitoring, refinement, or convergence loop. It is the execution-loop sibling of the doctrine-loop rule (which loops *the rules/docs* better each session).
 
 ## When to loop
 Whenever the work has a **measurable convergence criterion** and iterating beats a single pass: review → fix → re-verify until 0 blockers; find-until-dry for unknown-size discovery (keep finding until K consecutive rounds surface nothing new); converge-on-a-target (iterate until a named gate is green / it equals a golden / it matches the locked mock); bounded self-repair (generate → validate → repair only the failed field → re-validate).

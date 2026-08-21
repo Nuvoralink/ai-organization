@@ -35,8 +35,10 @@ not zero findings. Treat unknown/unverified, release/core-journey, security/tena
 data-integrity, irreversible/external/billed, and proof-trust defects as BLOCK. A residual is FIX-NEXT only
 when evidence proves it bounded, fail-safe, and unable to affect any BLOCK class. File FIX-NEXT evidence,
 impact, owner, fix direction, and validation in the durable backlog before merge, then repair it on a
-follow-up branch. A red mandatory gate cannot be downgraded; fix the product or a proven-stale gate and rerun.
-Unknown is never low severity.
+follow-up branch. A red mandatory gate cannot be waived and must be green before final merge. When it is proven to
+be only documentation, file-map, or non-functional projection drift, repair it with an active parallel owner while
+implementation, focused proof, auditing, and real-blocker repair continue. An unclassified or proof-invalidating
+red gate remains a critical-path BLOCK. Unknown is never low severity.
 
 ## Functionality-first delivery loop
 
@@ -45,10 +47,11 @@ truth → exact biting tests as targeted implementation proof → proportional d
 (migration/schema, DB integrity, build/startup, deploy readiness only) → human-authorized merge/deploy +
 **deployed functional proof** of the original user journey → remediate queued findings and run the broad
 closure gate on the hardened candidate. The motive is efficiency: prove the intended behavior — ideally on
-the real surface — before any time/tokens go to hardening, broad audits, cleanup, or edge-polish. Auditors
-may inspect in parallel before acceptance, but findings remain queue-only unless they identify a bounded
-interruption class in `.ai-organization/policies/delivery-lifecycle.v1.json`. Docs, mocks, and planning
-are exempt from the staged lifecycle. Never let review ceremony substitute for proving the feature works
+the real surface — before broad hardening, cleanup, or edge-polish. Applicable auditors are required before
+merge and may inspect in parallel. Classify every finding before merge: fix BLOCK findings now; queue only
+verified bounded fail-safe FIX-NEXT residuals outside every blocker class, each with a durable backlog row.
+Functionality-first changes remediation order, never auditor cadence. Docs, mocks, and planning are exempt
+from the staged lifecycle. Never let broad-closure ceremony substitute for proving the feature works
 on the deployed artifact.
 
 ## Evidence

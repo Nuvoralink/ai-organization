@@ -308,10 +308,26 @@ test('Proves: ORG-OVERLAY-001; Test type: mutation; Surface: existing-project bo
 
 test('Proves: ORG-CONTEXT-001; Test type: mutation; Surface: startup context; Authority: context-engineering; Killer mutation: add a second import path without changing unique bytes; Gated command: npm test', () => {
   const skill = fs.readFileSync(path.join(root, 'skills', 'context-engineering', 'SKILL.md'), 'utf8');
+  const bootstrap = read('SKILL.md');
   const gate = read('templates/gates/check-agent-context-budget.mjs.template');
+  const claude = read('templates/CLAUDE.md.template');
+  const agents = read('templates/AGENTS.md.template');
   assert.match(skill, /one import path per authority/u);
+  assert.match(bootstrap, /Do not explicitly `@`-import a path-scoped rule/u);
+  assert.match(bootstrap, /add an `@` import for an already path-scoped rule/u);
+  assert.match(bootstrap, /`@AGENTS\.md` remains valid/u);
   assert.match(gate, /Duplicate startup import/u);
+  assert.match(gate, /Duplicate startup\/rules-engine reachability/u);
   assert.match(gate, /firstParent/u);
+  assert.match(gate, /hasPathsFrontmatter\(source\)[\s\S]*included\.has\(resolved\)/u);
+  for (const router of [claude, agents]) {
+    assert.match(router, /fork_turns: "none"/u);
+    assert.match(router, /fork_turns: "all".*explicit exception with a recorded reason/u);
+    assert.match(router, /six-part brief/u);
+  }
+  assert.match(claude, /explicit import is allowed only for an irreducible authority that is not rules-engine reachable/u);
+  assert.doesNotMatch(claude, /IRREDUCIBLE_RULE_AT_REFS/u);
+  assert.doesNotMatch(claude, /zero to four deliberate/u);
 });
 
 test('Proves: ORG-GOV-005; Test type: architecture; Surface: cross-vendor assurance; Authority: vendor-neutral task governor; Killer mutation: fabricate Codex lifecycle parity without an authenticated platform event; Gated command: npm test', () => {

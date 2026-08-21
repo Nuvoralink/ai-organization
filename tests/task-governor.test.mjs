@@ -31,6 +31,7 @@ import { acceptLifecycleTask, completeLifecycleTask } from '../core/lifecycle/li
 import { loadActionAuthority, loadRiskPolicy, validateCompletion, validateTaskContract, validateTaskEvidence } from '../core/lifecycle/task-governor.mjs';
 import { loadAgentRoleRegistry, registeredRole } from '../core/roles/agent-role-registry.mjs';
 import { digestRoleRegistry } from '../core/roles/verdict-rubric.mjs';
+import { validateJsonAgainstSchema } from '../core/schema/validate-json-schema.mjs';
 
 const controlPlaneRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -206,7 +207,13 @@ function attachExternallyAuthenticatedHumanGateForTest({ stateDirectory, taskId,
   return receipt;
 }
 
-function acceptedFixture({ riskPolicy = loadRiskPolicy(), humanGates = [], claim = true } = {}) {
+function acceptedFixture({
+  riskPolicy = loadRiskPolicy(),
+  humanGates = [],
+  claim = true,
+  findingCount = 0,
+  unresolvedFindingCount = 0,
+} = {}) {
   const root = fixtureRepository();
   const stateDirectory = defaultAssuranceStateDirectory(root);
   const actionAuthority = loadActionAuthority();
@@ -244,6 +251,8 @@ function acceptedFixture({ riskPolicy = loadRiskPolicy(), humanGates = [], claim
     reviewerSessionId: 'review-session',
     role: 'adversarial-reviewer',
     criterionStatuses: reviewStatuses(root),
+    findingCount,
+    unresolvedFindingCount,
     cwd: root,
     repositoryProvider: () => current,
   });
@@ -262,6 +271,49 @@ function acceptedFixture({ riskPolicy = loadRiskPolicy(), humanGates = [], claim
     : loadTaskAttempt(stateDirectory, 'ORG-001');
   return { root, stateDirectory, riskPolicy, actionAuthority, profileRegistry, roleRegistry, attempt: currentAttempt, current };
 }
+
+test('Proves: FUNCTIONALITY-FIRST-REVIEW-DISPOSITION-001; Test type: lifecycle authority integration; Surface: review receipt completion; Authority: delivery-lifecycle.v1.json plus task-evidence.v3.schema.json; Killer mutation: treat every finding as unresolved so a verified durably-backlogged FIX-NEXT residual blocks functional-feedback merge; Counterexample: any BLOCK or unbacklogged finding keeps unresolved_finding_count nonzero and completion red; Gated command: npm test', () => {
+  const fixNext = generateValidCompletion({ findingCount: 1, unresolvedFindingCount: 0 });
+  assert.equal(fixNext.evidence.review_receipts[0].finding_count, 1);
+  assert.equal(fixNext.evidence.review_receipts[0].unresolved_finding_count, 0);
+  assert.deepEqual(validateCompletion(contract(), fixNext.evidence, fixNext.context), []);
+
+  const blocked = generateValidCompletion({ findingCount: 1, unresolvedFindingCount: 1 });
+  assert.match(
+    validateCompletion(contract(), blocked.evidence, blocked.context).join('\n'),
+    /not an accepted resolved review/u,
+  );
+});
+
+test('Proves: FUNCTIONALITY-FIRST-PARALLEL-REPAIR-001; Test type: control-policy contract; Surface: merge preparation; Authority: delivery-lifecycle.v1.json; Killer mutation: make proven documentation/filemap drift freeze merge-preparation work or allow final merge while a required gate is red; Counterexample: an unclassified or release-safety gate failure remains a blocking interruption; Gated command: npm test', () => {
+  const policyPath = path.join(controlPlaneRoot, 'policies', 'delivery-lifecycle.v1.json');
+  const schemaPath = path.join(controlPlaneRoot, 'schemas', 'delivery-lifecycle.v1.schema.json');
+  const canonical = JSON.parse(fs.readFileSync(policyPath, 'utf8'));
+  assert.deepEqual(validateJsonAgainstSchema(schemaPath, canonical), []);
+  const concurrency = canonical.functional_change.merge_preparation_concurrency;
+  assert.equal(concurrency.continue_during_proven_nonfunctional_control_drift, true);
+  assert.equal(concurrency.repair_in_parallel_before_merge, true);
+  assert.equal(concurrency.final_merge_requires_required_gates_green, true);
+  assert.deepEqual(concurrency.parallel_repair_requirements, [
+    'failure_is_proven_documentation_filemap_or_nonfunctional_projection_drift',
+    'targeted_functional_and_release_safety_proofs_remain_trustworthy',
+    'outside_release_blocker_classes',
+    'repair_has_active_owner',
+  ]);
+  assert.ok(
+    canonical.functional_change.pre_acceptance_interruptions.includes(
+      'mandatory_gate_or_proof_surface_failure_that_invalidates_functional_or_release_safety_evidence',
+    ),
+  );
+
+  const serializesMergePreparation = structuredClone(canonical);
+  serializesMergePreparation.functional_change.merge_preparation_concurrency.continue_during_proven_nonfunctional_control_drift = false;
+  assert.notDeepEqual(validateJsonAgainstSchema(schemaPath, serializesMergePreparation), []);
+
+  const waivesFinalGate = structuredClone(canonical);
+  waivesFinalGate.functional_change.merge_preparation_concurrency.final_merge_requires_required_gates_green = false;
+  assert.notDeepEqual(validateJsonAgainstSchema(schemaPath, waivesFinalGate), []);
+});
 
 function generateValidCompletion(options = {}) {
   const fixture = acceptedFixture(options);

@@ -1,5 +1,5 @@
 ---
-description: Functionality-first delivery — prove the intended code behavior on the real surface before hardening, broad audits, cleanup, or polish; queue-only auditors pre-acceptance; docs-and-SDK-first provider work
+description: Functionality-first delivery — prove intended behavior before broad hardening; auditors remain required before merge and classify BLOCK versus verified FIX-NEXT; docs-and-SDK-first provider work
 alwaysApply: false
 ---
 # Functionality-first delivery
@@ -37,11 +37,15 @@ A feature or functionality bug fix moves through these stages in order:
 5. **Hardening and broad assurance.** Only after stage 4 passes, remediate queued audit findings and run
    the broad security battery, doctrine, parity, full-verify/closure, cleanup, and optimization work.
 
-Auditors may run in parallel before stage 4 and report findings. Their findings are queued without
-remediation until functional acceptance. Only these classes interrupt stages 1–4: migration/schema apply
-failure, database-integrity or irreversible-data-loss risk, build/startup failure, deploy/readiness
-failure, or catastrophic irreversible security risk. A normal hardening finding is not permission to
-change the implementation before the original function is proven.
+Functionality-first changes remediation order, never auditor cadence. Applicable independent auditors are
+required before merge and may run in parallel. Classify every finding before merge: fix BLOCK findings now;
+queue only verified bounded fail-safe FIX-NEXT residuals outside every blocker class, each with a durable
+backlog row before merge.
+
+Merge preparation is concurrent. Proven documentation/file-map/non-functional projection drift gets an active
+parallel repair owner and does not pause implementation, focused proof, auditors, or real-blocker repair. Every
+required gate must still be green before final merge; an unclassified or functional/release-proof-invalidating
+gate failure remains BLOCK.
 
 This lifecycle does not grant production authority beyond `action-authority.v1.json` (including ORG-007's
 recorded exception); once authorized, ceremony must not delay the functional feedback loop.
@@ -57,5 +61,9 @@ third-party tutorials, and tests shaped from the implementation are leads, not p
 protocol/signing/serialization code is forbidden when the installed SDK already owns the capability unless
 the evidence names the verified SDK gap.
 
-*Fail-state:* a branch spends hours in auditors/full verify before anyone proves the original feature
-works at coach.nuvoralink.com, or provider code is invented from memory while an official SDK method exists.
+*Fail-state:* functionality-first is used to skip an applicable auditor, queue an unverified/core-journey
+finding, or serialize merge preparation behind proven non-functional drift; broad closure runs before behavior
+proof; or provider code is invented from memory while an official SDK method exists. Killer mutations: set
+`required_before_merge=false`, permit final merge while a required gate is red, make proven file-map drift freeze
+merge preparation, or remove the core-journey blocker class. Counterexample: proven stale file-map drift is
+repaired concurrently, but final merge still waits for green.

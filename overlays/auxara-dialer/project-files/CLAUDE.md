@@ -4,12 +4,7 @@
 
 Load only the irreducible execution core at startup. `AGENTS.md` routes every larger or path-specific rule; read the routed file completely before planning or editing that surface.
 
-@.claude/rules/agent-product-intent.md
-@.claude/rules/decision-discipline.md
-@.claude/rules/loop-discipline.md
-@.claude/rules/doctrine-loop.md
-@.claude/rules/never-reactive.md
-@.claude/rules/functionality-first-delivery.md
+Do not explicitly import path-scoped rules here: Claude's rules engine already reaches them on their declared paths, and `AGENTS.md` provides exact topic triggers for Codex and manual JIT reads.
 
 Claude Design is the approved design authority for visible frontend work. Do not use Figma or implement a visible change before the user approves its Claude Design mock/reference.
 

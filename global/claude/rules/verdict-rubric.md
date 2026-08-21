@@ -60,6 +60,8 @@ REVIEW_REPORT_JSON:{"task_id":"TASK-ID","criteria":{"registered-criterion":"pass
 
 The lifecycle controller loads the effective registered role, hashes that exact registry/rubric, and computes the authoritative verdict from `criteria`. A reviewer-written `verdict`, if present in prose or a legacy marker, is ignored and can never authorize completion. Missing criteria remain `skip`; unknown criteria or statuses fail closed.
 
+`unresolved_finding_count` means BLOCK, unclassified, or not-durably-backlogged findings and must be zero for an accepted review receipt. A verified bounded fail-safe FIX-NEXT residual with the required durable backlog row remains in `finding_count` but is resolved for the current functional-feedback merge; it does not falsely disappear from review history.
+
 The orchestrator computes the authoritative verdict from your statuses via `core/roles/verdict-rubric.mjs`; your own arithmetic is a cross-check, not the source. If your stated verdict disagrees with the computed one, the computed one wins and the disagreement is itself a finding.
 
 *Fail-state:* a lens issued ACCEPT over criteria it never evaluated, marked a criterion `pass` on the strength of a comment or an implementer's claim rather than the code, or buried an unreached critical surface in prose instead of returning UNVERIFIABLE.

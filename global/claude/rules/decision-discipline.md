@@ -1,6 +1,17 @@
+---
+paths:
+  - ".claude/**/*"
+  - ".codex/**/*"
+  - ".github/ISSUE_TEMPLATE/**/*"
+  - ".github/PULL_REQUEST_TEMPLATE.md"
+  - "docs/**/*"
+  - "AGENTS.md"
+  - "CLAUDE.md"
+---
+
 # Decision Discipline — Research, Reason Structurally, Never Decide Silently
 
-Purpose: stop mid-flight coin-flips. When implementation forces a choice the plan didn't settle, the quality of that unplanned decision is what separates durable work from drift. Always-on for every agent (orchestrator, implementer, reviewer; Claude or Codex) and every mid-task choice, not just architecture.
+Purpose: stop mid-flight coin-flips. When implementation forces a choice the plan didn't settle, the quality of that unplanned decision is what separates durable work from drift. The compact router's decision core is always on; every agent (orchestrator, implementer, reviewer; Claude or Codex) must load this full authority for every unsettled mid-task choice, not just architecture.
 
 ## 1. When this rule fires
 Any choice not already settled by an authority: library/dependency selection, schema or contract shape, API design, algorithm/pattern choice, naming a new domain concept, error/retry semantics, storage/queue topology, security-posture details, test strategy for a new surface, a UX micro-behavior the mock didn't specify — any tradeoff with more than one defensible side.

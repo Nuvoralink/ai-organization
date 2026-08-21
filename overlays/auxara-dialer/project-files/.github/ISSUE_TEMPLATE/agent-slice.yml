@@ -115,12 +115,12 @@ body:
     id: functional_acceptance
     attributes:
       label: Functional acceptance
-      description: Define the original deployed user journey, deploy-safety boundary, acceptance observer, and which audit findings remain queue-only until it works.
+      description: Define the original deployed user journey, deploy-safety boundary, acceptance observer, and the applicable auditors required before merge.
       placeholder: |
         Original journey: <exact user action -> deployed effect>
         Deploy safety: <migration/schema, DB integrity, build/startup, Railway readiness>
         Acceptance authority: <human observer or runtime artifact>
-        Pre-acceptance audits: queue without remediation except bounded interruption classes
+        Pre-merge audits: <applicable auditors; classify every finding; fix BLOCK; durably backlog only verified bounded fail-safe FIX-NEXT>
     validations:
       required: true
 

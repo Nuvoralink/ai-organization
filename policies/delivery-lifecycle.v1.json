@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/delivery-lifecycle.v1.schema.json",
-  "version": "1.1.0",
+  "version": "1.3.0",
   "principle": "prove_intended_behavior_on_the_real_surface_before_hardening_audits_cleanup_polish",
   "functional_change": {
     "ordered_stages": [
@@ -11,15 +11,40 @@
       "hardening_and_broad_assurance"
     ],
     "pre_acceptance_auditor_mode": {
+      "required_before_merge": true,
       "may_run_in_parallel": true,
-      "finding_disposition": "queue_without_remediation"
+      "finding_disposition": "classify_before_merge_fix_blockers_queue_verified_fix_next",
+      "fix_next_requirements": [
+        "verified",
+        "bounded",
+        "fails_safely",
+        "core_functionality_remains_working",
+        "outside_release_blocker_classes",
+        "durable_backlog_row_before_merge"
+      ]
+    },
+    "merge_preparation_concurrency": {
+      "continue_during_proven_nonfunctional_control_drift": true,
+      "repair_in_parallel_before_merge": true,
+      "final_merge_requires_required_gates_green": true,
+      "parallel_repair_requirements": [
+        "failure_is_proven_documentation_filemap_or_nonfunctional_projection_drift",
+        "targeted_functional_and_release_safety_proofs_remain_trustworthy",
+        "outside_release_blocker_classes",
+        "repair_has_active_owner"
+      ]
     },
     "pre_acceptance_interruptions": [
       "migration_or_schema_apply_failure",
       "database_integrity_or_irreversible_data_loss",
       "build_or_startup_failure",
       "railway_deploy_or_readiness_failure",
-      "catastrophic_irreversible_security_risk"
+      "catastrophic_irreversible_security_risk",
+      "intended_behavior_or_core_user_journey_failure",
+      "unknown_or_unverified_risk",
+      "security_auth_tenant_privacy_compliance_or_data_integrity_risk",
+      "irreversible_external_or_billed_effect_risk",
+      "mandatory_gate_or_proof_surface_failure_that_invalidates_functional_or_release_safety_evidence"
     ],
     "acceptance_authority": "observed_deployed_user_journey_and_human_acceptance_when_human_reachable"
   },
