@@ -39,7 +39,7 @@ The earlier flat "system enforces all of these, no override" list **over-claimed
 The system enforces these autonomously and **neither tenant nor human can disable** — because we are the registered/signing party, or the carrier enforces them upstream:
 
 - **STIR/SHAKEN attestation** (we sign as originating provider; Telnyx-provisioned DIDs only)
-- **10DLC Brand+Campaign registration gate** + **toll-free verification** (US carriers block unregistered **US** A2P SMS at the network level; **Canada SMS needs no 10DLC** — CASL mechanics + attestation only)
+- **10DLC Brand+Campaign registration gate** + **toll-free verification** (US carriers block unregistered **US-involved** A2P SMS at the network level: the actual selected sender OR recipient being US requires 10DLC; **CA→CA needs no 10DLC** — CASL sender-ID/functional-unsubscribe mechanics still apply, while recipient consent remains the tenant's Terms/AUP warranty)
 - **CASL SMS sender-ID + functional unsubscribe** (platform-level SMS plumbing)
 - **STOP / opt-out auto-suppression** (carrier-recognized keyword; always on and projected into the tenant-wide internal-DNC authority)
 
@@ -53,7 +53,11 @@ For these, the **caller (the tenant) is the legally liable party** and the diale
 - **DNC scrubbing** (CMP-005; default ON for dialer-owned lists; scrub-on-import + ≤31-day re-scrub + dial-time freshness; tenant configures sources / may disable)
 - **Recording disclosure** (default ON for all-party-consent states + a disclose-always option; configurable where legally optional)
 - **PIPEDA disclosure** (default ON for every Canadian call — sub-rule of recording disclosure)
-- **Per-recipient consent** (CMP-003 — tenant attestation only; never dialer-tracked)
+
+**Terms/AUP allocation, not a Tier-1b capability:** CMP-003 places consent-to-contact / PEWC
+responsibility in the tenant's warranty. Auxara never asks, tracks, attests, or gates on recipient
+consent. Carrier Campaign opt-in method/evidence is distinct TCR registration data, not an Auxara
+consent ceremony.
 
 **Posture for Tier 1b + shared-account self-protection:** safe defaults ON + a ToS/AUP that puts compliance responsibility on the tenant + **abuse/anomaly monitoring with the right to suspend** (protects the shared Telnyx account — a commercial, not legal, exposure). NOT per-call platform enforcement.
 
@@ -90,7 +94,7 @@ The dialer **syncs to the CRM via webhook** (INT-001) and **surfaces context to 
 
 Before building any behavior that changes state or contacts a prospect, ask:
 
-1. **Is it a hard legal/carrier gate?** → Tier 1. Then split (ADR-CMP-001): is the *platform* the actor (STIR/SHAKEN, 10DLC/toll-free, CASL mechanics, STOP/internal-DNC persistence)? → **1a** — enforce and make non-disableable; only S14-PF-G's permissioned, reasoned, single-call **manual voice** exception may contact while the internal-DNC entry stays active. Or is the *tenant* the liable caller (calling hours, **external-registry DNC scrubbing**, recording disclosure, consent)? → **1b** — ship the capability with a safe default ON + log what the system did; the tenant configures it and owns the liability.
+1. **Is it a hard legal/carrier gate?** → Tier 1. Then split (ADR-CMP-001): is the *platform* the actor (STIR/SHAKEN, 10DLC/toll-free, CASL mechanics, STOP/internal-DNC persistence)? → **1a** — enforce and make non-disableable; only S14-PF-G's permissioned, reasoned, single-call **manual voice** exception may contact while the internal-DNC entry stays active. Or is the *tenant* the liable caller (calling hours, **external-registry DNC scrubbing**, recording disclosure)? → **1b** — ship the capability with a safe default ON + log what the system did; the tenant configures it and owns the liability. Consent-to-contact is still tenant-owned, but CMP-003 carries it through Terms/AUP rather than an in-product capability or verdict.
 2. **Is it operational (which number, whether to keep dialing a flagged number, what the disposition was)?** → Tier 2: system recommends + offers a capability; the human decides; autonomy only via explicit opt-in (default off).
 3. **Is it strategy or lead lifecycle (who to pursue, when to call back, pipeline stage)?** → Tier 3: not the dialer's job; sync to CRM, surface to human.
 
